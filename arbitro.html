@@ -537,7 +537,73 @@
 
         function guardarDB() {
             localStorage.setItem('liga_premier_db', JSON.stringify(db));
+            intentarAutoBackup();
         }
+
+        // --- Aviso flotante reutilizable ---
+        function mostrarAvisoAutoguardado(mensaje) {
+            let aviso = document.getElementById('aviso-autoguardado-toast');
+            if (!aviso) {
+                aviso = document.createElement('div');
+                aviso.id = 'aviso-autoguardado-toast';
+                aviso.style.cssText = 'position:fixed;bottom:16px;right:16px;background:#2ec4b6;color:#fff;padding:10px 16px;border-radius:8px;font-size:0.8rem;font-weight:bold;box-shadow:0 4px 10px rgba(0,0,0,0.2);z-index:9999;opacity:0;transition:opacity .3s;max-width:280px;';
+                document.body.appendChild(aviso);
+            }
+            aviso.textContent = mensaje;
+            aviso.style.opacity = '1';
+            clearTimeout(aviso._t);
+            aviso._t = setTimeout(() => { aviso.style.opacity = '0'; }, 4000);
+        }
+
+        // --- Autoguardado automático en .json (sin necesidad de dar clic) ---
+        // Comparte el contador con admin.html e index.html a través de localStorage,
+        // así que cuenta cambios hechos desde cualquiera de las 3 páginas.
+        function descargarBackupJSON(automatico) {
+            try {
+                const fecha = new Date().toISOString().slice(0, 10);
+                const hora = new Date().toTimeString().slice(0, 5).replace(':', '-');
+                const contenido = JSON.stringify(db, null, 2);
+                const blob = new Blob([contenido], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const enlace = document.createElement('a');
+                enlace.href = url;
+                enlace.download = automatico ? `liga_premier_autoguardado_${fecha}_${hora}.json` : `liga_premier_backup_${fecha}.json`;
+                document.body.appendChild(enlace);
+                enlace.click();
+                document.body.removeChild(enlace);
+                URL.revokeObjectURL(url);
+                if (automatico) mostrarAvisoAutoguardado(`💾 Autoguardado descargado (${hora}).`);
+            } catch (err) { console.warn('No se pudo generar el auto-respaldo', err); }
+        }
+
+        function intentarAutoBackup() {
+            try {
+                let meta = JSON.parse(localStorage.getItem('liga_premier_backup_meta')) || { ultimoBackup: 0, cambiosPendientes: 0 };
+                meta.cambiosPendientes = (meta.cambiosPendientes || 0) + 1;
+                const ahora = Date.now();
+                const tiempoDesdeUltimo = ahora - (meta.ultimoBackup || 0);
+                const pasaronMinimo = tiempoDesdeUltimo >= 3 * 60 * 1000;
+                const debeRespaldar = pasaronMinimo && (meta.cambiosPendientes >= 15 || tiempoDesdeUltimo >= 20 * 60 * 1000);
+                if (debeRespaldar) {
+                    descargarBackupJSON(true);
+                    meta.ultimoBackup = ahora;
+                    meta.cambiosPendientes = 0;
+                }
+                localStorage.setItem('liga_premier_backup_meta', JSON.stringify(meta));
+            } catch (err) { /* si falla el auto-respaldo no debe interrumpir el guardado normal */ }
+        }
+
+        // --- Sincronización entre pestañas/páginas abiertas (misma computadora) ---
+        // Solo actualiza los datos en memoria y avisa; no vuelve a dibujar la cédula
+        // en captura para no perder lo que el árbitro esté escribiendo en ese momento.
+        window.addEventListener('storage', function (e) {
+            if (e.key === 'liga_premier_db' && e.newValue) {
+                try {
+                    db = JSON.parse(e.newValue);
+                    mostrarAvisoAutoguardado('🔄 Datos actualizados desde otra pestaña.');
+                } catch (err) { /* valor corrupto, se ignora */ }
+            }
+        });
 
         function asegurarFinanzas(eqId) {
             if (!db.finanzas[eqId]) db.finanzas[eqId] = { inscripcionPagada: false, adeudoArbitrajes: 0, multasTarjetas: 0 };
