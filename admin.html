@@ -419,6 +419,30 @@
         </div>
         <p id="backup-status-msg" style="font-size:0.8rem; margin:8px 0 0; min-height:1.1em;"></p>
     </div>
+
+    <!-- SINCRONIZACIÓN AUTOMÁTICA CON GITHUB -->
+    <div class="admin-box" style="border-top-color: #24292e; background: #f7f9fa; margin-bottom: 25px; position: relative; z-index: 1;">
+        <h3>🐙 Sincronización automática con GitHub</h3>
+        <p style="font-size:0.85rem; color:#555; margin-top:-6px;">
+            Guarda tus datos en un archivo dentro de un repositorio de GitHub, para que se respalden solos
+            y (si ese repo alimenta tu sitio) las demás páginas puedan leer la versión más reciente.
+            <strong>El token se guarda solo en este navegador</strong> (nunca queda escrito en este archivo .html),
+            así que si compartes este .html con alguien más, tu token no viaja con él — cada quien debe poner el suyo.
+        </p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:10px; margin-top:10px;">
+            <input type="text" id="gh-owner" placeholder="Usuario u organización (ej. mi-usuario)">
+            <input type="text" id="gh-repo" placeholder="Nombre del repositorio">
+            <input type="text" id="gh-path" placeholder="Ruta del archivo (ej. liga_premier_db.json)" value="liga_premier_db.json">
+            <input type="text" id="gh-branch" placeholder="Rama (ej. main)" value="main">
+            <input type="password" id="gh-token" placeholder="Token de acceso personal (ghp_... o github_pat_...)">
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+            <button type="button" onclick="guardarConfigGithub()" style="background:#24292e;">💾 Guardar configuración</button>
+            <button type="button" onclick="sincronizarConGithub(false)" style="background:#2ec4b6;">🔄 Sincronizar ahora</button>
+            <button type="button" onclick="traerDeGithub()" style="background:var(--secondary);">⬇️ Traer últimos datos de GitHub</button>
+        </div>
+        <p id="github-status-msg" style="font-size:0.8rem; margin:8px 0 0; min-height:1.1em;"></p>
+    </div>
     <div
         style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 25px; position:relative; z-index:1;">
         <div class="admin-box" style="border-top-color: var(--warning); background: #fffdf5; margin: 0;">
@@ -792,6 +816,7 @@
             renderizarFinanzas();
             renderizarGestion();
             intentarAutoBackup();
+            intentarAutoSyncGithub();
         }
 
         function mostrarBackupStatus(mensaje, esError) {
@@ -872,6 +897,165 @@
                 } catch (err) { /* valor corrupto, se ignora */ }
             }
         });
+
+        // --- Sincronización automática con GitHub ---
+        // El token SOLO se guarda en localStorage de este navegador; nunca se escribe en este archivo .html.
+        function mostrarGithubStatus(mensaje, esError) {
+            const el = document.getElementById('github-status-msg');
+            if (!el) return;
+            el.textContent = mensaje;
+            el.style.color = esError ? '#c62828' : '#2e7d32';
+        }
+
+        function utf8ToBase64(str) {
+            const bytes = new TextEncoder().encode(str);
+            let binary = '';
+            bytes.forEach(b => binary += String.fromCharCode(b));
+            return btoa(binary);
+        }
+
+        function base64ToUtf8(base64) {
+            const binary = atob(base64.replace(/\n/g, ''));
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            return new TextDecoder('utf-8').decode(bytes);
+        }
+
+        function obtenerConfigGithub() {
+            try {
+                return JSON.parse(localStorage.getItem('liga_premier_github_config')) || null;
+            } catch (err) {
+                return null;
+            }
+        }
+
+        function guardarConfigGithub() {
+            const cfg = {
+                owner: document.getElementById('gh-owner').value.trim(),
+                repo: document.getElementById('gh-repo').value.trim(),
+                path: document.getElementById('gh-path').value.trim() || 'liga_premier_db.json',
+                branch: document.getElementById('gh-branch').value.trim() || 'main',
+                token: document.getElementById('gh-token').value.trim()
+            };
+            const existente = obtenerConfigGithub();
+            if (!cfg.token && existente && existente.token) cfg.token = existente.token; // no borrar token guardado si se deja vacío
+            if (!cfg.owner || !cfg.repo || !cfg.token) {
+                mostrarGithubStatus('⚠️ Completa al menos usuario, repositorio y token.', true);
+                return;
+            }
+            localStorage.setItem('liga_premier_github_config', JSON.stringify(cfg));
+            document.getElementById('gh-token').value = '';
+            document.getElementById('gh-token').placeholder = '•••••••• (token guardado)';
+            mostrarGithubStatus('✅ Configuración guardada en este navegador.', false);
+        }
+
+        function cargarConfigGithub() {
+            const cfg = obtenerConfigGithub();
+            if (!cfg) return;
+            if (cfg.owner) document.getElementById('gh-owner').value = cfg.owner;
+            if (cfg.repo) document.getElementById('gh-repo').value = cfg.repo;
+            if (cfg.path) document.getElementById('gh-path').value = cfg.path;
+            if (cfg.branch) document.getElementById('gh-branch').value = cfg.branch;
+            if (cfg.token) document.getElementById('gh-token').placeholder = '•••••••• (token guardado)';
+        }
+
+        async function sincronizarConGithub(automatico) {
+            const cfg = obtenerConfigGithub();
+            if (!cfg || !cfg.owner || !cfg.repo || !cfg.token) {
+                if (!automatico) mostrarGithubStatus('⚠️ Primero guarda tu configuración de GitHub arriba.', true);
+                return;
+            }
+            try {
+                const apiUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${encodeURIComponent(cfg.path)}`;
+                let sha = null;
+                const resGet = await fetch(`${apiUrl}?ref=${encodeURIComponent(cfg.branch)}`, {
+                    headers: { 'Authorization': `token ${cfg.token}`, 'Accept': 'application/vnd.github+json' }
+                });
+                if (resGet.ok) {
+                    const dataGet = await resGet.json();
+                    sha = dataGet.sha;
+                } else if (resGet.status !== 404) {
+                    const errData = await resGet.json().catch(() => ({}));
+                    mostrarGithubStatus(`❌ Error al leer el archivo remoto: ${errData.message || resGet.status}`, true);
+                    return;
+                }
+                const body = {
+                    message: automatico ? `Autoguardado ${new Date().toLocaleString('es-MX')}` : `Actualización manual ${new Date().toLocaleString('es-MX')}`,
+                    content: utf8ToBase64(JSON.stringify(db, null, 2)),
+                    branch: cfg.branch
+                };
+                if (sha) body.sha = sha;
+                const resPut = await fetch(apiUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${cfg.token}`,
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+                if (resPut.ok) {
+                    mostrarGithubStatus(`✅ Sincronizado con GitHub (${new Date().toLocaleTimeString('es-MX')}).`, false);
+                } else {
+                    const errData = await resPut.json().catch(() => ({}));
+                    mostrarGithubStatus(`❌ Error al sincronizar: ${errData.message || resPut.status}`, true);
+                }
+            } catch (err) {
+                mostrarGithubStatus('❌ No se pudo conectar con GitHub. Revisa tu internet o el token.', true);
+            }
+        }
+
+        async function traerDeGithub() {
+            const cfg = obtenerConfigGithub();
+            if (!cfg || !cfg.owner || !cfg.repo || !cfg.token) {
+                mostrarGithubStatus('⚠️ Primero guarda tu configuración de GitHub arriba.', true);
+                return;
+            }
+            if (!confirm('Esto reemplazará los datos que tienes cargados ahora mismo con la última versión guardada en GitHub. ¿Continuar?')) return;
+            try {
+                const apiUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${encodeURIComponent(cfg.path)}`;
+                const res = await fetch(`${apiUrl}?ref=${encodeURIComponent(cfg.branch)}`, {
+                    headers: { 'Authorization': `token ${cfg.token}`, 'Accept': 'application/vnd.github+json' }
+                });
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    mostrarGithubStatus(`❌ No se pudo traer el archivo: ${errData.message || res.status}`, true);
+                    return;
+                }
+                const data = await res.json();
+                const contenido = base64ToUtf8(data.content);
+                db = JSON.parse(contenido);
+                localStorage.setItem('liga_premier_db', JSON.stringify(db));
+                actualizarFormularios();
+                renderizarSolicitudes();
+                renderizarFinanzas();
+                renderizarGestion();
+                mostrarGithubStatus('✅ Datos actualizados desde GitHub.', false);
+            } catch (err) {
+                mostrarGithubStatus('❌ No se pudo traer el archivo desde GitHub.', true);
+            }
+        }
+
+        // Igual que el autoguardado local, pero con su propio contador: cada cierto número de
+        // cambios o de minutos, sube sola la base de datos a GitHub (solo si ya configuraste token).
+        function intentarAutoSyncGithub() {
+            const cfg = obtenerConfigGithub();
+            if (!cfg || !cfg.owner || !cfg.repo || !cfg.token) return;
+            try {
+                let meta = JSON.parse(localStorage.getItem('liga_premier_github_sync_meta')) || { ultimoSync: 0, cambiosPendientes: 0 };
+                meta.cambiosPendientes = (meta.cambiosPendientes || 0) + 1;
+                const ahora = Date.now();
+                const tiempoDesdeUltimo = ahora - (meta.ultimoSync || 0);
+                const pasaronMinimo = tiempoDesdeUltimo >= 60 * 1000; // no más de 1 sync por minuto
+                const debeSincronizar = pasaronMinimo && (meta.cambiosPendientes >= 5 || tiempoDesdeUltimo >= 5 * 60 * 1000);
+                if (debeSincronizar) {
+                    sincronizarConGithub(true);
+                    meta.ultimoSync = ahora;
+                    meta.cambiosPendientes = 0;
+                }
+                localStorage.setItem('liga_premier_github_sync_meta', JSON.stringify(meta));
+            } catch (err) { /* no interrumpir el guardado normal */ }
+        }
 
         function importarBackupDB(event) {
             const archivo = event.target.files && event.target.files[0];
@@ -958,6 +1142,7 @@
             renderizarSolicitudes();
             renderizarFinanzas();
             renderizarGestion();
+            cargarConfigGithub();
         });
 
         function alternarRegistros(valor) {
