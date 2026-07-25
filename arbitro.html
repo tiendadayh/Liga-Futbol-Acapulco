@@ -352,7 +352,9 @@
             <select id="arbitro-selector">
                 <option value="">-- Selecciona tu nombre --</option>
             </select>
+            <p id="candado-identidad-msg" class="hidden" style="color:#0d7d6f; font-size:0.78rem; margin:4px 0 0;">🔒 Identificado automáticamente con tu cuenta — no puedes actuar como otro árbitro.</p>
             <p id="sin-arbitros-aviso" class="hidden" style="color:#b61225; font-size:0.85rem;">No hay árbitros registrados todavía. Pide al administrador que te registre en el panel admin antes de continuar.</p>
+            <p id="aviso-cuenta-sin-vincular" class="hidden" style="color:#b45309; background:#fffbeb; border:1px solid #fde68a; padding:10px 12px; border-radius:8px; font-size:0.82rem;">⚠️ Tu cuenta entró correctamente, pero el administrador todavía no vinculó este correo a ningún árbitro registrado. Mientras tanto, puedes seleccionar tu nombre manualmente abajo; pide al admin que agregue tu correo en tu ficha de árbitro para que la próxima vez se identifique solo.</p>
 
             <div id="perfil-arbitro" class="identificacion-row hidden" style="margin-top:16px;">
                 <div class="arbitro-foto-wrap">
@@ -581,10 +583,14 @@
             firebase.auth().signOut();
         }
 
+        let usuarioActual = null;
+
         firebase.auth().onAuthStateChanged(function (user) {
             const pantalla = document.getElementById('pantalla-login');
+            usuarioActual = user;
             if (user) {
                 pantalla.style.display = 'none';
+                aplicarIdentidadPorCorreo();
             } else {
                 pantalla.style.display = 'flex';
             }
@@ -621,6 +627,8 @@
             if (!db.partidos) db.partidos = [];
             if (!db.finanzas) db.finanzas = {};
             localStorage.setItem('liga_premier_db', JSON.stringify(db));
+            refrescarSelectorArbitros();
+            aplicarIdentidadPorCorreo();
             mostrarAvisoAutoguardado('🔄 Datos actualizados en la nube.');
         });
 
@@ -717,23 +725,65 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-            const selectorArb = document.getElementById('arbitro-selector');
+            refrescarSelectorArbitros();
+            aplicarIdentidadPorCorreo();
 
-            if (db.arbitros.length === 0) {
-                document.getElementById('sin-arbitros-aviso').classList.remove('hidden');
-            } else {
-                selectorArb.innerHTML = '<option value="">-- Selecciona tu nombre --</option>' +
-                    db.arbitros.map(a => `<option value="${a.nombre}">${a.nombre} (${a.colegio})</option>`).join('');
-            }
-
-            selectorArb.addEventListener('change', (e) => {
-                cargarPartidosDelArbitro(e.target.value);
-                mostrarPerfilArbitro(e.target.value);
-            });
             document.getElementById('admin-res-partido').addEventListener('change', (e) => desplegarCargaIncidencias(e.target.value));
             document.getElementById('form-add-resultado').addEventListener('submit', manejarEnvioResultado);
             document.getElementById('arbitro-foto-input').addEventListener('change', manejarSubidaFoto);
         });
+
+        function refrescarSelectorArbitros() {
+            const selectorArb = document.getElementById('arbitro-selector');
+            if (!selectorArb) return;
+
+            if (db.arbitros.length === 0) {
+                document.getElementById('sin-arbitros-aviso').classList.remove('hidden');
+            } else {
+                document.getElementById('sin-arbitros-aviso').classList.add('hidden');
+                const valorPrevio = selectorArb.value;
+                selectorArb.innerHTML = '<option value="">-- Selecciona tu nombre --</option>' +
+                    db.arbitros.map(a => `<option value="${a.nombre}">${a.nombre} (${a.colegio})</option>`).join('');
+                if (valorPrevio) selectorArb.value = valorPrevio;
+            }
+
+            if (!selectorArb.dataset.listenerListo) {
+                selectorArb.addEventListener('change', (e) => {
+                    cargarPartidosDelArbitro(e.target.value);
+                    mostrarPerfilArbitro(e.target.value);
+                });
+                selectorArb.dataset.listenerListo = '1';
+            }
+        }
+
+        // --- Identificación automática por correo: un árbitro solo puede llenar SU propia cédula ---
+        // Si el correo con el que inició sesión coincide con el que el admin le asignó en su ficha,
+        // se selecciona su nombre solo, se bloquea el selector (no puede elegir a otro árbitro),
+        // y desaparece el aviso de cuenta sin vincular.
+        function aplicarIdentidadPorCorreo() {
+            const selectorArb = document.getElementById('arbitro-selector');
+            const avisoSinVincular = document.getElementById('aviso-cuenta-sin-vincular');
+            if (!selectorArb || !usuarioActual || !usuarioActual.email) return;
+
+            const correo = usuarioActual.email.trim().toLowerCase();
+            const arbitroVinculado = db.arbitros.find(a => (a.email || '').trim().toLowerCase() === correo);
+
+            if (arbitroVinculado) {
+                selectorArb.value = arbitroVinculado.nombre;
+                selectorArb.disabled = true;
+                selectorArb.style.background = '#f0f4f8';
+                selectorArb.style.cursor = 'not-allowed';
+                cargarPartidosDelArbitro(arbitroVinculado.nombre);
+                mostrarPerfilArbitro(arbitroVinculado.nombre);
+                if (avisoSinVincular) avisoSinVincular.classList.add('hidden');
+                const candado = document.getElementById('candado-identidad-msg');
+                if (candado) candado.classList.remove('hidden');
+            } else if (db.arbitros.length > 0) {
+                // Tu cuenta entró bien, pero el admin todavía no vinculó tu correo a ningún árbitro.
+                selectorArb.disabled = false;
+                if (avisoSinVincular) avisoSinVincular.classList.remove('hidden');
+            }
+        }
 
         function mostrarPerfilArbitro(nombreArbitro) {
             const perfil = document.getElementById('perfil-arbitro');

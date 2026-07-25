@@ -59,8 +59,6 @@
         .bracket-container { display: flex; justify-content: space-around; gap: 20px; flex-wrap: wrap; margin-top: 20px; }
         .bracket-match { background: var(--light); border: 2px solid var(--primary); border-radius: 8px; padding: 15px; width: 280px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
         .bracket-title { font-weight: bold; color: var(--primary); text-align: center; margin-bottom: 10px; font-size: 0.9rem; text-transform: uppercase; }
-        .racha-badge { display: inline-block; width: 18px; height: 18px; border-radius: 50%; color: white; font-size: 0.65rem; text-align: center; line-height: 18px; font-weight: bold; margin-right: 2px; }
-        .racha-g { background: #2e7d32; } .racha-e { background: #f57c00; } .racha-p { background: #c62828; }
         .cancha { background: #2a9d8f; border: 4px solid white; border-radius: 12px; height: 500px; position: relative; margin-top: 20px; overflow: hidden; }
         .linea-medio { position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: rgba(255,255,255,0.5); }
         .circulo-medio { position: absolute; top: 50%; left: 50%; width: 100px; height: 100px; border: 2px solid rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); }
@@ -70,6 +68,12 @@
         .modal-content { background: var(--card-bg); padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; text-align: center; position: relative; margin: auto; }
         .close-modal { position: absolute; top: 15px; right: 15px; font-size: 1.5rem; cursor: pointer; background: none; border: none; color: var(--text); font-weight: bold; z-index: 10; }
         .hidden { display: none !important; }
+
+        /* --- Banner de partido EN VIVO en portada --- */
+        #banner-en-vivo { background: var(--primary); }
+        .banner-en-vivo-item { max-width: 1200px; margin: 0 auto; color: white; font-size: 0.85rem; padding: 10px 20px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; text-align: center; }
+        .banner-en-vivo-item:hover { background: rgba(255,255,255,0.1); }
+        .banner-en-vivo-dot { width: 9px; height: 9px; border-radius: 50%; background: white; flex-shrink: 0; animation: pulso-vivo 1.2s infinite; }
 
         /* FICHA TÉCNICA PRO */
         .ficha-tecnica-content { padding: 0 0 26px 0; overflow: hidden; }
@@ -144,8 +148,8 @@
 
     <nav>
         <a href="#tablon-sec">Tablón</a>
-        <a href="#bracket-sec">Bracket Liguilla</a>
         <a href="#posiciones-sec">Posiciones</a>
+        <a href="#bracket-sec">Bracket Liguilla</a>
         <a href="#headtohead-sec">Head to Head</a>
         <a href="#jornadas-sec">Jornadas</a>
         <a href="#registro-sec">Inscribirse</a>
@@ -156,11 +160,29 @@
         <a href="#equipos-arbitros-sec">Equipos y Árbitros</a>
     </nav>
 
+    <div id="banner-en-vivo" class="hidden"></div>
+
     <div class="container">
         <!-- TABLÓN DE ANUNCIOS -->
         <section id="tablon-sec" class="card-section">
             <h2>📢 Tablón de Avisos y Crónicas</h2>
             <div id="noticias-contenedor" class="grid"></div>
+        </section>
+
+        <!-- POSICIONES -->
+        <section id="posiciones-sec" class="card-section">
+            <div class="header-section-flex">
+                <h2>Tabla de Posiciones</h2>
+                <button class="btn-export" onclick="exportarTablaCSV()">📥 Descargar Excel</button>
+            </div>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th></tr>
+                    </thead>
+                    <tbody id="tabla-posiciones-body"></tbody>
+                </table>
+            </div>
         </section>
 
         <!-- BRACKET LIGUILLA -->
@@ -178,22 +200,6 @@
                 <button onclick="compararHeadToHead()" class="btn-export" style="background:#3f51b5;">Comparar Histórico</button>
             </div>
             <div id="h2h-resultado-box" style="margin-top:15px; display:none; background:var(--light); padding:15px; border-radius:8px;"></div>
-        </section>
-
-        <!-- POSICIONES Y RACHA DE RESULTADOS -->
-        <section id="posiciones-sec" class="card-section">
-            <div class="header-section-flex">
-                <h2>Tabla de Posiciones & Racha Reciente</h2>
-                <button class="btn-export" onclick="exportarTablaCSV()">📥 Descargar Excel</button>
-            </div>
-            <div style="overflow-x:auto;">
-                <table>
-                    <thead>
-                        <tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th><th>Racha (Últimos 5)</th></tr>
-                    </thead>
-                    <tbody id="tabla-posiciones-body"></tbody>
-                </table>
-            </div>
         </section>
 
         <!-- REGISTRO DE JUGADORES DESDE LA WEB PÚBLICA -->
@@ -534,6 +540,31 @@
             filtrarJugadores();
             renderXI();
             renderizarEquiposArbitros();
+            renderizarBannerEnVivo();
+        }
+
+        // --- Banner de partido EN VIVO en la portada ---
+        function renderizarBannerEnVivo() {
+            const cont = document.getElementById('banner-en-vivo');
+            if (!cont) return;
+            const partidosVivo = (db.partidos || []).filter(p => p.estadoVivo === 'en_curso' && !p.jugado);
+
+            if (partidosVivo.length === 0) {
+                cont.innerHTML = '';
+                cont.classList.add('hidden');
+                return;
+            }
+
+            cont.classList.remove('hidden');
+            cont.innerHTML = partidosVivo.map(p => {
+                const loc = db.equipos.find(e => e.id === p.localId);
+                const vis = db.equipos.find(e => e.id === p.visitaId);
+                return `
+                    <div class="banner-en-vivo-item" onclick="document.getElementById('jornadas-sec').scrollIntoView({behavior:'smooth'}); document.getElementById('select-jornada-filtro').value='${p.jornada}'; document.getElementById('select-jornada-filtro').dispatchEvent(new Event('change'));">
+                        <span class="banner-en-vivo-dot"></span>
+                        <span>EN VIVO ahora: <b>${loc ? loc.nombre : '-'}</b> ${p.golesLocal || 0} - ${p.golesVisita || 0} <b>${vis ? vis.nombre : '-'}</b></span>
+                    </div>`;
+            }).join('');
         }
 
         function actualizarTablaPosiciones() {
@@ -558,9 +589,6 @@
                     <td><b>${idx + 1}</b></td>
                     <td><img class="escudo-tab" src="${eq.escudo}">${eq.nombre}</td>
                     <td>${eq.pj}</td><td>${eq.pg}</td><td>${eq.pe}</td><td>${eq.pp}</td><td>${eq.gf}</td><td>${eq.gc}</td><td>${eq.dg}</td><td><b>${eq.pts}</b></td>
-                    <td>
-                        ${eq.racha.slice(-5).map(r => `<span class="racha-badge racha-${r.toLowerCase()}">${r}</span>`).join('') || '-'}
-                    </td>
                 </tr>
             `).join('');
         }

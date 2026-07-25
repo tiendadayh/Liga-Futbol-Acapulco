@@ -622,6 +622,7 @@
             <form id="form-add-arbitro">
                 <input type="text" id="admin-arb-nombre" placeholder="Nombre del Colegiado" required>
                 <input type="text" id="admin-arb-colegio" placeholder="Colegio / Asociación">
+                <input type="email" id="admin-arb-email" placeholder="Correo de acceso (para que solo él entre a su cédula)">
                 <label>Foto Perfil:</label>
                 <input type="file" id="admin-arb-foto" accept="image/*">
                 <button type="submit">Agregar Árbitro</button>
@@ -751,6 +752,10 @@
                 <div id="edit-campo-colegio" style="display:none;">
                     <label>Colegio / Asociación:</label>
                     <input type="text" id="edit-colegio">
+                </div>
+                <div id="edit-campo-email-arbitro" style="display:none;">
+                    <label>Correo de acceso (para que solo él entre a su cédula):</label>
+                    <input type="email" id="edit-email-arbitro">
                 </div>
                 <div id="edit-campo-direccion" style="display:none;">
                     <label>Dirección / Referencia:</label>
@@ -1202,7 +1207,7 @@
             document.getElementById('form-add-arbitro').addEventListener('submit', async function (e) {
                 e.preventDefault();
                 const fotoB64 = await convertirImagenABase64(document.getElementById('admin-arb-foto'));
-                db.arbitros.push({ id: Date.now(), nombre: document.getElementById('admin-arb-nombre').value.trim(), colegio: document.getElementById('admin-arb-colegio').value.trim() || 'Independiente', foto: fotoB64 });
+                db.arbitros.push({ id: Date.now(), nombre: document.getElementById('admin-arb-nombre').value.trim(), colegio: document.getElementById('admin-arb-colegio').value.trim() || 'Independiente', email: document.getElementById('admin-arb-email').value.trim().toLowerCase(), foto: fotoB64 });
                 this.reset(); guardarDB(); alert("Colegiado Registrado.");
             });
 
@@ -1250,6 +1255,7 @@
                     if (!a) return;
                     a.nombre = nombre;
                     a.colegio = document.getElementById('edit-colegio').value.trim() || 'Independiente';
+                    a.email = document.getElementById('edit-email-arbitro').value.trim().toLowerCase();
                     if (nuevaFoto) a.foto = nuevaFoto;
                 } else if (tipo === 'cancha') {
                     const c = db.campos.find(x => x.id === id);
@@ -1692,7 +1698,7 @@ ${cuerpo}`;
                     <img src="${a.foto || 'https://placehold.co/40'}">
                     <div class="gestion-info">
                         <strong>${a.nombre}</strong>
-                        <span>${a.colegio || ''}</span>
+                        <span>${a.colegio || ''} ${a.email ? '· 📧 ' + a.email : '<span style="color:#c62828;">· sin correo vinculado</span>'}</span>
                     </div>
                     <div class="gestion-acciones">
                         <button type="button" class="btn-editar-fila" onclick="abrirEdicion('arbitro', ${a.id})">✏️</button>
@@ -1745,6 +1751,7 @@ ${cuerpo}`;
             document.getElementById('edit-campo-equipo').style.display = 'none';
             document.getElementById('edit-campo-posicion').style.display = 'none';
             document.getElementById('edit-campo-colegio').style.display = 'none';
+            document.getElementById('edit-campo-email-arbitro').style.display = 'none';
             document.getElementById('edit-campo-direccion').style.display = 'none';
 
             if (tipo === 'equipo') {
@@ -1771,6 +1778,8 @@ ${cuerpo}`;
                 document.getElementById('edit-nombre').value = a.nombre;
                 document.getElementById('edit-colegio').value = a.colegio || '';
                 document.getElementById('edit-campo-colegio').style.display = 'block';
+                document.getElementById('edit-email-arbitro').value = a.email || '';
+                document.getElementById('edit-campo-email-arbitro').style.display = 'block';
                 document.getElementById('edit-label-foto').innerText = 'Reemplazar foto (opcional, deja vacío para conservar la actual):';
             } else if (tipo === 'cancha') {
                 const c = db.campos.find(x => x.id === id);
