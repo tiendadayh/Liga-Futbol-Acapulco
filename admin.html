@@ -444,6 +444,12 @@
     </header>
     <button type="button" id="btn-cerrar-sesion" onclick="cerrarSesionAdmin()" style="position:fixed; top:12px; right:12px; z-index:9998; background:#c62828; color:#fff; border:none; padding:8px 14px; border-radius:20px; font-size:0.8rem; font-weight:bold; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.25);">🚪 Cerrar sesión</button>
 
+    <!-- RESUMEN DEL DÍA -->
+    <div class="admin-box" style="border-top-color:#0b1e3d; background:#f4f7ff; margin-bottom:25px;">
+        <h3>📋 Resumen de hoy</h3>
+        <div id="resumen-dia-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:12px; margin-top:10px;"></div>
+    </div>
+
     <!-- RESPALDO Y RESTAURACIÓN DE DATOS -->
     <div class="admin-box" style="border-top-color: #455a64; background: #f7f9fa; margin-bottom: 25px; position: relative; z-index: 1;">
         <h3>💾 Respaldo de Datos</h3>
@@ -462,16 +468,30 @@
 
     <!-- PUBLICACIÓN MANUAL CON FIREBASE -->
     <div class="admin-box" style="border-top-color: #ff9100; background: #fffaf2; margin-bottom: 25px; position: relative; z-index: 1;">
-        <h3>☁️ Publicación en línea (Firebase)</h3>
-        <p style="font-size:0.85rem; color:#555; margin-top:-6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <h3 style="margin:0;">☁️ Publicación en línea (Firebase)</h3>
+            <span id="firebase-conexion-indicador" style="font-size:0.75rem; padding:4px 10px; border-radius:12px; font-weight:bold; background:#eee; color:#666;">● Verificando conexión...</span>
+        </div>
+        <p style="font-size:0.85rem; color:#555; margin:8px 0 0;">
             Aquí trabajas tus cambios sin que nadie más los vea todavía. Cuando presiones <strong>Publicar</strong>,
             se suben a la nube y en ese momento el sitio público y el panel del árbitro los reciben automáticamente,
             en cualquier teléfono, tablet o computadora.
         </p>
-        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; align-items:center;">
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-top:12px;">
+            <div style="background:#fff; border-radius:8px; padding:10px 12px; text-align:center;">
+                <div id="firebase-contador-cambios" style="font-size:1.5rem; font-weight:bold; color:#2e7d32;">0</div>
+                <div style="font-size:0.72rem; color:#777;">cambios sin publicar</div>
+            </div>
+            <div style="background:#fff; border-radius:8px; padding:10px 12px; text-align:center;">
+                <div id="firebase-ultima-publicacion" style="font-size:0.95rem; font-weight:bold; color:#0b1e3d;">—</div>
+                <div style="font-size:0.72rem; color:#777;">última publicación</div>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; align-items:center;">
             <button type="button" onclick="publicarEnFirebase()" style="background:#ff9100; font-weight:bold;">📤 Publicar cambios</button>
             <button type="button" onclick="traerDeFirebase()" style="background:var(--secondary);">⬇️ Traer última versión publicada</button>
-            <span id="firebase-cambios-badge" style="display:none; background:#c62828; color:#fff; font-size:0.75rem; padding:3px 10px; border-radius:12px; font-weight:bold;">cambios sin publicar</span>
         </div>
         <p id="firebase-status-msg" style="font-size:0.8rem; margin:8px 0 0; min-height:1.1em;"></p>
     </div>
@@ -714,6 +734,31 @@
         </div>
     </div>
 
+    <!-- CORRECCIÓN DE GOLEO -->
+    <div class="admin-box" style="margin-top: 25px; border-top-color: #2e7d32;">
+        <h3>⚽ Corrección de Goleo</h3>
+        <p style="font-size:0.85rem; color:#555;">
+            El goleo se suma solo cuando el árbitro cierra la cédula. Si algún jugador quedó con goles de más,
+            de menos, o mal contados por un error de captura, corrígelo aquí a mano. El cambio se ve reflejado
+            en el sitio público en cuanto lo publiques en Firebase.
+        </p>
+        <input type="text" id="goleo-buscar-jugador" placeholder="🔍 Buscar jugador o equipo..."
+            oninput="renderizarCorreccionGoleo()" style="margin:10px 0;">
+        <div style="overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+                <thead>
+                    <tr style="background:#f0f4f8; text-align:left;">
+                        <th style="padding:8px;">Jugador</th>
+                        <th style="padding:8px;">Equipo</th>
+                        <th style="padding:8px; text-align:center;">Goles</th>
+                    </tr>
+                </thead>
+                <tbody id="goleo-correccion-tbody"></tbody>
+            </table>
+        </div>
+        <p id="goleo-correccion-vacio" class="hidden" style="color:gray; font-size:0.85rem; text-align:center; padding:10px;">No se encontró ningún jugador con ese nombre.</p>
+    </div>
+
     <!-- MODAL: PLANTEL DEL EQUIPO -->
     <div id="modal-plantel" class="modal-overlay" style="display:none;" onclick="if(event.target === this) cerrarPlantel()">
         <div class="modal-box" style="max-width:480px;">
@@ -845,6 +890,38 @@
         firebase.initializeApp(firebaseConfig);
         const firebaseDbRef = firebase.database().ref('liga_premier_db');
         let hayCambiosSinPublicar = false;
+        let contadorCambiosPendientes = 0;
+
+        // --- Indicador de conexión con Firebase (ruta especial .info/connected) ---
+        firebase.database().ref('.info/connected').on('value', function (snap) {
+            const ind = document.getElementById('firebase-conexion-indicador');
+            if (!ind) return;
+            if (snap.val() === true) {
+                ind.textContent = '🟢 Conectado';
+                ind.style.background = '#e8f5e9';
+                ind.style.color = '#2e7d32';
+            } else {
+                ind.textContent = '🔴 Sin conexión';
+                ind.style.background = '#ffebee';
+                ind.style.color = '#c62828';
+            }
+        });
+
+        function actualizarUltimaPublicacionUI() {
+            const el = document.getElementById('firebase-ultima-publicacion');
+            if (!el) return;
+            const ts = localStorage.getItem('liga_premier_ultima_publicacion');
+            if (!ts) { el.textContent = '—'; return; }
+            const fecha = new Date(parseInt(ts));
+            const minutos = Math.round((Date.now() - fecha.getTime()) / 60000);
+            let texto;
+            if (minutos < 1) texto = 'justo ahora';
+            else if (minutos < 60) texto = `hace ${minutos} min`;
+            else texto = fecha.toLocaleString('es-MX', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+            el.textContent = texto;
+        }
+        actualizarUltimaPublicacionUI();
+        setInterval(actualizarUltimaPublicacionUI, 30000);
 
         function iniciarSesionAdmin() {
             const email = document.getElementById('login-email').value.trim();
@@ -888,14 +965,58 @@
             renderizarSolicitudes();
             renderizarFinanzas();
             renderizarGestion();
+            renderizarResumenDia();
+            renderizarCorreccionGoleo();
             intentarAutoBackup();
             marcarCambiosSinPublicar();
         }
 
+        function renderizarResumenDia() {
+            const cont = document.getElementById('resumen-dia-grid');
+            if (!cont) return;
+
+            const hoy = new Date().toISOString().slice(0, 10);
+            const partidosHoy = (db.partidos || []).filter(p => p.fecha === hoy && !p.jugado);
+            const pendientes = (db.solicitudes || []).length;
+            const equiposConAdeudo = (db.equipos || []).filter(eq => {
+                const f = db.finanzas ? db.finanzas[eq.id] : null;
+                return f && (!f.inscripcionPagada || (f.adeudoArbitrajes || 0) > 0);
+            }).length;
+            const sinAsignar = (db.partidos || []).filter(p => !p.jugado && (!p.arbitro || !p.campoId)).length;
+
+            const tarjetas = [
+                { valor: partidosHoy.length, etiqueta: 'Partidos hoy', color: '#0b1e3d', ancla: '#form-add-partido' },
+                { valor: pendientes, etiqueta: 'Solicitudes pendientes', color: pendientes > 0 ? '#c62828' : '#2e7d32', ancla: '#lista-solicitudes-pendientes' },
+                { valor: equiposConAdeudo, etiqueta: 'Equipos con adeudo', color: equiposConAdeudo > 0 ? '#b45309' : '#2e7d32', ancla: '#lista-finanzas' },
+                { valor: sinAsignar, etiqueta: 'Partidos sin árbitro/cancha', color: sinAsignar > 0 ? '#c62828' : '#2e7d32', ancla: '#form-add-partido' }
+            ];
+
+            cont.innerHTML = tarjetas.map(t => `
+                <div style="background:#fff; border-radius:10px; padding:14px; text-align:center; border-left:5px solid ${t.color}; cursor:pointer;" onclick="document.querySelector('${t.ancla}')?.scrollIntoView({behavior:'smooth'})">
+                    <div style="font-size:1.7rem; font-weight:bold; color:${t.color};">${t.valor}</div>
+                    <div style="font-size:0.78rem; color:#555;">${t.etiqueta}</div>
+                </div>
+            `).join('');
+
+            if (partidosHoy.length > 0) {
+                cont.innerHTML += `<div style="grid-column:1/-1; font-size:0.8rem; color:#444; background:#eef2ff; padding:10px; border-radius:8px;">
+                    📅 Hoy: ${partidosHoy.map(p => {
+                        const loc = db.equipos.find(e => e.id === p.localId);
+                        const vis = db.equipos.find(e => e.id === p.visitaId);
+                        return `${loc ? loc.nombre : '?'} vs ${vis ? vis.nombre : '?'} (${p.hora || 'sin hora'})`;
+                    }).join(' · ')}
+                </div>`;
+            }
+        }
+
         function marcarCambiosSinPublicar() {
             hayCambiosSinPublicar = true;
-            const badge = document.getElementById('firebase-cambios-badge');
-            if (badge) badge.style.display = 'inline-block';
+            contadorCambiosPendientes++;
+            const contadorEl = document.getElementById('firebase-contador-cambios');
+            if (contadorEl) {
+                contadorEl.textContent = contadorCambiosPendientes;
+                contadorEl.style.color = '#c62828';
+            }
         }
 
         function mostrarBackupStatus(mensaje, esError) {
@@ -972,6 +1093,8 @@
                     renderizarSolicitudes();
                     renderizarFinanzas();
                     renderizarGestion();
+            renderizarResumenDia();
+            renderizarCorreccionGoleo();
                     mostrarAvisoAutoguardado('🔄 Datos actualizados desde otra pestaña.');
                 } catch (err) { /* valor corrupto, se ignora */ }
             }
@@ -993,8 +1116,11 @@
             mostrarFirebaseStatus('⏳ Publicando...', false);
             firebaseDbRef.set(db).then(() => {
                 hayCambiosSinPublicar = false;
-                const badge = document.getElementById('firebase-cambios-badge');
-                if (badge) badge.style.display = 'none';
+                contadorCambiosPendientes = 0;
+                const contadorEl = document.getElementById('firebase-contador-cambios');
+                if (contadorEl) { contadorEl.textContent = '0'; contadorEl.style.color = '#2e7d32'; }
+                localStorage.setItem('liga_premier_ultima_publicacion', Date.now().toString());
+                actualizarUltimaPublicacionUI();
                 mostrarFirebaseStatus(`✅ Publicado (${new Date().toLocaleTimeString('es-MX')}). El sitio público y el árbitro ya lo ven.`, false);
             }).catch(err => {
                 mostrarFirebaseStatus('❌ No se pudo publicar. Revisa tu conexión a internet. (' + err.message + ')', true);
@@ -1019,12 +1145,15 @@
                 if (!db.votosMvp) db.votosMvp = {};
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
                 hayCambiosSinPublicar = false;
-                const badge = document.getElementById('firebase-cambios-badge');
-                if (badge) badge.style.display = 'none';
+                contadorCambiosPendientes = 0;
+                const contadorEl = document.getElementById('firebase-contador-cambios');
+                if (contadorEl) { contadorEl.textContent = '0'; contadorEl.style.color = '#2e7d32'; }
                 actualizarFormularios();
                 renderizarSolicitudes();
                 renderizarFinanzas();
                 renderizarGestion();
+            renderizarResumenDia();
+            renderizarCorreccionGoleo();
                 mostrarFirebaseStatus('✅ Datos actualizados desde la nube.', false);
             }).catch(err => {
                 mostrarFirebaseStatus('❌ No se pudo traer la información. (' + err.message + ')', true);
@@ -1048,6 +1177,8 @@
                 renderizarSolicitudes();
                 renderizarFinanzas();
                 renderizarGestion();
+            renderizarResumenDia();
+            renderizarCorreccionGoleo();
             }
         }).catch(() => { /* si falla, seguimos con lo que había en localStorage */ });
 
@@ -1136,6 +1267,8 @@
             renderizarSolicitudes();
             renderizarFinanzas();
             renderizarGestion();
+            renderizarResumenDia();
+            renderizarCorreccionGoleo();
         });
 
         function alternarRegistros(valor) {
@@ -1657,6 +1790,61 @@ ${cuerpo}`;
         }
 
         // ===================== GESTIÓN: EDITAR Y ELIMINAR =====================
+
+        // --- Corrección manual de goleo ---
+        function renderizarCorreccionGoleo() {
+            const tbody = document.getElementById('goleo-correccion-tbody');
+            const vacio = document.getElementById('goleo-correccion-vacio');
+            if (!tbody) return;
+
+            const filtro = (document.getElementById('goleo-buscar-jugador')?.value || '').trim().toLowerCase();
+
+            let jugadores = [...db.jugadores];
+            if (filtro) {
+                jugadores = jugadores.filter(j => {
+                    const eqNombre = db.equipos.find(e => e.id === j.equipoId)?.nombre || '';
+                    return j.nombre.toLowerCase().includes(filtro) || eqNombre.toLowerCase().includes(filtro);
+                });
+            }
+            jugadores.sort((a, b) => (b.goles || 0) - (a.goles || 0) || a.nombre.localeCompare(b.nombre));
+
+            if (jugadores.length === 0) {
+                tbody.innerHTML = '';
+                vacio.classList.remove('hidden');
+                return;
+            }
+            vacio.classList.add('hidden');
+
+            tbody.innerHTML = jugadores.map(j => `
+                <tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:6px;">${j.nombre}</td>
+                    <td style="padding:6px; color:#666;">${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</td>
+                    <td style="padding:6px; text-align:center;">
+                        <div style="display:inline-flex; align-items:center; gap:6px;">
+                            <button type="button" onclick="ajustarGolesJugador(${j.id}, -1)" style="padding:2px 10px; background:#c62828;">−</button>
+                            <input type="number" min="0" value="${j.goles || 0}" style="width:60px; text-align:center; padding:4px;"
+                                onchange="fijarGolesJugador(${j.id}, this.value)">
+                            <button type="button" onclick="ajustarGolesJugador(${j.id}, 1)" style="padding:2px 10px; background:#2e7d32;">+</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function ajustarGolesJugador(id, delta) {
+            const j = db.jugadores.find(x => x.id === id);
+            if (!j) return;
+            j.goles = Math.max(0, (j.goles || 0) + delta);
+            guardarDB();
+        }
+
+        function fijarGolesJugador(id, valor) {
+            const j = db.jugadores.find(x => x.id === id);
+            if (!j) return;
+            const n = parseInt(valor);
+            j.goles = isNaN(n) || n < 0 ? 0 : n;
+            guardarDB();
+        }
 
         function renderizarGestion() {
             const listaEquipos = document.getElementById('gestion-lista-equipos');

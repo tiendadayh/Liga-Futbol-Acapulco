@@ -333,6 +333,7 @@
             <p id="login-error-msg" style="color:#c62828; font-size:0.8rem; min-height:1.1em; margin:10px 0 0;"></p>
         </div>
     </div>
+    <div id="banner-sin-conexion" class="hidden" style="background:#b45309; color:#fff; text-align:center; padding:8px 14px; font-size:0.82rem; font-weight:600;"></div>
     <div class="wrap">
         <header>
             <div class="arbitro-header-content">
@@ -606,20 +607,67 @@
         if (!db.finanzas) db.finanzas = {};
 
         let arbitroActual = '';
+        let cambiosPendientesOffline = false;
 
         function guardarDB() {
             localStorage.setItem('liga_premier_db', JSON.stringify(db));
             intentarAutoBackup();
+
+            if (!navigator.onLine) {
+                cambiosPendientesOffline = true;
+                actualizarBannerConexion();
+                return;
+            }
+
             recibiendoDeFirebase = true;
-            firebaseDbRef.set(db).catch(err => console.warn('No se pudo sincronizar con Firebase', err))
-                .finally(() => { recibiendoDeFirebase = false; });
+            firebaseDbRef.set(db).then(() => {
+                cambiosPendientesOffline = false;
+                actualizarBannerConexion();
+            }).catch(err => {
+                console.warn('No se pudo sincronizar con Firebase', err);
+                cambiosPendientesOffline = true;
+                actualizarBannerConexion();
+            }).finally(() => { recibiendoDeFirebase = false; });
         }
+
+        // --- Modo sin internet ---
+        // Todo se sigue guardando en este dispositivo aunque se vaya la señal en la cancha.
+        // En cuanto vuelve el internet, lo que quedó pendiente se sube solo.
+        function actualizarBannerConexion() {
+            const banner = document.getElementById('banner-sin-conexion');
+            if (!banner) return;
+            if (!navigator.onLine) {
+                banner.textContent = '📴 Sin conexión — tus cambios se están guardando en este teléfono y se subirán solos cuando vuelva el internet.';
+                banner.classList.remove('hidden');
+            } else if (cambiosPendientesOffline) {
+                banner.textContent = '🔄 Ya hay internet — sincronizando lo que quedó pendiente...';
+                banner.classList.remove('hidden');
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        window.addEventListener('offline', actualizarBannerConexion);
+        window.addEventListener('online', () => {
+            actualizarBannerConexion();
+            if (cambiosPendientesOffline) {
+                recibiendoDeFirebase = true;
+                firebaseDbRef.set(db).then(() => {
+                    cambiosPendientesOffline = false;
+                    actualizarBannerConexion();
+                    mostrarAvisoAutoguardado('✅ Cambios pendientes sincronizados.');
+                }).catch(() => {
+                    // seguirá pendiente; se reintentará en el próximo guardarDB() o próxima reconexión
+                }).finally(() => { recibiendoDeFirebase = false; });
+            }
+        });
 
         // --- Sincronización automática en tiempo real con Firebase ---
         // Cada vez que admin.html publica, o el árbitro guarda algo desde otro dispositivo,
         // esta página recibe el cambio sola, sin recargar y sin perder lo que se esté escribiendo.
         firebaseDbRef.on('value', function (snapshot) {
             if (recibiendoDeFirebase) return;
+            if (cambiosPendientesOffline) return; // no aceptar datos remotos hasta subir lo pendiente de este dispositivo
             const datosNube = snapshot.val();
             if (!datosNube) return;
             db = datosNube;
@@ -727,6 +775,7 @@
         document.addEventListener("DOMContentLoaded", () => {
             refrescarSelectorArbitros();
             aplicarIdentidadPorCorreo();
+            actualizarBannerConexion();
 
             document.getElementById('admin-res-partido').addEventListener('change', (e) => desplegarCargaIncidencias(e.target.value));
             document.getElementById('form-add-resultado').addEventListener('submit', manejarEnvioResultado);
