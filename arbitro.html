@@ -295,10 +295,26 @@
 
         fieldset legend { color: var(--dark); }
 
-        @media (max-width: 480px) {
-            .goleador-row { grid-template-columns: 2fr 0.7fr 0.7fr 0.7fr; font-size: 0.72rem; gap: 3px; }
+        @media (max-width: 768px) {
+            body { padding: 14px; }
+            .wrap { max-width: 100%; }
+            header { padding: 18px 14px 16px; }
             header h1 { font-size: 1.3rem; }
+            .arbitro-header-logo { width: 48px; height: 48px; }
             .box { padding: 16px; }
+            .estado-controles { justify-content: center; text-align: center; }
+            .identificacion-row { justify-content: center; text-align: center; }
+            input, select, textarea { font-size: 16px; }
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 10px; }
+            .goleador-row { grid-template-columns: 2fr 0.7fr 0.7fr 0.7fr; font-size: 0.72rem; gap: 3px; }
+            header h1 { font-size: 1.15rem; }
+            header p { font-size: 0.78rem; }
+            .box { padding: 14px; }
+            .arbitro-foto, .arbitro-foto-placeholder, .arbitro-foto-wrap { width: 68px; height: 68px; }
+            .estado-btn { padding: 7px 12px; font-size: 0.75rem; }
         }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>

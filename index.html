@@ -93,6 +93,37 @@
         .stat-rojas strong { color: var(--danger); }
         .stat-mvps strong { color: var(--accent); }
         @media (max-width: 420px) { .ficha-tecnica-stats { grid-template-columns: repeat(2, 1fr); } }
+
+        /* ===== DISEÑO RESPONSIVO (MÓVIL / TABLET) ===== */
+        @media (max-width: 768px) {
+            header { padding: 18px 14px; }
+            header h1 { font-size: 1.5rem; }
+            .site-header-logo { width: 54px; height: 54px; }
+            .theme-switch { top: 12px; right: 12px; padding: 6px 10px; font-size: 0.75rem; }
+            nav a { padding: 12px 12px; font-size: 0.72rem; }
+            .container { margin: 18px auto; padding: 0 12px; }
+            .card-section { padding: 16px; margin-bottom: 22px; }
+            .header-section-flex { flex-wrap: wrap; gap: 8px; }
+            th, td { padding: 8px; font-size: 0.85rem; }
+            .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+            .jugador-card, .equipo-card, .arbitro-card { padding: 10px; }
+            .partido-escudo { width: 44px; height: 44px; }
+            .partido-nombre-equipo { font-size: 0.75rem; }
+            .cancha { height: 340px; }
+            .bracket-match { width: 100%; max-width: 320px; }
+            .modal-content { padding: 18px; }
+            .cedula-info-grid { grid-template-columns: 1fr !important; }
+            input, select { font-size: 16px; }
+        }
+
+        @media (max-width: 480px) {
+            header h1 { font-size: 1.25rem; }
+            header p { font-size: 0.8rem; }
+            .partido-principal { flex-wrap: wrap; justify-content: center; }
+            .marcador { font-size: 0.95rem; padding: 4px 10px; }
+            .cancha { height: 280px; }
+            .ficha-tecnica-foto { width: 84px; height: 84px; }
+        }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
@@ -846,12 +877,14 @@
                 <p style="font-size:0.85rem; color:#444;">👤 Árbitro: <b>${c.arbitro || p.arbitro || '-'}</b> · Asistente 1: ${c.asistente1 || '-'} · Asistente 2: ${c.asistente2 || '-'} · 4º Árbitro: ${c.cuartoArbitro || '-'}</p>
                 <p style="font-size:0.85rem; color:#444;">⏱️ 1er Tiempo: ${c.primerTiempoInicio || '-'} a ${c.primerTiempoFin || '-'} · 2do Tiempo: ${c.segundoTiempoInicio || '-'} a ${c.segundoTiempoFin || '-'}</p>
 
+                <div style="overflow-x:auto;">
                 <table style="width:100%; border-collapse:collapse; margin-top:12px; font-size:0.85rem;">
                     <thead><tr style="background:#f0f4f8;"><th style="padding:6px; text-align:left;">Jugador</th><th>Equipo</th><th>Amonestación</th><th>Expulsión</th></tr></thead>
                     <tbody>${filasJugadores || '<tr><td colspan="4" style="text-align:center; color:gray; padding:8px;">Sin incidencias registradas</td></tr>'}</tbody>
                 </table>
+                </div>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:12px; font-size:0.85rem;">
+                <div class="cedula-info-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:12px; font-size:0.85rem;">
                     <div><b>${loc}</b><br>Entrenador: ${c.entrenadorLocal || '-'}<br>Capitán: ${c.capitanLocal || '-'}</div>
                     <div><b>${vis}</b><br>Entrenador: ${c.entrenadorVisita || '-'}<br>Capitán: ${c.capitanVisita || '-'}</div>
                 </div>

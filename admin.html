@@ -388,6 +388,32 @@
         .xi-guardado-card { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; background: #fafcff; }
 
         .hidden { display: none !important; }
+
+        /* ===== DISEÑO RESPONSIVO (MÓVIL / TABLET) ===== */
+        @media (max-width: 768px) {
+            body { padding: 12px; }
+            header { padding: 20px 14px 18px; border-radius: 12px; }
+            header h1 { font-size: 1.3rem; letter-spacing: 0.3px; }
+            .admin-header-logo { width: 60px; height: 60px; }
+            .admin-header-content { gap: 12px; }
+            .admin-grid { grid-template-columns: 1fr; gap: 14px; }
+            .admin-grid, [style*="grid-template-columns:repeat(auto-fit"] { grid-template-columns: 1fr !important; }
+            .admin-box { padding: 16px; }
+            .admin-box:hover { transform: none; }
+            h3 { font-size: 1.02rem; }
+            table { font-size: 0.8rem; }
+            .cedula-info-grid { grid-template-columns: 1fr !important; }
+            #pantalla-login > div { padding: 26px 20px; }
+            #btn-cerrar-sesion { top: 8px; right: 8px; padding: 6px 10px; font-size: 0.7rem; }
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 8px; }
+            header h1 { font-size: 1.1rem; }
+            header p { font-size: 0.8rem; }
+            .admin-box { padding: 12px; }
+            input, select, textarea { font-size: 16px; } /* evita zoom automático en iPhone */
+        }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
@@ -416,7 +442,7 @@
             </div>
         </div>
     </header>
-    <button type="button" onclick="cerrarSesionAdmin()" style="position:fixed; top:12px; right:12px; z-index:9998; background:#c62828; color:#fff; border:none; padding:8px 14px; border-radius:20px; font-size:0.8rem; font-weight:bold; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.25);">🚪 Cerrar sesión</button>
+    <button type="button" id="btn-cerrar-sesion" onclick="cerrarSesionAdmin()" style="position:fixed; top:12px; right:12px; z-index:9998; background:#c62828; color:#fff; border:none; padding:8px 14px; border-radius:20px; font-size:0.8rem; font-weight:bold; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.25);">🚪 Cerrar sesión</button>
 
     <!-- RESPALDO Y RESTAURACIÓN DE DATOS -->
     <div class="admin-box" style="border-top-color: #455a64; background: #f7f9fa; margin-bottom: 25px; position: relative; z-index: 1;">
@@ -1482,12 +1508,14 @@
                 <p style="font-size:0.85rem; color:#444;">👤 Árbitro: <b>${c.arbitro || p.arbitro || '-'}</b> · Asistente 1: ${c.asistente1 || '-'} · Asistente 2: ${c.asistente2 || '-'} · 4º Árbitro: ${c.cuartoArbitro || '-'}</p>
                 <p style="font-size:0.85rem; color:#444;">⏱️ 1er Tiempo: ${c.primerTiempoInicio || '-'} a ${c.primerTiempoFin || '-'} · 2do Tiempo: ${c.segundoTiempoInicio || '-'} a ${c.segundoTiempoFin || '-'}</p>
 
+                <div style="overflow-x:auto;">
                 <table style="width:100%; border-collapse:collapse; margin-top:12px; font-size:0.85rem;">
                     <thead><tr style="background:#f0f4f8;"><th style="padding:6px; text-align:left;">Jugador</th><th>Equipo</th><th>Amonestación</th><th>Expulsión</th></tr></thead>
                     <tbody>${filasJugadores || '<tr><td colspan="4" style="text-align:center; color:gray; padding:8px;">Sin jugadores registrados</td></tr>'}</tbody>
                 </table>
+                </div>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:12px; font-size:0.85rem;">
+                <div class="cedula-info-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:12px; font-size:0.85rem;">
                     <div><b>${loc}</b><br>Entrenador: ${c.entrenadorLocal || '-'}<br>Médico: ${c.medicoLocal || '-'}<br>Prep. Físico: ${c.preparadorLocal || '-'}<br>Auxiliar: ${c.auxiliarLocal || '-'}<br>Capitán: ${c.capitanLocal || '-'}</div>
                     <div><b>${vis}</b><br>Entrenador: ${c.entrenadorVisita || '-'}<br>Médico: ${c.medicoVisita || '-'}<br>Prep. Físico: ${c.preparadorVisita || '-'}<br>Auxiliar: ${c.auxiliarVisita || '-'}<br>Capitán: ${c.capitanVisita || '-'}</div>
                 </div>
