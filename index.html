@@ -94,6 +94,8 @@
         .stat-mvps strong { color: var(--accent); }
         @media (max-width: 420px) { .ficha-tecnica-stats { grid-template-columns: repeat(2, 1fr); } }
     </style>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -327,6 +329,19 @@
     </div>
 
     <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDG07c_D4qtCJXap9J1ppU8xLk3IdWYOXo",
+            authDomain: "liga-premier-acapulco.firebaseapp.com",
+            databaseURL: "https://liga-premier-acapulco-default-rtdb.firebaseio.com",
+            projectId: "liga-premier-acapulco",
+            storageBucket: "liga-premier-acapulco.firebasestorage.app",
+            messagingSenderId: "426642299369",
+            appId: "1:426642299369:web:b3486f21982fd5f3515378"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const firebaseDbRef = firebase.database().ref('liga_premier_db');
+        let recibiendoDeFirebase = false;
+
         let db = JSON.parse(localStorage.getItem('liga_premier_db')) || { 
             equipos: [], jugadores: [], partidos: [], comunicados: [], 
             arbitros: [], campos: [], xiIdealAdmin: {}, registrosCerrados: false, liguillaActiva: false,
@@ -339,7 +354,25 @@
         function guardarDB() {
             localStorage.setItem('liga_premier_db', JSON.stringify(db));
             intentarAutoBackup();
+            recibiendoDeFirebase = true;
+            firebaseDbRef.set(db).catch(err => console.warn('No se pudo sincronizar con Firebase', err))
+                .finally(() => { recibiendoDeFirebase = false; });
         }
+
+        // --- Sincronización automática en tiempo real con Firebase ---
+        // Cuando admin.html publica cambios, este sitio público los recibe solo,
+        // sin recargar la página, sin importar el dispositivo.
+        firebaseDbRef.on('value', function (snapshot) {
+            if (recibiendoDeFirebase) return;
+            const datosNube = snapshot.val();
+            if (!datosNube) return;
+            db = datosNube;
+            if (!db.votosMvp) db.votosMvp = {};
+            if (!db.campos) db.campos = [];
+            localStorage.setItem('liga_premier_db', JSON.stringify(db));
+            actualizarVistaTodo();
+            mostrarAvisoAutoguardado('🔄 Datos actualizados.');
+        });
 
         // --- Aviso flotante reutilizable ---
         function mostrarAvisoAutoguardado(mensaje) {

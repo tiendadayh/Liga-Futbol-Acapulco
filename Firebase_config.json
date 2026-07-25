@@ -1,0 +1,22 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyDG07c_D4qtCJXap9J1ppU8xLk3IdWYOXo",
+  authDomain: "liga-premier-acapulco.firebaseapp.com",
+  databaseURL: "https://liga-premier-acapulco-default-rtdb.firebaseio.com",
+  projectId: "liga-premier-acapulco",
+  storageBucket: "liga-premier-acapulco.firebasestorage.app",
+  messagingSenderId: "426642299369",
+  appId: "1:426642299369:web:b3486f21982fd5f3515378",
+  measurementId: "G-4NB813C868"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
