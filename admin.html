@@ -579,14 +579,58 @@
             </form>
         </div>
 
+        <!-- CONFIGURACIÓN DE CREDENCIALES -->
+        <div class="admin-box" style="border-top-color:#7209b7;">
+            <h3>🪪 Configuración de Credenciales</h3>
+            <p style="font-size:0.8rem; color:#555; margin-top:-8px;">Estos datos se usan en todas las credenciales oficiales que imprimas. Se guardan una sola vez por temporada.</p>
+            <form id="form-config-credencial">
+                <label>Nombre de la Liga (como debe aparecer en la credencial):</label>
+                <input type="text" id="cfg-nombre-liga" placeholder="Ej. LIGA PREMIER ACAPULCO A.C.">
+                <label>Encabezado línea 1 (Ej. FEDERACIÓN MEXICANA DE FÚTBOL ASOC., A.C.):</label>
+                <input type="text" id="cfg-asociacion" placeholder="Ej. FEDERACIÓN MEXICANA DE FÚTBOL ASOC., A.C.">
+                <label>Encabezado línea 2 (Ej. SECTOR AFICIONADO ASOCIACIÓN GUERRERO):</label>
+                <input type="text" id="cfg-asociacion2" placeholder="Ej. SECTOR AFICIONADO ASOCIACIÓN GUERRERO">
+                <label>Temporada:</label>
+                <input type="text" id="cfg-temporada" placeholder="Ej. 2025-2026">
+                <label>Fecha de expedición (aplica a las credenciales de esta temporada):</label>
+                <input type="date" id="cfg-fecha-expedicion">
+                <label>Nombre del Presidente de la Liga (para la firma):</label>
+                <input type="text" id="cfg-presidente" placeholder="Nombre y apellidos">
+                <label>Escudo de la Liga:</label>
+                <input type="file" id="cfg-escudo-liga" accept="image/*">
+                <label>Escudo de la Federación / Asociación (si tienes el archivo oficial):</label>
+                <input type="file" id="cfg-escudo-federacion" accept="image/*">
+                <button type="submit" style="background:#7209b7;">💾 Guardar Configuración</button>
+            </form>
+        </div>
+
         <!-- REGISTRAR JUGADOR MANUAL -->
         <div class="admin-box">
             <h3>Registrar Jugador Directo</h3>
             <form id="form-add-jugador">
-                <input type="text" id="admin-jug-nombre" placeholder="Nombre Completo" required>
+                <label>Equipo:</label>
                 <select id="admin-jug-equipo" required></select>
+                <label>Nombre completo:</label>
+                <input type="text" id="admin-jug-nombre" placeholder="Nombre Completo" required>
+                <label>Número:</label>
+                <input type="number" id="admin-jug-numero" placeholder="Ej. 10" min="0" max="99">
+                <label>RFC:</label>
+                <input type="text" id="admin-jug-rfc" placeholder="RFC (opcional)" style="text-transform:uppercase;">
+                <label>Categoría:</label>
+                <select id="admin-jug-categoria">
+                    <option value="Especial">Especial</option>
+                    <option value="Ascenso">Ascenso</option>
+                    <option value="Amateur">Amateur</option>
+                </select>
+                <label>Posición:</label>
                 <input type="text" id="admin-jug-posicion" placeholder="Posición (Ej. Portero, Delantero)">
-                <label>Foto:</label>
+                <label>Lugar de nacimiento:</label>
+                <input type="text" id="admin-jug-lugar-nac" placeholder="Ej. Acapulco, Gro.">
+                <label>Fecha de nacimiento:</label>
+                <input type="date" id="admin-jug-fecha-nac">
+                <label>Nacionalidad:</label>
+                <input type="text" id="admin-jug-nacionalidad" placeholder="Ej. MEXICANA" value="MEXICANA">
+                <label>Foto (tamaño infantil, para la credencial):</label>
                 <input type="file" id="admin-jug-foto" accept="image/*">
                 <button type="submit">Agregar Jugador</button>
             </form>
@@ -734,29 +778,31 @@
         </div>
     </div>
 
-    <!-- CORRECCIÓN DE GOLEO -->
+    <!-- CORRECCIÓN DE ESTADÍSTICAS: GOLEO Y TARJETAS -->
     <div class="admin-box" style="margin-top: 25px; border-top-color: #2e7d32;">
-        <h3>⚽ Corrección de Goleo</h3>
+        <h3>⚽🟨🟥 Corrección de Goleo y Tarjetas</h3>
         <p style="font-size:0.85rem; color:#555;">
-            El goleo se suma solo cuando el árbitro cierra la cédula. Si algún jugador quedó con goles de más,
-            de menos, o mal contados por un error de captura, corrígelo aquí a mano. El cambio se ve reflejado
-            en el sitio público en cuanto lo publiques en Firebase.
+            Los goles y las tarjetas se suman solos cuando el árbitro cierra la cédula. Si algún jugador quedó
+            mal contado por un error de captura, corrígelo aquí a mano. El cambio se ve reflejado en el sitio
+            público en cuanto lo publiques en Firebase.
         </p>
-        <input type="text" id="goleo-buscar-jugador" placeholder="🔍 Buscar jugador o equipo..."
-            oninput="renderizarCorreccionGoleo()" style="margin:10px 0;">
+        <input type="text" id="stats-buscar-jugador" placeholder="🔍 Buscar jugador o equipo..."
+            oninput="renderizarCorreccionEstadisticas()" style="margin:10px 0;">
         <div style="overflow-x:auto;">
             <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
                 <thead>
                     <tr style="background:#f0f4f8; text-align:left;">
                         <th style="padding:8px;">Jugador</th>
                         <th style="padding:8px;">Equipo</th>
-                        <th style="padding:8px; text-align:center;">Goles</th>
+                        <th style="padding:8px; text-align:center;">⚽ Goles</th>
+                        <th style="padding:8px; text-align:center;">🟨 Amarillas</th>
+                        <th style="padding:8px; text-align:center;">🟥 Rojas</th>
                     </tr>
                 </thead>
-                <tbody id="goleo-correccion-tbody"></tbody>
+                <tbody id="stats-correccion-tbody"></tbody>
             </table>
         </div>
-        <p id="goleo-correccion-vacio" class="hidden" style="color:gray; font-size:0.85rem; text-align:center; padding:10px;">No se encontró ningún jugador con ese nombre.</p>
+        <p id="stats-correccion-vacio" class="hidden" style="color:gray; font-size:0.85rem; text-align:center; padding:10px;">No se encontró ningún jugador con ese nombre.</p>
     </div>
 
     <!-- MODAL: PLANTEL DEL EQUIPO -->
@@ -793,6 +839,24 @@
                 <div id="edit-campo-posicion" style="display:none;">
                     <label>Posición:</label>
                     <input type="text" id="edit-posicion">
+                </div>
+                <div id="edit-campo-jugador-extra" style="display:none;">
+                    <label>Número:</label>
+                    <input type="number" id="edit-numero" min="0" max="99">
+                    <label>RFC:</label>
+                    <input type="text" id="edit-rfc" style="text-transform:uppercase;">
+                    <label>Categoría:</label>
+                    <select id="edit-categoria">
+                        <option value="Especial">Especial</option>
+                        <option value="Ascenso">Ascenso</option>
+                        <option value="Amateur">Amateur</option>
+                    </select>
+                    <label>Lugar de nacimiento:</label>
+                    <input type="text" id="edit-lugar-nac">
+                    <label>Fecha de nacimiento:</label>
+                    <input type="date" id="edit-fecha-nac">
+                    <label>Nacionalidad:</label>
+                    <input type="text" id="edit-nacionalidad">
                 </div>
                 <div id="edit-campo-colegio" style="display:none;">
                     <label>Colegio / Asociación:</label>
@@ -946,10 +1010,23 @@
             }
         });
 
+        function crearConfigCredencialDefault() {
+            const logoHeader = document.querySelector('.admin-header-logo');
+            return {
+                nombreLiga: 'LIGA PREMIER ACAPULCO A.C.',
+                asociacion: '',
+                temporada: '',
+                fechaExpedicion: '',
+                presidente: '',
+                escudoLiga: logoHeader ? logoHeader.src : '',
+                escudoFederacion: ''
+            };
+        }
+
         let db = JSON.parse(localStorage.getItem('liga_premier_db')) || {
             equipos: [], jugadores: [], partidos: [], comunicados: [],
             arbitros: [], campos: [], xiIdealAdmin: {}, registrosCerrados: false, liguillaActiva: false,
-            historialFichajes: [], solicitudes: [], finanzas: {}, votosMvp: {}
+            historialFichajes: [], solicitudes: [], finanzas: {}, votosMvp: {}, config: crearConfigCredencialDefault()
         };
 
         if (!db.historialFichajes) db.historialFichajes = [];
@@ -958,6 +1035,7 @@
         if (!db.solicitudes) db.solicitudes = [];
         if (!db.finanzas) db.finanzas = {};
         if (!db.votosMvp) db.votosMvp = {};
+        if (!db.config) db.config = crearConfigCredencialDefault();
 
         function guardarDB() {
             localStorage.setItem('liga_premier_db', JSON.stringify(db));
@@ -966,7 +1044,7 @@
             renderizarFinanzas();
             renderizarGestion();
             renderizarResumenDia();
-            renderizarCorreccionGoleo();
+            renderizarCorreccionEstadisticas();
             intentarAutoBackup();
             marcarCambiosSinPublicar();
         }
@@ -1094,7 +1172,7 @@
                     renderizarFinanzas();
                     renderizarGestion();
             renderizarResumenDia();
-            renderizarCorreccionGoleo();
+            renderizarCorreccionEstadisticas();
                     mostrarAvisoAutoguardado('🔄 Datos actualizados desde otra pestaña.');
                 } catch (err) { /* valor corrupto, se ignora */ }
             }
@@ -1143,7 +1221,9 @@
                 if (!db.solicitudes) db.solicitudes = [];
                 if (!db.finanzas) db.finanzas = {};
                 if (!db.votosMvp) db.votosMvp = {};
+                if (!db.config) db.config = crearConfigCredencialDefault();
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
+                cargarConfigFormulario();
                 hayCambiosSinPublicar = false;
                 contadorCambiosPendientes = 0;
                 const contadorEl = document.getElementById('firebase-contador-cambios');
@@ -1153,7 +1233,7 @@
                 renderizarFinanzas();
                 renderizarGestion();
             renderizarResumenDia();
-            renderizarCorreccionGoleo();
+            renderizarCorreccionEstadisticas();
                 mostrarFirebaseStatus('✅ Datos actualizados desde la nube.', false);
             }).catch(err => {
                 mostrarFirebaseStatus('❌ No se pudo traer la información. (' + err.message + ')', true);
@@ -1172,13 +1252,15 @@
                 if (!db.solicitudes) db.solicitudes = [];
                 if (!db.finanzas) db.finanzas = {};
                 if (!db.votosMvp) db.votosMvp = {};
+                if (!db.config) db.config = crearConfigCredencialDefault();
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
+                cargarConfigFormulario();
                 actualizarFormularios();
                 renderizarSolicitudes();
                 renderizarFinanzas();
                 renderizarGestion();
             renderizarResumenDia();
-            renderizarCorreccionGoleo();
+            renderizarCorreccionEstadisticas();
             }
         }).catch(() => { /* si falla, seguimos con lo que había en localStorage */ });
 
@@ -1222,6 +1304,7 @@
                 if (!db.solicitudes) db.solicitudes = [];
                 if (!db.finanzas) db.finanzas = {};
                 if (!db.votosMvp) db.votosMvp = {};
+                if (!db.config) db.config = crearConfigCredencialDefault();
 
                 guardarDB();
                 mostrarBackupStatus('✅ Copia de seguridad restaurada. Recargando panel...', false);
@@ -1268,8 +1351,21 @@
             renderizarFinanzas();
             renderizarGestion();
             renderizarResumenDia();
-            renderizarCorreccionGoleo();
+            renderizarCorreccionEstadisticas();
+            cargarConfigFormulario();
         });
+
+        function cargarConfigFormulario() {
+            if (!db.config) db.config = crearConfigCredencialDefault();
+            const c = db.config;
+            const campo = document.getElementById('cfg-nombre-liga');
+            if (!campo) return; // el formulario todavía no existe en el DOM
+            campo.value = c.nombreLiga || '';
+            document.getElementById('cfg-asociacion').value = c.asociacion || '';
+            document.getElementById('cfg-temporada').value = c.temporada || '';
+            document.getElementById('cfg-fecha-expedicion').value = c.fechaExpedicion || '';
+            document.getElementById('cfg-presidente').value = c.presidente || '';
+        }
 
         function alternarRegistros(valor) {
             db.registrosCerrados = valor;
@@ -1313,8 +1409,35 @@
                 e.preventDefault();
                 if (db.registrosCerrados) return alert("Los registros están bloqueados administrativamente.");
                 const jugadorBase64 = await convertirImagenABase64(document.getElementById('admin-jug-foto'));
-                db.jugadores.push({ id: Date.now(), nombre: document.getElementById('admin-jug-nombre').value.trim(), equipoId: parseInt(document.getElementById('admin-jug-equipo').value), posicion: document.getElementById('admin-jug-posicion').value.trim() || 'Jugador', foto: jugadorBase64, goles: 0, amarillas: 0, rojas: 0, xiIdeal: [] });
+                db.jugadores.push({
+                    id: Date.now(),
+                    nombre: document.getElementById('admin-jug-nombre').value.trim(),
+                    equipoId: parseInt(document.getElementById('admin-jug-equipo').value),
+                    posicion: document.getElementById('admin-jug-posicion').value.trim() || 'Jugador',
+                    numero: document.getElementById('admin-jug-numero').value.trim(),
+                    rfc: document.getElementById('admin-jug-rfc').value.trim().toUpperCase(),
+                    categoria: document.getElementById('admin-jug-categoria').value,
+                    lugarNacimiento: document.getElementById('admin-jug-lugar-nac').value.trim(),
+                    fechaNacimiento: document.getElementById('admin-jug-fecha-nac').value,
+                    nacionalidad: document.getElementById('admin-jug-nacionalidad').value.trim() || 'MEXICANA',
+                    foto: jugadorBase64, goles: 0, amarillas: 0, rojas: 0, xiIdeal: []
+                });
                 this.reset(); guardarDB(); alert("Jugador registrado.");
+            });
+
+            document.getElementById('form-config-credencial').addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const nuevoEscudoLiga = await convertirImagenABase64(document.getElementById('cfg-escudo-liga'));
+                const nuevoEscudoFederacion = await convertirImagenABase64(document.getElementById('cfg-escudo-federacion'));
+                db.config.nombreLiga = document.getElementById('cfg-nombre-liga').value.trim() || db.config.nombreLiga;
+                db.config.asociacion = document.getElementById('cfg-asociacion').value.trim();
+                db.config.temporada = document.getElementById('cfg-temporada').value.trim();
+                db.config.fechaExpedicion = document.getElementById('cfg-fecha-expedicion').value;
+                db.config.presidente = document.getElementById('cfg-presidente').value.trim();
+                if (nuevoEscudoLiga) db.config.escudoLiga = nuevoEscudoLiga;
+                if (nuevoEscudoFederacion) db.config.escudoFederacion = nuevoEscudoFederacion;
+                guardarDB();
+                alert("Configuración de credenciales guardada.");
             });
 
             document.getElementById('form-add-partido').addEventListener('submit', function (e) {
@@ -1380,6 +1503,12 @@
                     if (!j) return;
                     j.nombre = nombre;
                     j.posicion = document.getElementById('edit-posicion').value.trim() || 'Jugador';
+                    j.numero = document.getElementById('edit-numero').value.trim();
+                    j.rfc = document.getElementById('edit-rfc').value.trim().toUpperCase();
+                    j.categoria = document.getElementById('edit-categoria').value;
+                    j.lugarNacimiento = document.getElementById('edit-lugar-nac').value.trim();
+                    j.fechaNacimiento = document.getElementById('edit-fecha-nac').value;
+                    j.nacionalidad = document.getElementById('edit-nacionalidad').value.trim() || 'MEXICANA';
                     const eqVal = document.getElementById('edit-equipo').value;
                     j.equipoId = eqVal ? parseInt(eqVal) : null;
                     if (nuevaFoto) j.foto = nuevaFoto;
@@ -1445,7 +1574,7 @@
                     <div style="display:flex; gap:12px; align-items:center;">
                         <img src="${s.foto || 'https://placehold.co/50'}" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);">
                         <div>
-                            <strong>${s.nombre}</strong> (${s.posicion})<br>
+                            <strong>${s.numero ? '#' + s.numero + ' · ' : ''}${s.nombre}</strong> (${s.posicion}${s.categoria ? ' · ' + s.categoria : ''})<br>
                             <small style="color:gray;">Equipo Solicitado: ${db.equipos.find(e => e.id === s.equipoId)?.nombre || 'Libre'}</small>
                         </div>
                     </div>
@@ -1460,7 +1589,13 @@
         function aprobarSolicitud(id) {
             const sol = db.solicitudes.find(s => s.id === id);
             if (!sol) return;
-            db.jugadores.push({ id: Date.now(), nombre: sol.nombre, equipoId: sol.equipoId, posicion: sol.posicion, foto: sol.foto, goles: 0, amarillas: 0, rojas: 0, xiIdeal: [] });
+            db.jugadores.push({
+                id: Date.now(), nombre: sol.nombre, equipoId: sol.equipoId, posicion: sol.posicion,
+                numero: sol.numero || '', rfc: sol.rfc || '', categoria: sol.categoria || 'Especial',
+                lugarNacimiento: sol.lugarNacimiento || '', fechaNacimiento: sol.fechaNacimiento || '',
+                nacionalidad: sol.nacionalidad || 'MEXICANA',
+                foto: sol.foto, goles: 0, amarillas: 0, rojas: 0, xiIdeal: []
+            });
             db.solicitudes = db.solicitudes.filter(s => s.id !== id);
             guardarDB(); alert(`Jugador ${sol.nombre} aprobado e integrado al plantel.`);
         }
@@ -1530,6 +1665,76 @@
             alert("Pago de arbitraje registrado. Adeudo actualizado.");
         }
 
+        function formatearFechaCarnet(f) {
+            if (!f) return '';
+            const partes = f.split('-');
+            if (partes.length !== 3) return f;
+            const [y, m, d] = partes;
+            const meses = ['ENERO', 'FEBRERO', 'MARZO', 'ABRIL', 'MAYO', 'JUNIO', 'JULIO', 'AGOSTO', 'SEPTIEMBRE', 'OCTUBRE', 'NOVIEMBRE', 'DICIEMBRE'];
+            const mes = meses[parseInt(m, 10) - 1] || m;
+            return `${d} / ${mes} / ${y}`;
+        }
+
+        function estiloCarnetCSS() {
+            return `
+                body { font-family: Arial, Helvetica, sans-serif; background: #f4f4f4; padding: 20px; }
+                .carnet { width: 330px; background: #fff; border: 2px solid #011f4b; border-radius: 10px; display: inline-block; margin: 12px; padding: 14px; box-sizing: border-box; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.12); page-break-inside: avoid; vertical-align: top; text-align: left; }
+                .carnet-numero { position: absolute; top: 8px; right: 10px; background: #d90429; color: #fff; font-weight: bold; font-size: 1.1rem; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.25); }
+                .carnet-header { display: flex; align-items: center; gap: 6px; border-bottom: 2px solid #011f4b; padding-bottom: 6px; margin-bottom: 8px; }
+                .carnet-escudo { width: 44px; height: 44px; object-fit: contain; flex-shrink: 0; }
+                .carnet-header-texto { flex: 1; text-align: center; }
+                .carnet-linea-chica { font-size: 0.62rem; line-height: 1.15; color: #011f4b; text-transform: uppercase; }
+                .carnet-cuerpo { display: flex; gap: 8px; }
+                .carnet-foto { width: 90px; height: 115px; object-fit: cover; border: 2px solid #011f4b; flex-shrink: 0; background: #eee; }
+                .carnet-datos p { margin: 2px 0; font-size: 0.62rem; line-height: 1.25; color: #1a1a1a; }
+                .carnet-datos strong { color: #011f4b; }
+                .carnet-liga-nombre { text-align: center; font-weight: bold; font-size: 0.72rem; color: #d90429; margin-top: 8px; text-transform: uppercase; }
+                .carnet-firmas { display: flex; justify-content: space-between; margin-top: 22px; gap: 10px; }
+                .carnet-firma { flex: 1; text-align: center; font-size: 0.55rem; color: #333; }
+                .carnet-firma-linea { display: block; border-top: 1px solid #333; margin-bottom: 3px; height: 22px; }
+                .carnet-folio { text-align: center; font-size: 0.55rem; color: gray; margin-top: 8px; }
+                @media print { .carnet { box-shadow: none; } }
+            `;
+        }
+
+        function generarCarnetHTML(j, eq) {
+            const c = db.config || crearConfigCredencialDefault();
+            const folio = `LPA-${j.id.toString().slice(-5)}`;
+            return `
+                <div class="carnet">
+                    <div class="carnet-numero">${j.numero || '-'}</div>
+                    <div class="carnet-header">
+                        <img class="carnet-escudo" src="${c.escudoFederacion || 'https://placehold.co/60x60?text=Escudo'}">
+                        <div class="carnet-header-texto">
+                            ${c.asociacion ? `<div class="carnet-linea-chica">${c.asociacion}</div>` : ''}
+                            <div class="carnet-linea-chica">TEMPORADA: ${c.temporada || ''}</div>
+                            <div class="carnet-linea-chica" style="margin-top:4px; font-weight:bold;">ACREDITA QUE:</div>
+                        </div>
+                        <img class="carnet-escudo" src="${c.escudoLiga || 'https://placehold.co/60x60?text=Liga'}">
+                    </div>
+                    <div class="carnet-cuerpo">
+                        <img class="carnet-foto" src="${j.foto || 'https://placehold.co/90x115?text=Foto'}">
+                        <div class="carnet-datos">
+                            <p><strong>EL EQUIPO:</strong> ${eq ? eq.nombre : 'Agente Libre'}</p>
+                            <p><strong>REGISTRA A:</strong> ${j.nombre}</p>
+                            <p><strong>COMO:</strong> JUGADOR &nbsp; <strong>RFC:</strong> ${j.rfc || ''}</p>
+                            <p><strong>CATEGORÍA:</strong> ${j.categoria || ''}</p>
+                            <p><strong>LUGAR DE NAC.:</strong> ${j.lugarNacimiento || ''}</p>
+                            <p><strong>FECHA DE NAC.:</strong> ${formatearFechaCarnet(j.fechaNacimiento)}</p>
+                            <p><strong>F. EXPEDICIÓN:</strong> ${formatearFechaCarnet(c.fechaExpedicion)}</p>
+                            <p><strong>NACIONALIDAD:</strong> ${j.nacionalidad || 'MEXICANA'}</p>
+                        </div>
+                    </div>
+                    <div class="carnet-liga-nombre">${c.nombreLiga || 'LIGA PREMIER ACAPULCO A.C.'}</div>
+                    <div class="carnet-firmas">
+                        <div class="carnet-firma"><span class="carnet-firma-linea"></span>FIRMA DEL JUGADOR</div>
+                        <div class="carnet-firma"><span class="carnet-firma-linea"></span>PRESIDENTE DE LA LIGA${c.presidente ? '<br>' + c.presidente : ''}</div>
+                    </div>
+                    <div class="carnet-folio">N° CAM: ${folio}</div>
+                </div>
+            `;
+        }
+
         function imprimirCredencialesEquipo() {
             const eqId = parseInt(document.getElementById('credencial-equipo').value);
             if (!eqId) return alert("Selecciona un equipo.");
@@ -1542,29 +1747,34 @@
             win.document.title = `Credenciales Oficiales - ${eq.nombre}`;
 
             const style = win.document.createElement('style');
-            style.textContent = `
-                body { font-family: sans-serif; background: #f4f4f4; padding:20px; }
-                .credencial { width: 250px; height: 380px; background: white; border: 3px solid #011f4b; border-radius: 12px; display: inline-block; margin: 10px; padding: 15px; box-sizing: border-box; text-align: center; position: relative; box-shadow:0 4px 8px rgba(0,0,0,0.1); page-break-inside: avoid; }
-                .credencial-header { background: #011f4b; color: white; padding: 5px; margin: -15px -15px 10px -15px; border-radius: 8px 8px 0 0; font-size: 0.8rem; font-weight: bold; }
-                .foto-player { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #d90429; }
-                .qr-fake { width: 60px; height: 60px; margin: 10px auto; background: #eee; border: 1px solid #ccc; display:flex; align-items:center; justify-content:center; font-size:0.6rem; color:#555; }
-            `;
+            style.textContent = estiloCarnetCSS();
             win.document.head.appendChild(style);
 
             win.document.body.innerHTML = `
-                <h2 style="text-align:center; color:#011f4b;">LIGA PREMIER DE ACAPULCO - CREDENCIALES COMPLEMENTARIAS</h2>
+                <h2 style="text-align:center; color:#011f4b;">${(db.config && db.config.nombreLiga) || 'LIGA PREMIER ACAPULCO A.C.'} - CREDENCIALES OFICIALES</h2>
                 <div style="text-align:center;">
-                    ${jugantes.map(j => `
-                        <div class="credencial">
-                            <div class="credencial-header">LIGA PREMIER ACAPULCO</div>
-                            <img class="foto-player" src="${j.foto || 'https://placehold.co/100'}">
-                            <h3 style="margin: 8px 0 2px 0; font-size: 1rem; color:#011f4b;">${j.nombre}</h3>
-                            <p style="margin:0; font-size:0.8rem; color:#d90429; font-weight:bold;">${eq.nombre}</p>
-                            <p style="margin:4px 0; font-size:0.75rem; color:#555;">Posición: ${j.posicion}</p>
-                            <div class="qr-fake">QR OFICIAL<br>VERIFICADO</div>
-                            <small style="font-size:0.6rem; color:gray;">FOLIO: LPA-${j.id.toString().slice(-5)}</small>
-                        </div>
-                    `).join('')}
+                    ${jugantes.map(j => generarCarnetHTML(j, eq)).join('')}
+                </div>
+            `;
+
+            win.onload = function () { win.print(); };
+        }
+
+        function imprimirCredencialJugador(id) {
+            const j = db.jugadores.find(x => x.id === id);
+            if (!j) return;
+            const eq = db.equipos.find(e => e.id === j.equipoId);
+
+            const win = window.open('', '', 'width=500,height=650');
+            win.document.title = `Credencial Oficial - ${j.nombre}`;
+
+            const style = win.document.createElement('style');
+            style.textContent = estiloCarnetCSS();
+            win.document.head.appendChild(style);
+
+            win.document.body.innerHTML = `
+                <div style="text-align:center;">
+                    ${generarCarnetHTML(j, eq)}
                 </div>
             `;
 
@@ -1791,13 +2001,13 @@ ${cuerpo}`;
 
         // ===================== GESTIÓN: EDITAR Y ELIMINAR =====================
 
-        // --- Corrección manual de goleo ---
-        function renderizarCorreccionGoleo() {
-            const tbody = document.getElementById('goleo-correccion-tbody');
-            const vacio = document.getElementById('goleo-correccion-vacio');
+        // --- Corrección manual de goleo y tarjetas (en una sola tabla) ---
+        function renderizarCorreccionEstadisticas() {
+            const tbody = document.getElementById('stats-correccion-tbody');
+            const vacio = document.getElementById('stats-correccion-vacio');
             if (!tbody) return;
 
-            const filtro = (document.getElementById('goleo-buscar-jugador')?.value || '').trim().toLowerCase();
+            const filtro = (document.getElementById('stats-buscar-jugador')?.value || '').trim().toLowerCase();
 
             let jugadores = [...db.jugadores];
             if (filtro) {
@@ -1806,7 +2016,7 @@ ${cuerpo}`;
                     return j.nombre.toLowerCase().includes(filtro) || eqNombre.toLowerCase().includes(filtro);
                 });
             }
-            jugadores.sort((a, b) => (b.goles || 0) - (a.goles || 0) || a.nombre.localeCompare(b.nombre));
+            jugadores.sort((a, b) => a.nombre.localeCompare(b.nombre));
 
             if (jugadores.length === 0) {
                 tbody.innerHTML = '';
@@ -1815,34 +2025,37 @@ ${cuerpo}`;
             }
             vacio.classList.add('hidden');
 
+            const control = (j, campo, colorMenos, colorMas) => `
+                <div style="display:inline-flex; flex-wrap:nowrap; white-space:nowrap; align-items:center; gap:4px;">
+                    <button type="button" onclick="ajustarStatJugador(${j.id}, '${campo}', -1)" style="padding:4px 0; width:30px; flex-shrink:0; background:${colorMenos};">−</button>
+                    <input type="number" min="0" value="${j[campo] || 0}" style="width:40px; flex-shrink:0; text-align:center; padding:4px;"
+                        onchange="fijarStatJugador(${j.id}, '${campo}', this.value)">
+                    <button type="button" onclick="ajustarStatJugador(${j.id}, '${campo}', 1)" style="padding:4px 0; width:30px; flex-shrink:0; background:${colorMas};">+</button>
+                </div>`;
+
             tbody.innerHTML = jugadores.map(j => `
                 <tr style="border-bottom:1px solid #eee;">
                     <td style="padding:6px;">${j.nombre}</td>
                     <td style="padding:6px; color:#666;">${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</td>
-                    <td style="padding:6px; text-align:center;">
-                        <div style="display:inline-flex; align-items:center; gap:6px;">
-                            <button type="button" onclick="ajustarGolesJugador(${j.id}, -1)" style="padding:2px 10px; background:#c62828;">−</button>
-                            <input type="number" min="0" value="${j.goles || 0}" style="width:60px; text-align:center; padding:4px;"
-                                onchange="fijarGolesJugador(${j.id}, this.value)">
-                            <button type="button" onclick="ajustarGolesJugador(${j.id}, 1)" style="padding:2px 10px; background:#2e7d32;">+</button>
-                        </div>
-                    </td>
+                    <td style="padding:6px; text-align:center;">${control(j, 'goles', '#c62828', '#2e7d32')}</td>
+                    <td style="padding:6px; text-align:center;">${control(j, 'amarillas', '#c62828', '#2e7d32')}</td>
+                    <td style="padding:6px; text-align:center;">${control(j, 'rojas', '#c62828', '#2e7d32')}</td>
                 </tr>
             `).join('');
         }
 
-        function ajustarGolesJugador(id, delta) {
+        function ajustarStatJugador(id, campo, delta) {
             const j = db.jugadores.find(x => x.id === id);
             if (!j) return;
-            j.goles = Math.max(0, (j.goles || 0) + delta);
+            j[campo] = Math.max(0, (j[campo] || 0) + delta);
             guardarDB();
         }
 
-        function fijarGolesJugador(id, valor) {
+        function fijarStatJugador(id, campo, valor) {
             const j = db.jugadores.find(x => x.id === id);
             if (!j) return;
             const n = parseInt(valor);
-            j.goles = isNaN(n) || n < 0 ? 0 : n;
+            j[campo] = isNaN(n) || n < 0 ? 0 : n;
             guardarDB();
         }
 
@@ -1872,10 +2085,11 @@ ${cuerpo}`;
                 <div class="gestion-fila">
                     <img src="${j.foto || 'https://placehold.co/40'}">
                     <div class="gestion-info">
-                        <strong>${j.nombre}</strong>
+                        <strong>${j.numero ? '#' + j.numero + ' · ' : ''}${j.nombre}</strong>
                         <span>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Agente Libre'} · ${j.posicion || ''}</span>
                     </div>
                     <div class="gestion-acciones">
+                        <button type="button" class="btn-editar-fila" title="Imprimir credencial" onclick="imprimirCredencialJugador(${j.id})">🪪</button>
                         <button type="button" class="btn-editar-fila" onclick="abrirEdicion('jugador', ${j.id})">✏️</button>
                         <button type="button" class="btn-eliminar-fila" onclick="eliminarJugador(${j.id})">🗑️</button>
                     </div>
@@ -1938,6 +2152,7 @@ ${cuerpo}`;
             document.getElementById('edit-foto').value = '';
             document.getElementById('edit-campo-equipo').style.display = 'none';
             document.getElementById('edit-campo-posicion').style.display = 'none';
+            document.getElementById('edit-campo-jugador-extra').style.display = 'none';
             document.getElementById('edit-campo-colegio').style.display = 'none';
             document.getElementById('edit-campo-email-arbitro').style.display = 'none';
             document.getElementById('edit-campo-direccion').style.display = 'none';
@@ -1954,8 +2169,15 @@ ${cuerpo}`;
                 document.getElementById('modal-editar-titulo').innerText = '✏️ Editar Jugador';
                 document.getElementById('edit-nombre').value = j.nombre;
                 document.getElementById('edit-posicion').value = j.posicion || '';
+                document.getElementById('edit-numero').value = j.numero || '';
+                document.getElementById('edit-rfc').value = j.rfc || '';
+                document.getElementById('edit-categoria').value = j.categoria || 'Especial';
+                document.getElementById('edit-lugar-nac').value = j.lugarNacimiento || '';
+                document.getElementById('edit-fecha-nac').value = j.fechaNacimiento || '';
+                document.getElementById('edit-nacionalidad').value = j.nacionalidad || 'MEXICANA';
                 document.getElementById('edit-campo-equipo').style.display = 'block';
                 document.getElementById('edit-campo-posicion').style.display = 'block';
+                document.getElementById('edit-campo-jugador-extra').style.display = 'block';
                 document.getElementById('edit-equipo').innerHTML = '<option value="">🕊️ Agente Libre</option>' + db.equipos.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
                 document.getElementById('edit-equipo').value = j.equipoId || '';
                 document.getElementById('edit-label-foto').innerText = 'Reemplazar foto (opcional, deja vacío para conservar la actual):';
@@ -2002,8 +2224,11 @@ ${cuerpo}`;
                 <div class="gestion-fila">
                     <img src="${j.foto || 'https://placehold.co/40'}">
                     <div class="gestion-info">
-                        <strong>${j.nombre}</strong>
+                        <strong>${j.numero ? '#' + j.numero + ' · ' : ''}${j.nombre}</strong>
                         <span>${j.posicion || 'Jugador'} · ⚽ ${j.goles || 0} · 🟨 ${j.amarillas || 0} · 🟥 ${j.rojas || 0}</span>
+                    </div>
+                    <div class="gestion-acciones">
+                        <button type="button" class="btn-editar-fila" title="Imprimir credencial" onclick="imprimirCredencialJugador(${j.id})">🪪</button>
                     </div>
                 </div>`).join('') : '<p style="font-size:0.8rem; color:#888;">Este equipo aún no tiene jugadores registrados.</p>';
 

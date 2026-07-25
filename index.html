@@ -67,6 +67,7 @@
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 200; overflow-y: auto; padding: 20px 0; }
         .modal-content { background: var(--card-bg); padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; text-align: center; position: relative; margin: auto; }
         .close-modal { position: absolute; top: 15px; right: 15px; font-size: 1.5rem; cursor: pointer; background: none; border: none; color: var(--text); font-weight: bold; z-index: 10; }
+        .foto-tabla { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 8px; border: 1px solid #ddd; }
         .hidden { display: none !important; }
 
         /* --- Banner de partido EN VIVO en portada --- */
@@ -207,11 +208,24 @@
             <h2>📝 Solicitud de Registro de Jugador</h2>
             <p style="font-size:0.85rem; color:gray;">¿Eres nuevo en la liga? Envía tus datos para ser aprobado por la administración.</p>
             <form id="form-solicitud-web" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px; margin-top:15px;">
-                <input type="text" id="sol-nombre" placeholder="Nombre Completo" required>
                 <select id="sol-equipo" required><option value="">-- Selecciona Club --</option></select>
+                <input type="text" id="sol-nombre" placeholder="Nombre Completo" required>
+                <input type="number" id="sol-numero" placeholder="Número" min="0" max="99">
+                <input type="text" id="sol-rfc" placeholder="RFC (opcional)" style="text-transform:uppercase;">
+                <select id="sol-categoria">
+                    <option value="Especial">Categoría: Especial</option>
+                    <option value="Ascenso">Categoría: Ascenso</option>
+                    <option value="Amateur">Categoría: Amateur</option>
+                </select>
                 <input type="text" id="sol-posicion" placeholder="Posición" required>
+                <input type="text" id="sol-lugar-nac" placeholder="Lugar de nacimiento (Ej. Acapulco, Gro.)">
                 <div>
-                    <label style="font-size:0.75rem;">Foto Perfil:</label>
+                    <label style="font-size:0.75rem;">Fecha de nacimiento:</label>
+                    <input type="date" id="sol-fecha-nac" style="width:100%;">
+                </div>
+                <input type="text" id="sol-nacionalidad" placeholder="Nacionalidad" value="MEXICANA">
+                <div>
+                    <label style="font-size:0.75rem;">Foto Perfil (tamaño infantil, para tu credencial):</label>
                     <input type="file" id="sol-foto" accept="image/*" required>
                 </div>
                 <button type="submit" class="btn-export" style="background:#4caf50; height:42px; align-self:end;">Enviar Solicitud</button>
@@ -499,6 +513,12 @@
                     nombre: document.getElementById('sol-nombre').value.trim(),
                     equipoId: parseInt(document.getElementById('sol-equipo').value),
                     posicion: document.getElementById('sol-posicion').value.trim(),
+                    numero: document.getElementById('sol-numero').value.trim(),
+                    rfc: document.getElementById('sol-rfc').value.trim().toUpperCase(),
+                    categoria: document.getElementById('sol-categoria').value,
+                    lugarNacimiento: document.getElementById('sol-lugar-nac').value.trim(),
+                    fechaNacimiento: document.getElementById('sol-fecha-nac').value,
+                    nacionalidad: document.getElementById('sol-nacionalidad').value.trim() || 'MEXICANA',
                     foto: fotoB64
                 });
                 guardarDB();
@@ -605,13 +625,13 @@
                         else golesContra += part.golesLocal;
                     });
                 }
-                return { nombre: p.nombre, equipo: eq?.nombre || 'Libre', goles: golesContra, pj: partidos, prom: partidos > 0 ? (golesContra/partidos).toFixed(2) : 0 };
+                return { nombre: p.nombre, equipo: eq?.nombre || 'Libre', foto: p.foto, goles: golesContra, pj: partidos, prom: partidos > 0 ? (golesContra/partidos).toFixed(2) : 0 };
             }).sort((a,b) => a.prom - b.prom);
 
             document.getElementById('tabla-porteros-body').innerHTML = data.map((pt, idx) => `
                 <tr>
                     <td><b>${idx+1}</b></td>
-                    <td><b>${pt.nombre}</b> (${pt.equipo})</td>
+                    <td><img class="foto-tabla" src="${pt.foto || 'https://placehold.co/34'}" alt=""><b>${pt.nombre}</b> (${pt.equipo})</td>
                     <td>${pt.goles} 🛡️</td>
                     <td><b>${pt.prom}</b> goles/partido</td>
                 </tr>
@@ -763,11 +783,11 @@
 
         function actualizarVistaGoleo() {
             let goleadores = [...db.jugadores].filter(j => j.goles > 0).sort((a,b) => b.goles - a.goles);
-            document.getElementById('tabla-goleo-body').innerHTML = goleadores.map((jug, idx) => `<tr><td><b>${idx + 1}</b></td><td>${jug.nombre}</td><td>${db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre'}</td><td><b>${jug.goles} ⚽</b></td></tr>`).join('');
+            document.getElementById('tabla-goleo-body').innerHTML = goleadores.map((jug, idx) => `<tr><td><b>${idx + 1}</b></td><td><img class="foto-tabla" src="${jug.foto || 'https://placehold.co/34'}" alt="">${jug.nombre}</td><td>${db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre'}</td><td><b>${jug.goles} ⚽</b></td></tr>`).join('');
         }
 
         function actualizarVistaDisciplina() {
-            document.getElementById('tabla-disciplina-body').innerHTML = db.jugadores.map((j, idx) => `<tr><td>${idx + 1}</td><td>${j.nombre}</td><td>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</td><td>${j.amarillas || 0}</td><td>${j.rojas || 0}</td><td>🟢 Habilitado</td></tr>`).join('');
+            document.getElementById('tabla-disciplina-body').innerHTML = db.jugadores.map((j, idx) => `<tr><td>${idx + 1}</td><td><img class="foto-tabla" src="${j.foto || 'https://placehold.co/34'}" alt="">${j.nombre}</td><td>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</td><td>${j.amarillas || 0}</td><td>${j.rojas || 0}</td><td>🟢 Habilitado</td></tr>`).join('');
         }
 
         function filtrarJugadores() {
