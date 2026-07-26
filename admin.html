@@ -530,17 +530,14 @@
     <!-- MÓDULO: CONTROL FINANCIERO Y ADEUDOS -->
     <div class="admin-box" style="margin-bottom: 25px; border-top-color: #4caf50;">
         <h3>💵 Control Financiero y Bloqueo por Adeudos</h3>
-        <p style="font-size:0.85rem; color:#555;">Gestiona pagos de inscripción. El pago de arbitraje se registra
-            automáticamente cada vez que el árbitro cierra la cédula del partido; si un equipo no paga, se le suma
-            un adeudo aquí mismo.</p>
+        <p style="font-size:0.85rem; color:#555;">El pago de arbitraje se registra automáticamente cada vez que el
+            árbitro cierra la cédula del partido; si un equipo no paga, se le suma un adeudo aquí mismo.</p>
         <div style="overflow-x:auto;">
             <table style="width:100%; text-align:left; border-collapse:collapse; font-size:0.9rem;">
                 <thead>
                     <tr style="background:#f4f4f4;">
                         <th style="padding:10px;">Equipo</th>
-                        <th>Inscripción</th>
                         <th>Pago Arbitraje</th>
-                        <th>Multas Tarjetas</th>
                         <th>Estado de Juego</th>
                     </tr>
                 </thead>
@@ -579,6 +576,22 @@
             </form>
         </div>
 
+        <!-- LOGO DEL SITIO (ENCABEZADO) -->
+        <div class="admin-box" style="border-top-color:#0b1e3d;">
+            <h3>🖼️ Logo del Sitio (Encabezado)</h3>
+            <p style="font-size:0.8rem; color:#555; margin-top:-8px;">Sube una imagen para reemplazar el escudo del encabezado en las 3 páginas (Admin, Árbitro y Sitio Público). Presiona "🚀 Publicar" (arriba) para que se refleje en los demás dispositivos. "Quitar" regresa al escudo original.</p>
+            <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+                <img id="logo-sitio-preview" src="" alt="Logo actual" style="width:70px; height:70px; object-fit:contain; border:1px solid #ccc; border-radius:8px; background:#fff; padding:4px;">
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <input type="file" id="input-logo-sitio" accept="image/*">
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" onclick="subirLogoSitio()" style="background:#0b1e3d;">⬆️ Subir Logo</button>
+                        <button type="button" id="btn-quitar-logo-sitio" onclick="quitarLogoSitio()" style="background:#c62828;" disabled>🗑️ Quitar Logo</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- CONFIGURACIÓN DE CREDENCIALES -->
         <div class="admin-box" style="border-top-color:#7209b7;">
             <h3>🪪 Configuración de Credenciales</h3>
@@ -596,10 +609,12 @@
                 <input type="date" id="cfg-fecha-expedicion">
                 <label>Nombre del Presidente de la Liga (para la firma):</label>
                 <input type="text" id="cfg-presidente" placeholder="Nombre y apellidos">
-                <label>Escudo de la Liga:</label>
-                <input type="file" id="cfg-escudo-liga" accept="image/*">
-                <label>Escudo de la Federación / Asociación (si tienes el archivo oficial):</label>
-                <input type="file" id="cfg-escudo-federacion" accept="image/*">
+                <label>Escudo de la Liga (aparece en la credencial):</label>
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                    <img id="cfg-escudo-liga-preview" src="" alt="Sin escudo" style="width:54px; height:54px; object-fit:contain; border:1px solid #ccc; border-radius:8px; background:#fff; padding:3px;">
+                    <input type="file" id="cfg-escudo-liga" accept="image/*" style="flex:1; min-width:180px;">
+                    <button type="button" id="btn-quitar-escudo-credencial" onclick="quitarEscudoCredencial()" style="background:#c62828;" disabled>🗑️ Quitar</button>
+                </div>
                 <button type="submit" style="background:#7209b7;">💾 Guardar Configuración</button>
             </form>
         </div>
@@ -956,6 +971,42 @@
         let hayCambiosSinPublicar = false;
         let contadorCambiosPendientes = 0;
 
+        // --- Logo del sitio (encabezado) personalizable ---
+        // Guarda el logo original que ya trae la página para poder volver a él
+        // cuando el admin presione "Quitar".
+        const LOGO_LIGA_DEFAULT = document.querySelector('.admin-header-logo') ? document.querySelector('.admin-header-logo').src : '';
+        function aplicarLogoSitio() {
+            const logo = document.querySelector('.admin-header-logo');
+            if (!logo) return;
+            logo.src = (db.config && db.config.logoSitio) ? db.config.logoSitio : LOGO_LIGA_DEFAULT;
+            const preview = document.getElementById('logo-sitio-preview');
+            if (preview) preview.src = logo.src;
+            const btnQuitar = document.getElementById('btn-quitar-logo-sitio');
+            if (btnQuitar) btnQuitar.disabled = !(db.config && db.config.logoSitio);
+        }
+
+        function subirLogoSitio() {
+            const input = document.getElementById('input-logo-sitio');
+            if (!input.files || !input.files[0]) return alert('Selecciona primero una imagen.');
+            const lector = new FileReader();
+            lector.onloadend = () => {
+                if (!db.config) db.config = crearConfigCredencialDefault();
+                db.config.logoSitio = lector.result;
+                guardarDB();
+                input.value = '';
+                alert('✅ Logo actualizado en esta pantalla. Presiona "🚀 Publicar" para que se vea en el sitio público y en el árbitro.');
+            };
+            lector.readAsDataURL(input.files[0]);
+        }
+
+        function quitarLogoSitio() {
+            if (!confirm('¿Quitar el logo personalizado y volver al escudo original?')) return;
+            if (!db.config) db.config = crearConfigCredencialDefault();
+            db.config.logoSitio = '';
+            guardarDB();
+            alert('✅ Logo restaurado al original en esta pantalla. Presiona "🚀 Publicar" para que se vea en los demás.');
+        }
+
         // --- Indicador de conexión con Firebase (ruta especial .info/connected) ---
         firebase.database().ref('.info/connected').on('value', function (snap) {
             const ind = document.getElementById('firebase-conexion-indicador');
@@ -1011,15 +1062,14 @@
         });
 
         function crearConfigCredencialDefault() {
-            const logoHeader = document.querySelector('.admin-header-logo');
             return {
                 nombreLiga: 'LIGA PREMIER ACAPULCO A.C.',
                 asociacion: '',
+                asociacion2: '',
                 temporada: '',
                 fechaExpedicion: '',
                 presidente: '',
-                escudoLiga: logoHeader ? logoHeader.src : '',
-                escudoFederacion: ''
+                escudoLiga: ''
             };
         }
 
@@ -1036,9 +1086,12 @@
         if (!db.finanzas) db.finanzas = {};
         if (!db.votosMvp) db.votosMvp = {};
         if (!db.config) db.config = crearConfigCredencialDefault();
+                if (db.config.logoSitio === undefined) db.config.logoSitio = '';
 
         function guardarDB() {
             localStorage.setItem('liga_premier_db', JSON.stringify(db));
+            aplicarLogoSitio();
+            actualizarPreviewEscudoCredencial();
             actualizarFormularios();
             renderizarSolicitudes();
             renderizarFinanzas();
@@ -1058,7 +1111,7 @@
             const pendientes = (db.solicitudes || []).length;
             const equiposConAdeudo = (db.equipos || []).filter(eq => {
                 const f = db.finanzas ? db.finanzas[eq.id] : null;
-                return f && (!f.inscripcionPagada || (f.adeudoArbitrajes || 0) > 0);
+                return f && (f.adeudoArbitrajes || 0) > 0;
             }).length;
             const sinAsignar = (db.partidos || []).filter(p => !p.jugado && (!p.arbitro || !p.campoId)).length;
 
@@ -1167,6 +1220,8 @@
             if (e.key === 'liga_premier_db' && e.newValue) {
                 try {
                     db = JSON.parse(e.newValue);
+                    aplicarLogoSitio();
+                    actualizarPreviewEscudoCredencial();
                     actualizarFormularios();
                     renderizarSolicitudes();
                     renderizarFinanzas();
@@ -1222,8 +1277,10 @@
                 if (!db.finanzas) db.finanzas = {};
                 if (!db.votosMvp) db.votosMvp = {};
                 if (!db.config) db.config = crearConfigCredencialDefault();
+                if (db.config.logoSitio === undefined) db.config.logoSitio = '';
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
                 cargarConfigFormulario();
+                aplicarLogoSitio();
                 hayCambiosSinPublicar = false;
                 contadorCambiosPendientes = 0;
                 const contadorEl = document.getElementById('firebase-contador-cambios');
@@ -1253,8 +1310,10 @@
                 if (!db.finanzas) db.finanzas = {};
                 if (!db.votosMvp) db.votosMvp = {};
                 if (!db.config) db.config = crearConfigCredencialDefault();
+                if (db.config.logoSitio === undefined) db.config.logoSitio = '';
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
                 cargarConfigFormulario();
+                aplicarLogoSitio();
                 actualizarFormularios();
                 renderizarSolicitudes();
                 renderizarFinanzas();
@@ -1305,6 +1364,7 @@
                 if (!db.finanzas) db.finanzas = {};
                 if (!db.votosMvp) db.votosMvp = {};
                 if (!db.config) db.config = crearConfigCredencialDefault();
+                if (db.config.logoSitio === undefined) db.config.logoSitio = '';
 
                 guardarDB();
                 mostrarBackupStatus('✅ Copia de seguridad restaurada. Recargando panel...', false);
@@ -1357,14 +1417,37 @@
 
         function cargarConfigFormulario() {
             if (!db.config) db.config = crearConfigCredencialDefault();
+                if (db.config.logoSitio === undefined) db.config.logoSitio = '';
+            aplicarLogoSitio();
             const c = db.config;
             const campo = document.getElementById('cfg-nombre-liga');
             if (!campo) return; // el formulario todavía no existe en el DOM
             campo.value = c.nombreLiga || '';
             document.getElementById('cfg-asociacion').value = c.asociacion || '';
+            document.getElementById('cfg-asociacion2').value = c.asociacion2 || '';
             document.getElementById('cfg-temporada').value = c.temporada || '';
             document.getElementById('cfg-fecha-expedicion').value = c.fechaExpedicion || '';
             document.getElementById('cfg-presidente').value = c.presidente || '';
+            actualizarPreviewEscudoCredencial();
+        }
+
+        function actualizarPreviewEscudoCredencial() {
+            const preview = document.getElementById('cfg-escudo-liga-preview');
+            const btnQuitar = document.getElementById('btn-quitar-escudo-credencial');
+            if (!preview) return;
+            const tieneEscudo = !!(db.config && db.config.escudoLiga);
+            preview.src = tieneEscudo ? db.config.escudoLiga : '';
+            preview.style.visibility = tieneEscudo ? 'visible' : 'hidden';
+            if (btnQuitar) btnQuitar.disabled = !tieneEscudo;
+        }
+
+        function quitarEscudoCredencial() {
+            if (!confirm('¿Quitar el escudo de la credencial y dejarlo en blanco?')) return;
+            if (!db.config) db.config = crearConfigCredencialDefault();
+            db.config.escudoLiga = '';
+            guardarDB();
+            actualizarPreviewEscudoCredencial();
+            alert('✅ Escudo quitado. Ya puedes subir uno nuevo cuando quieras.');
         }
 
         function alternarRegistros(valor) {
@@ -1401,7 +1484,7 @@
                 const fotoBase64 = await convertirImagenABase64(document.getElementById('admin-eq-foto'));
                 const newId = Date.now();
                 db.equipos.push({ id: newId, nombre: document.getElementById('admin-eq-nombre').value.trim(), escudo: escudoBase64, fotoGrupal: fotoBase64 });
-                db.finanzas[newId] = { inscripcionPagada: false, adeudoArbitrajes: 0, multasTarjetas: 0 };
+                db.finanzas[newId] = { adeudoArbitrajes: 0 };
                 this.reset(); guardarDB(); alert("Equipo registrado con éxito.");
             });
 
@@ -1428,15 +1511,16 @@
             document.getElementById('form-config-credencial').addEventListener('submit', async function (e) {
                 e.preventDefault();
                 const nuevoEscudoLiga = await convertirImagenABase64(document.getElementById('cfg-escudo-liga'));
-                const nuevoEscudoFederacion = await convertirImagenABase64(document.getElementById('cfg-escudo-federacion'));
                 db.config.nombreLiga = document.getElementById('cfg-nombre-liga').value.trim() || db.config.nombreLiga;
                 db.config.asociacion = document.getElementById('cfg-asociacion').value.trim();
+                db.config.asociacion2 = document.getElementById('cfg-asociacion2').value.trim();
                 db.config.temporada = document.getElementById('cfg-temporada').value.trim();
                 db.config.fechaExpedicion = document.getElementById('cfg-fecha-expedicion').value;
                 db.config.presidente = document.getElementById('cfg-presidente').value.trim();
                 if (nuevoEscudoLiga) db.config.escudoLiga = nuevoEscudoLiga;
-                if (nuevoEscudoFederacion) db.config.escudoFederacion = nuevoEscudoFederacion;
+                document.getElementById('cfg-escudo-liga').value = '';
                 guardarDB();
+                actualizarPreviewEscudoCredencial();
                 alert("Configuración de credenciales guardada.");
             });
 
@@ -1447,11 +1531,11 @@
 
                 const finLoc = db.finanzas[locId];
                 const finVis = db.finanzas[visId];
-                if (finLoc && (!finLoc.inscripcionPagada || (finLoc.adeudoArbitrajes || 0) > 0)) {
-                    if (!confirm(`⚠️ ATENCIÓN: El equipo Local presenta adeudos en finanzas (inscripción y/o ${finLoc.adeudoArbitrajes || 0} arbitraje(s) pendiente(s)). ¿Deseas programarlo de todas formas?`)) return;
+                if (finLoc && (finLoc.adeudoArbitrajes || 0) > 0) {
+                    if (!confirm(`⚠️ ATENCIÓN: El equipo Local presenta ${finLoc.adeudoArbitrajes || 0} arbitraje(s) pendiente(s) de pago. ¿Deseas programarlo de todas formas?`)) return;
                 }
-                if (finVis && (!finVis.inscripcionPagada || (finVis.adeudoArbitrajes || 0) > 0)) {
-                    if (!confirm(`⚠️ ATENCIÓN: El equipo Visitante presenta adeudos en finanzas (inscripción y/o ${finVis.adeudoArbitrajes || 0} arbitraje(s) pendiente(s)). ¿Deseas programarlo de todas formas?`)) return;
+                if (finVis && (finVis.adeudoArbitrajes || 0) > 0) {
+                    if (!confirm(`⚠️ ATENCIÓN: El equipo Visitante presenta ${finVis.adeudoArbitrajes || 0} arbitraje(s) pendiente(s) de pago. ¿Deseas programarlo de todas formas?`)) return;
                 }
 
                 const campoSeleccionado = db.campos.find(c => c.id === parseInt(document.getElementById('admin-part-estadio').value));
@@ -1610,16 +1694,11 @@
             tbody.innerHTML = db.equipos.map(eq => {
                 const f = asegurarFinanzas(eq.id);
                 const adeudo = f.adeudoArbitrajes || 0;
-                const habilitado = f.inscripcionPagada && adeudo === 0;
+                const habilitado = adeudo === 0;
 
                 return `
                     <tr style="border-bottom:1px solid #eee;">
                         <td style="padding:10px; font-weight:bold;">${eq.nombre}</td>
-                        <td>
-                            <button onclick="toggleFinanza(${eq.id}, 'inscripcionPagada')" class="badge-status ${f.inscripcionPagada ? 'badge-ok' : 'badge-pending'}">
-                                ${f.inscripcionPagada ? '✅ Pagado' : '❌ Pendiente'}
-                            </button>
-                        </td>
                         <td>
                             ${adeudo === 0
                         ? `<span class="badge-status badge-ok">✅ Al Día</span>`
@@ -1628,7 +1707,6 @@
                     }
                             <div style="font-size:0.65rem; color:#888; margin-top:3px;">Se registra automático desde la cédula del árbitro.</div>
                         </td>
-                        <td style="color:var(--primary); font-weight:bold;">$${f.multasTarjetas || 0} MXN</td>
                         <td>
                             <span class="badge-status ${habilitado ? 'badge-ok' : 'badge-pending'}">
                                 ${habilitado ? '🟢 Habilitado' : '🔒 Bloqueado'}
@@ -1636,7 +1714,7 @@
                         </td>
                     </tr>
                 `;
-            }).join('') || '<tr><td colspan="5" style="color:gray; padding:12px;">No hay equipos registrados.</td></tr>';
+            }).join('') || '<tr><td colspan="3" style="color:gray; padding:12px;">No hay equipos registrados.</td></tr>';
         }
 
         function toggleFinanza(eqId, campo) {
@@ -1646,7 +1724,7 @@
         }
 
         function asegurarFinanzas(eqId) {
-            if (!db.finanzas[eqId]) db.finanzas[eqId] = { inscripcionPagada: false, adeudoArbitrajes: 0, multasTarjetas: 0 };
+            if (!db.finanzas[eqId]) db.finanzas[eqId] = { adeudoArbitrajes: 0 };
             if (db.finanzas[eqId].adeudoArbitrajes === undefined) db.finanzas[eqId].adeudoArbitrajes = 0;
             return db.finanzas[eqId];
         }
@@ -1678,22 +1756,27 @@
         function estiloCarnetCSS() {
             return `
                 body { font-family: Arial, Helvetica, sans-serif; background: #f4f4f4; padding: 20px; }
-                .carnet { width: 330px; background: #fff; border: 2px solid #011f4b; border-radius: 10px; display: inline-block; margin: 12px; padding: 14px; box-sizing: border-box; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.12); page-break-inside: avoid; vertical-align: top; text-align: left; }
-                .carnet-numero { position: absolute; top: 8px; right: 10px; background: #d90429; color: #fff; font-weight: bold; font-size: 1.1rem; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.25); }
-                .carnet-header { display: flex; align-items: center; gap: 6px; border-bottom: 2px solid #011f4b; padding-bottom: 6px; margin-bottom: 8px; }
-                .carnet-escudo { width: 44px; height: 44px; object-fit: contain; flex-shrink: 0; }
+                .carnet { width: 540px; background: #fff; border: 2px solid #011f4b; border-radius: 10px; display: inline-block; margin: 12px; padding: 16px; box-sizing: border-box; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.12); page-break-inside: avoid; vertical-align: top; text-align: left; }
+                .carnet-numero { flex-shrink: 0; background: #d90429; color: #fff; font-weight: bold; font-size: 1.3rem; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.25); }
+                .carnet-header { display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #011f4b; padding-bottom: 8px; margin-bottom: 10px; }
+                .carnet-escudo { width: 54px; height: 54px; object-fit: contain; flex-shrink: 0; }
                 .carnet-header-texto { flex: 1; text-align: center; }
-                .carnet-linea-chica { font-size: 0.62rem; line-height: 1.15; color: #011f4b; text-transform: uppercase; }
-                .carnet-cuerpo { display: flex; gap: 8px; }
-                .carnet-foto { width: 90px; height: 115px; object-fit: cover; border: 2px solid #011f4b; flex-shrink: 0; background: #eee; }
-                .carnet-datos p { margin: 2px 0; font-size: 0.62rem; line-height: 1.25; color: #1a1a1a; }
+                .carnet-linea-chica { font-size: 0.66rem; line-height: 1.3; color: #011f4b; text-transform: uppercase; }
+                .carnet-cuerpo { display: flex; gap: 14px; }
+                .carnet-foto { width: 100px; height: 128px; object-fit: cover; border: 2px solid #011f4b; flex-shrink: 0; background: #eee; }
+                .carnet-datos { flex: 1; }
+                .carnet-datos p { margin: 3px 0; font-size: 0.72rem; line-height: 1.3; color: #1a1a1a; }
                 .carnet-datos strong { color: #011f4b; }
-                .carnet-liga-nombre { text-align: center; font-weight: bold; font-size: 0.72rem; color: #d90429; margin-top: 8px; text-transform: uppercase; }
-                .carnet-firmas { display: flex; justify-content: space-between; margin-top: 22px; gap: 10px; }
-                .carnet-firma { flex: 1; text-align: center; font-size: 0.55rem; color: #333; }
-                .carnet-firma-linea { display: block; border-top: 1px solid #333; margin-bottom: 3px; height: 22px; }
-                .carnet-folio { text-align: center; font-size: 0.55rem; color: gray; margin-top: 8px; }
-                @media print { .carnet { box-shadow: none; } }
+                .carnet-datos-liga { font-weight: bold; color: #d90429 !important; margin-top: 6px !important; text-transform: uppercase; }
+                .carnet-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 18px; gap: 14px; }
+                .carnet-folio { font-size: 0.6rem; color: gray; white-space: nowrap; }
+                .carnet-firmas { display: flex; gap: 20px; }
+                .carnet-firma { text-align: center; font-size: 0.58rem; color: #333; width: 130px; }
+                .carnet-firma-linea { display: block; border-top: 1px solid #333; margin-bottom: 3px; height: 20px; }
+                @media print {
+                    .carnet { box-shadow: none; }
+                    @page { size: landscape; margin: 10mm; }
+                }
             `;
         }
 
@@ -1702,35 +1785,37 @@
             const folio = `LPA-${j.id.toString().slice(-5)}`;
             return `
                 <div class="carnet">
-                    <div class="carnet-numero">${j.numero || '-'}</div>
                     <div class="carnet-header">
-                        <img class="carnet-escudo" src="${c.escudoFederacion || 'https://placehold.co/60x60?text=Escudo'}">
+                        <img class="carnet-escudo" src="${c.escudoLiga || ''}" style="${c.escudoLiga ? '' : 'visibility:hidden;'}">
                         <div class="carnet-header-texto">
-                            ${c.asociacion ? `<div class="carnet-linea-chica">${c.asociacion}</div>` : ''}
-                            <div class="carnet-linea-chica">TEMPORADA: ${c.temporada || ''}</div>
-                            <div class="carnet-linea-chica" style="margin-top:4px; font-weight:bold;">ACREDITA QUE:</div>
+                            ${c.asociacion ? `<div class="carnet-linea-chica" style="font-weight:bold;">${c.asociacion}</div>` : ''}
+                            ${c.asociacion2 ? `<div class="carnet-linea-chica">${c.asociacion2}</div>` : ''}
+                            <div class="carnet-linea-chica">TEMPORADA: ${c.temporada || ''} &nbsp; N° AFILIACIÓN: ______</div>
+                            <div class="carnet-linea-chica" style="margin-top:3px; font-weight:bold;">ACREDITA QUE:</div>
                         </div>
-                        <img class="carnet-escudo" src="${c.escudoLiga || 'https://placehold.co/60x60?text=Liga'}">
+                        <div class="carnet-numero">${j.numero || '-'}</div>
                     </div>
                     <div class="carnet-cuerpo">
-                        <img class="carnet-foto" src="${j.foto || 'https://placehold.co/90x115?text=Foto'}">
+                        <img class="carnet-foto" src="${j.foto || 'https://placehold.co/100x128?text=Foto'}">
                         <div class="carnet-datos">
                             <p><strong>EL EQUIPO:</strong> ${eq ? eq.nombre : 'Agente Libre'}</p>
                             <p><strong>REGISTRA A:</strong> ${j.nombre}</p>
                             <p><strong>COMO:</strong> JUGADOR &nbsp; <strong>RFC:</strong> ${j.rfc || ''}</p>
                             <p><strong>CATEGORÍA:</strong> ${j.categoria || ''}</p>
-                            <p><strong>LUGAR DE NAC.:</strong> ${j.lugarNacimiento || ''}</p>
-                            <p><strong>FECHA DE NAC.:</strong> ${formatearFechaCarnet(j.fechaNacimiento)}</p>
-                            <p><strong>F. EXPEDICIÓN:</strong> ${formatearFechaCarnet(c.fechaExpedicion)}</p>
+                            <p><strong>LUGAR DE NACIMIENTO:</strong> ${j.lugarNacimiento || ''}</p>
+                            <p><strong>FECHA DE NACIMIENTO:</strong> ${formatearFechaCarnet(j.fechaNacimiento)}</p>
+                            <p><strong>FECHA DE EXPEDICIÓN:</strong> ${formatearFechaCarnet(c.fechaExpedicion)}</p>
                             <p><strong>NACIONALIDAD:</strong> ${j.nacionalidad || 'MEXICANA'}</p>
+                            <p class="carnet-datos-liga">${c.nombreLiga || 'LIGA PREMIER ACAPULCO A.C.'}</p>
                         </div>
                     </div>
-                    <div class="carnet-liga-nombre">${c.nombreLiga || 'LIGA PREMIER ACAPULCO A.C.'}</div>
-                    <div class="carnet-firmas">
-                        <div class="carnet-firma"><span class="carnet-firma-linea"></span>FIRMA DEL JUGADOR</div>
-                        <div class="carnet-firma"><span class="carnet-firma-linea"></span>PRESIDENTE DE LA LIGA${c.presidente ? '<br>' + c.presidente : ''}</div>
+                    <div class="carnet-footer">
+                        <div class="carnet-folio">N° CAM:<br>${folio}</div>
+                        <div class="carnet-firmas">
+                            <div class="carnet-firma"><span class="carnet-firma-linea"></span>FIRMA DEL JUGADOR</div>
+                            <div class="carnet-firma"><span class="carnet-firma-linea"></span>PRESIDENTE DE LA LIGA${c.presidente ? '<br>' + c.presidente : ''}</div>
+                        </div>
                     </div>
-                    <div class="carnet-folio">N° CAM: ${folio}</div>
                 </div>
             `;
         }
@@ -1765,7 +1850,7 @@
             if (!j) return;
             const eq = db.equipos.find(e => e.id === j.equipoId);
 
-            const win = window.open('', '', 'width=500,height=650');
+            const win = window.open('', '', 'width=650,height=500');
             win.document.title = `Credencial Oficial - ${j.nombre}`;
 
             const style = win.document.createElement('style');
@@ -1936,7 +2021,7 @@ ${cuerpo}`;
 
             estadisticas = estadisticas.filter(eq => {
                 const fin = db.finanzas[eq.id];
-                return !fin || (fin.inscripcionPagada && (fin.adeudoArbitrajes || 0) === 0);
+                return !fin || (fin.adeudoArbitrajes || 0) === 0;
             });
 
             estadisticas.sort((a, b) => b.pts - a.pts || b.dg - a.dg);

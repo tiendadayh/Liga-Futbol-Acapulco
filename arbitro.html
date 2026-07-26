@@ -140,6 +140,42 @@
 
         .hidden { display: none !important; }
 
+        .partido-mini-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            background: var(--light);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.85rem;
+        }
+
+        .partido-mini-card .pmc-info strong { color: var(--dark); }
+        .partido-mini-card .pmc-meta { font-size: 0.75rem; color: #6b7280; margin-top: 2px; }
+
+        .pmc-badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .pmc-badge.programado { background: #e2e8f0; color: #334155; }
+        .pmc-badge.en_curso { background: #fee2e2; color: #b91c1c; }
+        .pmc-badge.finalizado { background: #dcfce7; color: #15803d; }
+
+        .pmc-btn-editar {
+            padding: 7px 12px;
+            font-size: 0.75rem;
+            border-radius: 8px;
+            background: var(--secondary);
+            flex-shrink: 0;
+        }
+
         /* --- Identificación / foto del árbitro --- */
         .identificacion-row {
             display: flex;
@@ -263,6 +299,7 @@
         .estado-btn.activo { color: white; box-shadow: 0 2px 6px rgba(0,0,0,0.15); }
         .estado-btn.activo[data-estado="programado"] { background: #6c757d; }
         .estado-btn.activo[data-estado="en_curso"] { background: var(--primary); }
+        .estado-btn.activo[data-estado="finalizado"] { background: #0d7d6f; }
 
         .estado-badge {
             display: inline-flex;
@@ -371,6 +408,17 @@
             </div>
         </div>
 
+        <div id="box-mis-partidos" class="box hidden">
+            <h3>📋 Mis Partidos</h3>
+            <p style="font-size:0.78rem; color:#6b7280; margin-top:-8px;">Aquí ves lo que te toca dirigir próximamente y el historial de todo lo que ya pitaste. Si te equivocaste en una cédula ya cerrada, dale "✏️ Editar" y corrígela — se guarda de nuevo sin duplicar goles ni tarjetas.</p>
+
+            <h4 style="margin:14px 0 6px; font-size:0.95rem; color:var(--dark);">🗓️ Próximos partidos asignados</h4>
+            <div id="lista-proximos-arbitro" style="display:flex; flex-direction:column; gap:8px;"></div>
+
+            <h4 style="margin:18px 0 6px; font-size:0.95rem; color:var(--dark);">✅ Historial de partidos pitados</h4>
+            <div id="lista-historial-arbitro" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+
         <div id="box-cedula" class="box hidden">
             <h3>📋 Cédula Oficial de Arbitraje</h3>
             <p style="font-size:0.78rem; color:#6b7280; margin-top:-8px;">Solo el árbitro asignado al encuentro puede llenar y cerrar esta cédula. Al cerrarla, se guarda automáticamente y queda disponible en el Panel Admin y en la página pública.</p>
@@ -386,6 +434,7 @@
                         <div class="estado-botones">
                             <button type="button" class="estado-btn" data-estado="programado" onclick="cambiarEstadoVivo('programado')">📅 Programado</button>
                             <button type="button" class="estado-btn" data-estado="en_curso" onclick="cambiarEstadoVivo('en_curso')">🔴 En Vivo</button>
+                            <button type="button" class="estado-btn" data-estado="finalizado" onclick="cambiarEstadoVivo('finalizado')">🏁 Finalizado</button>
                         </div>
                         <span id="txt-estado-actual" class="estado-badge programado"><span class="dot"></span>Programado</span>
                     </div>
@@ -570,6 +619,14 @@
         const firebaseDbRef = firebase.database().ref('liga_premier_db');
         let recibiendoDeFirebase = false; // evita que nuestro propio guardado se re-procese como si viniera de otro dispositivo
 
+        // --- Logo del sitio (encabezado) personalizable desde admin.html ---
+        const LOGO_LIGA_DEFAULT = document.querySelector('.arbitro-header-logo') ? document.querySelector('.arbitro-header-logo').src : '';
+        function aplicarLogoSitio() {
+            const logo = document.querySelector('.arbitro-header-logo');
+            if (!logo) return;
+            logo.src = (db.config && db.config.logoSitio) ? db.config.logoSitio : LOGO_LIGA_DEFAULT;
+        }
+
         function iniciarSesionAdmin() {
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
@@ -677,6 +734,7 @@
             localStorage.setItem('liga_premier_db', JSON.stringify(db));
             refrescarSelectorArbitros();
             aplicarIdentidadPorCorreo();
+            aplicarLogoSitio();
             mostrarAvisoAutoguardado('🔄 Datos actualizados en la nube.');
         });
 
@@ -740,13 +798,14 @@
             if (e.key === 'liga_premier_db' && e.newValue) {
                 try {
                     db = JSON.parse(e.newValue);
+                    aplicarLogoSitio();
                     mostrarAvisoAutoguardado('🔄 Datos actualizados desde otra pestaña.');
                 } catch (err) { /* valor corrupto, se ignora */ }
             }
         });
 
         function asegurarFinanzas(eqId) {
-            if (!db.finanzas[eqId]) db.finanzas[eqId] = { inscripcionPagada: false, adeudoArbitrajes: 0, multasTarjetas: 0 };
+            if (!db.finanzas[eqId]) db.finanzas[eqId] = { adeudoArbitrajes: 0 };
             if (db.finanzas[eqId].adeudoArbitrajes === undefined) db.finanzas[eqId].adeudoArbitrajes = 0;
             return db.finanzas[eqId];
         }
@@ -755,6 +814,14 @@
             if (!eqId) return;
             const f = asegurarFinanzas(eqId);
             if (!pagado) f.adeudoArbitrajes = (f.adeudoArbitrajes || 0) + 1;
+        }
+
+        // Deshace el efecto de un pago de arbitraje previamente registrado (para poder editar
+        // una cédula ya cerrada sin que el adeudo se duplique).
+        function revertirPagoArbitraje(eqId, pagadoPrevio) {
+            if (!eqId || pagadoPrevio === undefined) return;
+            const f = asegurarFinanzas(eqId);
+            if (!pagadoPrevio) f.adeudoArbitrajes = Math.max(0, (f.adeudoArbitrajes || 0) - 1);
         }
 
         function esJugadorSuspendidoEnJornada(jugador, jornadaActual) {
@@ -776,6 +843,7 @@
             refrescarSelectorArbitros();
             aplicarIdentidadPorCorreo();
             actualizarBannerConexion();
+            aplicarLogoSitio();
 
             document.getElementById('admin-res-partido').addEventListener('change', (e) => desplegarCargaIncidencias(e.target.value));
             document.getElementById('form-add-resultado').addEventListener('submit', manejarEnvioResultado);
@@ -878,10 +946,12 @@
         function cargarPartidosDelArbitro(nombreArbitro) {
             arbitroActual = nombreArbitro;
             const boxCedula = document.getElementById('box-cedula');
+            const boxMisPartidos = document.getElementById('box-mis-partidos');
             const selectPartido = document.getElementById('admin-res-partido');
 
             if (!nombreArbitro) {
                 boxCedula.classList.add('hidden');
+                boxMisPartidos.classList.add('hidden');
                 return;
             }
 
@@ -897,9 +967,62 @@
                     }).join('');
             }
 
+            renderizarMisPartidos(misPartidos);
+            boxMisPartidos.classList.remove('hidden');
+
             document.getElementById('contenedor-incidencias').style.display = 'none';
             document.getElementById('seccion-timeline-dinamica').style.display = 'none';
             boxCedula.classList.remove('hidden');
+        }
+
+        function formatearFechaCorta(f) {
+            if (!f) return 'Sin fecha';
+            const partes = f.split('-');
+            if (partes.length !== 3) return f;
+            const [y, m, d] = partes;
+            const dias = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
+            const fechaObj = new Date(parseInt(y), parseInt(m) - 1, parseInt(d));
+            const diaSemana = dias[fechaObj.getDay()];
+            return `${diaSemana} ${d}/${m}/${y}`;
+        }
+
+        function renderizarMisPartidos(misPartidos) {
+            const contProximos = document.getElementById('lista-proximos-arbitro');
+            const contHistorial = document.getElementById('lista-historial-arbitro');
+
+            const proximos = misPartidos.filter(p => !p.jugado).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+            const historial = misPartidos.filter(p => p.jugado).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+
+            const tarjetaPartido = (p, esHistorial) => {
+                const loc = db.equipos.find(e => e.id === p.localId)?.nombre || 'Local';
+                const vis = db.equipos.find(e => e.id === p.visitaId)?.nombre || 'Visita';
+                const estado = p.estadoVivo || 'programado';
+                const marcador = esHistorial ? `<strong>${p.golesLocal ?? 0} - ${p.golesVisita ?? 0}</strong> · ` : '';
+                return `
+                    <div class="partido-mini-card">
+                        <div class="pmc-info">
+                            <div>${marcador}<strong>${loc}</strong> vs <strong>${vis}</strong></div>
+                            <div class="pmc-meta">Jornada ${p.jornada} · ${formatearFechaCorta(p.fecha)}${p.hora ? ' · ' + p.hora : ''}${p.estadio ? ' · ' + p.estadio : ''}</div>
+                        </div>
+                        <span class="pmc-badge ${estado}">${estado === 'finalizado' ? 'Finalizado' : estado === 'en_curso' ? 'En Vivo' : 'Programado'}</span>
+                        ${esHistorial ? `<button type="button" class="pmc-btn-editar" onclick="cargarCedulaDesdeHistorial(${p.id})">✏️ Editar</button>` : ''}
+                    </div>`;
+            };
+
+            contProximos.innerHTML = proximos.length
+                ? proximos.map(p => tarjetaPartido(p, false)).join('')
+                : '<p style="font-size:0.8rem; color:#888;">No tienes partidos pendientes por dirigir.</p>';
+
+            contHistorial.innerHTML = historial.length
+                ? historial.map(p => tarjetaPartido(p, true)).join('')
+                : '<p style="font-size:0.8rem; color:#888;">Aún no has cerrado ninguna cédula.</p>';
+        }
+
+        function cargarCedulaDesdeHistorial(partidoId) {
+            const selectPartido = document.getElementById('admin-res-partido');
+            selectPartido.value = partidoId;
+            desplegarCargaIncidencias(partidoId);
+            document.getElementById('box-cedula').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function actualizarBadgeEstado(estado) {
@@ -1059,6 +1182,21 @@
                 return alert("Solo el árbitro asignado a este encuentro puede cerrar la cédula oficial.");
             }
 
+            // Si esta cédula ya se había cerrado antes, primero revertimos sus efectos
+            // (goles/tarjetas por jugador y adeudo de arbitraje) para poder editarla sin duplicar nada.
+            if (Array.isArray(partido.estadisticasJugadores)) {
+                partido.estadisticasJugadores.forEach(prev => {
+                    const jugPrev = db.jugadores.find(j => j.id === prev.jugadorId);
+                    if (jugPrev) {
+                        jugPrev.goles = Math.max(0, (jugPrev.goles || 0) - (prev.goles || 0));
+                        jugPrev.amarillas = Math.max(0, (jugPrev.amarillas || 0) - (prev.amarillas || 0));
+                        jugPrev.rojas = Math.max(0, (jugPrev.rojas || 0) - (prev.rojas || 0));
+                    }
+                });
+            }
+            revertirPagoArbitraje(partido.localId, partido.arbitrajePagoLocal);
+            revertirPagoArbitraje(partido.visitaId, partido.arbitrajePagoVisita);
+
             partido.golesLocal = parseInt(document.getElementById('admin-res-glocal').value);
             partido.golesVisita = parseInt(document.getElementById('admin-res-gvisita').value);
             partido.mvpJugadorId = parseInt(document.getElementById('admin-res-mvp').value) || null;
@@ -1113,8 +1251,7 @@
             registrarPagoArbitraje(partido.localId, pagoLocal);
             registrarPagoArbitraje(partido.visitaId, pagoVisita);
 
-            let costoAmarilla = 50;
-            let costoRoja = 100;
+            partido.estadisticasJugadores = [];
 
             document.querySelectorAll('.fila-datos-jugador').forEach(row => {
                 const jId = parseInt(row.dataset.jugadorid);
@@ -1129,9 +1266,7 @@
                     for (let i = 0; i < a; i++) partido.tarjetasDetalle.push({ jugadorId: jId, tipo: 'amarilla' });
                     for (let i = 0; i < r; i++) partido.tarjetasDetalle.push({ jugadorId: jId, tipo: 'roja' });
 
-                    if (jug.equipoId && db.finanzas[jug.equipoId]) {
-                        db.finanzas[jug.equipoId].multasTarjetas = (db.finanzas[jug.equipoId].multasTarjetas || 0) + (a * costoAmarilla) + (r * costoRoja);
-                    }
+                    if (g || a || r) partido.estadisticasJugadores.push({ jugadorId: jId, goles: g, amarillas: a, rojas: r });
                 }
             });
 

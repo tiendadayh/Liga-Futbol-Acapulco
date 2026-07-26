@@ -70,6 +70,17 @@
         .foto-tabla { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 8px; border: 1px solid #ddd; }
         .hidden { display: none !important; }
 
+        /* --- Formulario de Solicitud de Registro --- */
+        .form-solicitud-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px 20px; margin-top: 20px; }
+        .campo-solicitud { display: flex; flex-direction: column; gap: 6px; }
+        .campo-solicitud label { font-size: 0.75rem; font-weight: bold; color: var(--dark); text-transform: uppercase; letter-spacing: 0.4px; opacity: 0.85; }
+        .campo-solicitud label .opcional { text-transform: none; font-weight: normal; opacity: 0.7; }
+        .campo-solicitud input, .campo-solicitud select { width: 100%; box-sizing: border-box; padding: 11px 12px; }
+        .campo-solicitud small { font-size: 0.7rem; color: var(--text); opacity: 0.6; margin-top: -2px; }
+        .campo-solicitud-full { grid-column: 1 / -1; }
+        .btn-enviar-solicitud { background: var(--success); color: white; border: none; padding: 13px 34px; border-radius: 8px; font-weight: bold; font-size: 0.95rem; cursor: pointer; justify-self: start; }
+        .btn-enviar-solicitud:hover { opacity: 0.9; }
+
         /* --- Banner de partido EN VIVO en portada --- */
         #banner-en-vivo { background: var(--primary); }
         .banner-en-vivo-item { max-width: 1200px; margin: 0 auto; color: white; font-size: 0.85rem; padding: 10px 20px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; text-align: center; }
@@ -207,28 +218,53 @@
         <section id="registro-sec" class="card-section" style="border-top-color: #4caf50;">
             <h2>📝 Solicitud de Registro de Jugador</h2>
             <p style="font-size:0.85rem; color:gray;">¿Eres nuevo en la liga? Envía tus datos para ser aprobado por la administración.</p>
-            <form id="form-solicitud-web" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px; margin-top:15px;">
-                <select id="sol-equipo" required><option value="">-- Selecciona Club --</option></select>
-                <input type="text" id="sol-nombre" placeholder="Nombre Completo" required>
-                <input type="number" id="sol-numero" placeholder="Número" min="0" max="99">
-                <input type="text" id="sol-rfc" placeholder="RFC (opcional)" style="text-transform:uppercase;">
-                <select id="sol-categoria">
-                    <option value="Especial">Categoría: Especial</option>
-                    <option value="Ascenso">Categoría: Ascenso</option>
-                    <option value="Amateur">Categoría: Amateur</option>
-                </select>
-                <input type="text" id="sol-posicion" placeholder="Posición" required>
-                <input type="text" id="sol-lugar-nac" placeholder="Lugar de nacimiento (Ej. Acapulco, Gro.)">
-                <div>
-                    <label style="font-size:0.75rem;">Fecha de nacimiento:</label>
-                    <input type="date" id="sol-fecha-nac" style="width:100%;">
+            <form id="form-solicitud-web" class="form-solicitud-grid">
+                <div class="campo-solicitud">
+                    <label>Club</label>
+                    <select id="sol-equipo" required><option value="">-- Selecciona Club --</option></select>
                 </div>
-                <input type="text" id="sol-nacionalidad" placeholder="Nacionalidad" value="MEXICANA">
-                <div>
-                    <label style="font-size:0.75rem;">Foto Perfil (tamaño infantil, para tu credencial):</label>
+                <div class="campo-solicitud">
+                    <label>Nombre completo</label>
+                    <input type="text" id="sol-nombre" placeholder="Nombre y apellidos" required>
+                </div>
+                <div class="campo-solicitud">
+                    <label>Número</label>
+                    <input type="number" id="sol-numero" placeholder="Ej. 10" min="0" max="99">
+                </div>
+                <div class="campo-solicitud">
+                    <label>Categoría</label>
+                    <select id="sol-categoria">
+                        <option value="Especial">Especial</option>
+                        <option value="Ascenso">Ascenso</option>
+                        <option value="Amateur">Amateur</option>
+                    </select>
+                </div>
+                <div class="campo-solicitud">
+                    <label>Posición</label>
+                    <input type="text" id="sol-posicion" placeholder="Ej. Portero, Delantero" required>
+                </div>
+                <div class="campo-solicitud">
+                    <label>RFC <span class="opcional">(opcional)</span></label>
+                    <input type="text" id="sol-rfc" style="text-transform:uppercase;">
+                </div>
+                <div class="campo-solicitud">
+                    <label>Lugar de nacimiento</label>
+                    <input type="text" id="sol-lugar-nac" placeholder="Ej. Acapulco, Gro.">
+                </div>
+                <div class="campo-solicitud">
+                    <label>Fecha de nacimiento</label>
+                    <input type="date" id="sol-fecha-nac">
+                </div>
+                <div class="campo-solicitud">
+                    <label>Nacionalidad</label>
+                    <input type="text" id="sol-nacionalidad" value="MEXICANA">
+                </div>
+                <div class="campo-solicitud campo-solicitud-full">
+                    <label>Foto perfil</label>
                     <input type="file" id="sol-foto" accept="image/*" required>
+                    <small>Usa una foto tamaño infantil, de frente y bien iluminada — es la que se usará en tu credencial.</small>
                 </div>
-                <button type="submit" class="btn-export" style="background:#4caf50; height:42px; align-self:end;">Enviar Solicitud</button>
+                <button type="submit" class="btn-enviar-solicitud campo-solicitud-full">Enviar Solicitud</button>
             </form>
         </section>
 
@@ -393,6 +429,14 @@
         const firebaseDbRef = firebase.database().ref('liga_premier_db');
         let recibiendoDeFirebase = false;
 
+        // --- Logo del sitio (encabezado) personalizable desde admin.html ---
+        const LOGO_LIGA_DEFAULT = document.querySelector('.site-header-logo') ? document.querySelector('.site-header-logo').src : '';
+        function aplicarLogoSitio() {
+            const logo = document.querySelector('.site-header-logo');
+            if (!logo) return;
+            logo.src = (db.config && db.config.logoSitio) ? db.config.logoSitio : LOGO_LIGA_DEFAULT;
+        }
+
         let db = JSON.parse(localStorage.getItem('liga_premier_db')) || { 
             equipos: [], jugadores: [], partidos: [], comunicados: [], 
             arbitros: [], campos: [], xiIdealAdmin: {}, registrosCerrados: false, liguillaActiva: false,
@@ -537,6 +581,7 @@
         }
 
         function actualizarVistaTodo() {
+            aplicarLogoSitio();
             const contNoticias = document.getElementById('noticias-contenedor');
             contNoticias.innerHTML = (db.comunicados || []).map(c => `
                 <div style="background:var(--light); border:1px solid var(--border); padding:15px; border-radius:8px;">
