@@ -180,6 +180,7 @@
         <a href="#tablon-sec">Tablón</a>
         <a href="#posiciones-sec">Posiciones</a>
         <a href="#ofensiva-defensiva-sec">Ofensiva/Defensiva</a>
+        <a href="#goles-jornada-sec">Goles por Jornada</a>
         <a href="#bracket-sec">cuadro Liguilla</a>
         <a href="#headtohead-sec">Cara a Cara</a>
         <a href="#jornadas-sec">Jornadas</a>
@@ -239,6 +240,13 @@
                     </div>
                 </div>
             </div>
+        </section>
+
+        <!-- GRÁFICA DE GOLES POR JORNADA -->
+        <section id="goles-jornada-sec" class="card-section" style="border-top-color: var(--secondary);">
+            <h2>📊 Goles por Jornada</h2>
+            <p style="font-size:0.85rem; color:#6b7280; margin-top:-6px;">Total de goles anotados en cada jornada disputada del torneo.</p>
+            <div id="grafica-goles-jornada" style="overflow-x:auto; margin-top:12px;"></div>
         </section>
 
         <!-- BRACKET LIGUILLA -->
@@ -706,6 +714,7 @@
 
             actualizarTablaPosiciones();
             renderizarOfensivaDefensiva();
+            renderizarGraficaGolesJornada();
             renderizarBracketLiguilla();
             renderizarPorteros();
             actualizarVistaJornadas();
@@ -789,6 +798,50 @@
                     <td style="letter-spacing:2px; white-space:nowrap;">${eq.racha.slice(-5).map(r => iconoForma[r]).join('') || '—'}</td>
                 </tr>
             `).join('');
+        }
+
+        // Dibuja una gráfica de barras (SVG) con el total de goles anotados en cada jornada disputada.
+        function renderizarGraficaGolesJornada() {
+            const cont = document.getElementById('grafica-goles-jornada');
+            const jugados = db.partidos.filter(p => p.jugado && p.jornada);
+            if (!jugados.length) {
+                cont.innerHTML = '<p style="color:gray;">Aún no hay partidos jugados.</p>';
+                return;
+            }
+
+            const porJornada = {};
+            jugados.forEach(p => {
+                porJornada[p.jornada] = (porJornada[p.jornada] || 0) + (p.golesLocal || 0) + (p.golesVisita || 0);
+            });
+
+            const jornadas = Object.keys(porJornada).map(Number).sort((a, b) => a - b);
+            const maxGoles = Math.max(...jornadas.map(j => porJornada[j]), 1);
+            const totalGoles = jornadas.reduce((s, j) => s + porJornada[j], 0);
+
+            const anchoBarra = 46, espacio = 22, altoGrafica = 180;
+            const anchoSvg = jornadas.length * (anchoBarra + espacio) + espacio;
+
+            const barras = jornadas.map((j, idx) => {
+                const goles = porJornada[j];
+                const alto = (goles / maxGoles) * (altoGrafica - 30);
+                const x = espacio + idx * (anchoBarra + espacio);
+                const y = altoGrafica - alto;
+                return `
+                    <g>
+                        <rect x="${x}" y="${y}" width="${anchoBarra}" height="${alto}" rx="4" fill="var(--primary)"></rect>
+                        <text x="${x + anchoBarra / 2}" y="${y - 6}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text)">${goles}</text>
+                        <text x="${x + anchoBarra / 2}" y="${altoGrafica + 18}" text-anchor="middle" font-size="11" fill="var(--text)">J${j}</text>
+                    </g>
+                `;
+            }).join('');
+
+            cont.innerHTML = `
+                <svg viewBox="0 0 ${anchoSvg} ${altoGrafica + 30}" width="${anchoSvg}" height="${altoGrafica + 30}" style="display:block;">
+                    <line x1="0" y1="${altoGrafica}" x2="${anchoSvg}" y2="${altoGrafica}" stroke="var(--border)" stroke-width="1"></line>
+                    ${barras}
+                </svg>
+                <p style="font-size:0.78rem; color:#6b7280; margin-top:6px;">Promedio: <b>${(totalGoles / jornadas.length).toFixed(1)}</b> goles por jornada · Total: <b>${totalGoles}</b> goles en ${jornadas.length} jornada${jornadas.length === 1 ? '' : 's'}</p>
+            `;
         }
 
         function renderizarOfensivaDefensiva() {

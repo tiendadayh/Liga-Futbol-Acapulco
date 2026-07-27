@@ -471,6 +471,15 @@
         <div id="resumen-dia-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:12px; margin-top:10px;"></div>
     </div>
 
+    <!-- SUSPENSIONES AUTOMÁTICAS -->
+    <div id="suspendidos-sec" class="admin-box" style="border-top-color:#b91c1c; background:#fffafa; margin-bottom:25px;">
+        <h3>🚫 Jugadores Suspendidos (<span id="suspendidos-contador">0</span>)</h3>
+        <p style="font-size:0.85rem; color:#555; margin-top:-6px;">
+            Se calcula automáticamente por roja directa o acumulación de 3 amarillas. Un jugador suspendido no puede alinearse en el próximo partido de su equipo — al capturar su cédula, el árbitro lo verá marcado como "SUSPENDIDO" y sus casillas de goles/tarjetas quedarán bloqueadas.
+        </p>
+        <div id="lista-suspendidos" style="display:flex; flex-direction:column; gap:8px; margin-top:10px; max-height:340px; overflow-y:auto;"></div>
+    </div>
+
     <!-- RESPALDO Y RESTAURACIÓN DE DATOS -->
     <div class="admin-box" style="border-top-color: #455a64; background: #f7f9fa; margin-bottom: 25px; position: relative; z-index: 1;">
         <h3>💾 Respaldo de Datos</h3>
@@ -1233,6 +1242,7 @@
             renderizarFinanzas();
             renderizarGestion();
             renderizarResumenDia();
+            renderizarSuspendidos();
             renderizarCorreccionEstadisticas();
             intentarAutoBackup();
             marcarCambiosSinPublicar();
@@ -1250,12 +1260,14 @@
                 return f && (f.adeudoArbitrajes || 0) > 0;
             }).length;
             const sinAsignar = (db.partidos || []).filter(p => !p.jugado && (!p.arbitro || !p.campoId)).length;
+            const totalSuspendidos = obtenerSuspendidosActuales().length;
 
             const tarjetas = [
                 { valor: partidosHoy.length, etiqueta: 'Partidos hoy', color: '#0b1e3d', ancla: '#form-add-partido' },
                 { valor: pendientes, etiqueta: 'Solicitudes pendientes', color: pendientes > 0 ? '#c62828' : '#2e7d32', ancla: '#lista-solicitudes-pendientes' },
                 { valor: equiposConAdeudo, etiqueta: 'Equipos con adeudo', color: equiposConAdeudo > 0 ? '#b45309' : '#2e7d32', ancla: '#lista-finanzas' },
-                { valor: sinAsignar, etiqueta: 'Partidos sin árbitro/cancha', color: sinAsignar > 0 ? '#c62828' : '#2e7d32', ancla: '#form-add-partido' }
+                { valor: sinAsignar, etiqueta: 'Partidos sin árbitro/cancha', color: sinAsignar > 0 ? '#c62828' : '#2e7d32', ancla: '#form-add-partido' },
+                { valor: totalSuspendidos, etiqueta: 'Jugadores suspendidos', color: totalSuspendidos > 0 ? '#c62828' : '#2e7d32', ancla: '#suspendidos-sec' }
             ];
 
             cont.innerHTML = tarjetas.map(t => `
@@ -1363,6 +1375,7 @@
                     renderizarFinanzas();
                     renderizarGestion();
             renderizarResumenDia();
+            renderizarSuspendidos();
             renderizarCorreccionEstadisticas();
                     mostrarAvisoAutoguardado('🔄 Datos actualizados desde otra pestaña.');
                 } catch (err) { /* valor corrupto, se ignora */ }
@@ -1426,6 +1439,7 @@
                 renderizarFinanzas();
                 renderizarGestion();
             renderizarResumenDia();
+            renderizarSuspendidos();
             renderizarCorreccionEstadisticas();
                 mostrarFirebaseStatus('✅ Datos actualizados desde la nube.', false);
             }).catch(err => {
@@ -1455,6 +1469,7 @@
                 renderizarFinanzas();
                 renderizarGestion();
             renderizarResumenDia();
+            renderizarSuspendidos();
             renderizarCorreccionEstadisticas();
             }
         }).catch(() => { /* si falla, seguimos con lo que había en localStorage */ });
@@ -1541,6 +1556,50 @@
         function esJugadorSuspendidoActual(jugador) {
             const jornadaRef = Math.max(0, ...db.partidos.filter(p => p.jugado).map(p => p.jornada)) + 1;
             return esJugadorSuspendidoEnJornada(jugador, jornadaRef);
+        }
+
+        // Recorre todo el plantel y arma la lista de jugadores actualmente suspendidos, con el motivo (roja directa o acumulación de amarillas).
+        function obtenerSuspendidosActuales() {
+            const jornadaRef = Math.max(0, ...db.partidos.filter(p => p.jugado).map(p => p.jornada)) + 1;
+            const resultado = [];
+            (db.jugadores || []).forEach(j => {
+                let amarillasAcumuladas = 0;
+                let rojaDirecta = false;
+                (db.partidos || [])
+                    .filter(p => p.jugado && p.jornada < jornadaRef && p.tarjetasDetalle)
+                    .forEach(p => {
+                        (p.tarjetasDetalle || []).filter(t => t.jugadorId === j.id).forEach(t => {
+                            if (t.tipo === 'roja') rojaDirecta = true;
+                            if (t.tipo === 'amarilla') amarillasAcumuladas++;
+                        });
+                    });
+                if (rojaDirecta || amarillasAcumuladas >= 3) {
+                    resultado.push({
+                        jugador: j,
+                        equipo: db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Agente Libre',
+                        motivo: rojaDirecta ? 'Tarjeta roja directa' : `Acumulación de amarillas (${amarillasAcumuladas})`,
+                        jornadaAplica: jornadaRef
+                    });
+                }
+            });
+            return resultado.sort((a, b) => a.equipo.localeCompare(b.equipo));
+        }
+
+        // Pinta el aviso dedicado de "Jugadores Suspendidos" con motivo y jornada en la que aplica.
+        function renderizarSuspendidos() {
+            const cont = document.getElementById('lista-suspendidos');
+            if (!cont) return;
+            const suspendidos = obtenerSuspendidosActuales();
+            document.getElementById('suspendidos-contador').innerText = suspendidos.length;
+            cont.innerHTML = suspendidos.length ? suspendidos.map(s => `
+                <div style="background:#fff5f5; border:1px solid #fecaca; border-radius:8px; padding:10px 12px; display:flex; align-items:center; gap:10px;">
+                    <img src="${s.jugador.foto || 'https://placehold.co/40'}" style="width:36px; height:36px; border-radius:50%; object-fit:cover;">
+                    <div style="flex:1; min-width:0;">
+                        <strong style="font-size:0.85rem;">${s.jugador.nombre}</strong>
+                        <div style="font-size:0.75rem; color:#666;">${s.equipo} · ❌ ${s.motivo}</div>
+                    </div>
+                    <span style="font-size:0.7rem; background:#b91c1c; color:#fff; padding:3px 8px; border-radius:10px; white-space:nowrap;">Jornada ${s.jornadaAplica}</span>
+                </div>`).join('') : '<p style="font-size:0.85rem; color:#2e7d32; margin:0;">✅ No hay jugadores suspendidos actualmente.</p>';
         }
 
         // Calcula la edad a partir de una fecha de nacimiento (YYYY-MM-DD).
@@ -1706,6 +1765,7 @@
             renderizarFinanzas();
             renderizarGestion();
             renderizarResumenDia();
+            renderizarSuspendidos();
             renderizarCorreccionEstadisticas();
             cargarConfigFormulario();
         });

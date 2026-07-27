@@ -1287,11 +1287,14 @@
             const pintar = (contId, jugadores, titulares) => {
                 const cont = document.getElementById(contId);
                 if (!cont) return;
-                cont.innerHTML = jugadores.length ? jugadores.map(j => `
-                    <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:400; cursor:pointer;">
-                        <input type="checkbox" style="width:auto;" ${titulares.includes(j.id) ? 'checked' : ''} onchange="alternarTitular(${partido.id}, ${j.id}, this.checked)">
-                        ${j.nombre}${j.numero ? ` (#${j.numero})` : ''}
-                    </label>`).join('') : '<p style="font-size:0.78rem; color:#94a3b8; margin:0;">Sin jugadores en el plantel.</p>';
+                cont.innerHTML = jugadores.length ? jugadores.map(j => {
+                    const castigado = esJugadorSuspendidoEnJornada(j, partido.jornada);
+                    return `
+                    <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:400; cursor:${castigado ? 'not-allowed' : 'pointer'}; ${castigado ? 'color:#b91c1c;' : ''}">
+                        <input type="checkbox" style="width:auto;" ${titulares.includes(j.id) ? 'checked' : ''} ${castigado ? 'disabled' : ''} onchange="alternarTitular(${partido.id}, ${j.id}, this.checked)">
+                        ${j.nombre}${j.numero ? ` (#${j.numero})` : ''}${castigado ? ' ❌ SUSPENDIDO' : ''}
+                    </label>`;
+                }).join('') : '<p style="font-size:0.78rem; color:#94a3b8; margin:0;">Sin jugadores en el plantel.</p>';
             };
             pintar('ced-titulares-local', jugadoresLocal, titLocal);
             pintar('ced-titulares-visita', jugadoresVisita, titVisita);
