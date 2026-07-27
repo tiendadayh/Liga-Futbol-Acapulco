@@ -848,17 +848,42 @@
     </div>
 
     <!-- MODAL: PLANTEL DEL EQUIPO -->
-    <div id="modal-plantel" class="modal-overlay" style="display:none;" onclick="if(event.target === this) cerrarPlantel()">
-        <div class="modal-box" style="max-width:480px;">
-            <button type="button" class="close-modal-gestion" onclick="cerrarPlantel()">×</button>
+    <!-- MODAL: FICHA COMPLETA DEL EQUIPO -->
+    <div id="modal-ficha-equipo" class="modal-overlay" style="display:none;" onclick="if(event.target === this) cerrarFichaEquipoAdmin()">
+        <div class="modal-box" style="max-width:560px;">
+            <button type="button" class="close-modal-gestion" onclick="cerrarFichaEquipoAdmin()">×</button>
             <div class="plantel-header">
-                <img id="plantel-escudo" src="" alt="Escudo">
+                <img id="ficha-adm-eq-escudo" src="" alt="Escudo">
                 <div>
-                    <h3 id="plantel-nombre-equipo">Equipo</h3>
-                    <span id="plantel-conteo"></span>
+                    <h3 id="ficha-adm-eq-nombre">Equipo</h3>
+                    <span id="ficha-adm-eq-posicion"></span>
                 </div>
             </div>
-            <div id="plantel-lista-jugadores" class="gestion-lista" style="max-height:420px;"></div>
+            <div class="ficha-admin-stats">
+                <div><strong id="ficha-adm-eq-pj">0</strong><span>PJ</span></div>
+                <div><strong id="ficha-adm-eq-pts">0</strong><span>Pts</span></div>
+                <div><strong id="ficha-adm-eq-gf">0</strong><span>⚽ GF</span></div>
+                <div><strong id="ficha-adm-eq-gc">0</strong><span>🛡️ GC</span></div>
+            </div>
+            <div class="ficha-admin-datos">
+                <div><span class="lbl">Récord (G-E-P)</span><span class="val" id="ficha-adm-eq-record">—</span></div>
+                <div><span class="lbl">Diferencia de goles</span><span class="val" id="ficha-adm-eq-dg">—</span></div>
+                <div><span class="lbl">Ranking ofensivo</span><span class="val" id="ficha-adm-eq-rank-of">—</span></div>
+                <div><span class="lbl">Ranking defensivo</span><span class="val" id="ficha-adm-eq-rank-def">—</span></div>
+                <div><span class="lbl">Jugadores registrados</span><span class="val" id="ficha-adm-eq-conteo">0</span></div>
+            </div>
+
+            <h4 style="margin:14px 0 6px; font-size:0.8rem; color:var(--primary); text-transform:uppercase;">👥 Plantilla</h4>
+            <div id="ficha-adm-eq-plantilla" class="gestion-lista" style="max-height:180px; overflow-y:auto;"></div>
+
+            <h4 style="margin:14px 0 6px; font-size:0.8rem; color:var(--primary); text-transform:uppercase;">📋 Historial de Partidos</h4>
+            <div style="max-height:200px; overflow-y:auto;">
+                <table class="ficha-admin-hist-tabla">
+                    <thead><tr><th>Jor.</th><th>Rival</th><th>Marc.</th><th>Res.</th><th>Estado</th></tr></thead>
+                    <tbody id="ficha-adm-eq-hist-body"></tbody>
+                </table>
+                <p id="ficha-adm-eq-hist-vacio" class="hidden" style="font-size:0.78rem; color:#888; text-align:center; padding:8px 0;">Sin partidos programados todavía.</p>
+            </div>
         </div>
     </div>
 
@@ -2460,14 +2485,14 @@ ${cuerpo}`;
             if (!listaEquipos || !listaJugadores || !listaArbitros) return;
 
             listaEquipos.innerHTML = db.equipos.length ? db.equipos.map(eq => `
-                <div class="gestion-fila gestion-fila-clickable" onclick="verPlantelEquipo(${eq.id})" title="Toca para ver el plantel completo">
+                <div class="gestion-fila gestion-fila-clickable" onclick="verFichaEquipoAdmin(${eq.id})" title="Toca para ver la ficha completa">
                     <img src="${eq.escudo || 'https://placehold.co/40'}">
                     <div class="gestion-info">
                         <strong>${eq.nombre}</strong>
                         <span>${db.jugadores.filter(j => j.equipoId === eq.id).length} jugadores</span>
                     </div>
                     <div class="gestion-acciones">
-                        <button type="button" class="btn-ver-fila" title="Ver plantel completo" onclick="event.stopPropagation(); verPlantelEquipo(${eq.id})">👁️</button>
+                        <button type="button" class="btn-ver-fila" title="Ver ficha completa" onclick="event.stopPropagation(); verFichaEquipoAdmin(${eq.id})">👁️</button>
                         <button type="button" class="btn-editar-fila" onclick="event.stopPropagation(); abrirEdicion('equipo', ${eq.id})">✏️</button>
                         <button type="button" class="btn-eliminar-fila" onclick="event.stopPropagation(); eliminarEquipo(${eq.id})">🗑️</button>
                     </div>
@@ -2610,18 +2635,82 @@ ${cuerpo}`;
             document.getElementById('modal-editar').style.display = 'none';
         }
 
-        function verPlantelEquipo(id) {
+        // Calcula PJ, PG, PE, PP, GF, GC, DG y Pts de todos los equipos (misma lógica que el sitio público).
+        function calcularTablaPosicionesAdmin() {
+            let estadisticas = db.equipos.map(eq => ({ id: eq.id, nombre: eq.nombre, pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dg: 0, pts: 0 }));
+
+            db.partidos.filter(p => p.jugado).forEach(p => {
+                const loc = estadisticas.find(e => e.id === p.localId);
+                const vis = estadisticas.find(e => e.id === p.visitaId);
+                if (loc && vis) {
+                    loc.pj++; vis.pj++;
+                    loc.gf += p.golesLocal || 0; loc.gc += p.golesVisita || 0;
+                    vis.gf += p.golesVisita || 0; vis.gc += p.golesLocal || 0;
+                    if (p.golesLocal > p.golesVisita) { loc.pg++; loc.pts += 3; vis.pp++; }
+                    else if (p.golesLocal < p.golesVisita) { vis.pg++; vis.pts += 3; loc.pp++; }
+                    else { loc.pe++; loc.pts += 1; vis.pe++; vis.pts += 1; }
+                    loc.dg = loc.gf - loc.gc; vis.dg = vis.gf - vis.gc;
+                }
+            });
+
+            estadisticas.sort((a, b) => b.pts - a.pts || b.dg - a.dg || b.gf - a.gf);
+            return estadisticas;
+        }
+
+        // Arma el historial (jugados y por jugar) de un equipo.
+        function historialPartidosEquipo(eq) {
+            return db.partidos
+                .filter(p => p.localId === eq.id || p.visitaId === eq.id)
+                .map(p => {
+                    const esLocal = p.localId === eq.id;
+                    const rivalId = esLocal ? p.visitaId : p.localId;
+                    const rival = db.equipos.find(e => e.id === rivalId)?.nombre || 'Rival';
+                    const golesPropios = esLocal ? p.golesLocal : p.golesVisita;
+                    const golesRival = esLocal ? p.golesVisita : p.golesLocal;
+                    let resultado = '';
+                    if (p.jugado) resultado = golesPropios > golesRival ? '🟢 G' : golesPropios < golesRival ? '🔴 P' : '🟡 E';
+                    return {
+                        jornada: p.jornada,
+                        rival,
+                        marcador: p.jugado ? `${p.golesLocal ?? 0} - ${p.golesVisita ?? 0}` : (p.fecha ? `${p.fecha} ${p.hora || ''}`.trim() : 'Por definir'),
+                        resultado,
+                        estado: p.jugado ? 'Finalizado' : (!p.estadoVivo || p.estadoVivo === 'programado' ? 'Programado' : p.estadoVivo)
+                    };
+                })
+                .sort((a, b) => a.jornada - b.jornada);
+        }
+
+        function verFichaEquipoAdmin(id) {
             const eq = db.equipos.find(e => e.id === id);
             if (!eq) return;
 
-            document.getElementById('plantel-escudo').src = eq.escudo || 'https://placehold.co/50';
-            document.getElementById('plantel-nombre-equipo').textContent = eq.nombre;
+            document.getElementById('ficha-adm-eq-escudo').src = eq.escudo || 'https://placehold.co/70';
+            document.getElementById('ficha-adm-eq-nombre').innerText = eq.nombre;
+
+            const tabla = calcularTablaPosicionesAdmin();
+            const posicion = tabla.findIndex(e => e.id === id) + 1;
+            const stats = tabla.find(e => e.id === id);
+            document.getElementById('ficha-adm-eq-posicion').innerText = posicion ? `Posición ${posicion}° de ${tabla.length}` : '—';
+
+            document.getElementById('ficha-adm-eq-pj').innerText = stats?.pj || 0;
+            document.getElementById('ficha-adm-eq-pts').innerText = stats?.pts || 0;
+            document.getElementById('ficha-adm-eq-gf').innerText = stats?.gf || 0;
+            document.getElementById('ficha-adm-eq-gc').innerText = stats?.gc || 0;
+            document.getElementById('ficha-adm-eq-record').innerText = stats ? `${stats.pg}-${stats.pe}-${stats.pp}` : '—';
+            document.getElementById('ficha-adm-eq-dg').innerText = stats ? (stats.dg > 0 ? `+${stats.dg}` : `${stats.dg}`) : '—';
+
+            const conActividad = tabla.filter(e => e.pj > 0);
+            const rankOfensivo = [...conActividad].sort((a, b) => b.gf - a.gf || a.gc - b.gc);
+            const rankDefensivo = [...conActividad].sort((a, b) => a.gc - b.gc || b.gf - a.gf);
+            const idxOf = rankOfensivo.findIndex(e => e.id === id);
+            const idxDef = rankDefensivo.findIndex(e => e.id === id);
+            document.getElementById('ficha-adm-eq-rank-of').innerText = idxOf > -1 ? `${idxOf + 1}° de ${rankOfensivo.length}` : 'Sin partidos aún';
+            document.getElementById('ficha-adm-eq-rank-def').innerText = idxDef > -1 ? `${idxDef + 1}° de ${rankDefensivo.length}` : 'Sin partidos aún';
 
             const jugadores = db.jugadores.filter(j => j.equipoId === id);
-            document.getElementById('plantel-conteo').textContent =
-                `${jugadores.length} jugador${jugadores.length === 1 ? '' : 'es'} registrado${jugadores.length === 1 ? '' : 's'}`;
+            document.getElementById('ficha-adm-eq-conteo').innerText = jugadores.length;
 
-            const lista = document.getElementById('plantel-lista-jugadores');
+            const lista = document.getElementById('ficha-adm-eq-plantilla');
             lista.innerHTML = jugadores.length ? jugadores.map(j => `
                 <div class="gestion-fila">
                     <img src="${j.foto || 'https://placehold.co/40'}">
@@ -2635,14 +2724,32 @@ ${cuerpo}`;
                     </div>
                 </div>`).join('') : '<p style="font-size:0.8rem; color:#888;">Este equipo aún no tiene jugadores registrados.</p>';
 
-            document.getElementById('modal-plantel').style.display = 'flex';
+            const historial = historialPartidosEquipo(eq);
+            const tbody = document.getElementById('ficha-adm-eq-hist-body');
+            const vacio = document.getElementById('ficha-adm-eq-hist-vacio');
+            if (historial.length) {
+                vacio.classList.add('hidden');
+                tbody.innerHTML = historial.map(h => `
+                    <tr>
+                        <td>${h.jornada}</td>
+                        <td class="rival">${h.rival}</td>
+                        <td>${h.marcador}</td>
+                        <td>${h.resultado}</td>
+                        <td>${h.estado}</td>
+                    </tr>`).join('');
+            } else {
+                tbody.innerHTML = '';
+                vacio.classList.remove('hidden');
+            }
+
+            document.getElementById('modal-ficha-equipo').style.display = 'flex';
         }
 
-        function cerrarPlantel() {
-            document.getElementById('modal-plantel').style.display = 'none';
+        function cerrarFichaEquipoAdmin() {
+            document.getElementById('modal-ficha-equipo').style.display = 'none';
         }
 
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { cerrarEdicion(); cerrarPlantel(); cerrarFichaJugadorAdmin(); cerrarFichaArbitroAdmin(); } });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { cerrarEdicion(); cerrarFichaEquipoAdmin(); cerrarFichaJugadorAdmin(); cerrarFichaArbitroAdmin(); } });
 
         function eliminarEquipo(id) {
             const eq = db.equipos.find(e => e.id === id);

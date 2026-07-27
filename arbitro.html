@@ -556,6 +556,23 @@
                 </div>
 
                 <fieldset style="border:1px solid var(--border); border-radius:8px; padding:12px; margin-top:15px;">
+                    <legend style="padding:0 6px; font-weight:700; color:var(--dark); font-size:0.9rem;">🧩 Alineación Titular</legend>
+                    <p style="font-size:0.75rem; color:#6b7280; margin-top:-4px;">Marca los 11 jugadores que iniciaron el partido en cada equipo. El resto del plantel queda como suplente automáticamente.</p>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                        <div>
+                            <label id="ced-titulares-lbl-local" style="color:var(--primary);">Titulares Local</label>
+                            <span id="ced-titulares-contador-local" style="font-size:0.75rem; color:#6b7280; margin-left:6px;">0/11</span>
+                            <div id="ced-titulares-local" style="display:flex; flex-direction:column; gap:3px; max-height:220px; overflow-y:auto; margin-top:6px; border:1px solid var(--border); border-radius:6px; padding:8px;"></div>
+                        </div>
+                        <div>
+                            <label id="ced-titulares-lbl-visita" style="color:var(--secondary);">Titulares Visitante</label>
+                            <span id="ced-titulares-contador-visita" style="font-size:0.75rem; color:#6b7280; margin-left:6px;">0/11</span>
+                            <div id="ced-titulares-visita" style="display:flex; flex-direction:column; gap:3px; max-height:220px; overflow-y:auto; margin-top:6px; border:1px solid var(--border); border-radius:6px; padding:8px;"></div>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <fieldset style="border:1px solid var(--border); border-radius:8px; padding:12px; margin-top:15px;">
                     <legend style="padding:0 6px; font-weight:700; color:var(--dark); font-size:0.9rem;">🔁 Cambios (Sustituciones)</legend>
                     <p style="font-size:0.75rem; color:#6b7280; margin-top:-4px;">Selecciona quién sale y quién entra — ya no se escribe a mano. También puedes registrar cambios desde "Incidencias en Vivo" y aparecerán aquí solos.</p>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
@@ -1263,7 +1280,55 @@
             });
         }
 
-        // Núcleo compartido: registra un cambio (sustitución) tanto desde Incidencias en Vivo como desde el fieldset de Cambios.
+        // Renderiza las listas de titulares (checkboxes) para cada equipo del partido en la cédula.
+        function renderTitularesCedula(partido, jugadoresLocal, jugadoresVisita) {
+            const titLocal = partido.titularesLocal || [];
+            const titVisita = partido.titularesVisita || [];
+            const pintar = (contId, jugadores, titulares) => {
+                const cont = document.getElementById(contId);
+                if (!cont) return;
+                cont.innerHTML = jugadores.length ? jugadores.map(j => `
+                    <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:400; cursor:pointer;">
+                        <input type="checkbox" style="width:auto;" ${titulares.includes(j.id) ? 'checked' : ''} onchange="alternarTitular(${partido.id}, ${j.id}, this.checked)">
+                        ${j.nombre}${j.numero ? ` (#${j.numero})` : ''}
+                    </label>`).join('') : '<p style="font-size:0.78rem; color:#94a3b8; margin:0;">Sin jugadores en el plantel.</p>';
+            };
+            pintar('ced-titulares-local', jugadoresLocal, titLocal);
+            pintar('ced-titulares-visita', jugadoresVisita, titVisita);
+            document.getElementById('ced-titulares-contador-local').innerText = `${titLocal.length}/11`;
+            document.getElementById('ced-titulares-contador-visita').innerText = `${titVisita.length}/11`;
+        }
+
+        // Marca/desmarca un jugador como titular, con tope de 11 por equipo.
+        function alternarTitular(partidoId, jugadorId, marcado) {
+            const partido = db.partidos.find(p => p.id === partidoId);
+            if (!partido) return;
+            const jugador = db.jugadores.find(j => j.id === jugadorId);
+            if (!jugador) return;
+            const esLocal = jugador.equipoId === partido.localId;
+            const clave = esLocal ? 'titularesLocal' : 'titularesVisita';
+            if (!partido[clave]) partido[clave] = [];
+
+            if (marcado) {
+                if (partido[clave].length >= 11) {
+                    alert('Ya seleccionaste 11 titulares para este equipo. Desmarca alguno antes de agregar otro.');
+                    desplegarCargaIncidencias(partidoId);
+                    return;
+                }
+                if (!partido[clave].includes(jugadorId)) partido[clave].push(jugadorId);
+            } else {
+                partido[clave] = partido[clave].filter(id => id !== jugadorId);
+            }
+
+            const nombreLocal = db.equipos.find(e => e.id === partido.localId)?.nombre || 'Local';
+            const nombreVisita = db.equipos.find(e => e.id === partido.visitaId)?.nombre || 'Visita';
+            void nombreLocal; void nombreVisita;
+            document.getElementById('ced-titulares-contador-local').innerText = `${(partido.titularesLocal || []).length}/11`;
+            document.getElementById('ced-titulares-contador-visita').innerText = `${(partido.titularesVisita || []).length}/11`;
+            guardarDB();
+        }
+
+
         function registrarCambio(min, saleNombre, entraNombre) {
             const pId = parseInt(document.getElementById('admin-res-partido').value);
             const partido = db.partidos.find(p => p.id === pId);
@@ -1484,6 +1549,7 @@
             });
             renderListaEventos(p);
             renderListaCambios(p);
+            renderTitularesCedula(p, jugadoresLocal, jugadoresVisita);
             contenedor.style.display = 'flex';
         }
 

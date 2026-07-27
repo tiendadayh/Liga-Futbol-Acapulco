@@ -440,7 +440,7 @@
 
     <!-- MODAL PLANTEL DE EQUIPO -->
     <div id="modal-equipo" class="modal hidden" onclick="if(event.target === this) cerrarModal('modal-equipo')">
-        <div class="modal-content" style="max-width:700px; text-align:left;">
+        <div class="modal-content" style="max-width:760px; text-align:left;">
             <button class="close-modal" onclick="cerrarModal('modal-equipo')">×</button>
             <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px;">
                 <img id="equipo-modal-escudo" src="" style="width:70px; height:70px; border-radius:50%; object-fit:cover; border:3px solid var(--accent); background:white;">
@@ -449,6 +449,26 @@
                     <p id="equipo-modal-contador" style="margin:4px 0 0; opacity:0.7; font-size:0.85rem;"></p>
                 </div>
             </div>
+
+            <div id="equipo-modal-stats" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(70px,1fr)); gap:8px; background:var(--light); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:14px; text-align:center;"></div>
+
+            <div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:14px;">
+                <div id="equipo-modal-goleador" style="flex:1; min-width:200px; background:#fffdf0; border:1px solid #ffe082; border-radius:8px; padding:10px 12px; font-size:0.82rem;"></div>
+                <div id="equipo-modal-disciplina" style="flex:1; min-width:200px; background:#fff; border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:0.82rem;"></div>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <h4 style="margin:0 0 8px; font-size:0.85rem; color:var(--primary); text-transform:uppercase;">📋 Historial de Partidos</h4>
+                <div style="max-height:200px; overflow-y:auto;">
+                    <table style="width:100%; border-collapse:collapse; font-size:0.78rem;">
+                        <thead><tr style="background:var(--primary); color:#fff;"><th style="padding:5px;">Jor.</th><th>Rival</th><th>Sede</th><th>Marcador</th><th>Resultado</th></tr></thead>
+                        <tbody id="equipo-modal-historial-body"></tbody>
+                    </table>
+                    <p id="equipo-modal-historial-vacio" class="hidden" style="font-size:0.78rem; color:#888; text-align:center; padding:8px 0;">Este equipo aún no registra partidos jugados.</p>
+                </div>
+            </div>
+
+            <h4 style="margin:0 0 8px; font-size:0.85rem; color:var(--primary); text-transform:uppercase;">👥 Plantel</h4>
             <div id="equipo-modal-jugadores" class="grid"></div>
         </div>
     </div>
@@ -901,13 +921,39 @@
 
                 let eventosHtml = '';
                 if (p.eventos && p.eventos.length) {
-                    const iconoEvento = { gol: '⚽', autogol: '❌', amarilla: '🟨', roja: '🟥' };
-                    const etiquetaEvento = { gol: 'GOL', autogol: 'AUTOGOL', amarilla: 'Tarjeta Amarilla', roja: 'Tarjeta Roja' };
+                    const iconoEvento = { gol: '⚽', autogol: '❌', amarilla: '🟨', roja: '🟥', cambio: '🔁' };
+                    const etiquetaEvento = { gol: 'GOL', autogol: 'AUTOGOL', amarilla: 'Tarjeta Amarilla', roja: 'Tarjeta Roja', cambio: 'Cambio' };
                     const eventosOrdenados = [...p.eventos].sort((a, b) => a.min - b.min);
                     eventosHtml = `<div style="margin-top:10px; font-size:0.78rem; background:#fff; border:1px solid var(--border); padding:8px 10px; border-radius:6px;">
                         <strong>⏱️ Incidencias del Partido:</strong>
                         <div style="display:flex; flex-direction:column; gap:3px; margin-top:5px;">
-                            ${eventosOrdenados.map(ev => `<span>${iconoEvento[ev.tipo] || '•'} Min ${ev.min}' — <strong>${etiquetaEvento[ev.tipo] || ''}</strong> de ${ev.desc}</span>`).join('')}
+                            ${eventosOrdenados.map(ev => ev.tipo === 'cambio'
+                                ? `<span>🔁 Min ${ev.min}' — <strong>Cambio</strong>: Sale ${ev.saleNombre}, Entra ${ev.entraNombre}</span>`
+                                : `<span>${iconoEvento[ev.tipo] || '•'} Min ${ev.min}' — <strong>${etiquetaEvento[ev.tipo] || ''}</strong> de ${ev.desc}</span>`
+                            ).join('')}
+                        </div>
+                    </div>`;
+                }
+
+                let alineacionesHtml = '';
+                if ((p.titularesLocal && p.titularesLocal.length) || (p.titularesVisita && p.titularesVisita.length)) {
+                    const armarColumna = (equipoId, titularesIds) => {
+                        const plantel = db.jugadores.filter(j => j.equipoId === equipoId);
+                        const titulares = plantel.filter(j => (titularesIds || []).includes(j.id));
+                        const suplentes = plantel.filter(j => !(titularesIds || []).includes(j.id));
+                        const listaHtml = (arr) => arr.length ? arr.map(j => `<span onclick="verFicha(${j.id})" style="cursor:pointer; text-decoration:underline dotted;">${j.numero ? '#' + j.numero + ' ' : ''}${j.nombre}</span>`).join('<br>') : '<span style="color:#94a3b8;">—</span>';
+                        return `<div style="flex:1; min-width:130px;">
+                            <strong style="font-size:0.75rem;">🟢 Titulares</strong><br>
+                            <span style="font-size:0.76rem; line-height:1.6;">${listaHtml(titulares)}</span>
+                            <div style="margin-top:6px;"><strong style="font-size:0.75rem;">🪑 Suplentes</strong><br>
+                            <span style="font-size:0.76rem; line-height:1.6; color:#64748b;">${listaHtml(suplentes)}</span></div>
+                        </div>`;
+                    };
+                    alineacionesHtml = `<div style="margin-top:10px; font-size:0.78rem; background:#fff; border:1px solid var(--border); padding:8px 10px; border-radius:6px;">
+                        <strong>🧩 Alineaciones</strong>
+                        <div style="display:flex; gap:14px; margin-top:6px; flex-wrap:wrap;">
+                            ${armarColumna(p.localId, p.titularesLocal)}
+                            ${armarColumna(p.visitaId, p.titularesVisita)}
                         </div>
                     </div>`;
                 }
@@ -955,6 +1001,7 @@
                             <span>🕐 ${p.hora || 'Hora por definir'}</span>
                         </div>
                         ${eventosHtml}
+                        ${alineacionesHtml}
                         ${mvpHtml}
                         ${cedulaBtn}
                     </div>
@@ -1102,6 +1149,60 @@
             document.getElementById('equipo-modal-nombre').innerText = eq.nombre;
             const jugadoresEquipo = db.jugadores.filter(j => j.equipoId === id);
             document.getElementById('equipo-modal-contador').innerText = `${jugadoresEquipo.length} jugador(es) en plantilla`;
+
+            const tabla = calcularTablaPosiciones();
+            const posicion = tabla.findIndex(e => e.id === id) + 1;
+            const stats = tabla.find(e => e.id === id) || { pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dg: 0, pts: 0 };
+            const statItems = [
+                ['Pos.', posicion || '-'], ['PJ', stats.pj], ['G', stats.pg], ['E', stats.pe], ['P', stats.pp],
+                ['GF', stats.gf], ['GC', stats.gc], ['DG', stats.dg], ['Pts', stats.pts]
+            ];
+            document.getElementById('equipo-modal-stats').innerHTML = statItems.map(([lbl, val]) => `
+                <div><strong style="display:block; font-size:1.05rem; color:var(--dark);">${val}</strong><span style="font-size:0.62rem; text-transform:uppercase; color:#666;">${lbl}</span></div>
+            `).join('');
+
+            const goleadorEquipo = [...jugadoresEquipo].filter(j => j.goles > 0).sort((a, b) => (b.goles || 0) - (a.goles || 0))[0];
+            document.getElementById('equipo-modal-goleador').innerHTML = goleadorEquipo
+                ? `<strong>⚽ Goleador del equipo:</strong><br>${goleadorEquipo.nombre} — ${goleadorEquipo.goles} gol(es)`
+                : `<strong>⚽ Goleador del equipo:</strong><br><span style="color:#888;">Aún sin goles registrados.</span>`;
+
+            const amarillasEquipo = jugadoresEquipo.reduce((s, j) => s + (j.amarillas || 0), 0);
+            const rojasEquipo = jugadoresEquipo.reduce((s, j) => s + (j.rojas || 0), 0);
+            const suspendidosEquipo = jugadoresEquipo.filter(j => esJugadorSuspendidoActual(j)).length;
+            document.getElementById('equipo-modal-disciplina').innerHTML = `<strong>🟨🟥 Disciplina:</strong><br>${amarillasEquipo} amarillas · ${rojasEquipo} rojas${suspendidosEquipo ? ` · <span style="color:#b91c1c;">${suspendidosEquipo} suspendido(s) actualmente</span>` : ''}`;
+
+            const historial = db.partidos
+                .filter(p => p.jugado && (p.localId === id || p.visitaId === id))
+                .map(p => {
+                    const esLocal = p.localId === id;
+                    const rivalId = esLocal ? p.visitaId : p.localId;
+                    const rival = db.equipos.find(e => e.id === rivalId)?.nombre || 'Rival';
+                    const gf = esLocal ? p.golesLocal : p.golesVisita;
+                    const gc = esLocal ? p.golesVisita : p.golesLocal;
+                    let resultado = 'Empate', color = '#f59e0b';
+                    if (gf > gc) { resultado = 'Ganado'; color = '#16a34a'; }
+                    else if (gf < gc) { resultado = 'Perdido'; color = '#dc2626'; }
+                    return { jornada: p.jornada, rival, sede: esLocal ? 'Local' : 'Visita', marcador: `${gf ?? 0} - ${gc ?? 0}`, resultado, color };
+                })
+                .sort((a, b) => a.jornada - b.jornada);
+
+            const tbody = document.getElementById('equipo-modal-historial-body');
+            const vacio = document.getElementById('equipo-modal-historial-vacio');
+            if (historial.length) {
+                vacio.classList.add('hidden');
+                tbody.innerHTML = historial.map(h => `
+                    <tr>
+                        <td style="text-align:center; padding:4px;">${h.jornada}</td>
+                        <td style="padding:4px;">${h.rival}</td>
+                        <td style="text-align:center; padding:4px;">${h.sede}</td>
+                        <td style="text-align:center; padding:4px;">${h.marcador}</td>
+                        <td style="text-align:center; padding:4px; color:${h.color}; font-weight:600;">${h.resultado}</td>
+                    </tr>`).join('');
+            } else {
+                tbody.innerHTML = '';
+                vacio.classList.remove('hidden');
+            }
+
             document.getElementById('equipo-modal-jugadores').innerHTML = jugadoresEquipo.map(j => `
                 <div class="jugador-card" onclick="cerrarModal('modal-equipo'); verFicha(${j.id})">
                     <img src="${j.foto || 'https://placehold.co/100'}">
@@ -1239,6 +1340,15 @@
                     <div><b>${loc}</b><br>Entrenador: ${c.entrenadorLocal || '-'}<br>Capitán: ${c.capitanLocal || '-'}</div>
                     <div><b>${vis}</b><br>Entrenador: ${c.entrenadorVisita || '-'}<br>Capitán: ${c.capitanVisita || '-'}</div>
                 </div>
+
+                ${(p.titularesLocal && p.titularesLocal.length) || (p.titularesVisita && p.titularesVisita.length) ? `
+                <div style="margin-top:12px; font-size:0.85rem;">
+                    <b>🧩 Alineación Titular</b>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:6px;">
+                        <div><b>${loc}</b><br>${(p.titularesLocal || []).map(id => db.jugadores.find(j => j.id === id)?.nombre).filter(Boolean).join('<br>') || '-'}</div>
+                        <div><b>${vis}</b><br>${(p.titularesVisita || []).map(id => db.jugadores.find(j => j.id === id)?.nombre).filter(Boolean).join('<br>') || '-'}</div>
+                    </div>
+                </div>` : ''}
 
                 <div style="margin-top:12px; font-size:0.85rem;">
                     <b>🔁 Cambios ${loc}:</b> ${c.cambiosLocal ? c.cambiosLocal.replace(/\n/g,'<br>') : '-'}<br>
