@@ -178,12 +178,12 @@
 
     <nav>
         <a href="#tablon-sec">Tablón</a>
+        <a href="#jornadas-sec">Calendario En Vivo</a>
         <a href="#posiciones-sec">Posiciones</a>
         <a href="#ofensiva-defensiva-sec">Ofensiva/Defensiva</a>
         <a href="#goles-jornada-sec">Goles por Jornada</a>
         <a href="#bracket-sec">cuadro Liguilla</a>
         <a href="#headtohead-sec">Cara a Cara</a>
-        <a href="#jornadas-sec">Jornadas</a>
         <a href="#registro-sec">Inscribirse</a>
         <a href="#porteros-sec">Guante de Oro</a>
         <a href="#goleo-sec">Goleo</a>
@@ -199,6 +199,18 @@
         <section id="tablon-sec" class="card-section">
             <h2>📢 Tablón de Avisos y Crónicas</h2>
             <div id="noticias-contenedor" class="grid"></div>
+        </section>
+
+        <!-- JORNADAS, VIVO Y VOTACIÓN MVP -->
+        <section id="jornadas-sec" class="card-section">
+            <h2>Calendario & Resultados En Vivo</h2>
+            <div class="filter-container">
+                <select id="select-jornada-filtro">
+                    <option value="1">Jornada 1</option><option value="2">Jornada 2</option><option value="3">Jornada 3</option><option value="4">Jornada 4</option>
+                    <option value="99">Liguilla Semis</option><option value="100">Gran Final</option>
+                </select>
+            </div>
+            <div id="lista-partidos-jornada"></div>
         </section>
 
         <!-- POSICIONES -->
@@ -245,7 +257,10 @@
         <!-- GRÁFICA DE GOLES POR JORNADA -->
         <section id="goles-jornada-sec" class="card-section" style="border-top-color: var(--secondary);">
             <h2>📊 Goles por Jornada</h2>
-            <p style="font-size:0.85rem; color:#6b7280; margin-top:-6px;">Total de goles anotados en cada jornada disputada del torneo.</p>
+            <p style="font-size:0.85rem; color:#6b7280; margin-top:-6px;">Total de goles anotados en cada jornada disputada del torneo. Elige un equipo para ver solo sus goles.</p>
+            <select id="grafica-goles-equipo-select" onchange="renderizarGraficaGolesJornada()" style="margin-top:8px; max-width:280px;">
+                <option value="">⚽ Todos los equipos (total del torneo)</option>
+            </select>
             <div id="grafica-goles-jornada" style="overflow-x:auto; margin-top:12px;"></div>
         </section>
 
@@ -331,18 +346,6 @@
                     <tbody id="tabla-porteros-body"></tbody>
                 </table>
             </div>
-        </section>
-
-        <!-- JORNADAS, VIVO Y VOTACIÓN MVP -->
-        <section id="jornadas-sec" class="card-section">
-            <h2>Calendario & Resultados En Vivo</h2>
-            <div class="filter-container">
-                <select id="select-jornada-filtro">
-                    <option value="1">Jornada 1</option><option value="2">Jornada 2</option><option value="3">Jornada 3</option><option value="4">Jornada 4</option>
-                    <option value="99">Liguilla Semis</option><option value="100">Gran Final</option>
-                </select>
-            </div>
-            <div id="lista-partidos-jornada"></div>
         </section>
 
         <!-- XI IDEAL -->
@@ -498,6 +501,7 @@
                 <div class="stat-box"><span class="stat-icono">✅</span><strong id="arbitro-modal-cerradas">0</strong><span class="stat-label">Cédulas Cerradas</span></div>
                 <div class="stat-box stat-amarillas"><span class="stat-icono">🟨</span><strong id="arbitro-modal-amarillas">0</strong><span class="stat-label">Amarillas</span></div>
                 <div class="stat-box stat-rojas"><span class="stat-icono">🟥</span><strong id="arbitro-modal-rojas">0</strong><span class="stat-label">Rojas</span></div>
+                <div class="stat-box"><span class="stat-icono">⭐</span><strong id="arbitro-modal-calificacion">—</strong><span class="stat-label" id="arbitro-modal-calificacion-votos">Calificación</span></div>
             </div>
 
             <div class="ficha-tecnica-datos">
@@ -556,11 +560,12 @@
         let db = JSON.parse(localStorage.getItem('liga_premier_db')) || { 
             equipos: [], jugadores: [], partidos: [], comunicados: [], 
             arbitros: [], campos: [], xiIdealAdmin: {}, registrosCerrados: false, liguillaActiva: false,
-            historialFichajes: [], solicitudes: [], votosMvp: {}
+            historialFichajes: [], solicitudes: [], votosMvp: {}, calificacionesArbitro: {}
         };
 
         if(!db.votosMvp) db.votosMvp = {};
         if(!db.campos) db.campos = [];
+        if(!db.calificacionesArbitro) db.calificacionesArbitro = {};
 
         function guardarDB() {
             localStorage.setItem('liga_premier_db', JSON.stringify(db));
@@ -801,22 +806,38 @@
         }
 
         // Dibuja una gráfica de barras (SVG) con el total de goles anotados en cada jornada disputada.
+        // Si se elige un equipo en el selector, muestra solo los goles anotados por ese equipo (a favor).
         function renderizarGraficaGolesJornada() {
             const cont = document.getElementById('grafica-goles-jornada');
-            const jugados = db.partidos.filter(p => p.jugado && p.jornada);
+            const sel = document.getElementById('grafica-goles-equipo-select');
+
+            // Llena el selector de equipos una sola vez (si ya tiene opciones más allá de "Todos", no lo vuelve a llenar)
+            if (sel && sel.options.length <= 1) {
+                sel.innerHTML = '<option value="">⚽ Todos los equipos (total del torneo)</option>' +
+                    db.equipos.map(eq => `<option value="${eq.id}">${eq.nombre}</option>`).join('');
+            }
+
+            const equipoId = sel ? parseInt(sel.value) : NaN;
+            const equipoSel = !isNaN(equipoId) ? db.equipos.find(e => e.id === equipoId) : null;
+
+            const jugados = db.partidos.filter(p => p.jugado && p.jornada && (!equipoSel || p.localId === equipoSel.id || p.visitaId === equipoSel.id));
             if (!jugados.length) {
-                cont.innerHTML = '<p style="color:gray;">Aún no hay partidos jugados.</p>';
+                cont.innerHTML = `<p style="color:gray;">${equipoSel ? `${equipoSel.nombre} aún no tiene partidos jugados.` : 'Aún no hay partidos jugados.'}</p>`;
                 return;
             }
 
             const porJornada = {};
             jugados.forEach(p => {
-                porJornada[p.jornada] = (porJornada[p.jornada] || 0) + (p.golesLocal || 0) + (p.golesVisita || 0);
+                const golesSumar = equipoSel
+                    ? (p.localId === equipoSel.id ? (p.golesLocal || 0) : (p.golesVisita || 0))
+                    : (p.golesLocal || 0) + (p.golesVisita || 0);
+                porJornada[p.jornada] = (porJornada[p.jornada] || 0) + golesSumar;
             });
 
             const jornadas = Object.keys(porJornada).map(Number).sort((a, b) => a - b);
             const maxGoles = Math.max(...jornadas.map(j => porJornada[j]), 1);
             const totalGoles = jornadas.reduce((s, j) => s + porJornada[j], 0);
+            const colorBarra = equipoSel ? 'var(--secondary)' : 'var(--primary)';
 
             const anchoBarra = 46, espacio = 22, altoGrafica = 180;
             const anchoSvg = jornadas.length * (anchoBarra + espacio) + espacio;
@@ -828,19 +849,23 @@
                 const y = altoGrafica - alto;
                 return `
                     <g>
-                        <rect x="${x}" y="${y}" width="${anchoBarra}" height="${alto}" rx="4" fill="var(--primary)"></rect>
+                        <rect x="${x}" y="${y}" width="${anchoBarra}" height="${alto}" rx="4" fill="${colorBarra}"></rect>
                         <text x="${x + anchoBarra / 2}" y="${y - 6}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text)">${goles}</text>
                         <text x="${x + anchoBarra / 2}" y="${altoGrafica + 18}" text-anchor="middle" font-size="11" fill="var(--text)">J${j}</text>
                     </g>
                 `;
             }).join('');
 
+            const etiquetaResumen = equipoSel
+                ? `${equipoSel.nombre} — Promedio: <b>${(totalGoles / jornadas.length).toFixed(1)}</b> goles por jornada · Total: <b>${totalGoles}</b> goles en ${jornadas.length} jornada${jornadas.length === 1 ? '' : 's'} jugada${jornadas.length === 1 ? '' : 's'}`
+                : `Promedio: <b>${(totalGoles / jornadas.length).toFixed(1)}</b> goles por jornada · Total: <b>${totalGoles}</b> goles en ${jornadas.length} jornada${jornadas.length === 1 ? '' : 's'}`;
+
             cont.innerHTML = `
                 <svg viewBox="0 0 ${anchoSvg} ${altoGrafica + 30}" width="${anchoSvg}" height="${altoGrafica + 30}" style="display:block;">
                     <line x1="0" y1="${altoGrafica}" x2="${anchoSvg}" y2="${altoGrafica}" stroke="var(--border)" stroke-width="1"></line>
                     ${barras}
                 </svg>
-                <p style="font-size:0.78rem; color:#6b7280; margin-top:6px;">Promedio: <b>${(totalGoles / jornadas.length).toFixed(1)}</b> goles por jornada · Total: <b>${totalGoles}</b> goles en ${jornadas.length} jornada${jornadas.length === 1 ? '' : 's'}</p>
+                <p style="font-size:0.78rem; color:#6b7280; margin-top:6px;">${etiquetaResumen}</p>
             `;
         }
 
@@ -946,6 +971,33 @@
             `;
         }
 
+        // Registra la calificación (1-5 estrellas) que la afición da al arbitraje de un partido específico.
+        // Cada navegador puede calificar una sola vez por partido (se guarda una marca en localStorage).
+        function calificarArbitroPartido(partidoId, estrellas) {
+            const clave = `voto_arbitro_partido_${partidoId}`;
+            if (localStorage.getItem(clave)) return;
+
+            if (!db.calificacionesArbitro) db.calificacionesArbitro = {};
+            if (!db.calificacionesArbitro[partidoId]) db.calificacionesArbitro[partidoId] = { suma: 0, votos: 0 };
+            db.calificacionesArbitro[partidoId].suma += estrellas;
+            db.calificacionesArbitro[partidoId].votos += 1;
+
+            localStorage.setItem(clave, String(estrellas));
+            guardarDB();
+            actualizarVistaJornadas();
+        }
+
+        // Promedio de calificación de un árbitro sumando todos los partidos que ha dirigido.
+        function calcularCalificacionPromedioArbitro(nombreArbitro) {
+            const idsPartidos = db.partidos.filter(p => p.arbitro === nombreArbitro).map(p => p.id);
+            let suma = 0, votos = 0;
+            idsPartidos.forEach(id => {
+                const c = db.calificacionesArbitro && db.calificacionesArbitro[id];
+                if (c) { suma += c.suma; votos += c.votos; }
+            });
+            return { promedio: votos ? suma / votos : 0, votos };
+        }
+
         function actualizarVistaJornadas() {
             const jFiltro = parseInt(document.getElementById('select-jornada-filtro').value);
             const contenedor = document.getElementById('lista-partidos-jornada');
@@ -961,6 +1013,7 @@
                 const pen = p.penaltis ? `<br><small>(Penaltis: ${p.penaltis.local} - ${p.penaltis.visita})</small>` : '';
 
                 const cedulaBtn = (p.jugado && p.cedula) ? `<div style="text-align:center; margin-top:8px;"><button onclick="verCedulaPublica(${p.id})" style="background:var(--dark, #011f4b); color:white; border:none; padding:6px 14px; border-radius:20px; font-size:0.75rem; cursor:pointer;">📋 Ver Cédula Oficial</button></div>` : '';
+                const compartirBtn = p.jugado ? `<div style="text-align:center; margin-top:8px;"><button onclick="compartirResultadoPartido(${p.id})" style="background:var(--secondary, #7209b7); color:white; border:none; padding:6px 14px; border-radius:20px; font-size:0.75rem; cursor:pointer;">📤 Compartir Resultado</button></div>` : '';
 
                 let mvpHtml = '';
                 if (p.mvpJugadorId) {
@@ -1033,6 +1086,35 @@
                     estadoBadge = `<div class="badge-en-vivo badge-programado"><span class="dot-vivo"></span>PROGRAMADO ${p.hora ? '· ' + p.hora : ''}</div>`;
                 }
 
+                let facebookLiveHtml = '';
+                if (p.facebookEnVivo && p.facebookPagina) {
+                    const esLink = /^(https?:\/\/|www\.|facebook\.com)/i.test(p.facebookPagina.trim());
+                    const urlPagina = esLink ? (p.facebookPagina.trim().startsWith('http') ? p.facebookPagina.trim() : `https://${p.facebookPagina.trim()}`) : null;
+                    const tituloTransmision = (enVivo || p.estadoVivo === 'medio_tiempo') ? '🔴 Transmisión EN VIVO por Facebook' : (p.jugado ? '📺 Este partido se transmitió por Facebook' : '📺 Este partido se transmitirá por Facebook');
+                    facebookLiveHtml = `<div style="margin-top:10px; background:#fff; border:1px solid var(--border); padding:10px; border-radius:6px; text-align:center;">
+                        <strong style="font-size:0.8rem; display:block; margin-bottom:4px;">${tituloTransmision}</strong>
+                        <span style="font-size:0.78rem; color:#444;">Página: ${urlPagina ? `<a href="${urlPagina}" target="_blank" rel="noopener" style="color:#1877F2; font-weight:600;">${p.facebookPagina}</a>` : `<strong>${p.facebookPagina}</strong>`}</span>
+                    </div>`;
+                }
+
+
+                let calificacionHtml = '';
+                if (p.jugado && p.arbitro) {
+                    const calif = (db.calificacionesArbitro && db.calificacionesArbitro[p.id]) || { suma: 0, votos: 0 };
+                    const promedio = calif.votos ? calif.suma / calif.votos : 0;
+                    const votoPrevio = localStorage.getItem(`voto_arbitro_partido_${p.id}`);
+                    const estrellas = [1, 2, 3, 4, 5].map(n => votoPrevio
+                        ? `<span style="font-size:1.15rem;">${n <= parseInt(votoPrevio) ? '⭐' : '☆'}</span>`
+                        : `<span onclick="calificarArbitroPartido(${p.id}, ${n})" style="font-size:1.25rem; cursor:pointer;" title="${n} estrella${n > 1 ? 's' : ''}">☆</span>`
+                    ).join('');
+                    calificacionHtml = `<div style="margin-top:10px; font-size:0.78rem; background:#fff; border:1px solid var(--border); padding:8px 10px; border-radius:6px; text-align:center;">
+                        <strong>👨‍⚖️ Califica el arbitraje de ${p.arbitro}</strong>
+                        <div style="margin-top:4px;">${estrellas}</div>
+                        ${votoPrevio ? '<div style="color:#16a34a; font-size:0.72rem; margin-top:2px;">¡Gracias por tu calificación!</div>' : ''}
+                        <div style="color:#6b7280; font-size:0.72rem; margin-top:4px;">Calificación de la afición: ${promedio ? promedio.toFixed(1) : '—'} ⭐ (${calif.votos} voto${calif.votos === 1 ? '' : 's'})</div>
+                    </div>`;
+                }
+
                 return `
                     <div class="partido-item">
                         ${estadoBadge}
@@ -1054,9 +1136,12 @@
                             <span>🕐 ${p.hora || 'Hora por definir'}</span>
                         </div>
                         ${eventosHtml}
+                        ${facebookLiveHtml}
                         ${alineacionesHtml}
                         ${mvpHtml}
+                        ${calificacionHtml}
                         ${cedulaBtn}
+                        ${compartirBtn}
                     </div>
                 `;
             }).join('') || '<p style="color:gray;">No hay partidos.</p>';
@@ -1303,6 +1388,10 @@
             document.getElementById('arbitro-modal-amarillas').innerText = totalAmarillas;
             document.getElementById('arbitro-modal-rojas').innerText = totalRojas;
 
+            const calificacionArb = calcularCalificacionPromedioArbitro(a.nombre);
+            document.getElementById('arbitro-modal-calificacion').innerText = calificacionArb.votos ? calificacionArb.promedio.toFixed(1) : '—';
+            document.getElementById('arbitro-modal-calificacion-votos').innerText = calificacionArb.votos ? `Calif. (${calificacionArb.votos} votos)` : 'Sin calificar';
+
             const tbody = document.getElementById('arbitro-modal-historial-body');
             const vacio = document.getElementById('arbitro-modal-historial-vacio');
             if (historial.length) {
@@ -1344,13 +1433,139 @@
                     </div>`).join('') || '<p style="color:gray;">Aún no hay equipos registrados.</p>';
             }
             if (contArbitros) {
-                contArbitros.innerHTML = db.arbitros.map(a => `
+                contArbitros.innerHTML = db.arbitros.map(a => {
+                    const calif = calcularCalificacionPromedioArbitro(a.nombre);
+                    return `
                     <div class="arbitro-card" onclick="verArbitro('${a.nombre.replace(/'/g, "\\'")}')">
                         <img src="${a.foto || 'https://placehold.co/70'}">
                         <h3>${a.nombre}</h3>
                         <p>${a.colegio || 'Independiente'}</p>
-                    </div>`).join('') || '<p style="color:gray;">Aún no hay árbitros registrados.</p>';
+                        <p>${calif.votos ? `⭐ ${calif.promedio.toFixed(1)} (${calif.votos})` : 'Sin calificar aún'}</p>
+                    </div>`;
+                }).join('') || '<p style="color:gray;">Aún no hay árbitros registrados.</p>';
             }
+        }
+
+        // Trunca un texto para que no se salga del ancho asignado dentro del canvas.
+        function ajustarTextoAncho(ctx, texto, x, y, maxAncho) {
+            let t = texto || '';
+            while (ctx.measureText(t).width > maxAncho && t.length > 3) t = t.slice(0, -1);
+            if (t !== texto) t = t.slice(0, -1) + '…';
+            ctx.fillText(t, x, y);
+        }
+
+        // Genera una imagen tipo "tarjeta de resultado" del partido (escudos, marcador, jornada, árbitro)
+        // y la comparte con el sistema operativo (WhatsApp/Instagram) o la descarga si el navegador no lo soporta.
+        async function compartirResultadoPartido(partidoId) {
+            const p = db.partidos.find(part => part.id === partidoId);
+            if (!p || !p.jugado) return;
+
+            const equipoL = db.equipos.find(e => e.id === p.localId);
+            const equipoV = db.equipos.find(e => e.id === p.visitaId);
+            const nameL = equipoL?.nombre || 'Local';
+            const nameV = equipoV?.nombre || 'Visita';
+
+            const cargarImagen = (src) => new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => resolve(img);
+                img.onerror = () => resolve(null);
+                img.src = src || 'https://placehold.co/220';
+            });
+
+            const [imgL, imgV] = await Promise.all([cargarImagen(equipoL?.escudo), cargarImagen(equipoV?.escudo)]);
+
+            const W = 1080, H = 1080;
+            const canvas = document.createElement('canvas');
+            canvas.width = W; canvas.height = H;
+            const ctx = canvas.getContext('2d');
+
+            const grad = ctx.createLinearGradient(0, 0, W, H);
+            grad.addColorStop(0, '#011f4b');
+            grad.addColorStop(1, '#03306e');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, W, H);
+
+            ctx.fillStyle = '#d90429';
+            ctx.fillRect(0, 0, W, 14);
+
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#ffcc00';
+            ctx.font = 'bold 34px Arial';
+            ctx.fillText('LIGA DE FUTBOL ACAPULCO', W / 2, 100);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '24px Arial';
+            ctx.fillText(`Jornada ${p.jornada}`, W / 2, 140);
+
+            ctx.font = 'bold 20px Arial';
+            const badgeTxt = 'FINALIZADO';
+            const badgeW = ctx.measureText(badgeTxt).width + 40;
+            ctx.fillStyle = '#2ec4b6';
+            if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(W / 2 - badgeW / 2, 165, badgeW, 40, 20); ctx.fill(); }
+            else { ctx.fillRect(W / 2 - badgeW / 2, 165, badgeW, 40); }
+            ctx.fillStyle = '#011f4b';
+            ctx.fillText(badgeTxt, W / 2, 192);
+
+            const escudoSize = 220, cy = 430;
+            function dibujarEscudoCircular(img, cx, cyPos, size) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(cx, cyPos, size / 2, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                ctx.clip();
+                if (img) ctx.drawImage(img, cx - size / 2, cyPos - size / 2, size, size);
+                ctx.restore();
+                ctx.beginPath();
+                ctx.arc(cx, cyPos, size / 2, 0, Math.PI * 2);
+                ctx.lineWidth = 6;
+                ctx.strokeStyle = '#ffcc00';
+                ctx.stroke();
+            }
+            dibujarEscudoCircular(imgL, 260, cy, escudoSize);
+            dibujarEscudoCircular(imgV, W - 260, cy, escudoSize);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 30px Arial';
+            ajustarTextoAncho(ctx, nameL, 260, cy + 160, 320);
+            ajustarTextoAncho(ctx, nameV, W - 260, cy + 160, 320);
+
+            ctx.font = 'bold 130px Arial';
+            ctx.fillStyle = '#ffcc00';
+            ctx.fillText(`${p.golesLocal ?? 0}  -  ${p.golesVisita ?? 0}`, W / 2, cy + 45);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '22px Arial';
+            ctx.fillText(`📅 ${p.fecha || 'Fecha por definir'}   🏟️ ${p.estadio || 'Campo por definir'}`, W / 2, H - 130);
+            ctx.font = '20px Arial';
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillText(`Árbitro: ${p.arbitro || 'Por definir'}`, W / 2, H - 95);
+            ctx.font = 'italic 18px Arial';
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText('Sitio Oficial · Liga de Futbol Acapulco', W / 2, H - 40);
+
+            canvas.toBlob(async (blob) => {
+                if (!blob) return;
+                const nombreArchivo = `resultado-${nameL}-vs-${nameV}.png`.replace(/\s+/g, '-');
+                const archivo = new File([blob], nombreArchivo, { type: 'image/png' });
+
+                if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+                    try {
+                        await navigator.share({ files: [archivo], title: `${nameL} ${p.golesLocal}-${p.golesVisita} ${nameV}`, text: `Resultado Liga de Futbol Acapulco · Jornada ${p.jornada}` });
+                        return;
+                    } catch (err) { /* si el usuario cancela el share, caemos a la descarga */ }
+                }
+
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = nombreArchivo;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 'image/png');
         }
 
         function verCedulaPublica(partidoId) {

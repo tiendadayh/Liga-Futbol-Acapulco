@@ -471,15 +471,6 @@
         <div id="resumen-dia-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:12px; margin-top:10px;"></div>
     </div>
 
-    <!-- SUSPENSIONES AUTOMÁTICAS -->
-    <div id="suspendidos-sec" class="admin-box" style="border-top-color:#b91c1c; background:#fffafa; margin-bottom:25px;">
-        <h3>🚫 Jugadores Suspendidos (<span id="suspendidos-contador">0</span>)</h3>
-        <p style="font-size:0.85rem; color:#555; margin-top:-6px;">
-            Se calcula automáticamente por roja directa o acumulación de 3 amarillas. Un jugador suspendido no puede alinearse en el próximo partido de su equipo — al capturar su cédula, el árbitro lo verá marcado como "SUSPENDIDO" y sus casillas de goles/tarjetas quedarán bloqueadas.
-        </p>
-        <div id="lista-suspendidos" style="display:flex; flex-direction:column; gap:8px; margin-top:10px; max-height:340px; overflow-y:auto;"></div>
-    </div>
-
     <!-- RESPALDO Y RESTAURACIÓN DE DATOS -->
     <div class="admin-box" style="border-top-color: #455a64; background: #f7f9fa; margin-bottom: 25px; position: relative; z-index: 1;">
         <h3>💾 Respaldo de Datos</h3>
@@ -960,6 +951,7 @@
                 <div><span class="lbl">Nacionalidad</span><span class="val" id="ficha-adm-arb-nacionalidad">—</span></div>
                 <div><span class="lbl">Lugar de nacimiento</span><span class="val" id="ficha-adm-arb-lugar-nac">—</span></div>
                 <div><span class="lbl">Cédulas pendientes</span><span class="val" id="ficha-adm-arb-pendientes">0</span></div>
+                <div><span class="lbl">Calificación de la afición</span><span class="val" id="ficha-adm-arb-calificacion">—</span></div>
             </div>
             <h4 style="margin:0 0 6px; font-size:0.8rem; color:var(--primary); text-transform:uppercase;">📋 Historial de Partidos Dirigidos</h4>
             <div style="max-height:200px; overflow-y:auto;">
@@ -1073,6 +1065,36 @@
             </div>
         </div>
     </div>
+
+    <!-- MÓDULO: EN VIVO POR FACEBOOK -->
+    <div class="admin-box" style="margin-top: 25px; border-top-color: #1877F2;">
+        <h3>📺 En Vivo por Facebook</h3>
+        <p style="font-size:0.8rem; color:#6b7280; margin-top:-6px;">
+            Marca el partido que se está transmitiendo y escribe qué Página de Facebook lo transmite. Se mostrará en el sitio público.
+        </p>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:15px; margin-top:10px;">
+            <div>
+                <label>Partido:</label>
+                <select id="fb-live-partido-select">
+                    <option value="">-- Selecciona Encuentro --</option>
+                </select>
+            </div>
+            <div>
+                <label>Página de Facebook que transmite:</label>
+                <input type="text" id="fb-live-pagina" placeholder="Ej. Liga Futbol de Acapulco (o el link de la página)">
+            </div>
+        </div>
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; margin-top:12px; cursor:pointer;">
+            <input type="checkbox" id="fb-live-checkbox" style="width:16px; height:16px;">
+            🔴 Este partido se transmite en vivo por Facebook
+        </label>
+        <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
+            <button type="button" onclick="guardarFacebookLive()" style="background:#1877F2;">💾 Guardar</button>
+            <button type="button" onclick="quitarFacebookLive()" style="background:#6b7280;">🗑️ Quitar de este Partido</button>
+        </div>
+        <p id="fb-live-estado" style="font-size:0.78rem; color:#6b7280; margin-top:8px;"></p>
+    </div>
+
 
     <!-- CÉDULA ARBITRAL (SOLO LECTURA) Y CRÓNICA IA -->
     <div class="admin-box" style="margin-top: 25px; border-top-color: #7209b7;">
@@ -1230,6 +1252,7 @@
         if (!db.solicitudes) db.solicitudes = [];
         if (!db.finanzas) db.finanzas = {};
         if (!db.votosMvp) db.votosMvp = {};
+        if (!db.calificacionesArbitro) db.calificacionesArbitro = {};
         if (!db.config) db.config = crearConfigCredencialDefault();
                 if (db.config.logoSitio === undefined) db.config.logoSitio = '';
 
@@ -1242,7 +1265,6 @@
             renderizarFinanzas();
             renderizarGestion();
             renderizarResumenDia();
-            renderizarSuspendidos();
             renderizarCorreccionEstadisticas();
             intentarAutoBackup();
             marcarCambiosSinPublicar();
@@ -1260,14 +1282,12 @@
                 return f && (f.adeudoArbitrajes || 0) > 0;
             }).length;
             const sinAsignar = (db.partidos || []).filter(p => !p.jugado && (!p.arbitro || !p.campoId)).length;
-            const totalSuspendidos = obtenerSuspendidosActuales().length;
 
             const tarjetas = [
                 { valor: partidosHoy.length, etiqueta: 'Partidos hoy', color: '#0b1e3d', ancla: '#form-add-partido' },
                 { valor: pendientes, etiqueta: 'Solicitudes pendientes', color: pendientes > 0 ? '#c62828' : '#2e7d32', ancla: '#lista-solicitudes-pendientes' },
                 { valor: equiposConAdeudo, etiqueta: 'Equipos con adeudo', color: equiposConAdeudo > 0 ? '#b45309' : '#2e7d32', ancla: '#lista-finanzas' },
-                { valor: sinAsignar, etiqueta: 'Partidos sin árbitro/cancha', color: sinAsignar > 0 ? '#c62828' : '#2e7d32', ancla: '#form-add-partido' },
-                { valor: totalSuspendidos, etiqueta: 'Jugadores suspendidos', color: totalSuspendidos > 0 ? '#c62828' : '#2e7d32', ancla: '#suspendidos-sec' }
+                { valor: sinAsignar, etiqueta: 'Partidos sin árbitro/cancha', color: sinAsignar > 0 ? '#c62828' : '#2e7d32', ancla: '#form-add-partido' }
             ];
 
             cont.innerHTML = tarjetas.map(t => `
@@ -1375,7 +1395,6 @@
                     renderizarFinanzas();
                     renderizarGestion();
             renderizarResumenDia();
-            renderizarSuspendidos();
             renderizarCorreccionEstadisticas();
                     mostrarAvisoAutoguardado('🔄 Datos actualizados desde otra pestaña.');
                 } catch (err) { /* valor corrupto, se ignora */ }
@@ -1425,6 +1444,7 @@
                 if (!db.solicitudes) db.solicitudes = [];
                 if (!db.finanzas) db.finanzas = {};
                 if (!db.votosMvp) db.votosMvp = {};
+                if (!db.calificacionesArbitro) db.calificacionesArbitro = {};
                 if (!db.config) db.config = crearConfigCredencialDefault();
                 if (db.config.logoSitio === undefined) db.config.logoSitio = '';
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
@@ -1439,7 +1459,6 @@
                 renderizarFinanzas();
                 renderizarGestion();
             renderizarResumenDia();
-            renderizarSuspendidos();
             renderizarCorreccionEstadisticas();
                 mostrarFirebaseStatus('✅ Datos actualizados desde la nube.', false);
             }).catch(err => {
@@ -1459,6 +1478,7 @@
                 if (!db.solicitudes) db.solicitudes = [];
                 if (!db.finanzas) db.finanzas = {};
                 if (!db.votosMvp) db.votosMvp = {};
+                if (!db.calificacionesArbitro) db.calificacionesArbitro = {};
                 if (!db.config) db.config = crearConfigCredencialDefault();
                 if (db.config.logoSitio === undefined) db.config.logoSitio = '';
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
@@ -1469,7 +1489,6 @@
                 renderizarFinanzas();
                 renderizarGestion();
             renderizarResumenDia();
-            renderizarSuspendidos();
             renderizarCorreccionEstadisticas();
             }
         }).catch(() => { /* si falla, seguimos con lo que había en localStorage */ });
@@ -1514,6 +1533,7 @@
                 if (!db.solicitudes) db.solicitudes = [];
                 if (!db.finanzas) db.finanzas = {};
                 if (!db.votosMvp) db.votosMvp = {};
+                if (!db.calificacionesArbitro) db.calificacionesArbitro = {};
                 if (!db.config) db.config = crearConfigCredencialDefault();
                 if (db.config.logoSitio === undefined) db.config.logoSitio = '';
 
@@ -1556,50 +1576,6 @@
         function esJugadorSuspendidoActual(jugador) {
             const jornadaRef = Math.max(0, ...db.partidos.filter(p => p.jugado).map(p => p.jornada)) + 1;
             return esJugadorSuspendidoEnJornada(jugador, jornadaRef);
-        }
-
-        // Recorre todo el plantel y arma la lista de jugadores actualmente suspendidos, con el motivo (roja directa o acumulación de amarillas).
-        function obtenerSuspendidosActuales() {
-            const jornadaRef = Math.max(0, ...db.partidos.filter(p => p.jugado).map(p => p.jornada)) + 1;
-            const resultado = [];
-            (db.jugadores || []).forEach(j => {
-                let amarillasAcumuladas = 0;
-                let rojaDirecta = false;
-                (db.partidos || [])
-                    .filter(p => p.jugado && p.jornada < jornadaRef && p.tarjetasDetalle)
-                    .forEach(p => {
-                        (p.tarjetasDetalle || []).filter(t => t.jugadorId === j.id).forEach(t => {
-                            if (t.tipo === 'roja') rojaDirecta = true;
-                            if (t.tipo === 'amarilla') amarillasAcumuladas++;
-                        });
-                    });
-                if (rojaDirecta || amarillasAcumuladas >= 3) {
-                    resultado.push({
-                        jugador: j,
-                        equipo: db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Agente Libre',
-                        motivo: rojaDirecta ? 'Tarjeta roja directa' : `Acumulación de amarillas (${amarillasAcumuladas})`,
-                        jornadaAplica: jornadaRef
-                    });
-                }
-            });
-            return resultado.sort((a, b) => a.equipo.localeCompare(b.equipo));
-        }
-
-        // Pinta el aviso dedicado de "Jugadores Suspendidos" con motivo y jornada en la que aplica.
-        function renderizarSuspendidos() {
-            const cont = document.getElementById('lista-suspendidos');
-            if (!cont) return;
-            const suspendidos = obtenerSuspendidosActuales();
-            document.getElementById('suspendidos-contador').innerText = suspendidos.length;
-            cont.innerHTML = suspendidos.length ? suspendidos.map(s => `
-                <div style="background:#fff5f5; border:1px solid #fecaca; border-radius:8px; padding:10px 12px; display:flex; align-items:center; gap:10px;">
-                    <img src="${s.jugador.foto || 'https://placehold.co/40'}" style="width:36px; height:36px; border-radius:50%; object-fit:cover;">
-                    <div style="flex:1; min-width:0;">
-                        <strong style="font-size:0.85rem;">${s.jugador.nombre}</strong>
-                        <div style="font-size:0.75rem; color:#666;">${s.equipo} · ❌ ${s.motivo}</div>
-                    </div>
-                    <span style="font-size:0.7rem; background:#b91c1c; color:#fff; padding:3px 8px; border-radius:10px; white-space:nowrap;">Jornada ${s.jornadaAplica}</span>
-                </div>`).join('') : '<p style="font-size:0.85rem; color:#2e7d32; margin:0;">✅ No hay jugadores suspendidos actualmente.</p>';
         }
 
         // Calcula la edad a partir de una fecha de nacimiento (YYYY-MM-DD).
@@ -1712,6 +1688,13 @@
             document.getElementById('ficha-adm-arb-cerradas').innerText = partidosArb.filter(p => p.cedula).length;
             document.getElementById('ficha-adm-arb-pendientes').innerText = partidosArb.filter(p => !p.cedula).length;
 
+            let sumaCalif = 0, votosCalif = 0;
+            partidosArb.forEach(p => {
+                const c = db.calificacionesArbitro && db.calificacionesArbitro[p.id];
+                if (c) { sumaCalif += c.suma; votosCalif += c.votos; }
+            });
+            document.getElementById('ficha-adm-arb-calificacion').innerText = votosCalif ? `⭐ ${(sumaCalif / votosCalif).toFixed(1)} (${votosCalif} votos)` : 'Sin calificar aún';
+
             let totalAmarillas = 0, totalRojas = 0;
             const historial = partidosArb.filter(p => p.jugado).map(p => {
                 const tarjetas = p.tarjetasDetalle || [];
@@ -1758,6 +1741,7 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('admin-res-partido').addEventListener('change', (e) => mostrarCedulaAdmin(e.target.value));
+            document.getElementById('fb-live-partido-select').addEventListener('change', (e) => cargarEstadoFacebookLive(e.target.value));
             setupFormularios();
             verificarEstadoFormularios();
             actualizarFormularios();
@@ -1765,7 +1749,6 @@
             renderizarFinanzas();
             renderizarGestion();
             renderizarResumenDia();
-            renderizarSuspendidos();
             renderizarCorreccionEstadisticas();
             cargarConfigFormulario();
         });
@@ -2342,6 +2325,52 @@
             </div>`;
         }
 
+        // ===================== EN VIVO POR FACEBOOK (simple) =====================
+        // Solo guarda si el partido está en vivo por Facebook y el nombre/link de la Página que transmite.
+        function cargarEstadoFacebookLive(partidoId) {
+            const pagina = document.getElementById('fb-live-pagina');
+            const check = document.getElementById('fb-live-checkbox');
+            const estado = document.getElementById('fb-live-estado');
+            const p = db.partidos.find(x => x.id === parseInt(partidoId));
+            if (!p) { pagina.value = ''; check.checked = false; estado.innerText = ''; return; }
+            pagina.value = p.facebookPagina || '';
+            check.checked = !!p.facebookEnVivo;
+            estado.innerText = p.facebookEnVivo ? '🔴 Este partido ya está marcado como en vivo por Facebook.' : 'Este partido aún no está marcado como en vivo.';
+        }
+
+        // Guarda si el partido está en vivo por Facebook y qué Página lo transmite; el sitio público lo muestra automáticamente.
+        function guardarFacebookLive() {
+            const partidoId = parseInt(document.getElementById('fb-live-partido-select').value);
+            const pagina = document.getElementById('fb-live-pagina').value.trim();
+            const enVivo = document.getElementById('fb-live-checkbox').checked;
+            if (!partidoId) return alert('Selecciona primero el partido.');
+            if (enVivo && !pagina) return alert('Escribe el nombre (o link) de la Página de Facebook que transmite.');
+
+            const p = db.partidos.find(x => x.id === partidoId);
+            if (!p) return;
+            p.facebookEnVivo = enVivo;
+            p.facebookPagina = pagina;
+            guardarDB();
+            actualizarFormularios();
+            document.getElementById('fb-live-estado').innerText = '✅ Guardado y publicado en el sitio público.';
+        }
+
+        // Quita la marca de en vivo por Facebook del partido seleccionado (deja de mostrarse en el sitio público).
+        function quitarFacebookLive() {
+            const partidoId = parseInt(document.getElementById('fb-live-partido-select').value);
+            if (!partidoId) return alert('Selecciona primero el partido.');
+            const p = db.partidos.find(x => x.id === partidoId);
+            if (!p) return;
+            p.facebookEnVivo = false;
+            delete p.facebookPagina;
+            guardarDB();
+            actualizarFormularios();
+            document.getElementById('fb-live-pagina').value = '';
+            document.getElementById('fb-live-checkbox').checked = false;
+            document.getElementById('fb-live-estado').innerText = 'Se quitó la transmisión de este partido.';
+        }
+
+
         function mostrarCedulaAdmin(partidoId) {
             const viewer = document.getElementById('admin-cedula-viewer');
             const bloqueCronica = document.getElementById('bloque-cronica-ia');
@@ -2476,6 +2505,10 @@ ${cuerpo}`;
             document.getElementById('fichaje-destino').innerHTML = '<option value="libre">🕊️ Dejar Agente Libre</option>' + db.equipos.map(e => `<option value="${e.id}">⚽ Trasladar a: ${e.nombre}</option>`).join('');
             document.getElementById('admin-res-partido').innerHTML = '<option value="">-- Selecciona Partido --</option>' + db.partidos.map(p => `<option value="${p.id}">J${p.jornada}: ${db.equipos.find(e => e.id === p.localId)?.nombre} vs ${db.equipos.find(e => e.id === p.visitaId)?.nombre} [${p.cedula ? '📋 Cédula cerrada' : etiquetaEstadoVivoAdmin(p.estadoVivo)}]</option>`).join('');
             document.getElementById('banner-partido-select').innerHTML = '<option value="">-- Selecciona Partido --</option>' + db.partidos.filter(p => p.jugado).map(p => `<option value="${p.id}">J${p.jornada}: ${db.equipos.find(e => e.id === p.localId)?.nombre} vs ${db.equipos.find(e => e.id === p.visitaId)?.nombre}</option>`).join('');
+            const selFbLive = document.getElementById('fb-live-partido-select');
+            if (selFbLive) {
+                selFbLive.innerHTML = '<option value="">-- Selecciona Partido --</option>' + db.partidos.map(p => `<option value="${p.id}">${p.jugado ? '✅' : '📅'} J${p.jornada}: ${db.equipos.find(e => e.id === p.localId)?.nombre} vs ${db.equipos.find(e => e.id === p.visitaId)?.nombre}${p.facebookEnVivo ? ' 🔴' : ''}</option>`).join('');
+            }
         }
 
         // ===================== GESTIÓN: EDITAR Y ELIMINAR =====================
