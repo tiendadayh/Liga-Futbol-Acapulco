@@ -457,8 +457,8 @@
                     <input type="text" id="sol-posicion" placeholder="Ej. Portero, Delantero" required>
                 </div>
                 <div class="campo-solicitud">
-                    <label>RFC <span class="opcional">(opcional)</span></label>
-                    <input type="text" id="sol-rfc" style="text-transform:uppercase;">
+                    <label>CURP <span class="opcional">(opcional)</span></label>
+                    <input type="text" id="sol-curp" style="text-transform:uppercase;" maxlength="18">
                 </div>
                 <div class="campo-solicitud">
                     <label>Lugar de nacimiento</label>
@@ -826,7 +826,7 @@
                     equipoId: parseInt(document.getElementById('sol-equipo').value),
                     posicion: document.getElementById('sol-posicion').value.trim(),
                     numero: document.getElementById('sol-numero').value.trim(),
-                    rfc: document.getElementById('sol-rfc').value.trim().toUpperCase(),
+                    curp: document.getElementById('sol-curp').value.trim().toUpperCase(),
                     categoria: document.getElementById('sol-categoria').value,
                     lugarNacimiento: document.getElementById('sol-lugar-nac').value.trim(),
                     fechaNacimiento: document.getElementById('sol-fecha-nac').value,

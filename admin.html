@@ -257,8 +257,9 @@
 
         .gestion-fila {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
-            gap: 10px;
+            gap: 8px 10px;
             background: #f8f9fa;
             border: 1px solid var(--border);
             border-radius: 8px;
@@ -274,7 +275,10 @@
             background: #e2e8f0;
         }
 
-        .gestion-info { flex: 1; min-width: 0; }
+        .gestion-info {
+            flex: 1 1 140px;
+            min-width: 140px;
+        }
 
         .gestion-info strong {
             display: block;
@@ -294,12 +298,27 @@
             display: flex;
             gap: 5px;
             flex-shrink: 0;
+            margin-left: auto;
         }
 
         .gestion-acciones button {
-            padding: 5px 9px;
-            font-size: 0.75rem;
+            padding: 6px 10px;
+            font-size: 0.8rem;
             border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        /* Cuando no cabe todo en una línea, los botones bajan a su propia fila
+           y quedan alineados a la derecha, en vez de comprimir el nombre a una
+           columna de una sola letra. */
+        @media (max-width: 480px) {
+            .gestion-acciones {
+                flex-basis: 100%;
+                justify-content: flex-end;
+                margin-left: 0;
+                padding-top: 4px;
+                border-top: 1px dashed var(--border);
+            }
         }
 
         .btn-editar-fila { background: var(--secondary) !important; }
@@ -760,8 +779,8 @@
                 <input type="text" id="admin-jug-nombre" placeholder="Nombre Completo" required>
                 <label>Número:</label>
                 <input type="number" id="admin-jug-numero" placeholder="Ej. 10" min="0" max="99">
-                <label>RFC:</label>
-                <input type="text" id="admin-jug-rfc" placeholder="RFC (opcional)" style="text-transform:uppercase;">
+                <label>CURP:</label>
+                <input type="text" id="admin-jug-curp" placeholder="CURP (opcional)" style="text-transform:uppercase;" maxlength="18">
                 <label>Categoría:</label>
                 <select id="admin-jug-categoria">
                     <option value="Especial">Especial</option>
@@ -1019,7 +1038,7 @@
                 <div><span class="lbl">Número</span><span class="val" id="ficha-adm-numero">—</span></div>
                 <div><span class="lbl">Posición</span><span class="val" id="ficha-adm-posicion">—</span></div>
                 <div><span class="lbl">Categoría</span><span class="val" id="ficha-adm-categoria">—</span></div>
-                <div><span class="lbl">RFC</span><span class="val" id="ficha-adm-rfc">—</span></div>
+                <div><span class="lbl">CURP</span><span class="val" id="ficha-adm-curp">—</span></div>
                 <div><span class="lbl">Edad</span><span class="val" id="ficha-adm-edad">—</span></div>
                 <div><span class="lbl">Nacionalidad</span><span class="val" id="ficha-adm-nacionalidad">—</span></div>
                 <div><span class="lbl">Lugar de nacimiento</span><span class="val" id="ficha-adm-lugar-nac">—</span></div>
@@ -1097,8 +1116,8 @@
                 <div id="edit-campo-jugador-extra" style="display:none;">
                     <label>Número:</label>
                     <input type="number" id="edit-numero" min="0" max="99">
-                    <label>RFC:</label>
-                    <input type="text" id="edit-rfc" style="text-transform:uppercase;">
+                    <label>CURP:</label>
+                    <input type="text" id="edit-curp" style="text-transform:uppercase;" maxlength="18">
                     <label>Categoría:</label>
                     <select id="edit-categoria">
                         <option value="Especial">Especial</option>
@@ -1746,7 +1765,7 @@
             document.getElementById('ficha-adm-numero').innerText = j.numero ? `#${j.numero}` : '—';
             document.getElementById('ficha-adm-posicion').innerText = j.posicion || '—';
             document.getElementById('ficha-adm-categoria').innerText = j.categoria || '—';
-            document.getElementById('ficha-adm-rfc').innerText = j.rfc || '—';
+            document.getElementById('ficha-adm-curp').innerText = j.curp || '—';
             const edad = calcularEdad(j.fechaNacimiento);
             document.getElementById('ficha-adm-edad').innerText = edad !== null ? `${edad} años` : '—';
             document.getElementById('ficha-adm-nacionalidad').innerText = j.nacionalidad || '—';
@@ -1948,7 +1967,7 @@
                     equipoId: parseInt(document.getElementById('admin-jug-equipo').value),
                     posicion: document.getElementById('admin-jug-posicion').value.trim() || 'Jugador',
                     numero: document.getElementById('admin-jug-numero').value.trim(),
-                    rfc: document.getElementById('admin-jug-rfc').value.trim().toUpperCase(),
+                    curp: document.getElementById('admin-jug-curp').value.trim().toUpperCase(),
                     categoria: document.getElementById('admin-jug-categoria').value,
                     lugarNacimiento: document.getElementById('admin-jug-lugar-nac').value.trim(),
                     fechaNacimiento: document.getElementById('admin-jug-fecha-nac').value,
@@ -2039,7 +2058,7 @@
                     j.nombre = nombre;
                     j.posicion = document.getElementById('edit-posicion').value.trim() || 'Jugador';
                     j.numero = document.getElementById('edit-numero').value.trim();
-                    j.rfc = document.getElementById('edit-rfc').value.trim().toUpperCase();
+                    j.curp = document.getElementById('edit-curp').value.trim().toUpperCase();
                     j.categoria = document.getElementById('edit-categoria').value;
                     j.lugarNacimiento = document.getElementById('edit-lugar-nac').value.trim();
                     j.fechaNacimiento = document.getElementById('edit-fecha-nac').value;
@@ -2129,7 +2148,7 @@
             if (!sol) return;
             db.jugadores.push({
                 id: Date.now(), nombre: sol.nombre, equipoId: sol.equipoId, posicion: sol.posicion,
-                numero: sol.numero || '', rfc: sol.rfc || '', categoria: sol.categoria || 'Especial',
+                numero: sol.numero || '', curp: sol.curp || '', categoria: sol.categoria || 'Especial',
                 lugarNacimiento: sol.lugarNacimiento || '', fechaNacimiento: sol.fechaNacimiento || '',
                 nacionalidad: sol.nacionalidad || 'MEXICANA',
                 foto: sol.foto, goles: 0, amarillas: 0, rojas: 0, xiIdeal: []
@@ -2287,7 +2306,7 @@
                         <div class="carnet-datos">
                             <p><strong>EL EQUIPO:</strong> ${eq ? eq.nombre : 'Agente Libre'}</p>
                             <p><strong>REGISTRA A:</strong> ${j.nombre}</p>
-                            <p><strong>COMO:</strong> JUGADOR &nbsp; <strong>RFC:</strong> ${j.rfc || ''}</p>
+                            <p><strong>COMO:</strong> JUGADOR &nbsp; <strong>CURP:</strong> ${j.curp || ''}</p>
                             <p><strong>CATEGORÍA:</strong> ${j.categoria || ''}</p>
                             <p><strong>LUGAR DE NACIMIENTO:</strong> ${j.lugarNacimiento || ''}</p>
                             <p><strong>FECHA DE NACIMIENTO:</strong> ${formatearFechaCarnet(j.fechaNacimiento)}</p>
@@ -2860,7 +2879,7 @@ ${cuerpo}`;
                 document.getElementById('edit-nombre').value = j.nombre;
                 document.getElementById('edit-posicion').value = j.posicion || '';
                 document.getElementById('edit-numero').value = j.numero || '';
-                document.getElementById('edit-rfc').value = j.rfc || '';
+                document.getElementById('edit-curp').value = j.curp || '';
                 document.getElementById('edit-categoria').value = j.categoria || 'Especial';
                 document.getElementById('edit-lugar-nac').value = j.lugarNacimiento || '';
                 document.getElementById('edit-fecha-nac').value = j.fechaNacimiento || '';
