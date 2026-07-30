@@ -360,7 +360,10 @@
         <section id="posiciones-sec" class="card-section">
             <div class="header-section-flex">
                 <h2>Tabla de Posiciones</h2>
-                <button class="btn-export" onclick="exportarTablaCSV()">📥 Descargar Excel</button>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="btn-export" onclick="compartirTablaPosicionesImagen()" style="background:var(--secondary, #7209b7);">📤 Compartir Imagen</button>
+                    <button class="btn-export" onclick="exportarTablaCSV()">📥 Descargar Excel</button>
+                </div>
             </div>
             <div style="overflow-x:auto;">
                 <table>
@@ -562,6 +565,7 @@
             <h3 id="modal-nombre" class="ficha-tecnica-nombre"></h3>
             <p id="ficha-modal-equipo" class="ficha-tecnica-equipo"></p>
             <p id="modal-posicion" class="ficha-tecnica-posicion"></p>
+            <button type="button" onclick="compartirPerfilJugadorActual()" style="background:var(--secondary, #7209b7); color:white; border:none; padding:6px 14px; border-radius:20px; font-size:0.75rem; cursor:pointer; margin:0 0 10px;">🔗 Compartir este perfil</button>
 
             <div class="ficha-tecnica-stats">
                 <div class="stat-box stat-goles"><span class="stat-icono">⚽</span><strong id="modal-goles">0</strong><span class="stat-label">Goles</span></div>
@@ -872,6 +876,24 @@
             renderXI();
             renderizarEquiposArbitros();
             renderizarBannerEnVivo();
+            intentarAbrirFichaDesdeURL();
+        }
+
+        // Si la página se abrió con ?jugador=<id> (por ejemplo, al escanear el QR de una
+        // credencial), abre automáticamente la ficha pública de ese jugador una sola vez.
+        let fichaURLYaAbierta = false;
+        function intentarAbrirFichaDesdeURL() {
+            if (fichaURLYaAbierta) return;
+            const idParam = new URLSearchParams(window.location.search).get('jugador');
+            if (!idParam) return;
+            const id = parseInt(idParam);
+            if (isNaN(id)) return;
+            const existe = db.jugadores.find(j => j.id === id);
+            if (!existe) return;
+            fichaURLYaAbierta = true;
+            verFicha(id);
+            const sec = document.getElementById('jugadores-sec');
+            if (sec) sec.scrollIntoView({ behavior: 'smooth' });
         }
 
         // Estados de un partido que se consideran "en curso" (se les muestra marcador
@@ -1369,8 +1391,12 @@
                 .sort((a, b) => a.jornada - b.jornada);
         }
 
+        let fichaActualJugadorId = null;
+
         function verFicha(id) {
             const j = db.jugadores.find(jug => jug.id === id);
+            if (!j) return;
+            fichaActualJugadorId = id;
             document.getElementById('modal-foto').src = j.foto || 'https://placehold.co/100';
             document.getElementById('modal-nombre').innerText = j.nombre;
             document.getElementById('ficha-modal-equipo').innerText = db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Agente Libre';
@@ -1418,6 +1444,32 @@
             }
 
             document.getElementById('ficha-modal').classList.remove('hidden');
+        }
+
+        // Construye el enlace público a la ficha del jugador actualmente abierto y lo
+        // comparte con el sistema operativo (WhatsApp, etc.) o lo copia al portapapeles.
+        async function compartirPerfilJugadorActual() {
+            if (fichaActualJugadorId === null) return;
+            const j = db.jugadores.find(jug => jug.id === fichaActualJugadorId);
+            const url = new URL(window.location.href);
+            url.search = '';
+            url.searchParams.set('jugador', fichaActualJugadorId);
+            const enlace = url.toString();
+
+            if (navigator.share) {
+                try {
+                    await navigator.share({ title: j ? `Perfil de ${j.nombre}` : 'Perfil de jugador', text: 'Mira este perfil en la Liga Futbol de Acapulco', url: enlace });
+                    return;
+                } catch (err) { /* si el usuario cancela el share, caemos a copiar el enlace */ }
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                try {
+                    await navigator.clipboard.writeText(enlace);
+                    mostrarAvisoAutoguardado('🔗 Enlace del perfil copiado.');
+                    return;
+                } catch (err) { /* si falla el portapapeles, mostramos el enlace en un aviso */ }
+            }
+            prompt('Copia este enlace para compartir el perfil:', enlace);
         }
 
         function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); }
@@ -1776,6 +1828,152 @@
             `;
             document.getElementById('cedula-modal').classList.remove('hidden');
         }
+        // Genera una imagen tipo "tabla de posiciones" (escudos, PJ/PG/PE/PP/DG/Pts de cada
+        // equipo) y la comparte con el sistema operativo (WhatsApp/Instagram) o la descarga
+        // si el navegador no soporta compartir archivos. Reutiliza el mismo patrón visual
+        // que "Compartir Resultado".
+        async function compartirTablaPosicionesImagen() {
+            const estadisticas = calcularTablaPosiciones();
+            if (!estadisticas.length) return alert('Aún no hay equipos registrados.');
+
+            const cargarImagen = (src) => new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => resolve(img);
+                img.onerror = () => resolve(null);
+                img.src = src || 'https://placehold.co/60';
+            });
+            const escudos = await Promise.all(estadisticas.map(eq => cargarImagen(eq.escudo)));
+
+            const W = 1080;
+            const filaAlto = 74;
+            const headerAlto = 190;
+            const colHeaderAlto = 56;
+            const footerAlto = 60;
+            const H = headerAlto + colHeaderAlto + estadisticas.length * filaAlto + footerAlto;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = W; canvas.height = H;
+            const ctx = canvas.getContext('2d');
+
+            const grad = ctx.createLinearGradient(0, 0, 0, H);
+            grad.addColorStop(0, '#011f4b');
+            grad.addColorStop(1, '#03306e');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, W, H);
+
+            ctx.fillStyle = '#d90429';
+            ctx.fillRect(0, 0, W, 14);
+
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'alphabetic';
+            ctx.fillStyle = '#ffcc00';
+            ctx.font = 'bold 40px Arial';
+            ctx.fillText('LIGA DE FUTBOL ACAPULCO', W / 2, 90);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '26px Arial';
+            ctx.fillText('Tabla de Posiciones', W / 2, 128);
+            const fechaTxt = new Date().toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
+            ctx.font = '18px Arial';
+            ctx.fillStyle = '#cbd5e1';
+            ctx.fillText(`Actualizada al ${fechaTxt}`, W / 2, 158);
+
+            const colX = { pos: 60, escudo: 130, nombre: 175, pj: 650, pg: 715, pe: 780, pp: 845, dg: 930, pts: 1015 };
+
+            let yCabecera = headerAlto;
+            ctx.textAlign = 'left';
+            ctx.font = 'bold 20px Arial';
+            ctx.fillStyle = '#ffcc00';
+            ctx.fillText('#', colX.pos, yCabecera);
+            ctx.fillText('EQUIPO', colX.nombre, yCabecera);
+            ctx.textAlign = 'center';
+            ctx.fillText('PJ', colX.pj, yCabecera);
+            ctx.fillText('PG', colX.pg, yCabecera);
+            ctx.fillText('PE', colX.pe, yCabecera);
+            ctx.fillText('PP', colX.pp, yCabecera);
+            ctx.fillText('DG', colX.dg, yCabecera);
+            ctx.fillText('PTS', colX.pts, yCabecera);
+
+            ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+            ctx.beginPath(); ctx.moveTo(40, yCabecera + 16); ctx.lineTo(W - 40, yCabecera + 16); ctx.stroke();
+
+            const tablaTop = headerAlto + colHeaderAlto;
+            ctx.textBaseline = 'middle';
+
+            estadisticas.forEach((eq, idx) => {
+                const filaTop = tablaTop + idx * filaAlto;
+                const filaCentroY = filaTop + filaAlto / 2;
+
+                if (idx % 2 === 0) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+                    ctx.fillRect(40, filaTop, W - 80, filaAlto);
+                }
+
+                ctx.textAlign = 'left';
+                ctx.font = 'bold 26px Arial';
+                ctx.fillStyle = idx < 3 ? '#2ec4b6' : '#ffffff';
+                ctx.fillText(`${idx + 1}`, colX.pos, filaCentroY);
+
+                const img = escudos[idx];
+                const size = 50;
+                const cx = colX.escudo, cy = filaCentroY;
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                ctx.clip();
+                if (img) ctx.drawImage(img, cx - size / 2, cy - size / 2, size, size);
+                ctx.restore();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 24px Arial';
+                ajustarTextoAncho(ctx, eq.nombre, colX.nombre, filaCentroY, 440);
+
+                ctx.textAlign = 'center';
+                ctx.font = '22px Arial';
+                ctx.fillStyle = '#e2e8f0';
+                ctx.fillText(`${eq.pj}`, colX.pj, filaCentroY);
+                ctx.fillText(`${eq.pg}`, colX.pg, filaCentroY);
+                ctx.fillText(`${eq.pe}`, colX.pe, filaCentroY);
+                ctx.fillText(`${eq.pp}`, colX.pp, filaCentroY);
+                ctx.fillText(`${eq.dg > 0 ? '+' + eq.dg : eq.dg}`, colX.dg, filaCentroY);
+
+                ctx.font = 'bold 26px Arial';
+                ctx.fillStyle = '#ffcc00';
+                ctx.fillText(`${eq.pts}`, colX.pts, filaCentroY);
+            });
+
+            ctx.textBaseline = 'alphabetic';
+            ctx.textAlign = 'center';
+            ctx.font = 'italic 18px Arial';
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText('Sitio Oficial · Liga de Futbol Acapulco', W / 2, H - 22);
+
+            canvas.toBlob(async (blob) => {
+                if (!blob) return;
+                const nombreArchivo = `tabla-posiciones-${new Date().toISOString().slice(0, 10)}.png`;
+                const archivo = new File([blob], nombreArchivo, { type: 'image/png' });
+
+                if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+                    try {
+                        await navigator.share({ files: [archivo], title: 'Tabla de Posiciones', text: 'Tabla de Posiciones · Liga de Futbol Acapulco' });
+                        return;
+                    } catch (err) { /* si el usuario cancela el share, caemos a la descarga */ }
+                }
+
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = nombreArchivo;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        }
+
         function exportarTablaCSV() {
             const estadisticas = calcularTablaPosiciones();
             const encabezado = ['Pos', 'Equipo', 'PJ', 'G', 'E', 'P', 'GF', 'GC', 'DG', 'Pts', 'Forma (más reciente al final)'];

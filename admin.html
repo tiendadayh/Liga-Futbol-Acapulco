@@ -545,6 +545,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 
 <body>
@@ -736,6 +737,9 @@
                 <input type="date" id="cfg-fecha-expedicion">
                 <label>Nombre del Presidente de la Liga (para la firma):</label>
                 <input type="text" id="cfg-presidente" placeholder="Nombre y apellidos">
+                <label>URL pública del sitio (para el código QR de la credencial):</label>
+                <input type="text" id="cfg-url-publica" placeholder="Ej. https://tuliga.com/index.html">
+                <small style="display:block; margin:-6px 0 10px; color:#777;">Pega aquí el enlace donde cualquiera puede ver index.html en internet. Con este dato, cada credencial impresa incluye un código QR que abre el perfil público del jugador.</small>
                 <label>Escudo de la Liga (aparece en la credencial):</label>
                 <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
                     <img id="cfg-escudo-liga-preview" src="" alt="Sin escudo" style="width:54px; height:54px; object-fit:contain; border:1px solid #ccc; border-radius:8px; background:#fff; padding:3px;">
@@ -1342,7 +1346,8 @@
                 temporada: '',
                 fechaExpedicion: '',
                 presidente: '',
-                escudoLiga: ''
+                escudoLiga: '',
+                urlPublica: ''
             };
         }
 
@@ -1872,6 +1877,7 @@
             document.getElementById('cfg-temporada').value = c.temporada || '';
             document.getElementById('cfg-fecha-expedicion').value = c.fechaExpedicion || '';
             document.getElementById('cfg-presidente').value = c.presidente || '';
+            document.getElementById('cfg-url-publica').value = c.urlPublica || '';
             actualizarPreviewEscudoCredencial();
         }
 
@@ -1961,6 +1967,7 @@
                 db.config.temporada = document.getElementById('cfg-temporada').value.trim();
                 db.config.fechaExpedicion = document.getElementById('cfg-fecha-expedicion').value;
                 db.config.presidente = document.getElementById('cfg-presidente').value.trim();
+                db.config.urlPublica = document.getElementById('cfg-url-publica').value.trim().replace(/\s+/g, '');
                 if (nuevoEscudoLiga) db.config.escudoLiga = nuevoEscudoLiga;
                 document.getElementById('cfg-escudo-liga').value = '';
                 guardarDB();
@@ -2200,6 +2207,33 @@
             return `${d} / ${mes} / ${y}`;
         }
 
+        // Construye el enlace al perfil público del jugador en index.html, a partir de la
+        // URL configurada en "Configuración de Credenciales". Devuelve '' si no hay URL configurada.
+        function construirEnlacePerfilJugador(id) {
+            const base = (db.config && db.config.urlPublica || '').trim();
+            if (!base) return '';
+            const separador = base.includes('?') ? '&' : '?';
+            return `${base}${separador}jugador=${id}`;
+        }
+
+        // Genera un código QR como imagen (data URL) a partir de un texto/enlace, usando
+        // un contenedor oculto temporal. Se resuelve con '' si no hay librería QR disponible.
+        function generarQRDataURL(texto, tam) {
+            return new Promise((resolve) => {
+                if (!texto || typeof QRCode === 'undefined') { resolve(''); return; }
+                const cont = document.createElement('div');
+                cont.style.cssText = 'position:absolute; left:-9999px; top:-9999px;';
+                document.body.appendChild(cont);
+                new QRCode(cont, { text: texto, width: tam || 120, height: tam || 120, correctLevel: QRCode.CorrectLevel.M });
+                setTimeout(() => {
+                    const canvas = cont.querySelector('canvas');
+                    const dataUrl = canvas ? canvas.toDataURL('image/png') : '';
+                    document.body.removeChild(cont);
+                    resolve(dataUrl);
+                }, 80);
+            });
+        }
+
         function estiloCarnetCSS() {
             return `
                 body { font-family: Arial, Helvetica, sans-serif; background: #f4f4f4; padding: 20px; }
@@ -2215,8 +2249,11 @@
                 .carnet-datos p { margin: 3px 0; font-size: 0.72rem; line-height: 1.3; color: #1a1a1a; }
                 .carnet-datos strong { color: #011f4b; }
                 .carnet-datos-liga { font-weight: bold; color: #d90429 !important; margin-top: 6px !important; text-transform: uppercase; }
-                .carnet-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 18px; gap: 14px; }
+                .carnet-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 18px; gap: 10px; }
                 .carnet-folio { font-size: 0.6rem; color: gray; white-space: nowrap; }
+                .carnet-qr-box { text-align: center; flex-shrink: 0; }
+                .carnet-qr-box img { width: 52px; height: 52px; display: block; margin: 0 auto 2px; }
+                .carnet-qr-box span { font-size: 0.48rem; color: #555; line-height: 1.1; display: block; max-width: 60px; }
                 .carnet-firmas { display: flex; gap: 20px; }
                 .carnet-firma { text-align: center; font-size: 0.58rem; color: #333; width: 130px; }
                 .carnet-firma-linea { display: block; border-top: 1px solid #333; margin-bottom: 3px; height: 20px; }
@@ -2227,9 +2264,12 @@
             `;
         }
 
-        function generarCarnetHTML(j, eq) {
+        function generarCarnetHTML(j, eq, qrDataUrl) {
             const c = db.config || crearConfigCredencialDefault();
             const folio = `LPA-${j.id.toString().slice(-5)}`;
+            const bloqueQR = qrDataUrl
+                ? `<div class="carnet-qr-box"><img src="${qrDataUrl}"><span>Escanea para ver el perfil</span></div>`
+                : '';
             return `
                 <div class="carnet">
                     <div class="carnet-header">
@@ -2258,6 +2298,7 @@
                     </div>
                     <div class="carnet-footer">
                         <div class="carnet-folio">N° CAM:<br>${folio}</div>
+                        ${bloqueQR}
                         <div class="carnet-firmas">
                             <div class="carnet-firma"><span class="carnet-firma-linea"></span>FIRMA DEL JUGADOR</div>
                             <div class="carnet-firma"><span class="carnet-firma-linea"></span>PRESIDENTE DE LA LIGA${c.presidente ? '<br>' + c.presidente : ''}</div>
@@ -2267,13 +2308,15 @@
             `;
         }
 
-        function imprimirCredencialesEquipo() {
+        async function imprimirCredencialesEquipo() {
             const eqId = parseInt(document.getElementById('credencial-equipo').value);
             if (!eqId) return alert("Selecciona un equipo.");
             const eq = db.equipos.find(e => e.id === eqId);
             const jugantes = db.jugadores.filter(j => j.equipoId === eqId);
 
             if (jugantes.length === 0) return alert("El equipo seleccionado no posee futbolistas registrados.");
+
+            const qrs = await Promise.all(jugantes.map(j => generarQRDataURL(construirEnlacePerfilJugador(j.id))));
 
             const win = window.open('', '', 'width=800,height=600');
             win.document.title = `Credenciales Oficiales - ${eq.nombre}`;
@@ -2285,17 +2328,18 @@
             win.document.body.innerHTML = `
                 <h2 style="text-align:center; color:#011f4b;">${(db.config && db.config.nombreLiga) || 'LIGA FUTBOL DE ACAPULCO A.C.'} - CREDENCIALES OFICIALES</h2>
                 <div style="text-align:center;">
-                    ${jugantes.map(j => generarCarnetHTML(j, eq)).join('')}
+                    ${jugantes.map((j, idx) => generarCarnetHTML(j, eq, qrs[idx])).join('')}
                 </div>
             `;
 
             win.onload = function () { win.print(); };
         }
 
-        function imprimirCredencialJugador(id) {
+        async function imprimirCredencialJugador(id) {
             const j = db.jugadores.find(x => x.id === id);
             if (!j) return;
             const eq = db.equipos.find(e => e.id === j.equipoId);
+            const qr = await generarQRDataURL(construirEnlacePerfilJugador(j.id));
 
             const win = window.open('', '', 'width=650,height=500');
             win.document.title = `Credencial Oficial - ${j.nombre}`;
@@ -2306,11 +2350,34 @@
 
             win.document.body.innerHTML = `
                 <div style="text-align:center;">
-                    ${generarCarnetHTML(j, eq)}
+                    ${generarCarnetHTML(j, eq, qr)}
                 </div>
             `;
 
             win.onload = function () { win.print(); };
+        }
+
+        // Muestra en una ventana emergente el código QR y el enlace directo al perfil
+        // público del jugador (sin necesidad de imprimir la credencial completa).
+        async function mostrarPerfilQR(id) {
+            const j = db.jugadores.find(x => x.id === id);
+            if (!j) return;
+            const enlace = construirEnlacePerfilJugador(id);
+            if (!enlace) {
+                alert('Primero configura la "URL pública del sitio" en 🪪 Configuración de Credenciales para poder generar el enlace del perfil.');
+                return;
+            }
+            const qr = await generarQRDataURL(enlace, 220);
+            const win = window.open('', '', 'width=380,height=480');
+            win.document.title = `Perfil público - ${j.nombre}`;
+            win.document.body.innerHTML = `
+                <div style="font-family:Arial, sans-serif; text-align:center; padding:24px;">
+                    <h3 style="color:#011f4b; margin-bottom:4px;">${j.nombre}</h3>
+                    <p style="font-size:0.8rem; color:#555; margin-top:0;">Escanea para ver el perfil público</p>
+                    ${qr ? `<img src="${qr}" style="width:220px; height:220px;">` : '<p style="color:#c62828;">No se pudo generar el QR.</p>'}
+                    <p style="word-break:break-all; font-size:0.75rem; color:#333; margin-top:16px;">${enlace}</p>
+                </div>
+            `;
         }
 
         function generarBannerResultado() {
@@ -2710,6 +2777,7 @@ ${cuerpo}`;
                     <div class="gestion-acciones">
                         <button type="button" class="btn-ver-fila" title="Ver ficha completa" onclick="verFichaJugadorAdmin(${j.id})">👁️</button>
                         <button type="button" class="btn-editar-fila" title="Imprimir credencial" onclick="imprimirCredencialJugador(${j.id})">🪪</button>
+                        <button type="button" class="btn-editar-fila" title="Compartir perfil público (QR)" onclick="mostrarPerfilQR(${j.id})">🔗</button>
                         <button type="button" class="btn-editar-fila" onclick="abrirEdicion('jugador', ${j.id})">✏️</button>
                         <button type="button" class="btn-eliminar-fila" onclick="eliminarJugador(${j.id})">🗑️</button>
                     </div>
@@ -2920,6 +2988,7 @@ ${cuerpo}`;
                     <div class="gestion-acciones">
                         <button type="button" class="btn-ver-fila" title="Ver ficha completa" onclick="verFichaJugadorAdmin(${j.id})">👁️</button>
                         <button type="button" class="btn-editar-fila" title="Imprimir credencial" onclick="imprimirCredencialJugador(${j.id})">🪪</button>
+                        <button type="button" class="btn-editar-fila" title="Compartir perfil público (QR)" onclick="mostrarPerfilQR(${j.id})">🔗</button>
                     </div>
                 </div>`).join('') : '<p style="font-size:0.8rem; color:#888;">Este equipo aún no tiene jugadores registrados.</p>';
 
