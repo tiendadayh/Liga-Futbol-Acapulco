@@ -1080,7 +1080,6 @@
                 <div><span class="lbl">Nacionalidad</span><span class="val" id="ficha-adm-arb-nacionalidad">—</span></div>
                 <div><span class="lbl">Lugar de nacimiento</span><span class="val" id="ficha-adm-arb-lugar-nac">—</span></div>
                 <div><span class="lbl">Cédulas pendientes</span><span class="val" id="ficha-adm-arb-pendientes">0</span></div>
-                <div><span class="lbl">Calificación de la afición</span><span class="val" id="ficha-adm-arb-calificacion">—</span></div>
             </div>
             <h4 style="margin:0 0 6px; font-size:0.8rem; color:var(--primary); text-transform:uppercase;">📋 Historial de Partidos Dirigidos</h4>
             <div style="max-height:200px; overflow-y:auto;">
@@ -1382,7 +1381,7 @@
         if (!db.solicitudes) db.solicitudes = [];
         if (!db.finanzas) db.finanzas = {};
         if (!db.votosMvp) db.votosMvp = {};
-        if (!db.calificacionesArbitro) db.calificacionesArbitro = {};
+        if (!db.comunicados) db.comunicados = [];
         if (!db.config) db.config = crearConfigCredencialDefault();
                 if (db.config.logoSitio === undefined) db.config.logoSitio = '';
 
@@ -1574,7 +1573,7 @@
                 if (!db.solicitudes) db.solicitudes = [];
                 if (!db.finanzas) db.finanzas = {};
                 if (!db.votosMvp) db.votosMvp = {};
-                if (!db.calificacionesArbitro) db.calificacionesArbitro = {};
+        if (!db.comunicados) db.comunicados = [];
                 if (!db.config) db.config = crearConfigCredencialDefault();
                 if (db.config.logoSitio === undefined) db.config.logoSitio = '';
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
@@ -1608,7 +1607,7 @@
                 if (!db.solicitudes) db.solicitudes = [];
                 if (!db.finanzas) db.finanzas = {};
                 if (!db.votosMvp) db.votosMvp = {};
-                if (!db.calificacionesArbitro) db.calificacionesArbitro = {};
+        if (!db.comunicados) db.comunicados = [];
                 if (!db.config) db.config = crearConfigCredencialDefault();
                 if (db.config.logoSitio === undefined) db.config.logoSitio = '';
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
@@ -1663,7 +1662,7 @@
                 if (!db.solicitudes) db.solicitudes = [];
                 if (!db.finanzas) db.finanzas = {};
                 if (!db.votosMvp) db.votosMvp = {};
-                if (!db.calificacionesArbitro) db.calificacionesArbitro = {};
+        if (!db.comunicados) db.comunicados = [];
                 if (!db.config) db.config = crearConfigCredencialDefault();
                 if (db.config.logoSitio === undefined) db.config.logoSitio = '';
 
@@ -1818,12 +1817,6 @@
             document.getElementById('ficha-adm-arb-cerradas').innerText = partidosArb.filter(p => p.cedula).length;
             document.getElementById('ficha-adm-arb-pendientes').innerText = partidosArb.filter(p => !p.cedula).length;
 
-            let sumaCalif = 0, votosCalif = 0;
-            partidosArb.forEach(p => {
-                const c = db.calificacionesArbitro && db.calificacionesArbitro[p.id];
-                if (c) { sumaCalif += c.suma; votosCalif += c.votos; }
-            });
-            document.getElementById('ficha-adm-arb-calificacion').innerText = votosCalif ? `⭐ ${(sumaCalif / votosCalif).toFixed(1)} (${votosCalif} votos)` : 'Sin calificar aún';
 
             let totalAmarillas = 0, totalRojas = 0;
             const historial = partidosArb.filter(p => p.jugado).map(p => {

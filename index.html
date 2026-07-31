@@ -544,6 +544,7 @@
             <h2 style="margin-top:30px;">🎙️ Árbitros Oficiales</h2>
             <div id="grid-arbitros-publico" class="grid"></div>
         </section>
+
     </div>
 
     <!-- MODAL CÉDULA OFICIAL -->
@@ -648,7 +649,6 @@
                 <div class="stat-box"><span class="stat-icono">✅</span><strong id="arbitro-modal-cerradas">0</strong><span class="stat-label">Cédulas Cerradas</span></div>
                 <div class="stat-box stat-amarillas"><span class="stat-icono">🟨</span><strong id="arbitro-modal-amarillas">0</strong><span class="stat-label">Amarillas</span></div>
                 <div class="stat-box stat-rojas"><span class="stat-icono">🟥</span><strong id="arbitro-modal-rojas">0</strong><span class="stat-label">Rojas</span></div>
-                <div class="stat-box"><span class="stat-icono">⭐</span><strong id="arbitro-modal-calificacion">—</strong><span class="stat-label" id="arbitro-modal-calificacion-votos">Calificación</span></div>
             </div>
 
             <div class="ficha-tecnica-datos">
@@ -707,12 +707,11 @@
         let db = JSON.parse(localStorage.getItem('liga_premier_db')) || { 
             equipos: [], jugadores: [], partidos: [], comunicados: [], 
             arbitros: [], campos: [], xiIdealAdmin: {}, registrosCerrados: false, liguillaActiva: false,
-            historialFichajes: [], solicitudes: [], votosMvp: {}, calificacionesArbitro: {}
+            historialFichajes: [], solicitudes: [], votosMvp: {}
         };
 
         if(!db.votosMvp) db.votosMvp = {};
         if(!db.campos) db.campos = [];
-        if(!db.calificacionesArbitro) db.calificacionesArbitro = {};
 
         function guardarDB() {
             localStorage.setItem('liga_premier_db', JSON.stringify(db));
@@ -1136,33 +1135,6 @@
             `;
         }
 
-        // Registra la calificación (1-5 estrellas) que la afición da al arbitraje de un partido específico.
-        // Cada navegador puede calificar una sola vez por partido (se guarda una marca en localStorage).
-        function calificarArbitroPartido(partidoId, estrellas) {
-            const clave = `voto_arbitro_partido_${partidoId}`;
-            if (localStorage.getItem(clave)) return;
-
-            if (!db.calificacionesArbitro) db.calificacionesArbitro = {};
-            if (!db.calificacionesArbitro[partidoId]) db.calificacionesArbitro[partidoId] = { suma: 0, votos: 0 };
-            db.calificacionesArbitro[partidoId].suma += estrellas;
-            db.calificacionesArbitro[partidoId].votos += 1;
-
-            localStorage.setItem(clave, String(estrellas));
-            guardarDB();
-            actualizarVistaJornadas();
-        }
-
-        // Promedio de calificación de un árbitro sumando todos los partidos que ha dirigido.
-        function calcularCalificacionPromedioArbitro(nombreArbitro) {
-            const idsPartidos = db.partidos.filter(p => p.arbitro === nombreArbitro).map(p => p.id);
-            let suma = 0, votos = 0;
-            idsPartidos.forEach(id => {
-                const c = db.calificacionesArbitro && db.calificacionesArbitro[id];
-                if (c) { suma += c.suma; votos += c.votos; }
-            });
-            return { promedio: votos ? suma / votos : 0, votos };
-        }
-
         function actualizarVistaJornadas() {
             const jFiltro = parseInt(document.getElementById('select-jornada-filtro').value);
             const contenedor = document.getElementById('lista-partidos-jornada');
@@ -1263,23 +1235,6 @@
                 }
 
 
-                let calificacionHtml = '';
-                if (p.jugado && p.arbitro) {
-                    const calif = (db.calificacionesArbitro && db.calificacionesArbitro[p.id]) || { suma: 0, votos: 0 };
-                    const promedio = calif.votos ? calif.suma / calif.votos : 0;
-                    const votoPrevio = localStorage.getItem(`voto_arbitro_partido_${p.id}`);
-                    const estrellas = [1, 2, 3, 4, 5].map(n => votoPrevio
-                        ? `<span style="font-size:1.15rem;">${n <= parseInt(votoPrevio) ? '⭐' : '☆'}</span>`
-                        : `<span onclick="calificarArbitroPartido(${p.id}, ${n})" style="font-size:1.25rem; cursor:pointer;" title="${n} estrella${n > 1 ? 's' : ''}">☆</span>`
-                    ).join('');
-                    calificacionHtml = `<div style="margin-top:10px; font-size:0.78rem; background:#fff; border:1px solid var(--border); padding:8px 10px; border-radius:6px; text-align:center;">
-                        <strong>👨‍⚖️ Califica el arbitraje de ${p.arbitro}</strong>
-                        <div style="margin-top:4px;">${estrellas}</div>
-                        ${votoPrevio ? '<div style="color:#16a34a; font-size:0.72rem; margin-top:2px;">¡Gracias por tu calificación!</div>' : ''}
-                        <div style="color:#6b7280; font-size:0.72rem; margin-top:4px;">Calificación de la afición: ${promedio ? promedio.toFixed(1) : '—'} ⭐ (${calif.votos} voto${calif.votos === 1 ? '' : 's'})</div>
-                    </div>`;
-                }
-
                 return `
                     <div class="partido-item">
                         ${estadoBadge}
@@ -1304,7 +1259,6 @@
                         ${facebookLiveHtml}
                         ${alineacionesHtml}
                         ${mvpHtml}
-                        ${calificacionHtml}
                         ${cedulaBtn}
                         ${compartirBtn}
                     </div>
@@ -1583,10 +1537,6 @@
             document.getElementById('arbitro-modal-amarillas').innerText = totalAmarillas;
             document.getElementById('arbitro-modal-rojas').innerText = totalRojas;
 
-            const calificacionArb = calcularCalificacionPromedioArbitro(a.nombre);
-            document.getElementById('arbitro-modal-calificacion').innerText = calificacionArb.votos ? calificacionArb.promedio.toFixed(1) : '—';
-            document.getElementById('arbitro-modal-calificacion-votos').innerText = calificacionArb.votos ? `Calif. (${calificacionArb.votos} votos)` : 'Sin calificar';
-
             const tbody = document.getElementById('arbitro-modal-historial-body');
             const vacio = document.getElementById('arbitro-modal-historial-vacio');
             if (historial.length) {
@@ -1629,13 +1579,11 @@
             }
             if (contArbitros) {
                 contArbitros.innerHTML = db.arbitros.map(a => {
-                    const calif = calcularCalificacionPromedioArbitro(a.nombre);
                     return `
                     <div class="arbitro-card" onclick="verArbitro('${a.nombre.replace(/'/g, "\\'")}')">
                         <img src="${a.foto || 'https://placehold.co/70'}">
                         <h3>${a.nombre}</h3>
                         <p>${a.colegio || 'Independiente'}</p>
-                        <p>${calif.votos ? `⭐ ${calif.promedio.toFixed(1)} (${calif.votos})` : 'Sin calificar aún'}</p>
                     </div>`;
                 }).join('') || '<p style="color:gray;">Aún no hay árbitros registrados.</p>';
             }
