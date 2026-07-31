@@ -946,6 +946,11 @@
                 <h4 style="margin:0 0 8px; color:var(--dark);">🏟️ Canchas</h4>
                 <div id="gestion-lista-canchas" class="gestion-lista"></div>
             </div>
+            <div>
+                <h4 style="margin:0 0 8px; color:var(--dark);">📢 Avisos y Crónicas</h4>
+                <p style="font-size:0.75rem; color:#888; margin:-4px 0 8px;">Elimina lo publicado en el Tablón del sitio público.</p>
+                <div id="gestion-lista-comunicados" class="gestion-lista"></div>
+            </div>
         </div>
     </div>
 
@@ -2845,6 +2850,21 @@ ${cuerpo}`;
                         </div>
                     </div>`).join('') : '<p style="font-size:0.8rem; color:#888;">Sin canchas registradas.</p>';
             }
+
+            const listaComunicados = document.getElementById('gestion-lista-comunicados');
+            if (listaComunicados) {
+                const iconoTipo = { aviso: '📢', sancion: '⚠️', cronica: '📰' };
+                listaComunicados.innerHTML = (db.comunicados || []).length ? db.comunicados.map(c => `
+                    <div class="gestion-fila">
+                        <div class="gestion-info">
+                            <strong>${iconoTipo[c.tipo] || '📢'} ${c.titulo}</strong>
+                            <span>${c.fecha || ''}</span>
+                        </div>
+                        <div class="gestion-acciones">
+                            <button type="button" class="btn-eliminar-fila" onclick="eliminarComunicado(${c.id})">🗑️</button>
+                        </div>
+                    </div>`).join('') : '<p style="font-size:0.8rem; color:#888;">Sin avisos ni crónicas publicadas.</p>';
+            }
         }
 
         function abrirEdicion(tipo, id) {
@@ -3075,6 +3095,15 @@ ${cuerpo}`;
             db.campos = db.campos.filter(x => x.id !== id);
             guardarDB();
             alert("Cancha eliminada.");
+        }
+
+        function eliminarComunicado(id) {
+            const c = db.comunicados.find(x => x.id === id);
+            if (!c) return;
+            if (!confirm(`¿Eliminar "${c.titulo}" del Tablón?`)) return;
+            db.comunicados = db.comunicados.filter(x => x.id !== id);
+            guardarDB();
+            alert("Publicación eliminada del Tablón.");
         }
 
         function eliminarPartido(id) {
