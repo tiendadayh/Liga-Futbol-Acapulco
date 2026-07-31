@@ -122,6 +122,27 @@
         .buscador-resultado-info span { font-size: 0.72rem; color: var(--text); opacity: 0.65; }
         .buscador-resultado-vacio { padding: 14px; text-align: center; font-size: 0.82rem; color: var(--text); opacity: 0.6; }
 
+        .patrocinadores-bar {
+            background: var(--card-bg); border-bottom: 1px solid var(--border); overflow: hidden; padding: 12px 0;
+        }
+        .patrocinadores-track {
+            display: flex; align-items: center; width: max-content; animation: patrocinadores-scroll 20s linear infinite;
+        }
+        .patrocinadores-bar:hover .patrocinadores-track { animation-play-state: paused; }
+        .patrocinadores-item {
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0 30px;
+        }
+        .patrocinadores-item img {
+            height: 52px; max-width: 140px; object-fit: contain; filter: grayscale(20%); opacity: 0.85;
+            transition: filter var(--transition-fast), opacity var(--transition-fast), transform var(--transition-fast);
+        }
+        .patrocinadores-item a { display: block; cursor: pointer; }
+        .patrocinadores-item img:hover { filter: grayscale(0%); opacity: 1; transform: scale(1.06); }
+        @keyframes patrocinadores-scroll {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); }
+        }
+
         .container { max-width: 1200px; margin: 34px auto; padding: 0 20px; }
         .card-section {
             background: var(--card-bg); padding: 26px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm);
@@ -349,6 +370,10 @@
             </div>
         </div>
     </header>
+
+    <div id="patrocinadores-carrusel-wrap" class="patrocinadores-bar hidden">
+        <div class="patrocinadores-track" id="patrocinadores-track"></div>
+    </div>
 
     <nav>
         <a href="#tablon-sec">Tablón</a>
@@ -752,6 +777,7 @@
 
         if(!db.votosMvp) db.votosMvp = {};
         if(!db.campos) db.campos = [];
+        if(!db.patrocinadores) db.patrocinadores = [];
 
         function guardarDB() {
             localStorage.setItem('liga_premier_db', JSON.stringify(db));
@@ -887,8 +913,26 @@
             }
         }
 
+        // Dibuja el carrusel de patrocinadores en movimiento continuo (se oculta si no hay ninguno)
+        function renderizarPatrocinadores() {
+            const wrap = document.getElementById('patrocinadores-carrusel-wrap');
+            const track = document.getElementById('patrocinadores-track');
+            const lista = db.patrocinadores || [];
+            if (!lista.length) { wrap.classList.add('hidden'); track.innerHTML = ''; return; }
+
+            const itemsHtml = lista.map(p => {
+                const img = `<img src="${p.logo}" alt="${p.nombre}" title="${p.nombre}">`;
+                return `<div class="patrocinadores-item">${p.link ? `<a href="${p.link}" target="_blank" rel="noopener">${img}</a>` : img}</div>`;
+            }).join('');
+            // Se duplica la lista para lograr un desplazamiento continuo sin cortes
+            track.innerHTML = itemsHtml + itemsHtml;
+            track.style.animationDuration = Math.max(lista.length * 6, 14) + 's';
+            wrap.classList.remove('hidden');
+        }
+
         function actualizarVistaTodo() {
             aplicarLogoSitio();
+            renderizarPatrocinadores();
             const contNoticias = document.getElementById('noticias-contenedor');
             contNoticias.innerHTML = (db.comunicados || []).map(c => `
                 <div style="background:var(--light); border:1px solid var(--border); padding:15px; border-radius:8px;">

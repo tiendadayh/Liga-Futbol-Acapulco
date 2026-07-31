@@ -723,6 +723,19 @@
             </form>
         </div>
 
+        <!-- REGISTRAR PATROCINADOR -->
+        <div class="admin-box" style="border-top-color:#ff9100;">
+            <h3>🤝 Registrar Patrocinador</h3>
+            <form id="form-add-patrocinador">
+                <input type="text" id="patro-nombre" placeholder="Nombre del Patrocinador" required>
+                <label>Logo:</label>
+                <input type="file" id="patro-logo" accept="image/*" required>
+                <label>Enlace (opcional: su página, Facebook, WhatsApp, etc.):</label>
+                <input type="text" id="patro-link" placeholder="https://...">
+                <button type="submit" style="background:#ff9100;">Agregar Patrocinador</button>
+            </form>
+        </div>
+
         <!-- LOGO DEL SITIO (ENCABEZADO) -->
         <div class="admin-box" style="border-top-color:#0b1e3d;">
             <h3>🖼️ Logo del Sitio (Encabezado)</h3>
@@ -951,6 +964,10 @@
                 <p style="font-size:0.75rem; color:#888; margin:-4px 0 8px;">Elimina lo publicado en el Tablón del sitio público.</p>
                 <div id="gestion-lista-comunicados" class="gestion-lista"></div>
             </div>
+            <div>
+                <h4 style="margin:0 0 8px; color:var(--dark);">🤝 Patrocinadores</h4>
+                <div id="gestion-lista-patrocinadores" class="gestion-lista"></div>
+            </div>
         </div>
     </div>
 
@@ -1154,6 +1171,10 @@
                 <div id="edit-campo-direccion" style="display:none;">
                     <label>Dirección / Referencia:</label>
                     <input type="text" id="edit-direccion">
+                </div>
+                <div id="edit-campo-link" style="display:none;">
+                    <label>Enlace (opcional):</label>
+                    <input type="text" id="edit-link" placeholder="https://...">
                 </div>
 
                 <label id="edit-label-foto">Reemplazar foto (opcional, deja vacío para conservar la actual):</label>
@@ -1387,6 +1408,7 @@
         if (!db.finanzas) db.finanzas = {};
         if (!db.votosMvp) db.votosMvp = {};
         if (!db.comunicados) db.comunicados = [];
+        if (!db.patrocinadores) db.patrocinadores = [];
         if (!db.config) db.config = crearConfigCredencialDefault();
                 if (db.config.logoSitio === undefined) db.config.logoSitio = '';
 
@@ -1579,6 +1601,7 @@
                 if (!db.finanzas) db.finanzas = {};
                 if (!db.votosMvp) db.votosMvp = {};
         if (!db.comunicados) db.comunicados = [];
+        if (!db.patrocinadores) db.patrocinadores = [];
                 if (!db.config) db.config = crearConfigCredencialDefault();
                 if (db.config.logoSitio === undefined) db.config.logoSitio = '';
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
@@ -1613,6 +1636,7 @@
                 if (!db.finanzas) db.finanzas = {};
                 if (!db.votosMvp) db.votosMvp = {};
         if (!db.comunicados) db.comunicados = [];
+        if (!db.patrocinadores) db.patrocinadores = [];
                 if (!db.config) db.config = crearConfigCredencialDefault();
                 if (db.config.logoSitio === undefined) db.config.logoSitio = '';
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
@@ -1668,6 +1692,7 @@
                 if (!db.finanzas) db.finanzas = {};
                 if (!db.votosMvp) db.votosMvp = {};
         if (!db.comunicados) db.comunicados = [];
+        if (!db.patrocinadores) db.patrocinadores = [];
                 if (!db.config) db.config = crearConfigCredencialDefault();
                 if (db.config.logoSitio === undefined) db.config.logoSitio = '';
 
@@ -1955,6 +1980,16 @@
                 this.reset(); guardarDB(); alert("Equipo registrado con éxito.");
             });
 
+            document.getElementById('form-add-patrocinador').addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const logoBase64 = await convertirImagenABase64(document.getElementById('patro-logo'));
+                if (!logoBase64) { alert("Sube el logo del patrocinador."); return; }
+                let link = document.getElementById('patro-link').value.trim();
+                if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
+                db.patrocinadores.push({ id: Date.now(), nombre: document.getElementById('patro-nombre').value.trim(), logo: logoBase64, link: link, fecha: new Date().toLocaleDateString('es-MX') });
+                this.reset(); guardarDB(); alert("Patrocinador agregado con éxito.");
+            });
+
             document.getElementById('form-add-jugador').addEventListener('submit', async function (e) {
                 e.preventDefault();
                 if (db.registrosCerrados) return alert("Los registros están bloqueados administrativamente.");
@@ -2080,6 +2115,14 @@
                     c.nombre = nombre;
                     c.direccion = document.getElementById('edit-direccion').value.trim();
                     if (nuevaFoto) c.foto = nuevaFoto;
+                } else if (tipo === 'patrocinador') {
+                    const p = db.patrocinadores.find(x => x.id === id);
+                    if (!p) return;
+                    p.nombre = nombre;
+                    let link = document.getElementById('edit-link').value.trim();
+                    if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
+                    p.link = link;
+                    if (nuevaFoto) p.logo = nuevaFoto;
                 }
 
                 guardarDB();
@@ -2865,6 +2908,22 @@ ${cuerpo}`;
                         </div>
                     </div>`).join('') : '<p style="font-size:0.8rem; color:#888;">Sin avisos ni crónicas publicadas.</p>';
             }
+
+            const listaPatrocinadores = document.getElementById('gestion-lista-patrocinadores');
+            if (listaPatrocinadores) {
+                listaPatrocinadores.innerHTML = (db.patrocinadores || []).length ? db.patrocinadores.map(p => `
+                    <div class="gestion-fila">
+                        <img src="${p.logo || 'https://placehold.co/40'}">
+                        <div class="gestion-info">
+                            <strong>${p.nombre}</strong>
+                            <span>${p.link ? '🔗 ' + p.link : 'Sin enlace'}</span>
+                        </div>
+                        <div class="gestion-acciones">
+                            <button type="button" class="btn-editar-fila" onclick="abrirEdicion('patrocinador', ${p.id})">✏️</button>
+                            <button type="button" class="btn-eliminar-fila" onclick="eliminarPatrocinador(${p.id})">🗑️</button>
+                        </div>
+                    </div>`).join('') : '<p style="font-size:0.8rem; color:#888;">Sin patrocinadores registrados.</p>';
+            }
         }
 
         function abrirEdicion(tipo, id) {
@@ -2878,6 +2937,7 @@ ${cuerpo}`;
             document.getElementById('edit-campo-email-arbitro').style.display = 'none';
             document.getElementById('edit-campo-arbitro-extra').style.display = 'none';
             document.getElementById('edit-campo-direccion').style.display = 'none';
+            document.getElementById('edit-campo-link').style.display = 'none';
 
             if (tipo === 'equipo') {
                 const eq = db.equipos.find(e => e.id === id);
@@ -2925,6 +2985,14 @@ ${cuerpo}`;
                 document.getElementById('edit-direccion').value = c.direccion || '';
                 document.getElementById('edit-campo-direccion').style.display = 'block';
                 document.getElementById('edit-label-foto').innerText = 'Reemplazar foto (opcional, deja vacío para conservar la actual):';
+            } else if (tipo === 'patrocinador') {
+                const p = db.patrocinadores.find(x => x.id === id);
+                if (!p) return;
+                document.getElementById('modal-editar-titulo').innerText = '✏️ Editar Patrocinador';
+                document.getElementById('edit-nombre').value = p.nombre;
+                document.getElementById('edit-link').value = p.link || '';
+                document.getElementById('edit-campo-link').style.display = 'block';
+                document.getElementById('edit-label-foto').innerText = 'Reemplazar logo (opcional, deja vacío para conservar el actual):';
             }
 
             document.getElementById('modal-editar').style.display = 'flex';
@@ -3104,6 +3172,15 @@ ${cuerpo}`;
             db.comunicados = db.comunicados.filter(x => x.id !== id);
             guardarDB();
             alert("Publicación eliminada del Tablón.");
+        }
+
+        function eliminarPatrocinador(id) {
+            const p = db.patrocinadores.find(x => x.id === id);
+            if (!p) return;
+            if (!confirm(`¿Eliminar al patrocinador "${p.nombre}"?`)) return;
+            db.patrocinadores = db.patrocinadores.filter(x => x.id !== id);
+            guardarDB();
+            alert("Patrocinador eliminado.");
         }
 
         function eliminarPartido(id) {
