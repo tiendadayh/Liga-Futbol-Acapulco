@@ -8,6 +8,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#011f4b">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="icon" href="icon-192.png">
     <style>
         :root {
             --primary: #d90429;
@@ -563,6 +567,7 @@
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -590,6 +595,7 @@
         </div>
     </header>
     <button type="button" id="btn-cerrar-sesion" onclick="cerrarSesionAdmin()" style="position:fixed; top:12px; right:12px; z-index:9998; background:#c62828; color:#fff; border:none; padding:8px 14px; border-radius:20px; font-size:0.8rem; font-weight:bold; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.25);">🚪 Cerrar sesión</button>
+    <button type="button" id="btn-instalar-app" onclick="instalarAppPWA()" style="display:none; position:fixed; top:12px; left:12px; z-index:9998; background:#ffcc00; color:#0b1e3d; border:none; padding:8px 14px; border-radius:20px; font-size:0.8rem; font-weight:bold; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.25);">📲 Instalar App</button>
 
     <!-- RESUMEN DEL DÍA -->
     <div class="admin-box" style="border-top-color:#0b1e3d; background:#f4f7ff; margin-bottom:25px;">
@@ -1285,9 +1291,11 @@
             projectId: "liga-premier-acapulco",
             storageBucket: "liga-premier-acapulco.firebasestorage.app",
             messagingSenderId: "426642299369",
-            appId: "1:426642299369:web:b3486f21982fd5f3515378"
+            appId: "1:426642299369:web:b3486f21982fd5f3515378",
+            measurementId: "G-4NB813C868"
         };
         firebase.initializeApp(firebaseConfig);
+        firebase.analytics();
         const firebaseDbRef = firebase.database().ref('liga_premier_db');
         let hayCambiosSinPublicar = false;
         let contadorCambiosPendientes = 0;
@@ -1296,6 +1304,34 @@
         // Guarda el logo original que ya trae la página para poder volver a él
         // cuando el admin presione "Quitar".
         const LOGO_LIGA_DEFAULT = document.querySelector('.admin-header-logo') ? document.querySelector('.admin-header-logo').src : '';
+        // ---- PWA: registro de service worker e instalación como app ----
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            });
+        }
+        let eventoInstalacionPWA = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            eventoInstalacionPWA = e;
+            const btn = document.getElementById('btn-instalar-app');
+            if (btn) btn.style.display = 'inline-block';
+        });
+        window.addEventListener('appinstalled', () => {
+            eventoInstalacionPWA = null;
+            const btn = document.getElementById('btn-instalar-app');
+            if (btn) btn.style.display = 'none';
+        });
+        function instalarAppPWA() {
+            if (!eventoInstalacionPWA) return;
+            eventoInstalacionPWA.prompt();
+            eventoInstalacionPWA.userChoice.finally(() => {
+                eventoInstalacionPWA = null;
+                const btn = document.getElementById('btn-instalar-app');
+                if (btn) btn.style.display = 'none';
+            });
+        }
+
         function aplicarLogoSitio() {
             const logo = document.querySelector('.admin-header-logo');
             if (!logo) return;
