@@ -1,7 +1,7 @@
 {
-  "name": "Liga Premier de Acapulco",
+  "name": "Liga Futbol de Acapulco",
   "short_name": "Liga Acapulco",
-  "description": "Sitio oficial de la Liga Premier de Acapulco: tabla de posiciones, resultados en vivo, fichas de jugadores y más.",
+  "description": "Sitio oficial de la Liga Futbol de Acapulco: tabla de posiciones, resultados en vivo, fichas de jugadores y más.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

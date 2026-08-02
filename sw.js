@@ -1,0 +1,60 @@
+// Service Worker - Liga Futbol de Acapulco
+// Cachea el "cascarón" del sitio para que cargue rápido y no se rompa
+// si hay un mal momento de señal. Los datos en vivo siguen viniendo
+// de Firebase, esto solo cachea las páginas y los íconos.
+
+const CACHE_NAME = 'liga-acapulco-v1';
+const APP_SHELL = [
+    './index.html',
+    './admin.html',
+    './arbitro.html',
+    './manifest.json',
+    './icon-192.png',
+    './icon-512.png'
+];
+
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
+    );
+    self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys().then((keys) =>
+            Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+        )
+    );
+    self.clients.claim();
+});
+
+self.addEventListener('fetch', (event) => {
+    const req = event.request;
+
+    // Solo manejamos peticiones GET del mismo origen (HTML, íconos, manifest).
+    // Todo lo demás (Firebase, fuentes de Google, etc.) pasa directo a la red.
+    if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) {
+        return;
+    }
+
+    // Páginas HTML: primero intenta la red (para tener lo más nuevo),
+    // si no hay conexión usa la copia guardada.
+    if (req.mode === 'navigate' || req.headers.get('accept')?.includes('text/html')) {
+        event.respondWith(
+            fetch(req)
+                .then((res) => {
+                    const resClone = res.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
+                    return res;
+                })
+                .catch(() => caches.match(req).then((res) => res || caches.match('./index.html')))
+        );
+        return;
+    }
+
+    // Recursos estáticos (íconos, manifest): usa la copia guardada primero.
+    event.respondWith(
+        caches.match(req).then((res) => res || fetch(req))
+    );
+});
