@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Liga Futbol de Acapulco - Sitio Oficial</title>
+    <meta name="description" content="Sitio oficial de la Liga Futbol de Acapulco: tabla de posiciones, resultados en vivo, fichas de jugadores y más.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Liga Futbol de Acapulco - Sitio Oficial">
+    <meta property="og:description" content="Tabla de posiciones, resultados en vivo, goleo y fichas de jugadores de la Liga Futbol de Acapulco.">
+    <meta property="og:image" content="https://tiendadayh.github.io/Liga-Futbol-Acapulco/icon-512.png">
+    <meta property="og:url" content="https://tiendadayh.github.io/Liga-Futbol-Acapulco/">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Liga Futbol de Acapulco - Sitio Oficial">
+    <meta name="twitter:description" content="Tabla de posiciones, resultados en vivo, goleo y fichas de jugadores de la Liga Futbol de Acapulco.">
+    <meta name="twitter:image" content="https://tiendadayh.github.io/Liga-Futbol-Acapulco/icon-512.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -520,7 +530,7 @@
                     <input type="text" id="sol-nombre" placeholder="Nombre y apellidos" required>
                 </div>
                 <div class="campo-solicitud">
-                    <label>Número</label>
+                    <label>Número de playera</label>
                     <input type="number" id="sol-numero" placeholder="Ej. 10" min="0" max="99">
                 </div>
                 <div class="campo-solicitud">
@@ -536,8 +546,8 @@
                     <input type="text" id="sol-posicion" placeholder="Ej. Portero, Delantero" required>
                 </div>
                 <div class="campo-solicitud">
-                    <label>CURP <span class="opcional">(opcional)</span></label>
-                    <input type="text" id="sol-curp" style="text-transform:uppercase;" maxlength="18">
+                    <label>CURP</label>
+                    <input type="text" id="sol-curp" style="text-transform:uppercase;" maxlength="18" required>
                 </div>
                 <div class="campo-solicitud">
                     <label>Lugar de nacimiento</label>
@@ -551,10 +561,48 @@
                     <label>Nacionalidad</label>
                     <input type="text" id="sol-nacionalidad" value="MEXICANA">
                 </div>
+                <div class="campo-solicitud">
+                    <label>¿El jugador es mayor o menor de edad?</label>
+                    <select id="sol-tipo-edad" required>
+                        <option value="">-- Selecciona --</option>
+                        <option value="mayor">Mayor de edad</option>
+                        <option value="menor">Menor de edad</option>
+                    </select>
+                </div>
                 <div class="campo-solicitud campo-solicitud-full">
                     <label>Foto perfil</label>
                     <input type="file" id="sol-foto" accept="image/*" required>
                     <small>Usa una foto tamaño infantil, de frente y bien iluminada — es la que se usará en tu credencial.</small>
+                </div>
+                <div class="campo-solicitud campo-solicitud-full" id="bloque-datos-tutor" style="display:none; border:1px dashed var(--border); padding:12px; border-radius:8px; background:var(--light);">
+                    <p style="font-weight:600; margin:0 0 10px;">👨‍👩‍👦 Datos del padre, madre o tutor <span style="font-weight:normal; color:#c62828;">(obligatorio: el jugador es menor de edad)</span></p>
+                    <div class="campo-solicitud">
+                        <label>Nombre completo del tutor</label>
+                        <input type="text" id="sol-tutor-nombre" placeholder="Nombre completo">
+                    </div>
+                    <div class="campo-solicitud">
+                        <label>CURP del tutor</label>
+                        <input type="text" id="sol-tutor-curp" style="text-transform:uppercase;" maxlength="18" placeholder="18 caracteres">
+                    </div>
+                    <div class="campo-solicitud">
+                        <label>Fecha de nacimiento del tutor</label>
+                        <input type="date" id="sol-tutor-fecha-nac">
+                    </div>
+                    <small style="color:#777;">Estos tres datos deben coincidir entre sí (la CURP codifica el nombre y la fecha de nacimiento).</small>
+                </div>
+                <div class="campo-solicitud campo-solicitud-full">
+                    <details style="background:var(--light); border:1px solid var(--border); border-radius:8px; padding:10px 14px; font-size:0.82rem;">
+                        <summary style="cursor:pointer; font-weight:600;">📄 Aviso de Privacidad (léelo antes de enviar tu solicitud)</summary>
+                        <div style="margin-top:10px; line-height:1.5; color:#555;">
+                            <p>La Liga Futbol de Acapulco recaba los datos de este formulario (nombre, número, categoría, posición, CURP, lugar y fecha de nacimiento, nacionalidad y fotografía) con la única finalidad de gestionar tu registro como jugador, elaborar tu credencial oficial y mostrar tu información deportiva (nombre, foto, número y estadísticas) en el sitio público de la liga.</p>
+                            <p>Estos datos no se venden ni se comparten con terceros ajenos a la liga. Puedes solicitar la corrección o eliminación de tus datos contactando a la administración de la liga.</p>
+                            <p><strong>Si el jugador es menor de edad</strong>, este registro debe ser realizado y autorizado por su padre, madre o tutor legal, quien acepta que los datos deportivos del menor (nombre, foto, número y estadísticas) sean publicados en el sitio de la liga en el contexto de su participación en el torneo.</p>
+                        </div>
+                    </details>
+                    <label style="display:flex; align-items:flex-start; gap:8px; margin-top:10px; font-size:0.85rem; font-weight:normal;">
+                        <input type="checkbox" id="sol-acepta-aviso" required style="margin-top:3px;">
+                        <span>He leído el Aviso de Privacidad y acepto que estos datos sean usados para el registro y que el nombre, foto, número y estadísticas del jugador sean visibles públicamente en este sitio. <strong>Si el jugador es menor de edad, confirmo que soy su padre, madre o tutor legal y autorizo este registro.</strong></span>
+                    </label>
                 </div>
                 <button type="submit" class="btn-enviar-solicitud campo-solicitud-full">Enviar Solicitud</button>
             </form>
@@ -655,7 +703,7 @@
             </div>
 
             <div class="ficha-tecnica-datos">
-                <div class="ficha-dato-item"><span class="ficha-dato-label">Número</span><span class="ficha-dato-valor" id="modal-numero">—</span></div>
+                <div class="ficha-dato-item"><span class="ficha-dato-label">Número de playera</span><span class="ficha-dato-valor" id="modal-numero">—</span></div>
                 <div class="ficha-dato-item"><span class="ficha-dato-label">Categoría</span><span class="ficha-dato-valor" id="modal-categoria">—</span></div>
                 <div class="ficha-dato-item"><span class="ficha-dato-label">Edad</span><span class="ficha-dato-valor" id="modal-edad">—</span></div>
                 <div class="ficha-dato-item"><span class="ficha-dato-label">Nacionalidad</span><span class="ficha-dato-valor" id="modal-nacionalidad">—</span></div>
@@ -924,23 +972,112 @@
             document.getElementById('input-buscar-jugador').addEventListener('input', filtrarJugadores);
             document.getElementById('select-filtrar-equipo').addEventListener('change', filtrarJugadores);
             
+            // --- Datos del tutor (menores de edad): mostrar bloque y validar CURP ---
+            function calcularEdad(fechaStr) {
+                if (!fechaStr) return null;
+                const hoy = new Date();
+                const nac = new Date(fechaStr + 'T00:00:00');
+                let edad = hoy.getFullYear() - nac.getFullYear();
+                const m = hoy.getMonth() - nac.getMonth();
+                if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+                return edad;
+            }
+
+            function validarCurpTutor(curp, nombreCompleto, fechaNacStr) {
+                curp = (curp || '').toUpperCase().trim();
+                if (!/^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/.test(curp)) {
+                    return { valido: false, motivo: 'La CURP del tutor no tiene un formato válido (debe tener 18 caracteres).' };
+                }
+                if (fechaNacStr) {
+                    const nac = new Date(fechaNacStr + 'T00:00:00');
+                    const esperadaFecha = String(nac.getFullYear()).slice(-2) + String(nac.getMonth() + 1).padStart(2, '0') + String(nac.getDate()).padStart(2, '0');
+                    if (curp.substr(4, 6) !== esperadaFecha) {
+                        return { valido: false, motivo: 'La fecha de nacimiento del tutor no coincide con la que indica su CURP.' };
+                    }
+                }
+                const PALABRAS_OMITIR = ['DE', 'DEL', 'LA', 'LAS', 'LOS', 'Y', 'MC', 'VAN', 'VON'];
+                const limpio = (nombreCompleto || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z\s]/g, '');
+                const palabras = limpio.split(/\s+/).filter(p => p && !PALABRAS_OMITIR.includes(p));
+                if (palabras.length >= 2) {
+                    let apPat, apMat, nombres;
+                    if (palabras.length === 2) { nombres = [palabras[0]]; apPat = palabras[1]; apMat = ''; }
+                    else { apPat = palabras[palabras.length - 2]; apMat = palabras[palabras.length - 1]; nombres = palabras.slice(0, palabras.length - 2); }
+                    let primerNombre = nombres[0] || '';
+                    if ((primerNombre === 'MARIA' || primerNombre === 'JOSE') && nombres.length > 1) primerNombre = nombres[1];
+                    const vocalInterna = p => { const m = (p || '').substr(1).match(/[AEIOU]/); return m ? m[0] : 'X'; };
+                    const esperado = (apPat[0] || 'X') + vocalInterna(apPat) + (apMat ? apMat[0] : 'X') + (primerNombre[0] || 'X');
+                    if (esperado !== curp.substr(0, 4)) {
+                        return { valido: false, motivo: 'El nombre del tutor no coincide con su CURP. Revisa que ambos datos correspondan a la misma persona.' };
+                    }
+                }
+                return { valido: true };
+            }
+
+            function actualizarBloqueTutor() {
+                const esMenor = document.getElementById('sol-tipo-edad').value === 'menor';
+                const bloque = document.getElementById('bloque-datos-tutor');
+                bloque.style.display = esMenor ? 'block' : 'none';
+                ['sol-tutor-nombre', 'sol-tutor-curp', 'sol-tutor-fecha-nac'].forEach(id => {
+                    document.getElementById(id).required = esMenor;
+                });
+            }
+            document.getElementById('sol-tipo-edad').addEventListener('change', actualizarBloqueTutor);
+            document.getElementById('sol-fecha-nac').addEventListener('change', function () {
+                const edad = calcularEdad(this.value);
+                if (edad === null) return;
+                document.getElementById('sol-tipo-edad').value = edad < 18 ? 'menor' : 'mayor';
+                actualizarBloqueTutor();
+            });
+
+            function numeroYaUsadoEnEquipo(equipoId, numero) {
+                if (!numero) return false;
+                const enJugadores = (db.jugadores || []).some(j => j.equipoId === equipoId && String(j.numero) === String(numero));
+                const enSolicitudes = (db.solicitudes || []).some(s => s.equipoId === equipoId && String(s.numero) === String(numero));
+                return enJugadores || enSolicitudes;
+            }
+
             document.getElementById('form-solicitud-web').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 if(db.registrosCerrados) return alert("Los registros se encuentran cerrados temporalmente.");
+                if(!document.getElementById('sol-acepta-aviso').checked) {
+                    return alert("Debes aceptar el Aviso de Privacidad para poder enviar la solicitud.");
+                }
+                const tipoEdad = document.getElementById('sol-tipo-edad').value;
+                if (!tipoEdad) return alert("Selecciona si el jugador es mayor o menor de edad.");
+                const equipoIdSel = parseInt(document.getElementById('sol-equipo').value);
+                const numeroSel = document.getElementById('sol-numero').value.trim();
+                if (numeroYaUsadoEnEquipo(equipoIdSel, numeroSel)) {
+                    return alert("Ese número de playera ya está ocupado en este equipo. Elige otro.");
+                }
+                let datosTutor = null;
+                if (tipoEdad === 'menor') {
+                    const tutorNombre = document.getElementById('sol-tutor-nombre').value.trim();
+                    const tutorCurp = document.getElementById('sol-tutor-curp').value.trim().toUpperCase();
+                    const tutorFechaNac = document.getElementById('sol-tutor-fecha-nac').value;
+                    if (!tutorNombre || !tutorCurp || !tutorFechaNac) {
+                        return alert("El jugador es menor de edad: el nombre, la CURP y la fecha de nacimiento del padre, madre o tutor son obligatorios.");
+                    }
+                    const check = validarCurpTutor(tutorCurp, tutorNombre, tutorFechaNac);
+                    if (!check.valido) return alert("⚠️ " + check.motivo);
+                    datosTutor = { nombre: tutorNombre, curp: tutorCurp, fechaNacimiento: tutorFechaNac };
+                }
                 const fotoB64 = await convertirImagenABase64(document.getElementById('sol-foto'));
                 if(!db.solicitudes) db.solicitudes = [];
                 db.solicitudes.push({
                     id: Date.now(),
                     nombre: document.getElementById('sol-nombre').value.trim(),
-                    equipoId: parseInt(document.getElementById('sol-equipo').value),
+                    equipoId: equipoIdSel,
                     posicion: document.getElementById('sol-posicion').value.trim(),
-                    numero: document.getElementById('sol-numero').value.trim(),
+                    numero: numeroSel,
                     curp: document.getElementById('sol-curp').value.trim().toUpperCase(),
                     categoria: document.getElementById('sol-categoria').value,
                     lugarNacimiento: document.getElementById('sol-lugar-nac').value.trim(),
                     fechaNacimiento: document.getElementById('sol-fecha-nac').value,
                     nacionalidad: document.getElementById('sol-nacionalidad').value.trim() || 'MEXICANA',
-                    foto: fotoB64
+                    foto: fotoB64,
+                    tutor: datosTutor,
+                    avisoPrivacidadAceptado: true,
+                    fechaAceptacionAviso: new Date().toISOString()
                 });
                 guardarDB();
                 this.reset(); alert("¡Solicitud enviada! El administrador revisará tu registro.");
@@ -978,12 +1115,26 @@
             aplicarLogoSitio();
             renderizarPatrocinadores();
             const contNoticias = document.getElementById('noticias-contenedor');
-            contNoticias.innerHTML = (db.comunicados || []).map(c => `
-                <div style="background:var(--light); border:1px solid var(--border); padding:15px; border-radius:8px;">
-                    <h4>${c.titulo}</h4>
-                    <p style="font-size:0.85rem; white-space:pre-line;">${c.contenido}</p>
-                </div>
-            `).join('') || '<p style="color:gray;">No hay avisos recientes.</p>';
+            const estiloTipo = {
+                aviso: { color: '#0b1e3d', etiqueta: '📢 Aviso' },
+                sancion: { color: '#c62828', etiqueta: '⚠️ Sanción' },
+                cronica: { color: '#7209b7', etiqueta: '📰 Crónica' }
+            };
+            contNoticias.innerHTML = (db.comunicados || []).map(c => {
+                const et = estiloTipo[c.tipo] || estiloTipo.aviso;
+                return `
+                <div style="background:var(--card-bg, var(--light)); border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06)); display:flex; flex-direction:column;">
+                    ${c.imagen ? `<img src="${c.imagen}" alt="${c.titulo}" style="width:100%; height:150px; object-fit:cover;">` : ''}
+                    <div style="padding:15px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
+                            <span style="font-size:0.72rem; font-weight:700; color:#fff; background:${et.color}; padding:3px 10px; border-radius:999px;">${et.etiqueta}</span>
+                            ${c.fecha ? `<span style="font-size:0.75rem; color:#888;">${c.fecha}</span>` : ''}
+                        </div>
+                        <h4 style="margin:0 0 6px;">${c.titulo}</h4>
+                        <p style="font-size:0.85rem; white-space:pre-line; margin:0;">${c.contenido}</p>
+                    </div>
+                </div>`;
+            }).join('') || '<p style="color:gray;">No hay avisos recientes.</p>';
 
             const optsEq = db.equipos.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
             document.getElementById('h2h-equipo1').innerHTML = '<option value="">-- Club A --</option>' + optsEq;
