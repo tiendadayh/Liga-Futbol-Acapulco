@@ -5,6 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Liga Futbol de Acapulco - Panel Avanzado Pro</title>
+    <meta name="description" content="Panel administrativo de la Liga Futbol de Acapulco: gestión de equipos, jugadores, partidos, credenciales y patrocinadores.">
+    <meta name="robots" content="noindex, nofollow">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Liga Futbol de Acapulco - Panel Avanzado Pro">
+    <meta property="og:description" content="Panel administrativo de la Liga Futbol de Acapulco.">
+    <meta property="og:image" content="https://tiendadayh.github.io/Liga-Futbol-Acapulco/icon-512.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -2293,7 +2299,7 @@
             cont.innerHTML = db.solicitudes.map(s => `
                 <div style="background:#f4f4f4; padding:12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
                     <div style="display:flex; gap:12px; align-items:center;">
-                        <img src="${s.foto || 'https://placehold.co/50'}" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);">
+                        <img src="${s.foto || 'https://placehold.co/50'}" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);" alt="${s.nombre || 'Solicitante'}">
                         <div>
                             <strong>${s.numero ? '#' + s.numero + ' · ' : ''}${s.nombre}</strong> (${s.posicion}${s.categoria ? ' · ' + s.categoria : ''})<br>
                             <small style="color:gray;">Equipo Solicitado: ${db.equipos.find(e => e.id === s.equipoId)?.nombre || 'Libre'}</small>
@@ -2451,12 +2457,12 @@
             const c = db.config || crearConfigCredencialDefault();
             const folio = `LPA-${j.id.toString().slice(-5)}`;
             const bloqueQR = qrDataUrl
-                ? `<div class="carnet-qr-box"><img src="${qrDataUrl}"><span>Escanea para ver el perfil</span></div>`
+                ? `<div class="carnet-qr-box"><img src="${qrDataUrl}" alt="Código QR del perfil del jugador"><span>Escanea para ver el perfil</span></div>`
                 : '';
             return `
                 <div class="carnet">
                     <div class="carnet-header">
-                        <img class="carnet-escudo" src="${c.escudoLiga || ''}" style="${c.escudoLiga ? '' : 'visibility:hidden;'}">
+                        <img class="carnet-escudo" src="${c.escudoLiga || ''}" style="${c.escudoLiga ? '' : 'visibility:hidden;'}" alt="Escudo de la liga">
                         <div class="carnet-header-texto">
                             ${c.asociacion ? `<div class="carnet-linea-chica" style="font-weight:bold;">${c.asociacion}</div>` : ''}
                             ${c.asociacion2 ? `<div class="carnet-linea-chica">${c.asociacion2}</div>` : ''}
@@ -2466,7 +2472,7 @@
                         <div class="carnet-numero">${j.numero || '-'}</div>
                     </div>
                     <div class="carnet-cuerpo">
-                        <img class="carnet-foto" src="${j.foto || 'https://placehold.co/100x128?text=Foto'}">
+                        <img class="carnet-foto" src="${j.foto || 'https://placehold.co/100x128?text=Foto'}" alt="${j.nombre}">
                         <div class="carnet-datos">
                             <p><strong>EL EQUIPO:</strong> ${eq ? eq.nombre : 'Agente Libre'}</p>
                             <p><strong>REGISTRA A:</strong> ${j.nombre}</p>
@@ -2557,7 +2563,7 @@
                 <div style="font-family:Arial, sans-serif; text-align:center; padding:24px;">
                     <h3 style="color:#011f4b; margin-bottom:4px;">${j.nombre}</h3>
                     <p style="font-size:0.8rem; color:#555; margin-top:0;">Escanea para ver el perfil público</p>
-                    ${qr ? `<img src="${qr}" style="width:220px; height:220px;">` : '<p style="color:#c62828;">No se pudo generar el QR.</p>'}
+                    ${qr ? `<img src="${qr}" style="width:220px; height:220px;" alt="Código QR del perfil de ${j.nombre}">` : '<p style="color:#c62828;">No se pudo generar el QR.</p>'}
                     <p style="word-break:break-all; font-size:0.75rem; color:#333; margin-top:16px;">${enlace}</p>
                 </div>
             `;
@@ -2669,11 +2675,11 @@
                 <div class="cedula-info-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:14px; border-top:2px solid #eee; padding-top:12px;">
                     <div style="text-align:center;">
                         <b style="font-size:0.8rem;">Firma de Conformidad — ${loc}</b>
-                        ${c.firmas?.local?.firma ? `<div><img src="${c.firmas.local.firma}" style="max-width:100%; height:70px; border:1px solid #eee; border-radius:6px; margin-top:6px;"></div><p style="font-size:0.72rem; color:#666; margin-top:2px;">${c.firmas.local.nombre || 'Sin nombre'}</p>` : `<p style="font-size:0.75rem; color:#b45309; margin-top:6px;">⏳ Sin firma registrada</p>`}
+                        ${c.firmas?.local?.firma ? `<div><img src="${c.firmas.local.firma}" style="max-width:100%; height:70px; border:1px solid #eee; border-radius:6px; margin-top:6px;" alt="Firma de conformidad del equipo local"></div><p style="font-size:0.72rem; color:#666; margin-top:2px;">${c.firmas.local.nombre || 'Sin nombre'}</p>` : `<p style="font-size:0.75rem; color:#b45309; margin-top:6px;">⏳ Sin firma registrada</p>`}
                     </div>
                     <div style="text-align:center;">
                         <b style="font-size:0.8rem;">Firma de Conformidad — ${vis}</b>
-                        ${c.firmas?.visita?.firma ? `<div><img src="${c.firmas.visita.firma}" style="max-width:100%; height:70px; border:1px solid #eee; border-radius:6px; margin-top:6px;"></div><p style="font-size:0.72rem; color:#666; margin-top:2px;">${c.firmas.visita.nombre || 'Sin nombre'}</p>` : `<p style="font-size:0.75rem; color:#b45309; margin-top:6px;">⏳ Sin firma registrada</p>`}
+                        ${c.firmas?.visita?.firma ? `<div><img src="${c.firmas.visita.firma}" style="max-width:100%; height:70px; border:1px solid #eee; border-radius:6px; margin-top:6px;" alt="Firma de conformidad del equipo visitante"></div><p style="font-size:0.72rem; color:#666; margin-top:2px;">${c.firmas.visita.nombre || 'Sin nombre'}</p>` : `<p style="font-size:0.75rem; color:#b45309; margin-top:6px;">⏳ Sin firma registrada</p>`}
                     </div>
                 </div>
 
@@ -2935,7 +2941,7 @@ ${cuerpo}`;
 
             listaEquipos.innerHTML = db.equipos.length ? db.equipos.map(eq => `
                 <div class="gestion-fila gestion-fila-clickable" onclick="verFichaEquipoAdmin(${eq.id})" title="Toca para ver la ficha completa">
-                    <img src="${eq.escudo || 'https://placehold.co/40'}">
+                    <img src="${eq.escudo || 'https://placehold.co/40'}" alt="${eq.nombre}">
                     <div class="gestion-info">
                         <strong>${eq.nombre}</strong>
                         <span>${db.jugadores.filter(j => j.equipoId === eq.id).length} jugadores</span>
@@ -2952,7 +2958,7 @@ ${cuerpo}`;
             const jugadoresFiltrados = db.jugadores.filter(j => j.nombre.toLowerCase().includes(filtroTxt));
             listaJugadores.innerHTML = jugadoresFiltrados.length ? jugadoresFiltrados.map(j => `
                 <div class="gestion-fila">
-                    <img src="${j.foto || 'https://placehold.co/40'}">
+                    <img src="${j.foto || 'https://placehold.co/40'}" alt="${j.nombre}">
                     <div class="gestion-info">
                         <strong>${j.numero ? '#' + j.numero + ' · ' : ''}${j.nombre}</strong>
                         <span>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Agente Libre'} · ${j.posicion || ''}</span>
@@ -2968,7 +2974,7 @@ ${cuerpo}`;
 
             listaArbitros.innerHTML = db.arbitros.length ? db.arbitros.map(a => `
                 <div class="gestion-fila">
-                    <img src="${a.foto || 'https://placehold.co/40'}">
+                    <img src="${a.foto || 'https://placehold.co/40'}" alt="${a.nombre}">
                     <div class="gestion-info">
                         <strong>${a.nombre}</strong>
                         <span>${a.colegio || ''} ${a.email ? '· 📧 ' + a.email : '<span style="color:#c62828;">· sin correo vinculado</span>'}</span>
@@ -3005,7 +3011,7 @@ ${cuerpo}`;
             if (listaCanchas) {
                 listaCanchas.innerHTML = db.campos.length ? db.campos.map(c => `
                     <div class="gestion-fila">
-                        <img src="${c.foto || 'https://placehold.co/44x34'}" class="foto-cancha">
+                        <img src="${c.foto || 'https://placehold.co/44x34'}" class="foto-cancha" alt="Foto de la cancha ${c.nombre}">
                         <div class="gestion-info">
                             <strong>${c.nombre}</strong>
                             <span>${c.direccion || 'Sin dirección registrada'}</span>
@@ -3036,7 +3042,7 @@ ${cuerpo}`;
             if (listaPatrocinadores) {
                 listaPatrocinadores.innerHTML = (db.patrocinadores || []).length ? db.patrocinadores.map(p => `
                     <div class="gestion-fila">
-                        <img src="${p.logo || 'https://placehold.co/40'}">
+                        <img src="${p.logo || 'https://placehold.co/40'}" alt="Logo de ${p.nombre}">
                         <div class="gestion-info">
                             <strong>${p.nombre}</strong>
                             <span>${p.link ? '🔗 ' + p.link : 'Sin enlace'}</span>
@@ -3203,7 +3209,7 @@ ${cuerpo}`;
             const lista = document.getElementById('ficha-adm-eq-plantilla');
             lista.innerHTML = jugadores.length ? jugadores.map(j => `
                 <div class="gestion-fila">
-                    <img src="${j.foto || 'https://placehold.co/40'}">
+                    <img src="${j.foto || 'https://placehold.co/40'}" alt="${j.nombre}">
                     <div class="gestion-info">
                         <strong>${j.numero ? '#' + j.numero + ' · ' : ''}${j.nombre}</strong>
                         <span>${j.posicion || 'Jugador'} · ⚽ ${j.goles || 0} · 🟨 ${j.amarillas || 0} · 🟥 ${j.rojas || 0}</span>

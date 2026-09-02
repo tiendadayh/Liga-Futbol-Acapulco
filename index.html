@@ -103,6 +103,7 @@
             background-color: rgba(1, 31, 75, 0.92); backdrop-filter: blur(8px); display: flex; justify-content: center;
             flex-wrap: wrap; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.15);
         }
+        .nav-links { display: flex; flex-wrap: wrap; justify-content: center; }
         nav a {
             color: white; padding: 15px 18px; text-decoration: none; font-weight: 700; text-transform: uppercase;
             font-size: 0.78rem; letter-spacing: 0.4px; position: relative; transition: color var(--transition-fast);
@@ -113,6 +114,13 @@
         }
         nav a:hover { color: var(--accent); background: rgba(255,255,255,0.06); }
         nav a:hover::after { transform: scaleX(1); }
+        .nav-toggle {
+            display: none; width: 100%; background: none; border: none; color: white; font-weight: 700;
+            text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; padding: 14px 18px;
+            cursor: pointer; align-items: center; gap: 10px; text-align: left;
+        }
+        .nav-toggle-icon { font-size: 1.1rem; line-height: 1; }
+        .nav-toggle:hover { color: var(--accent); }
 
         .buscador-global-bar {
             background: var(--dark); padding: 14px 20px; display: flex; justify-content: center;
@@ -350,7 +358,11 @@
             .site-header-logo { width: 54px; height: 54px; }
             .theme-switch { top: 12px; right: 12px; padding: 6px 10px; font-size: 0.75rem; }
             .install-btn { top: 12px; left: 12px; padding: 6px 10px; font-size: 0.75rem; }
-            nav a { padding: 12px 12px; font-size: 0.72rem; }
+            nav { flex-direction: column; align-items: stretch; }
+            .nav-toggle { display: flex; }
+            .nav-links { display: none; flex-direction: column; width: 100%; }
+            .nav-links.nav-links-open { display: flex; }
+            nav a { padding: 12px 18px; font-size: 0.72rem; text-align: left; border-top: 1px solid rgba(255,255,255,0.08); }
             .container { margin: 20px auto; padding: 0 12px; }
             .card-section { padding: 18px; margin-bottom: 22px; }
             .header-section-flex { flex-wrap: wrap; gap: 8px; }
@@ -401,19 +413,24 @@
     </div>
 
     <nav>
-        <a href="#tablon-sec">Tablón</a>
-        <a href="#jornadas-sec">Calendario En Vivo</a>
-        <a href="#posiciones-sec">Posiciones</a>
-        <a href="#ofensiva-defensiva-sec">Ofensiva/Defensiva</a>
-        <a href="#goles-jornada-sec">Goles por Jornada</a>
-        <a href="#bracket-sec">cuadro Liguilla</a>
-        <a href="#headtohead-sec">Cara a Cara</a>
-        <a href="#registro-sec">Inscribirse</a>
-        <a href="#porteros-sec">Guante de Oro</a>
-        <a href="#goleo-sec">Goleo</a>
-        <a href="#disciplina-sec">Disciplina</a>
-        <a href="#jugadores-sec">Jugadores</a>
-        <a href="#equipos-arbitros-sec">Equipos y Árbitros</a>
+        <button type="button" class="nav-toggle" id="nav-toggle-btn" onclick="toggleNavMenu()" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-links">
+            <span class="nav-toggle-icon">☰</span> Menú
+        </button>
+        <div class="nav-links" id="nav-links">
+            <a href="#tablon-sec">Tablón</a>
+            <a href="#jornadas-sec">Calendario En Vivo</a>
+            <a href="#posiciones-sec">Posiciones</a>
+            <a href="#ofensiva-defensiva-sec">Ofensiva/Defensiva</a>
+            <a href="#goles-jornada-sec">Goles por Jornada</a>
+            <a href="#bracket-sec">cuadro Liguilla</a>
+            <a href="#headtohead-sec">Cara a Cara</a>
+            <a href="#registro-sec">Inscribirse</a>
+            <a href="#porteros-sec">Guante de Oro</a>
+            <a href="#goleo-sec">Goleo</a>
+            <a href="#disciplina-sec">Disciplina</a>
+            <a href="#jugadores-sec">Jugadores</a>
+            <a href="#equipos-arbitros-sec">Equipos y Árbitros</a>
+        </div>
     </nav>
 
     <div class="buscador-global-bar">
@@ -687,7 +704,7 @@
         <div class="modal-content ficha-tecnica-content" style="max-width:560px;">
             <button class="close-modal" onclick="cerrarModal('ficha-modal')">×</button>
             <div class="ficha-tecnica-banner">
-                <img id="modal-foto" class="ficha-tecnica-foto" src="">
+                <img id="modal-foto" class="ficha-tecnica-foto" src="" alt="Foto del jugador">
                 <span id="modal-estado" class="ficha-tecnica-estado"></span>
             </div>
             <h3 id="modal-nombre" class="ficha-tecnica-nombre"></h3>
@@ -729,7 +746,7 @@
         <div class="modal-content" style="max-width:760px; text-align:left;">
             <button class="close-modal" onclick="cerrarModal('modal-equipo')">×</button>
             <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px;">
-                <img id="equipo-modal-escudo" src="" style="width:70px; height:70px; border-radius:50%; object-fit:cover; border:3px solid var(--accent); background:white;">
+                <img id="equipo-modal-escudo" src="" style="width:70px; height:70px; border-radius:50%; object-fit:cover; border:3px solid var(--accent); background:white;" alt="Escudo del equipo">
                 <div>
                     <h3 id="equipo-modal-nombre" style="margin:0; color:var(--primary);"></h3>
                     <p id="equipo-modal-contador" style="margin:4px 0 0; opacity:0.7; font-size:0.85rem;"></p>
@@ -764,7 +781,7 @@
         <div class="modal-content ficha-tecnica-content" style="max-width:560px;">
             <button class="close-modal" onclick="cerrarModal('modal-arbitro')">×</button>
             <div class="ficha-tecnica-banner">
-                <img id="arbitro-modal-foto" class="ficha-tecnica-foto" src="">
+                <img id="arbitro-modal-foto" class="ficha-tecnica-foto" src="" alt="Foto del árbitro">
                 <span class="ficha-tecnica-estado estado-ok">✅ Activo</span>
             </div>
             <h3 id="arbitro-modal-nombre" class="ficha-tecnica-nombre"></h3>
@@ -803,7 +820,7 @@
     <div id="modal-cancha" class="modal hidden" onclick="if(event.target === this) cerrarModal('modal-cancha')">
         <div class="modal-content" style="max-width:460px;">
             <button class="close-modal" onclick="cerrarModal('modal-cancha')">×</button>
-            <img id="cancha-modal-foto" src="" style="width:100%; max-height:280px; object-fit:cover; border-radius:10px; background:#eee;">
+            <img id="cancha-modal-foto" src="" style="width:100%; max-height:280px; object-fit:cover; border-radius:10px; background:#eee;" alt="Foto de la cancha">
             <h3 style="margin:14px 0 4px; color:var(--primary);" id="cancha-modal-nombre"></h3>
             <p style="opacity:0.75; font-size:0.85rem;" id="cancha-modal-direccion"></p>
         </div>
@@ -1094,6 +1111,22 @@
             }
         }
 
+        // Menú móvil: abre/cierra la lista de enlaces del nav en pantallas angostas
+        function toggleNavMenu() {
+            const links = document.getElementById('nav-links');
+            const btn = document.getElementById('nav-toggle-btn');
+            const abierto = links.classList.toggle('nav-links-open');
+            btn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+        }
+
+        // Cierra el menú móvil al elegir una sección (para no tapar el contenido)
+        document.getElementById('nav-links').addEventListener('click', (e) => {
+            if (e.target.tagName === 'A' && window.matchMedia('(max-width: 768px)').matches) {
+                document.getElementById('nav-links').classList.remove('nav-links-open');
+                document.getElementById('nav-toggle-btn').setAttribute('aria-expanded', 'false');
+            }
+        });
+
         // Dibuja el carrusel de patrocinadores en movimiento continuo (se oculta si no hay ninguno)
         function renderizarPatrocinadores() {
             const wrap = document.getElementById('patrocinadores-carrusel-wrap');
@@ -1241,7 +1274,7 @@
             document.getElementById('tabla-posiciones-body').innerHTML = estadisticas.map((eq, idx) => `
                 <tr>
                     <td><b>${idx + 1}</b></td>
-                    <td><img class="escudo-tab" src="${eq.escudo}">${eq.nombre}</td>
+                    <td><img class="escudo-tab" src="${eq.escudo}" alt="${eq.nombre}">${eq.nombre}</td>
                     <td>${eq.pj}</td><td>${eq.pg}</td><td>${eq.pe}</td><td>${eq.pp}</td><td>${eq.gf}</td><td>${eq.gc}</td><td>${eq.dg}</td><td><b>${eq.pts}</b></td>
                     <td style="letter-spacing:2px; white-space:nowrap;">${eq.racha.slice(-5).map(r => iconoForma[r]).join('') || '—'}</td>
                 </tr>
@@ -1321,7 +1354,7 @@
             document.getElementById('tabla-ofensiva-body').innerHTML = ofensiva.length ? ofensiva.map((eq, idx) => `
                 <tr>
                     <td><b>${idx + 1}</b></td>
-                    <td><img class="escudo-tab" src="${eq.escudo}">${eq.nombre}</td>
+                    <td><img class="escudo-tab" src="${eq.escudo}" alt="${eq.nombre}">${eq.nombre}</td>
                     <td><b>${eq.gf}</b> ⚽ ${idx === 0 ? '🏆' : ''}</td>
                 </tr>
             `).join('') : '<tr><td colspan="3" style="color:gray;">Aún no hay partidos jugados.</td></tr>';
@@ -1329,7 +1362,7 @@
             document.getElementById('tabla-defensiva-body').innerHTML = defensiva.length ? defensiva.map((eq, idx) => `
                 <tr>
                     <td><b>${idx + 1}</b></td>
-                    <td><img class="escudo-tab" src="${eq.escudo}">${eq.nombre}</td>
+                    <td><img class="escudo-tab" src="${eq.escudo}" alt="${eq.nombre}">${eq.nombre}</td>
                     <td><b>${eq.gc}</b> 🛡️ ${idx === 0 ? '🏆' : ''}</td>
                 </tr>
             `).join('') : '<tr><td colspan="3" style="color:gray;">Aún no hay partidos jugados.</td></tr>';
@@ -1551,7 +1584,7 @@
             let elegidos = db.jugadores.filter(j => j.xiIdeal && j.xiIdeal.length > 0);
             for (let i = 0; i < 11; i++) {
                 const pos = coordsXI[i]; const jug = elegidos[i];
-                cancha.innerHTML += jug ? `<div class="xi-jugador" style="top:${pos.t}%; left:${pos.l}%;"><img src="${jug.foto || 'https://placehold.co/50'}"><p>${jug.nombre.split(' ')[0]}</p></div>` : '';
+                cancha.innerHTML += jug ? `<div class="xi-jugador" style="top:${pos.t}%; left:${pos.l}%;"><img src="${jug.foto || 'https://placehold.co/50'}" alt="${jug.nombre}"><p>${jug.nombre.split(' ')[0]}</p></div>` : '';
             }
         }
 
@@ -1572,7 +1605,7 @@
             const txt = document.getElementById('input-buscar-jugador').value.toLowerCase();
             const eqFiltro = document.getElementById('select-filtrar-equipo').value;
             let filtrados = db.jugadores.filter(j => j.nombre.toLowerCase().includes(txt) && (eqFiltro === 'todos' || j.equipoId === parseInt(eqFiltro)));
-            document.getElementById('grid-jugadores').innerHTML = filtrados.map(j => `<div class="jugador-card" onclick="verFicha(${j.id})"><img src="${j.foto || 'https://placehold.co/100'}"><h3>${j.nombre}</h3><p>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</p></div>`).join('');
+            document.getElementById('grid-jugadores').innerHTML = filtrados.map(j => `<div class="jugador-card" onclick="verFicha(${j.id})"><img src="${j.foto || 'https://placehold.co/100'}" alt="${j.nombre}"><h3>${j.nombre}</h3><p>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</p></div>`).join('');
         }
 
         function esJugadorSuspendidoActual(jugador) {
@@ -1638,14 +1671,14 @@
             let html = '';
             equiposMatch.forEach(eq => {
                 html += `<div class="buscador-resultado-item" onclick="seleccionarResultadoBusqueda('equipo', ${eq.id})">
-                    <img src="${eq.escudo || 'https://placehold.co/34'}">
+                    <img src="${eq.escudo || 'https://placehold.co/34'}" alt="${eq.nombre}">
                     <div class="buscador-resultado-info"><strong>${eq.nombre}</strong><span>⚽ Equipo</span></div>
                 </div>`;
             });
             jugadoresMatch.forEach(j => {
                 const nombreEquipo = db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Agente Libre';
                 html += `<div class="buscador-resultado-item" onclick="seleccionarResultadoBusqueda('jugador', ${j.id})">
-                    <img src="${j.foto || 'https://placehold.co/34'}">
+                    <img src="${j.foto || 'https://placehold.co/34'}" alt="${j.nombre}">
                     <div class="buscador-resultado-info"><strong>${j.numero ? '#' + j.numero + ' ' : ''}${j.nombre}</strong><span>🧍 ${nombreEquipo}</span></div>
                 </div>`;
             });
@@ -1815,7 +1848,7 @@
 
             document.getElementById('equipo-modal-jugadores').innerHTML = jugadoresEquipo.map(j => `
                 <div class="jugador-card" onclick="cerrarModal('modal-equipo'); verFicha(${j.id})">
-                    <img src="${j.foto || 'https://placehold.co/100'}">
+                    <img src="${j.foto || 'https://placehold.co/100'}" alt="${j.nombre}">
                     <h3>${j.nombre}</h3>
                     <p>${j.posicion || ''}</p>
                 </div>`).join('') || '<p style="color:gray;">Este equipo aún no tiene jugadores registrados.</p>';
@@ -1895,7 +1928,7 @@
             if (contEquipos) {
                 contEquipos.innerHTML = db.equipos.map(eq => `
                     <div class="equipo-card" onclick="verEquipo(${eq.id})">
-                        <img src="${eq.escudo || 'https://placehold.co/70'}">
+                        <img src="${eq.escudo || 'https://placehold.co/70'}" alt="${eq.nombre}">
                         <h3>${eq.nombre}</h3>
                         <p>${db.jugadores.filter(j => j.equipoId === eq.id).length} jugadores</p>
                     </div>`).join('') || '<p style="color:gray;">Aún no hay equipos registrados.</p>';
@@ -1904,7 +1937,7 @@
                 contArbitros.innerHTML = db.arbitros.map(a => {
                     return `
                     <div class="arbitro-card" onclick="verArbitro('${a.nombre.replace(/'/g, "\\'")}')">
-                        <img src="${a.foto || 'https://placehold.co/70'}">
+                        <img src="${a.foto || 'https://placehold.co/70'}" alt="${a.nombre}">
                         <h3>${a.nombre}</h3>
                         <p>${a.colegio || 'Independiente'}</p>
                     </div>`;
