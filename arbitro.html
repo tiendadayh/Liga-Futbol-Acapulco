@@ -924,9 +924,23 @@
             arbitros: [], xiIdealAdmin: {}, registrosCerrados: false, liguillaActiva: false,
             historialFichajes: [], solicitudes: [], finanzas: {}, votosMvp: {}
         };
-        if (!db.arbitros) db.arbitros = [];
-        if (!db.partidos) db.partidos = [];
-        if (!db.finanzas) db.finanzas = {};
+        function normalizarDB(obj) {
+            if (!obj.equipos) obj.equipos = [];
+            if (!obj.jugadores) obj.jugadores = [];
+            if (!obj.partidos) obj.partidos = [];
+            if (!obj.comunicados) obj.comunicados = [];
+            if (!obj.arbitros) obj.arbitros = [];
+            if (!obj.campos) obj.campos = [];
+            if (!obj.historialFichajes) obj.historialFichajes = [];
+            if (!obj.solicitudes) obj.solicitudes = [];
+            if (!obj.finanzas) obj.finanzas = {};
+            if (!obj.votosMvp) obj.votosMvp = {};
+            if (!obj.xiIdealAdmin) obj.xiIdealAdmin = {};
+            if (obj.registrosCerrados === undefined) obj.registrosCerrados = false;
+            if (obj.liguillaActiva === undefined) obj.liguillaActiva = false;
+            return obj;
+        }
+        normalizarDB(db);
 
         let arbitroActual = '';
         let cambiosPendientesOffline = false;
@@ -993,9 +1007,7 @@
             const datosNube = snapshot.val();
             if (!datosNube) return;
             db = datosNube;
-            if (!db.arbitros) db.arbitros = [];
-            if (!db.partidos) db.partidos = [];
-            if (!db.finanzas) db.finanzas = {};
+            normalizarDB(db);
             localStorage.setItem('liga_premier_db', JSON.stringify(db));
             refrescarSelectorArbitros();
             aplicarIdentidadPorCorreo();
@@ -1063,6 +1075,7 @@
             if (e.key === 'liga_premier_db' && e.newValue) {
                 try {
                     db = JSON.parse(e.newValue);
+                    normalizarDB(db);
                     aplicarLogoSitio();
                     mostrarAvisoAutoguardado('🔄 Datos actualizados desde otra pestaña.');
                 } catch (err) { /* valor corrupto, se ignora */ }

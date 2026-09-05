@@ -1042,6 +1042,7 @@
                     <span id="ficha-adm-eq-posicion"></span>
                 </div>
             </div>
+            <img id="ficha-adm-eq-foto-plantel" src="" alt="Foto del plantel" style="display:none; width:100%; max-height:220px; object-fit:cover; border-radius:10px; margin:10px 0;">
             <div class="ficha-admin-stats">
                 <div><strong id="ficha-adm-eq-pj">0</strong><span>PJ</span></div>
                 <div><strong id="ficha-adm-eq-pts">0</strong><span>Pts</span></div>
@@ -1212,6 +1213,11 @@
 
                 <label id="edit-label-foto">Reemplazar foto (opcional, deja vacío para conservar la actual):</label>
                 <input type="file" id="edit-foto" accept="image/*">
+
+                <div id="edit-campo-equipo-foto-plantel" style="display:none;">
+                    <label>Reemplazar foto del plantel/equipo (opcional, deja vacío para conservar la actual):</label>
+                    <input type="file" id="edit-foto-plantel" accept="image/*">
+                </div>
 
                 <button type="submit">💾 Guardar Cambios</button>
             </form>
@@ -1464,16 +1470,32 @@
             historialFichajes: [], solicitudes: [], finanzas: {}, votosMvp: {}, config: crearConfigCredencialDefault()
         };
 
-        if (!db.historialFichajes) db.historialFichajes = [];
-        if (!db.arbitros) db.arbitros = [];
-        if (!db.campos) db.campos = [];
-        if (!db.solicitudes) db.solicitudes = [];
-        if (!db.finanzas) db.finanzas = {};
-        if (!db.votosMvp) db.votosMvp = {};
-        if (!db.comunicados) db.comunicados = [];
-        if (!db.patrocinadores) db.patrocinadores = [];
-        if (!db.config) db.config = crearConfigCredencialDefault();
-                if (db.config.logoSitio === undefined) db.config.logoSitio = '';
+        // Se asegura de que TODOS los campos que la app espera existan siempre en db,
+        // sin importar de dónde venga el objeto (localStorage, Firebase, o un backup restaurado).
+        // Esto evita errores como "Cannot read properties of undefined (reading 'push')"
+        // si en la nube faltara algún campo (por ejemplo, si nunca se había publicado nada,
+        // o se restauró un backup viejo/incompleto).
+        function normalizarDB(obj) {
+            if (!obj.equipos) obj.equipos = [];
+            if (!obj.jugadores) obj.jugadores = [];
+            if (!obj.partidos) obj.partidos = [];
+            if (!obj.historialFichajes) obj.historialFichajes = [];
+            if (!obj.arbitros) obj.arbitros = [];
+            if (!obj.campos) obj.campos = [];
+            if (!obj.solicitudes) obj.solicitudes = [];
+            if (!obj.finanzas) obj.finanzas = {};
+            if (!obj.votosMvp) obj.votosMvp = {};
+            if (!obj.comunicados) obj.comunicados = [];
+            if (!obj.patrocinadores) obj.patrocinadores = [];
+            if (!obj.xiIdealAdmin) obj.xiIdealAdmin = {};
+            if (obj.registrosCerrados === undefined) obj.registrosCerrados = false;
+            if (obj.liguillaActiva === undefined) obj.liguillaActiva = false;
+            if (!obj.config) obj.config = crearConfigCredencialDefault();
+            if (obj.config.logoSitio === undefined) obj.config.logoSitio = '';
+            return obj;
+        }
+
+        normalizarDB(db);
 
         function guardarDB() {
             try {
@@ -1612,6 +1634,7 @@
             if (e.key === 'liga_premier_db' && e.newValue) {
                 try {
                     db = JSON.parse(e.newValue);
+                    normalizarDB(db);
                     aplicarLogoSitio();
                     actualizarPreviewEscudoCredencial();
                     actualizarFormularios();
@@ -1662,16 +1685,7 @@
                     return;
                 }
                 db = datosNube;
-                if (!db.historialFichajes) db.historialFichajes = [];
-                if (!db.arbitros) db.arbitros = [];
-                if (!db.campos) db.campos = [];
-                if (!db.solicitudes) db.solicitudes = [];
-                if (!db.finanzas) db.finanzas = {};
-                if (!db.votosMvp) db.votosMvp = {};
-        if (!db.comunicados) db.comunicados = [];
-        if (!db.patrocinadores) db.patrocinadores = [];
-                if (!db.config) db.config = crearConfigCredencialDefault();
-                if (db.config.logoSitio === undefined) db.config.logoSitio = '';
+                normalizarDB(db);
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
                 cargarConfigFormulario();
                 aplicarLogoSitio();
@@ -1697,16 +1711,7 @@
             const datosNube = snapshot.val();
             if (datosNube) {
                 db = datosNube;
-                if (!db.historialFichajes) db.historialFichajes = [];
-                if (!db.arbitros) db.arbitros = [];
-                if (!db.campos) db.campos = [];
-                if (!db.solicitudes) db.solicitudes = [];
-                if (!db.finanzas) db.finanzas = {};
-                if (!db.votosMvp) db.votosMvp = {};
-        if (!db.comunicados) db.comunicados = [];
-        if (!db.patrocinadores) db.patrocinadores = [];
-                if (!db.config) db.config = crearConfigCredencialDefault();
-                if (db.config.logoSitio === undefined) db.config.logoSitio = '';
+                normalizarDB(db);
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
                 cargarConfigFormulario();
                 aplicarLogoSitio();
@@ -1753,16 +1758,7 @@
                 }
 
                 db = datos;
-                if (!db.historialFichajes) db.historialFichajes = [];
-                if (!db.arbitros) db.arbitros = [];
-                if (!db.campos) db.campos = [];
-                if (!db.solicitudes) db.solicitudes = [];
-                if (!db.finanzas) db.finanzas = {};
-                if (!db.votosMvp) db.votosMvp = {};
-        if (!db.comunicados) db.comunicados = [];
-        if (!db.patrocinadores) db.patrocinadores = [];
-                if (!db.config) db.config = crearConfigCredencialDefault();
-                if (db.config.logoSitio === undefined) db.config.logoSitio = '';
+                normalizarDB(db);
 
                 guardarDB();
                 mostrarBackupStatus('✅ Copia de seguridad restaurada. Recargando panel...', false);
@@ -1780,13 +1776,27 @@
             return new Promise((resolve) => {
                 if (!inputElement || !inputElement.files || !inputElement.files[0]) { resolve(""); return; }
                 const file = inputElement.files[0];
+
+                let resuelto = false;
+                const resolverUnaVez = (valor) => { if (!resuelto) { resuelto = true; resolve(valor); } };
+                // Red de seguridad: si por lo que sea (formato raro, foto gigante, celular lento)
+                // el procesamiento de la imagen no termina en 8 segundos, seguimos adelante
+                // con la imagen sin comprimir en vez de dejar el formulario colgado para siempre.
+                const timeoutSeguridad = setTimeout(() => {
+                    const reader2 = new FileReader();
+                    reader2.onloadend = () => resolverUnaVez(reader2.result);
+                    reader2.onerror = () => resolverUnaVez("");
+                    try { reader2.readAsDataURL(file); } catch (e) { resolverUnaVez(""); }
+                }, 8000);
+
                 const reader = new FileReader();
                 reader.onloadend = () => {
                     const img = new Image();
                     img.onload = () => {
+                        clearTimeout(timeoutSeguridad);
                         const w0 = img.naturalWidth || img.width;
                         const h0 = img.naturalHeight || img.height;
-                        if (!w0 || !h0 || (w0 <= maxDim && h0 <= maxDim)) { resolve(reader.result); return; }
+                        if (!w0 || !h0 || (w0 <= maxDim && h0 <= maxDim)) { resolverUnaVez(reader.result); return; }
                         const escala = Math.min(maxDim / w0, maxDim / h0);
                         const w = Math.max(1, Math.round(w0 * escala));
                         const h = Math.max(1, Math.round(h0 * escala));
@@ -1796,15 +1806,15 @@
                             const ctx = canvas.getContext('2d');
                             ctx.drawImage(img, 0, 0, w, h);
                             const tipo = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-                            resolve(canvas.toDataURL(tipo, 0.82));
+                            resolverUnaVez(canvas.toDataURL(tipo, 0.82));
                         } catch (e) {
-                            resolve(reader.result); // si algo falla al comprimir, usar la imagen original
+                            resolverUnaVez(reader.result); // si algo falla al comprimir, usar la imagen original
                         }
                     };
-                    img.onerror = () => resolve(reader.result);
+                    img.onerror = () => { clearTimeout(timeoutSeguridad); resolverUnaVez(reader.result); };
                     img.src = reader.result;
                 };
-                reader.onerror = () => resolve("");
+                reader.onerror = () => { clearTimeout(timeoutSeguridad); resolverUnaVez(""); };
                 reader.readAsDataURL(file);
             });
         }
@@ -2085,12 +2095,22 @@
 
             document.getElementById('form-add-equipo').addEventListener('submit', async function (e) {
                 e.preventDefault();
-                const escudoBase64 = await convertirImagenABase64(document.getElementById('admin-eq-escudo'));
-                const fotoBase64 = await convertirImagenABase64(document.getElementById('admin-eq-foto'));
-                const newId = Date.now();
-                db.equipos.push({ id: newId, nombre: document.getElementById('admin-eq-nombre').value.trim(), escudo: escudoBase64, fotoGrupal: fotoBase64 });
-                db.finanzas[newId] = { adeudoArbitrajes: 0 };
-                this.reset(); guardarDB(); alert("Equipo registrado con éxito.");
+                const btn = this.querySelector('button[type="submit"]');
+                const textoOriginalBtn = btn ? btn.innerText : '';
+                if (btn) { btn.disabled = true; btn.innerText = 'Guardando...'; }
+                try {
+                    const escudoBase64 = await convertirImagenABase64(document.getElementById('admin-eq-escudo'));
+                    const fotoBase64 = await convertirImagenABase64(document.getElementById('admin-eq-foto'));
+                    const newId = Date.now();
+                    db.equipos.push({ id: newId, nombre: document.getElementById('admin-eq-nombre').value.trim(), escudo: escudoBase64, fotoGrupal: fotoBase64 });
+                    db.finanzas[newId] = { adeudoArbitrajes: 0 };
+                    this.reset();
+                    if (guardarDB() !== false) alert("Equipo registrado con éxito.");
+                } catch (err) {
+                    alert('❌ No se pudo registrar el equipo. Detalle: ' + (err && err.message ? err.message : err));
+                } finally {
+                    if (btn) { btn.disabled = false; btn.innerText = textoOriginalBtn; }
+                }
             });
 
             document.getElementById('form-add-patrocinador').addEventListener('submit', async function (e) {
@@ -2274,6 +2294,10 @@
 
             document.getElementById('form-editar').addEventListener('submit', async function (e) {
                 e.preventDefault();
+                const btnEditar = this.querySelector('button[type="submit"]');
+                const textoOriginalBtnEditar = btnEditar ? btnEditar.innerText : '';
+                if (btnEditar) { btnEditar.disabled = true; btnEditar.innerText = 'Guardando...'; }
+                try {
                 const tipo = document.getElementById('edit-tipo').value;
                 const id = parseInt(document.getElementById('edit-id').value);
                 const nuevaFoto = await convertirImagenABase64(document.getElementById('edit-foto'));
@@ -2284,6 +2308,8 @@
                     if (!eq) return;
                     eq.nombre = nombre;
                     if (nuevaFoto) eq.escudo = nuevaFoto;
+                    const nuevaFotoPlantel = await convertirImagenABase64(document.getElementById('edit-foto-plantel'));
+                    if (nuevaFotoPlantel) eq.fotoGrupal = nuevaFotoPlantel;
                 } else if (tipo === 'jugador') {
                     const j = db.jugadores.find(x => x.id === id);
                     if (!j) return;
@@ -2332,9 +2358,15 @@
                     if (nuevaFoto) p.logo = nuevaFoto;
                 }
 
-                guardarDB();
-                cerrarEdicion();
-                alert("Cambios guardados correctamente.");
+                if (guardarDB() !== false) {
+                    cerrarEdicion();
+                    alert("Cambios guardados correctamente.");
+                }
+                } catch (err) {
+                    alert('❌ No se pudieron guardar los cambios. Detalle: ' + (err && err.message ? err.message : err));
+                } finally {
+                    if (btnEditar) { btnEditar.disabled = false; btnEditar.innerText = textoOriginalBtnEditar; }
+                }
             });
 
             document.getElementById('form-fichaje-rapido').addEventListener('submit', function (e) {
@@ -3370,6 +3402,8 @@ ${cuerpo}`;
             document.getElementById('edit-tipo').value = tipo;
             document.getElementById('edit-id').value = id;
             document.getElementById('edit-foto').value = '';
+            document.getElementById('edit-campo-equipo-foto-plantel').style.display = 'none';
+            document.getElementById('edit-foto-plantel').value = '';
             document.getElementById('edit-campo-equipo').style.display = 'none';
             document.getElementById('edit-campo-posicion').style.display = 'none';
             document.getElementById('edit-campo-jugador-extra').style.display = 'none';
@@ -3386,6 +3420,7 @@ ${cuerpo}`;
                 document.getElementById('modal-editar-titulo').innerText = '✏️ Editar Equipo';
                 document.getElementById('edit-nombre').value = eq.nombre;
                 document.getElementById('edit-label-foto').innerText = 'Reemplazar escudo (opcional, deja vacío para conservar el actual):';
+                document.getElementById('edit-campo-equipo-foto-plantel').style.display = 'block';
             } else if (tipo === 'jugador') {
                 const j = db.jugadores.find(x => x.id === id);
                 if (!j) return;
@@ -3495,6 +3530,9 @@ ${cuerpo}`;
 
             document.getElementById('ficha-adm-eq-escudo').src = eq.escudo || 'https://placehold.co/70';
             document.getElementById('ficha-adm-eq-nombre').innerText = eq.nombre;
+            const imgFotoPlantel = document.getElementById('ficha-adm-eq-foto-plantel');
+            if (eq.fotoGrupal) { imgFotoPlantel.src = eq.fotoGrupal; imgFotoPlantel.style.display = 'block'; }
+            else { imgFotoPlantel.src = ''; imgFotoPlantel.style.display = 'none'; }
 
             const tabla = calcularTablaPosicionesAdmin();
             const posicion = tabla.findIndex(e => e.id === id) + 1;
