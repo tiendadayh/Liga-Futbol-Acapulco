@@ -150,6 +150,7 @@
         .buscador-resultado-item:last-child { border-bottom: none; }
         .buscador-resultado-item:hover { background: var(--light); }
         .buscador-resultado-item img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: white; border: 1px solid var(--border); flex-shrink: 0; }
+        .buscador-item-equipo img { border-radius: 6px; }
         .buscador-resultado-info strong { display: block; font-size: 0.85rem; color: var(--text); }
         .buscador-resultado-info span { font-size: 0.72rem; color: var(--text); opacity: 0.65; }
         .buscador-resultado-vacio { padding: 14px; text-align: center; font-size: 0.82rem; color: var(--text); opacity: 0.6; }
@@ -198,7 +199,7 @@
         tbody tr:nth-child(even) { background: rgba(11, 47, 92, 0.025); }
         [data-theme="dark"] tbody tr:nth-child(even) { background: rgba(255,255,255,0.025); }
         tbody tr:hover { background: rgba(209, 20, 15, 0.06); }
-        .escudo-tab { width: 30px; height: 30px; object-fit: cover; border-radius: 50%; vertical-align: middle; margin-right: 10px; box-shadow: var(--shadow-xs); }
+        .escudo-tab { width: 30px; height: 30px; object-fit: cover; border-radius: 6px; vertical-align: middle; margin-right: 10px; box-shadow: var(--shadow-xs); }
         .equipo-celda { display: flex; align-items: center; gap: 8px; }
         .equipo-celda .escudo-tab { margin-right: 0; flex-shrink: 0; }
         .equipo-celda span { font-weight: 600; }
@@ -229,7 +230,7 @@
         .partido-principal { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
         .partido-equipo-visual { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; padding: 6px; border-radius: var(--radius-sm); transition: var(--transition-fast); }
         .partido-equipo-visual:hover { background: rgba(209, 20, 15, 0.07); transform: translateY(-2px); }
-        .partido-escudo { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; background: white; border: 2px solid var(--border); box-shadow: var(--shadow-xs); }
+        .partido-escudo { width: 54px; height: 54px; border-radius: 10px; object-fit: cover; background: white; border: 2px solid var(--border); box-shadow: var(--shadow-xs); }
         .partido-nombre-equipo { font-weight: 700; font-size: 0.85rem; text-align: center; color: var(--text); }
         .partido-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border); font-size: 0.75rem; color: var(--text); opacity: 0.85; }
         .meta-cancha-clicable, .meta-item-clicable { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; opacity: 1 !important; transition: var(--transition-fast); }
@@ -257,6 +258,7 @@
         }
         .equipo-card:hover, .arbitro-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: var(--secondary); }
         .equipo-card img, .arbitro-card img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; background: white; border: 2px solid var(--border); margin-bottom: 8px; }
+        .equipo-card img { border-radius: 10px; }
         .equipo-card p, .arbitro-card p { margin: 4px 0 0; font-size: 0.8rem; opacity: 0.75; }
 
         .marcador { background: var(--gradient-header); color: white; padding: 6px 16px; border-radius: var(--radius-full); font-size: 1.1rem; font-weight: 700; font-family: var(--font-display); }
@@ -426,19 +428,20 @@
             <span class="nav-toggle-icon">☰</span> Menú
         </button>
         <div class="nav-links" id="nav-links">
+            <a href="#bracket-sec" id="nav-link-bracket" class="hidden">Cuadro Liguilla</a>
             <a href="#tablon-sec">Tablón</a>
             <a href="#jornadas-sec">Calendario En Vivo</a>
             <a href="#posiciones-sec">Posiciones</a>
             <a href="#ofensiva-defensiva-sec">Ofensiva/Defensiva</a>
-            <a href="#goles-jornada-sec">Goles por Jornada</a>
-            <a href="#bracket-sec">cuadro Liguilla</a>
-            <a href="#headtohead-sec">Cara a Cara</a>
-            <a href="#registro-sec">Inscribirse</a>
-            <a href="#porteros-sec">Guante de Oro</a>
             <a href="#goleo-sec">Goleo</a>
             <a href="#disciplina-sec">Disciplina</a>
+            <a href="#porteros-sec">Guante de Oro</a>
+            <a href="#goles-jornada-sec">Goles por Jornada</a>
+            <a href="#headtohead-sec">Cara a Cara</a>
+            <a href="#xi-sec">XI MVP</a>
             <a href="#jugadores-sec">Jugadores</a>
             <a href="#equipos-arbitros-sec">Equipos y Árbitros</a>
+            <a href="#registro-sec">Inscribirse</a>
         </div>
     </nav>
 
@@ -454,6 +457,12 @@
     <div id="banner-en-vivo" class="hidden"></div>
 
     <div class="container">
+        <!-- BRACKET LIGUILLA (primero cuando está activa la fase de liguilla) -->
+        <section id="bracket-sec" class="card-section hidden" style="border-top-color: #e0932e;">
+            <h2>🏆 Cuadro de Liguilla</h2>
+            <div id="bracket-tree" class="bracket-container"></div>
+        </section>
+
         <!-- TABLÓN DE ANUNCIOS -->
         <section id="tablon-sec" class="card-section">
             <h2>📢 Tablón de Avisos y Crónicas</h2>
@@ -515,149 +524,6 @@
             </div>
         </section>
 
-        <!-- GRÁFICA DE GOLES POR JORNADA -->
-        <section id="goles-jornada-sec" class="card-section" style="border-top-color: var(--secondary);">
-            <h2>📊 Goles por Jornada</h2>
-            <p style="font-size:0.85rem; color:#6b7280; margin-top:-6px;">Total de goles anotados en cada jornada disputada del torneo. Elige un equipo para ver solo sus goles.</p>
-            <select id="grafica-goles-equipo-select" onchange="renderizarGraficaGolesJornada()" style="margin-top:8px; max-width:280px;">
-                <option value="">⚽ Todos los equipos (total del torneo)</option>
-            </select>
-            <div id="grafica-goles-jornada" style="overflow-x:auto; margin-top:12px;"></div>
-        </section>
-
-        <!-- BRACKET LIGUILLA -->
-        <section id="bracket-sec" class="card-section" style="border-top-color: #e0932e;">
-            <h2>🏆 Cuadro de Liguilla</h2>
-            <div id="bracket-tree" class="bracket-container"></div>
-        </section>
-
-        <!-- COMPARADOR HEAD TO HEAD -->
-        <section id="headtohead-sec" class="card-section" style="border-top-color: #3f51b5;">
-            <h2>⚔️ Comparador Cara a Cara</h2>
-            <div class="filter-container">
-                <select id="h2h-equipo1"><option value="">-- Selecciona Club A --</option></select>
-                <select id="h2h-equipo2"><option value="">-- Selecciona Club B --</option></select>
-                <button onclick="compararHeadToHead()" class="btn-export" style="background:#3f51b5;">Comparar Histórico</button>
-            </div>
-            <div id="h2h-resultado-box" style="margin-top:15px; display:none; background:var(--light); padding:15px; border-radius:8px;"></div>
-        </section>
-
-        <!-- REGISTRO DE JUGADORES DESDE LA WEB PÚBLICA -->
-        <section id="registro-sec" class="card-section" style="border-top-color: #4caf50;">
-            <h2>📝 Solicitud de Registro de Jugador</h2>
-            <p style="font-size:0.85rem; color:gray;">¿Eres nuevo en la liga? Envía tus datos para ser aprobado por la administración.</p>
-            <form id="form-solicitud-web" class="form-solicitud-grid">
-                <div class="campo-solicitud">
-                    <label>Club</label>
-                    <select id="sol-equipo" required><option value="">-- Selecciona Club --</option></select>
-                </div>
-                <div class="campo-solicitud">
-                    <label>Nombre completo</label>
-                    <input type="text" id="sol-nombre" placeholder="Nombre y apellidos" required>
-                </div>
-                <div class="campo-solicitud">
-                    <label>Número de playera</label>
-                    <input type="number" id="sol-numero" placeholder="Ej. 10" min="0" max="99" required>
-                </div>
-                <div class="campo-solicitud">
-                    <label>Categoría</label>
-                    <select id="sol-categoria">
-                        <option value="Especial">Especial</option>
-                        <option value="Ascenso">Ascenso</option>
-                        <option value="Amateur">Amateur</option>
-                        <option value="Edad Libre">Edad Libre</option>
-                    </select>
-                </div>
-                <div class="campo-solicitud">
-                    <label>Posición</label>
-                    <input type="text" id="sol-posicion" placeholder="Ej. Portero, Delantero" required>
-                </div>
-                <div class="campo-solicitud">
-                    <label>CURP</label>
-                    <input type="text" id="sol-curp" style="text-transform:uppercase;" maxlength="18" required>
-                </div>
-                <div class="campo-solicitud">
-                    <label>Lugar de nacimiento</label>
-                    <input type="text" id="sol-lugar-nac" placeholder="Ej. Acapulco, Gro.">
-                </div>
-                <div class="campo-solicitud">
-                    <label>Fecha de nacimiento</label>
-                    <input type="date" id="sol-fecha-nac">
-                </div>
-                <div class="campo-solicitud">
-                    <label>Nacionalidad</label>
-                    <input type="text" id="sol-nacionalidad" value="MEXICANA">
-                </div>
-                <div class="campo-solicitud">
-                    <label>¿El jugador es mayor o menor de edad?</label>
-                    <select id="sol-tipo-edad" required>
-                        <option value="">-- Selecciona --</option>
-                        <option value="mayor">Mayor de edad</option>
-                        <option value="menor">Menor de edad</option>
-                    </select>
-                </div>
-                <div class="campo-solicitud campo-solicitud-full">
-                    <label>Foto perfil</label>
-                    <input type="file" id="sol-foto" accept="image/*" required>
-                    <small>Usa una foto tamaño infantil, de frente y bien iluminada — es la que se usará en tu credencial.</small>
-                </div>
-                <div class="campo-solicitud campo-solicitud-full" id="bloque-datos-tutor" style="display:none; border:1px dashed var(--border); padding:12px; border-radius:8px; background:var(--light);">
-                    <p style="font-weight:600; margin:0 0 10px;">👨‍👩‍👦 Datos del padre, madre o tutor <span style="font-weight:normal; color:#c62828;">(obligatorio: el jugador es menor de edad)</span></p>
-                    <div class="campo-solicitud">
-                        <label>Nombre completo del tutor</label>
-                        <input type="text" id="sol-tutor-nombre" placeholder="Nombre completo">
-                    </div>
-                    <div class="campo-solicitud">
-                        <label>CURP del tutor</label>
-                        <input type="text" id="sol-tutor-curp" style="text-transform:uppercase;" maxlength="18" placeholder="18 caracteres">
-                    </div>
-                    <div class="campo-solicitud">
-                        <label>Fecha de nacimiento del tutor</label>
-                        <input type="date" id="sol-tutor-fecha-nac">
-                    </div>
-                    <small style="color:#777;">Estos tres datos deben coincidir entre sí (la CURP codifica el nombre y la fecha de nacimiento).</small>
-                </div>
-                <div class="campo-solicitud campo-solicitud-full">
-                    <details style="background:var(--light); border:1px solid var(--border); border-radius:8px; padding:10px 14px; font-size:0.82rem;">
-                        <summary style="cursor:pointer; font-weight:600;">📄 Aviso de Privacidad (léelo antes de enviar tu solicitud)</summary>
-                        <div style="margin-top:10px; line-height:1.5; color:#555;">
-                            <p>La Liga de Futbol CoSmar SPORT CLUB recaba los datos de este formulario (nombre, número, categoría, posición, CURP, lugar y fecha de nacimiento, nacionalidad y fotografía) con la única finalidad de gestionar tu registro como jugador, elaborar tu credencial oficial y mostrar tu información deportiva (nombre, foto, número y estadísticas) en el sitio público de la liga.</p>
-                            <p>Estos datos no se venden ni se comparten con terceros ajenos a la liga. Puedes solicitar la corrección o eliminación de tus datos contactando a la administración de la liga.</p>
-                            <p><strong>Si el jugador es menor de edad</strong>, este registro debe ser realizado y autorizado por su padre, madre o tutor legal, quien acepta que los datos deportivos del menor (nombre, foto, número y estadísticas) sean publicados en el sitio de la liga en el contexto de su participación en el torneo.</p>
-                        </div>
-                    </details>
-                    <label style="display:flex; align-items:flex-start; gap:8px; margin-top:10px; font-size:0.85rem; font-weight:normal;">
-                        <input type="checkbox" id="sol-acepta-aviso" required style="margin-top:3px;">
-                        <span>He leído el Aviso de Privacidad y acepto que estos datos sean usados para el registro y que el nombre, foto, número y estadísticas del jugador sean visibles públicamente en este sitio. <strong>Si el jugador es menor de edad, confirmo que soy su padre, madre o tutor legal y autorizo este registro.</strong></span>
-                    </label>
-                </div>
-                <button type="submit" class="btn-enviar-solicitud campo-solicitud-full">Enviar Solicitud</button>
-            </form>
-        </section>
-
-        <!-- PORTEROS MENOS GOLEADOS (GUANTE DE ORO) -->
-        <section id="porteros-sec" class="card-section" style="border-top-color: #ff9800;">
-            <h2>🧤 Portero Con Menos Goles</h2>
-            <div style="overflow-x:auto;">
-                <table>
-                    <thead>
-                        <tr><th>Pos</th><th>Portero / Equipo</th><th>Goles Recibidos 🛡️</th><th>Promedio por Partido</th></tr>
-                    </thead>
-                    <tbody id="tabla-porteros-body"></tbody>
-                </table>
-            </div>
-        </section>
-
-        <!-- XI IDEAL -->
-        <section id="xi-sec" class="card-section">
-            <h2>🏅 XI MVP de la Semana</h2>
-            <div class="cancha" id="contenedor-cancha">
-                <div class="linea-medio"></div>
-                <div class="circulo-medio"></div>
-                <div id="posiciones-cancha"></div>
-            </div>
-        </section>
-
         <!-- GOLEO INDIVIDUAL -->
         <section id="goleo-sec" class="card-section">
             <h2>Goleo Individual</h2>
@@ -680,6 +546,50 @@
             </div>
         </section>
 
+        <!-- PORTEROS MENOS GOLEADOS (GUANTE DE ORO) -->
+        <section id="porteros-sec" class="card-section" style="border-top-color: #ff9800;">
+            <h2>🧤 Portero Con Menos Goles</h2>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr><th>Pos</th><th>Portero / Equipo</th><th>Goles Recibidos 🛡️</th><th>Promedio por Partido</th></tr>
+                    </thead>
+                    <tbody id="tabla-porteros-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- GRÁFICA DE GOLES POR JORNADA -->
+        <section id="goles-jornada-sec" class="card-section" style="border-top-color: var(--secondary);">
+            <h2>📊 Goles por Jornada</h2>
+            <p style="font-size:0.85rem; color:#6b7280; margin-top:-6px;">Total de goles anotados en cada jornada disputada del torneo. Elige un equipo para ver solo sus goles.</p>
+            <select id="grafica-goles-equipo-select" onchange="renderizarGraficaGolesJornada()" style="margin-top:8px; max-width:280px;">
+                <option value="">⚽ Todos los equipos (total del torneo)</option>
+            </select>
+            <div id="grafica-goles-jornada" style="overflow-x:auto; margin-top:12px;"></div>
+        </section>
+
+        <!-- COMPARADOR HEAD TO HEAD -->
+        <section id="headtohead-sec" class="card-section" style="border-top-color: #3f51b5;">
+            <h2>⚔️ Comparador Cara a Cara</h2>
+            <div class="filter-container">
+                <select id="h2h-equipo1"><option value="">-- Selecciona Club A --</option></select>
+                <select id="h2h-equipo2"><option value="">-- Selecciona Club B --</option></select>
+                <button onclick="compararHeadToHead()" class="btn-export" style="background:#3f51b5;">Comparar Histórico</button>
+            </div>
+            <div id="h2h-resultado-box" style="margin-top:15px; display:none; background:var(--light); padding:15px; border-radius:8px;"></div>
+        </section>
+
+        <!-- XI IDEAL -->
+        <section id="xi-sec" class="card-section">
+            <h2>🏅 XI MVP de la Semana</h2>
+            <div class="cancha" id="contenedor-cancha">
+                <div class="linea-medio"></div>
+                <div class="circulo-medio"></div>
+                <div id="posiciones-cancha"></div>
+            </div>
+        </section>
+
         <!-- JUGADORES -->
         <section id="jugadores-sec" class="card-section">
             <h2>Fichas De Jugadores Oficial</h2>
@@ -699,6 +609,82 @@
             <div id="grid-arbitros-publico" class="grid"></div>
         </section>
 
+        <!-- REGISTRO DE JUGADORES DESDE LA WEB PÚBLICA -->
+        <section id="registro-sec" class="card-section" style="border-top-color: #4caf50;">
+            <h2>📝 Solicitud de Registro de Jugador</h2>
+            <p style="font-size:0.85rem; color:gray;">¿Eres nuevo en la liga? Envía tus datos para ser aprobado por la administración.</p>
+            <form id="form-solicitud-web" class="form-solicitud-grid">
+                <div class="campo-solicitud">
+                    <label>Club</label>
+                    <select id="sol-equipo" required><option value="">-- Selecciona Club --</option></select>
+                </div>
+                <div class="campo-solicitud">
+                    <label>Nombre completo</label>
+                    <input type="text" id="sol-nombre" placeholder="Nombre y apellidos" required>
+                </div>
+                <div class="campo-solicitud">
+                    <label>Número de playera</label>
+                    <input type="number" id="sol-numero" placeholder="Ej. 10" min="0" max="99" required>
+                </div>
+                <div class="campo-solicitud">
+                    <label>Categoría</label>
+                    <select id="sol-categoria">
+                        <option value="Edad Libre">Edad Libre</option>
+                    </select>
+                </div>
+                <div class="campo-solicitud">
+                    <label>Posición</label>
+                    <select id="sol-posicion" required>
+                        <option value="">-- Selecciona --</option>
+                        <option value="Portero">Portero</option>
+                        <option value="Lateral izquierdo">Lateral izquierdo</option>
+                        <option value="Lateral derecho">Lateral derecho</option>
+                        <option value="Defensa central">Defensa central</option>
+                        <option value="Mediocentro defensivo">Mediocentro defensivo</option>
+                        <option value="Mediocentro central">Mediocentro central</option>
+                        <option value="Mediocentro ofensivo">Mediocentro ofensivo</option>
+                        <option value="Extremo izquierdo">Extremo izquierdo</option>
+                        <option value="Extremo derecho">Extremo derecho</option>
+                        <option value="Delantero">Delantero</option>
+                    </select>
+                </div>
+                <div class="campo-solicitud">
+                    <label>Lugar de nacimiento</label>
+                    <input type="text" id="sol-lugar-nac" placeholder="Ej. Acapulco, Gro.">
+                </div>
+                <div class="campo-solicitud">
+                    <label>Fecha de nacimiento</label>
+                    <input type="date" id="sol-fecha-nac">
+                </div>
+                <div class="campo-solicitud">
+                    <label>Nacionalidad</label>
+                    <input type="text" id="sol-nacionalidad" value="MEXICANA">
+                </div>
+                <div class="campo-solicitud campo-solicitud-full">
+                    <label>Foto de perfil (solo rostro, de frente y bien iluminada)</label>
+                    <input type="file" id="sol-foto" accept="image/*" required>
+                    <small>Sube una foto donde se vea únicamente tu rostro, de frente — es la que se usará en tu credencial.</small>
+                    <div style="margin-top:8px;">
+                        <img id="sol-foto-preview" src="" alt="" style="display:none; width:100px; height:100px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);">
+                    </div>
+                </div>
+                <div class="campo-solicitud campo-solicitud-full">
+                    <details style="background:var(--light); border:1px solid var(--border); border-radius:8px; padding:10px 14px; font-size:0.82rem;">
+                        <summary style="cursor:pointer; font-weight:600;">📄 Aviso de Privacidad (léelo antes de enviar tu solicitud)</summary>
+                        <div style="margin-top:10px; line-height:1.5; color:#555;">
+                            <p>La Liga de Futbol CoSmar SPORT CLUB recaba los datos de este formulario (nombre, número, categoría, posición, lugar y fecha de nacimiento, nacionalidad y fotografía) con la única finalidad de gestionar tu registro como jugador, elaborar tu credencial oficial y mostrar tu información deportiva (nombre, foto, número y estadísticas) en el sitio público de la liga.</p>
+                            <p>Estos datos no se venden ni se comparten con terceros ajenos a la liga. Puedes solicitar la corrección o eliminación de tus datos contactando a la administración de la liga.</p>
+                            <p>Todas las solicitudes son revisadas y deben ser aprobadas por la administración de la liga antes de quedar registradas.</p>
+                        </div>
+                    </details>
+                    <label style="display:flex; align-items:flex-start; gap:8px; margin-top:10px; font-size:0.85rem; font-weight:normal;">
+                        <input type="checkbox" id="sol-acepta-aviso" required style="margin-top:3px;">
+                        <span>He leído el Aviso de Privacidad y acepto que estos datos sean usados para el registro y que el nombre, foto, número y estadísticas del jugador sean visibles públicamente en este sitio.</span>
+                    </label>
+                </div>
+                <button type="submit" class="btn-enviar-solicitud campo-solicitud-full">Enviar Solicitud</button>
+            </form>
+        </section>
     </div>
 
     <!-- MODAL CÉDULA OFICIAL -->
@@ -756,7 +742,7 @@
         <div class="modal-content" style="max-width:760px; text-align:left;">
             <button class="close-modal" onclick="cerrarModal('modal-equipo')">×</button>
             <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px;">
-                <img id="equipo-modal-escudo" src="" style="width:70px; height:70px; border-radius:50%; object-fit:cover; border:3px solid var(--accent); background:white;" alt="Escudo del equipo">
+                <img id="equipo-modal-escudo" src="" style="width:70px; height:70px; border-radius:10px; object-fit:cover; border:3px solid var(--accent); background:white;" alt="Escudo del equipo">
                 <div>
                     <h3 id="equipo-modal-nombre" style="margin:0; color:var(--primary);"></h3>
                     <p id="equipo-modal-contador" style="margin:4px 0 0; opacity:0.7; font-size:0.85rem;"></p>
@@ -1050,62 +1036,18 @@
             document.getElementById('input-buscar-jugador').addEventListener('input', filtrarJugadores);
             document.getElementById('select-filtrar-equipo').addEventListener('change', filtrarJugadores);
             
-            // --- Datos del tutor (menores de edad): mostrar bloque y validar CURP ---
-            function calcularEdad(fechaStr) {
-                if (!fechaStr) return null;
-                const hoy = new Date();
-                const nac = new Date(fechaStr + 'T00:00:00');
-                let edad = hoy.getFullYear() - nac.getFullYear();
-                const m = hoy.getMonth() - nac.getMonth();
-                if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
-                return edad;
-            }
-
-            function validarCurpTutor(curp, nombreCompleto, fechaNacStr) {
-                curp = (curp || '').toUpperCase().trim();
-                if (!/^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/.test(curp)) {
-                    return { valido: false, motivo: 'La CURP del tutor no tiene un formato válido (debe tener 18 caracteres).' };
-                }
-                if (fechaNacStr) {
-                    const nac = new Date(fechaNacStr + 'T00:00:00');
-                    const esperadaFecha = String(nac.getFullYear()).slice(-2) + String(nac.getMonth() + 1).padStart(2, '0') + String(nac.getDate()).padStart(2, '0');
-                    if (curp.substr(4, 6) !== esperadaFecha) {
-                        return { valido: false, motivo: 'La fecha de nacimiento del tutor no coincide con la que indica su CURP.' };
-                    }
-                }
-                const PALABRAS_OMITIR = ['DE', 'DEL', 'LA', 'LAS', 'LOS', 'Y', 'MC', 'VAN', 'VON'];
-                const limpio = (nombreCompleto || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z\s]/g, '');
-                const palabras = limpio.split(/\s+/).filter(p => p && !PALABRAS_OMITIR.includes(p));
-                if (palabras.length >= 2) {
-                    let apPat, apMat, nombres;
-                    if (palabras.length === 2) { nombres = [palabras[0]]; apPat = palabras[1]; apMat = ''; }
-                    else { apPat = palabras[palabras.length - 2]; apMat = palabras[palabras.length - 1]; nombres = palabras.slice(0, palabras.length - 2); }
-                    let primerNombre = nombres[0] || '';
-                    if ((primerNombre === 'MARIA' || primerNombre === 'JOSE') && nombres.length > 1) primerNombre = nombres[1];
-                    const vocalInterna = p => { const m = (p || '').substr(1).match(/[AEIOU]/); return m ? m[0] : 'X'; };
-                    const esperado = (apPat[0] || 'X') + vocalInterna(apPat) + (apMat ? apMat[0] : 'X') + (primerNombre[0] || 'X');
-                    if (esperado !== curp.substr(0, 4)) {
-                        return { valido: false, motivo: 'El nombre del tutor no coincide con su CURP. Revisa que ambos datos correspondan a la misma persona.' };
-                    }
-                }
-                return { valido: true };
-            }
-
-            function actualizarBloqueTutor() {
-                const esMenor = document.getElementById('sol-tipo-edad').value === 'menor';
-                const bloque = document.getElementById('bloque-datos-tutor');
-                bloque.style.display = esMenor ? 'block' : 'none';
-                ['sol-tutor-nombre', 'sol-tutor-curp', 'sol-tutor-fecha-nac'].forEach(id => {
-                    document.getElementById(id).required = esMenor;
+            // --- Vista previa de la foto de perfil (registro público) ---
+            const inputSolFoto = document.getElementById('sol-foto');
+            if (inputSolFoto) {
+                inputSolFoto.addEventListener('change', function () {
+                    const preview = document.getElementById('sol-foto-preview');
+                    const file = this.files && this.files[0];
+                    if (!file) { preview.style.display = 'none'; return; }
+                    const reader = new FileReader();
+                    reader.onload = e => { preview.src = e.target.result; preview.style.display = 'inline-block'; };
+                    reader.readAsDataURL(file);
                 });
             }
-            document.getElementById('sol-tipo-edad').addEventListener('change', actualizarBloqueTutor);
-            document.getElementById('sol-fecha-nac').addEventListener('change', function () {
-                const edad = calcularEdad(this.value);
-                if (edad === null) return;
-                document.getElementById('sol-tipo-edad').value = edad < 18 ? 'menor' : 'mayor';
-                actualizarBloqueTutor();
-            });
 
             function numeroYaUsadoEnEquipo(equipoId, numero) {
                 if (!numero) return false;
@@ -1120,8 +1062,6 @@
                 if(!document.getElementById('sol-acepta-aviso').checked) {
                     return alert("Debes aceptar el Aviso de Privacidad para poder enviar la solicitud.");
                 }
-                const tipoEdad = document.getElementById('sol-tipo-edad').value;
-                if (!tipoEdad) return alert("Selecciona si el jugador es mayor o menor de edad.");
                 const equipoIdSel = parseInt(document.getElementById('sol-equipo').value);
                 const numeroSel = document.getElementById('sol-numero').value.trim();
                 if (!numeroSel) return alert("El número de playera es obligatorio.");
@@ -1133,18 +1073,6 @@
                 if (registradosYPendientes >= 15) {
                     return alert("Este equipo ya alcanzó el máximo de 15 jugadores (contando solicitudes pendientes de aprobar). Elige otro equipo o contacta al administrador.");
                 }
-                let datosTutor = null;
-                if (tipoEdad === 'menor') {
-                    const tutorNombre = document.getElementById('sol-tutor-nombre').value.trim();
-                    const tutorCurp = document.getElementById('sol-tutor-curp').value.trim().toUpperCase();
-                    const tutorFechaNac = document.getElementById('sol-tutor-fecha-nac').value;
-                    if (!tutorNombre || !tutorCurp || !tutorFechaNac) {
-                        return alert("El jugador es menor de edad: el nombre, la CURP y la fecha de nacimiento del padre, madre o tutor son obligatorios.");
-                    }
-                    const check = validarCurpTutor(tutorCurp, tutorNombre, tutorFechaNac);
-                    if (!check.valido) return alert("⚠️ " + check.motivo);
-                    datosTutor = { nombre: tutorNombre, curp: tutorCurp, fechaNacimiento: tutorFechaNac };
-                }
                 const fotoB64 = await convertirImagenABase64(document.getElementById('sol-foto'));
                 if(!db.solicitudes) db.solicitudes = [];
                 db.solicitudes.push({
@@ -1153,17 +1081,16 @@
                     equipoId: equipoIdSel,
                     posicion: document.getElementById('sol-posicion').value.trim(),
                     numero: numeroSel,
-                    curp: document.getElementById('sol-curp').value.trim().toUpperCase(),
                     categoria: document.getElementById('sol-categoria').value,
                     lugarNacimiento: document.getElementById('sol-lugar-nac').value.trim(),
                     fechaNacimiento: document.getElementById('sol-fecha-nac').value,
                     nacionalidad: document.getElementById('sol-nacionalidad').value.trim() || 'MEXICANA',
                     foto: fotoB64,
-                    tutor: datosTutor,
                     avisoPrivacidadAceptado: true,
                     fechaAceptacionAviso: new Date().toISOString()
                 });
                 guardarDB();
+                document.getElementById('sol-foto-preview').style.display = 'none';
                 this.reset(); alert("¡Solicitud enviada! El administrador revisará tu registro.");
             });
 
@@ -1245,6 +1172,7 @@
             actualizarTablaPosiciones();
             renderizarOfensivaDefensiva();
             renderizarGraficaGolesJornada();
+            actualizarVisibilidadLiguilla();
             renderizarBracketLiguilla();
             renderizarPorteros();
             actualizarVistaJornadas();
@@ -1487,6 +1415,14 @@
                     <div style="text-align:center; font-size:0.75rem; color:var(--primary); font-weight:bold;">${p.jugado ? 'Finalizado' + pen : 'Programado'}</div>
                 </div>
             `;
+        }
+
+        function actualizarVisibilidadLiguilla() {
+            const seccion = document.getElementById('bracket-sec');
+            const navLink = document.getElementById('nav-link-bracket');
+            const enLiguilla = !!db.liguillaActiva;
+            if (seccion) seccion.classList.toggle('hidden', !enLiguilla);
+            if (navLink) navLink.classList.toggle('hidden', !enLiguilla);
         }
 
         function renderizarBracketLiguilla() {
@@ -1768,7 +1704,7 @@
 
             let html = '';
             equiposMatch.forEach(eq => {
-                html += `<div class="buscador-resultado-item" onclick="seleccionarResultadoBusqueda('equipo', ${eq.id})">
+                html += `<div class="buscador-resultado-item buscador-item-equipo" onclick="seleccionarResultadoBusqueda('equipo', ${eq.id})">
                     <img src="${eq.escudo || 'https://placehold.co/34'}" alt="${eq.nombre}">
                     <div class="buscador-resultado-info"><strong>${eq.nombre}</strong><span>⚽ Equipo</span></div>
                 </div>`;
