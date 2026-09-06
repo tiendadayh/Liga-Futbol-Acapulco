@@ -895,7 +895,6 @@
             <form id="form-add-arbitro">
                 <input type="text" id="admin-arb-nombre" placeholder="Nombre del Colegiado" required>
                 <input type="text" id="admin-arb-colegio" placeholder="Colegio / Asociación">
-                <input type="email" id="admin-arb-email" placeholder="Correo de acceso (para que solo él entre a su cédula)">
                 <label>Lugar de nacimiento:</label>
                 <input type="text" id="admin-arb-lugar-nac" placeholder="Ej. Acapulco, Gro.">
                 <label>Fecha de nacimiento:</label>
@@ -1162,7 +1161,6 @@
             </div>
             <div class="ficha-admin-datos">
                 <div><span class="lbl">Colegio / Asociación</span><span class="val" id="ficha-adm-arb-colegio2">—</span></div>
-                <div><span class="lbl">Correo de acceso</span><span class="val" id="ficha-adm-arb-email">—</span></div>
                 <div><span class="lbl">Edad</span><span class="val" id="ficha-adm-arb-edad">—</span></div>
                 <div><span class="lbl">Nacionalidad</span><span class="val" id="ficha-adm-arb-nacionalidad">—</span></div>
                 <div><span class="lbl">Lugar de nacimiento</span><span class="val" id="ficha-adm-arb-lugar-nac">—</span></div>
@@ -1228,10 +1226,6 @@
                 <div id="edit-campo-colegio" style="display:none;">
                     <label>Colegio / Asociación:</label>
                     <input type="text" id="edit-colegio">
-                </div>
-                <div id="edit-campo-email-arbitro" style="display:none;">
-                    <label>Correo de acceso (para que solo él entre a su cédula):</label>
-                    <input type="email" id="edit-email-arbitro">
                 </div>
                 <div id="edit-campo-arbitro-extra" style="display:none;">
                     <label>Lugar de nacimiento:</label>
@@ -1611,6 +1605,7 @@
             if (!obj.config) obj.config = crearConfigCredencialDefault();
             if (obj.config.logoSitio === undefined) obj.config.logoSitio = '';
             (obj.equipos || []).forEach(eq => { if (!eq.pin) eq.pin = String(Math.floor(100000 + Math.random() * 900000)); });
+            (obj.arbitros || []).forEach(arb => { if (!arb.pin) arb.pin = String(Math.floor(100000 + Math.random() * 900000)); });
             return obj;
         }
 
@@ -1647,14 +1642,14 @@
         // formulario público de "Solicitud de Registro de Jugador" (index.html) para
         // desbloquearlo. Así, aunque el sitio siga siendo público, solo quien tenga el
         // PIN de SU equipo puede enviar solicitudes a nombre de ese equipo.
-        function generarPinEquipo() {
+        function generarPin6Digitos() {
             return String(Math.floor(100000 + Math.random() * 900000));
         }
 
         function mostrarPinRegistroEquipo(id, esNuevo) {
             const eq = db.equipos.find(e => e.id === id);
             if (!eq) return;
-            if (!eq.pin) { eq.pin = generarPinEquipo(); guardarDB(); }
+            if (!eq.pin) { eq.pin = generarPin6Digitos(); guardarDB(); }
             const encabezado = esNuevo ? `Equipo registrado con éxito.\n\n` : '';
             alert(`${encabezado}PIN de registro de "${eq.nombre}": ${eq.pin}\n\nDaselo únicamente al dueño/representante del equipo. Lo debe escribir en la sección "Solicitud de Registro de Jugador" del sitio público para poder registrar a sus jugadores.`);
         }
@@ -1663,9 +1658,31 @@
             const eq = db.equipos.find(e => e.id === id);
             if (!eq) return;
             if (!confirm(`¿Generar un nuevo PIN para "${eq.nombre}"? El PIN anterior dejará de funcionar.`)) return;
-            eq.pin = generarPinEquipo();
+            eq.pin = generarPin6Digitos();
             guardarDB();
             mostrarPinRegistroEquipo(id, false);
+        }
+
+        // --- PIN de acceso del árbitro (panel arbitro.html) ---
+        // Cada árbitro tiene su propio PIN de 6 dígitos. En arbitro.html, ese PIN
+        // reemplaza el login de correo/contraseña: reemplaza también la identificación,
+        // ya que el PIN detecta automáticamente de qué árbitro se trata y bloquea el
+        // selector de nombre para que solo pueda llenar SU propia cédula.
+        function mostrarPinArbitro(id, esNuevo) {
+            const arb = db.arbitros.find(a => a.id === id);
+            if (!arb) return;
+            if (!arb.pin) { arb.pin = generarPin6Digitos(); guardarDB(); }
+            const encabezado = esNuevo ? `Árbitro registrado con éxito.\n\n` : '';
+            alert(`${encabezado}PIN de acceso de "${arb.nombre}": ${arb.pin}\n\nDaselo únicamente a él. Lo debe escribir en la pantalla de acceso de arbitro.html para entrar a su panel.`);
+        }
+
+        function regenerarPinArbitro(id) {
+            const arb = db.arbitros.find(a => a.id === id);
+            if (!arb) return;
+            if (!confirm(`¿Generar un nuevo PIN para "${arb.nombre}"? El PIN anterior dejará de funcionar.`)) return;
+            arb.pin = generarPin6Digitos();
+            guardarDB();
+            mostrarPinArbitro(id, false);
         }
 
         function guardarDB() {
@@ -2149,7 +2166,6 @@
             document.getElementById('ficha-adm-arb-nombre').innerText = a.nombre;
             document.getElementById('ficha-adm-arb-colegio').innerText = a.colegio || 'Independiente';
             document.getElementById('ficha-adm-arb-colegio2').innerText = a.colegio || 'Independiente';
-            document.getElementById('ficha-adm-arb-email').innerText = a.email || '—';
 
             const edad = calcularEdad(a.fechaNacimiento);
             document.getElementById('ficha-adm-arb-edad').innerText = edad !== null ? `${edad} años` : '—';
@@ -2295,7 +2311,7 @@
                     const fotoBase64 = await convertirImagenABase64(document.getElementById('admin-eq-foto'));
                     const newId = Date.now();
                     const nombreNuevoEquipo = document.getElementById('admin-eq-nombre').value.trim();
-                    const pinNuevoEquipo = generarPinEquipo();
+                    const pinNuevoEquipo = generarPin6Digitos();
                     db.equipos.push({ id: newId, nombre: nombreNuevoEquipo, escudo: escudoBase64, fotoGrupal: fotoBase64, pin: pinNuevoEquipo });
                     db.finanzas[newId] = { adeudoArbitrajes: 0 };
                     agregarAvisoRegistro('registro', '🆕 Nuevo equipo registrado', `El equipo "${nombreNuevoEquipo}" se ha registrado en la liga.`);
@@ -2429,9 +2445,11 @@
                 e.preventDefault();
                 const fotoB64 = await convertirImagenABase64(document.getElementById('admin-arb-foto'));
                 const nombreNuevoArbitro = document.getElementById('admin-arb-nombre').value.trim();
-                db.arbitros.push({ id: Date.now(), nombre: nombreNuevoArbitro, colegio: document.getElementById('admin-arb-colegio').value.trim() || 'Independiente', email: document.getElementById('admin-arb-email').value.trim().toLowerCase(), lugarNacimiento: document.getElementById('admin-arb-lugar-nac').value.trim(), fechaNacimiento: document.getElementById('admin-arb-fecha-nac').value, nacionalidad: document.getElementById('admin-arb-nacionalidad').value.trim() || 'MEXICANA', foto: fotoB64 });
+                const pinNuevoArbitro = generarPin6Digitos();
+                db.arbitros.push({ id: Date.now(), nombre: nombreNuevoArbitro, colegio: document.getElementById('admin-arb-colegio').value.trim() || 'Independiente', lugarNacimiento: document.getElementById('admin-arb-lugar-nac').value.trim(), fechaNacimiento: document.getElementById('admin-arb-fecha-nac').value, nacionalidad: document.getElementById('admin-arb-nacionalidad').value.trim() || 'MEXICANA', foto: fotoB64, pin: pinNuevoArbitro });
                 agregarAvisoRegistro('registro', '🆕 Nuevo árbitro registrado', `${nombreNuevoArbitro} se ha integrado al cuerpo arbitral de la liga.`);
-                this.reset(); guardarDB(); alert("Colegiado Registrado.");
+                this.reset();
+                if (guardarDB() !== false) mostrarPinArbitro(db.arbitros[db.arbitros.length - 1].id, true);
             });
 
             document.getElementById('form-add-cancha').addEventListener('submit', async function (e) {
@@ -2502,7 +2520,6 @@
                     if (!a) return;
                     a.nombre = nombre;
                     a.colegio = document.getElementById('edit-colegio').value.trim() || 'Independiente';
-                    a.email = document.getElementById('edit-email-arbitro').value.trim().toLowerCase();
                     a.lugarNacimiento = document.getElementById('edit-arb-lugar-nac').value.trim();
                     a.fechaNacimiento = document.getElementById('edit-arb-fecha-nac').value;
                     a.nacionalidad = document.getElementById('edit-arb-nacionalidad').value.trim() || 'MEXICANA';
@@ -3539,10 +3556,12 @@ ${cuerpo}`;
                     <img src="${a.foto || 'https://placehold.co/40'}" alt="${a.nombre}">
                     <div class="gestion-info">
                         <strong>${a.nombre}</strong>
-                        <span>${a.colegio || ''} ${a.email ? '· 📧 ' + a.email : '<span style="color:#c62828;">· sin correo vinculado</span>'}</span>
+                        <span>${a.colegio || ''}</span>
                     </div>
                     <div class="gestion-acciones">
                         <button type="button" class="btn-ver-fila" title="Ver ficha completa" onclick="verFichaArbitroAdmin(${a.id})">👁️</button>
+                        <button type="button" class="btn-editar-fila" title="Ver/mostrar PIN de acceso a su panel" onclick="mostrarPinArbitro(${a.id}, false)">🔑</button>
+                        <button type="button" class="btn-editar-fila" title="Regenerar PIN de acceso (invalida el anterior)" onclick="regenerarPinArbitro(${a.id})">🔄</button>
                         <button type="button" class="btn-editar-fila" onclick="abrirEdicion('arbitro', ${a.id})">✏️</button>
                         <button type="button" class="btn-eliminar-fila" onclick="eliminarArbitro(${a.id})">🗑️</button>
                     </div>
@@ -3660,7 +3679,6 @@ ${cuerpo}`;
             document.getElementById('edit-campo-posicion').style.display = 'none';
             document.getElementById('edit-campo-jugador-extra').style.display = 'none';
             document.getElementById('edit-campo-colegio').style.display = 'none';
-            document.getElementById('edit-campo-email-arbitro').style.display = 'none';
             document.getElementById('edit-campo-arbitro-extra').style.display = 'none';
             document.getElementById('edit-campo-direccion').style.display = 'none';
             document.getElementById('edit-campo-link').style.display = 'none';
@@ -3698,8 +3716,6 @@ ${cuerpo}`;
                 document.getElementById('edit-nombre').value = a.nombre;
                 document.getElementById('edit-colegio').value = a.colegio || '';
                 document.getElementById('edit-campo-colegio').style.display = 'block';
-                document.getElementById('edit-email-arbitro').value = a.email || '';
-                document.getElementById('edit-campo-email-arbitro').style.display = 'block';
                 document.getElementById('edit-arb-lugar-nac').value = a.lugarNacimiento || '';
                 document.getElementById('edit-arb-fecha-nac').value = a.fechaNacimiento || '';
                 document.getElementById('edit-arb-nacionalidad').value = a.nacionalidad || 'MEXICANA';
