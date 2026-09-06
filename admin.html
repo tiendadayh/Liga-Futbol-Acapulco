@@ -1350,6 +1350,78 @@
         let hayCambiosSinPublicar = false;
         let contadorCambiosPendientes = 0;
 
+        // --- Notificación en tiempo real de nuevas Solicitudes de Registro ---
+        // admin.html normalmente NO escucha a Firebase en vivo (para no perder cambios
+        // sin publicar), pero las solicitudes públicas son la excepción: SÍ deben avisarte
+        // al instante, aunque tengas cambios de otra sección sin publicar.
+        // idsSolicitudesResueltasSinPublicar guarda las solicitudes que ya aprobaste/rechazaste
+        // en esta pantalla pero todavía no publicas, para que no "reaparezcan" mientras
+        // siguen existiendo en la nube (hasta que las publiques y desaparezcan de ahí).
+        let idsSolicitudesResueltasSinPublicar = new Set(JSON.parse(localStorage.getItem('liga_premier_solicitudes_resueltas') || '[]'));
+        let primeraCargaSolicitudesFirebase = true;
+        let audioCtxNotificaciones = null;
+
+        function obtenerAudioCtxNotificaciones() {
+            if (!audioCtxNotificaciones) {
+                try { audioCtxNotificaciones = new (window.AudioContext || window.webkitAudioContext)(); }
+                catch (err) { return null; }
+            }
+            if (audioCtxNotificaciones.state === 'suspended') audioCtxNotificaciones.resume().catch(() => {});
+            return audioCtxNotificaciones;
+        }
+        // Los navegadores bloquean el audio hasta el primer clic del usuario en la página;
+        // esto lo "desbloquea" en cuanto entras a trabajar al panel.
+        document.addEventListener('click', obtenerAudioCtxNotificaciones, { once: true });
+
+        function reproducirSonidoNuevaSolicitud() {
+            try {
+                const ctx = obtenerAudioCtxNotificaciones();
+                if (!ctx) return;
+                let t = ctx.currentTime;
+                [880, 1108].forEach(freq => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.0001, t);
+                    gain.gain.exponentialRampToValueAtTime(0.3, t + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+                    osc.connect(gain).connect(ctx.destination);
+                    osc.start(t); osc.stop(t + 0.3);
+                    t += 0.18;
+                });
+            } catch (err) { /* el navegador puede bloquear audio si no ha habido clic aún */ }
+        }
+
+        firebaseDbRef.child('solicitudes').on('value', function (snapshot) {
+            const remotas = snapshot.val() || [];
+            if (!Array.isArray(db.solicitudes)) db.solicitudes = [];
+            if (primeraCargaSolicitudesFirebase) {
+                // Primera lectura al abrir la página: solo sincroniza, sin sonido ni aviso.
+                const idsLocales = new Set(db.solicitudes.map(s => s.id));
+                remotas.forEach(rs => { if (!idsLocales.has(rs.id)) db.solicitudes.push(rs); });
+                localStorage.setItem('liga_premier_db', JSON.stringify(db));
+                renderizarSolicitudes();
+                primeraCargaSolicitudesFirebase = false;
+                return;
+            }
+            const idsLocales = new Set(db.solicitudes.map(s => s.id));
+            let huboNuevas = false;
+            remotas.forEach(rs => {
+                if (!idsLocales.has(rs.id) && !idsSolicitudesResueltasSinPublicar.has(rs.id)) {
+                    db.solicitudes.push(rs);
+                    huboNuevas = true;
+                }
+            });
+            if (huboNuevas) {
+                localStorage.setItem('liga_premier_db', JSON.stringify(db));
+                renderizarSolicitudes();
+                renderizarResumenDia();
+                reproducirSonidoNuevaSolicitud();
+                mostrarAvisoAutoguardado('📥 ¡Nueva solicitud de registro recibida!');
+            }
+        });
+
         // --- Logo del sitio (encabezado) personalizable ---
         // Guarda el logo original que ya trae la página para poder volver a él
         // cuando el admin presione "Quitar".
@@ -1698,6 +1770,8 @@
             firebaseDbRef.set(db).then(() => {
                 hayCambiosSinPublicar = false;
                 contadorCambiosPendientes = 0;
+                idsSolicitudesResueltasSinPublicar.clear();
+                localStorage.setItem('liga_premier_solicitudes_resueltas', '[]');
                 const contadorEl = document.getElementById('firebase-contador-cambios');
                 if (contadorEl) { contadorEl.textContent = '0'; contadorEl.style.color = '#2e7d32'; }
                 localStorage.setItem('liga_premier_ultima_publicacion', Date.now().toString());
@@ -1724,6 +1798,8 @@
                 aplicarLogoSitio();
                 hayCambiosSinPublicar = false;
                 contadorCambiosPendientes = 0;
+                idsSolicitudesResueltasSinPublicar.clear();
+                localStorage.setItem('liga_premier_solicitudes_resueltas', '[]');
                 const contadorEl = document.getElementById('firebase-contador-cambios');
                 if (contadorEl) { contadorEl.textContent = '0'; contadorEl.style.color = '#2e7d32'; }
                 actualizarFormularios();
@@ -2404,6 +2480,11 @@
             `).join('');
         }
 
+        function marcarSolicitudResueltaSinPublicar(id) {
+            idsSolicitudesResueltasSinPublicar.add(id);
+            localStorage.setItem('liga_premier_solicitudes_resueltas', JSON.stringify([...idsSolicitudesResueltasSinPublicar]));
+        }
+
         function aprobarSolicitud(id) {
             const sol = db.solicitudes.find(s => s.id === id);
             if (!sol) return;
@@ -2418,11 +2499,13 @@
                 foto: sol.foto, goles: 0, amarillas: 0, rojas: 0, xiIdeal: []
             });
             db.solicitudes = db.solicitudes.filter(s => s.id !== id);
-            guardarDB(); alert(`Jugador ${sol.nombre} aprobado e integrado al plantel.`);
+            marcarSolicitudResueltaSinPublicar(id);
+            guardarDB(); alert(`Jugador ${sol.nombre} aprobado e integrado al plantel. Recuerda presionar "📤 Publicar cambios" para que quede oficial.`);
         }
 
         function rechazarSolicitud(id) {
             db.solicitudes = db.solicitudes.filter(s => s.id !== id);
+            marcarSolicitudResueltaSinPublicar(id);
             guardarDB();
         }
 
