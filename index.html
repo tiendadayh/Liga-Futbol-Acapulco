@@ -902,7 +902,11 @@
 
         function guardarDB() {
             localStorage.setItem('liga_premier_db', JSON.stringify(db));
-            intentarAutoBackup();
+            // Nota: el auto-respaldo en .json NO se ejecuta aquí a propósito.
+            // Esta es la página pública: si se activara aquí, cada visitante que llenara
+            // un formulario (p. ej. la Solicitud de Registro de Jugador) recibiría de golpe
+            // una descarga forzada del archivo .json completo de la liga en su celular/computadora.
+            // El auto-respaldo real se hace desde admin.html (y arbitro.html), no desde aquí.
             recibiendoDeFirebase = true;
             firebaseDbRef.set(db).catch(err => console.warn('No se pudo sincronizar con Firebase', err))
                 .finally(() => { recibiendoDeFirebase = false; });
@@ -960,7 +964,7 @@
 
         function intentarAutoBackup() {
             try {
-                let meta = JSON.parse(localStorage.getItem('liga_premier_backup_meta')) || { ultimoBackup: 0, cambiosPendientes: 0 };
+                let meta = JSON.parse(localStorage.getItem('liga_premier_backup_meta')) || { ultimoBackup: Date.now(), cambiosPendientes: 0 };
                 meta.cambiosPendientes = (meta.cambiosPendientes || 0) + 1;
                 const ahora = Date.now();
                 const tiempoDesdeUltimo = ahora - (meta.ultimoBackup || 0);

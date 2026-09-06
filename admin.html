@@ -1630,7 +1630,7 @@
         // así que cuenta cambios hechos desde admin, árbitro o el sitio público.
         function intentarAutoBackup() {
             try {
-                let meta = JSON.parse(localStorage.getItem('liga_premier_backup_meta')) || { ultimoBackup: 0, cambiosPendientes: 0 };
+                let meta = JSON.parse(localStorage.getItem('liga_premier_backup_meta')) || { ultimoBackup: Date.now(), cambiosPendientes: 0 };
                 meta.cambiosPendientes = (meta.cambiosPendientes || 0) + 1;
                 const ahora = Date.now();
                 const tiempoDesdeUltimo = ahora - (meta.ultimoBackup || 0);
