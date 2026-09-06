@@ -908,7 +908,8 @@
             // una descarga forzada del archivo .json completo de la liga en su celular/computadora.
             // El auto-respaldo real se hace desde admin.html (y arbitro.html), no desde aquí.
             recibiendoDeFirebase = true;
-            firebaseDbRef.set(db).catch(err => console.warn('No se pudo sincronizar con Firebase', err))
+            return firebaseDbRef.set(db)
+                .catch(err => { console.warn('No se pudo sincronizar con Firebase', err); throw err; })
                 .finally(() => { recibiendoDeFirebase = false; });
         }
 
@@ -1079,7 +1080,7 @@
                 }
                 const fotoB64 = await convertirImagenABase64(document.getElementById('sol-foto'));
                 if(!db.solicitudes) db.solicitudes = [];
-                db.solicitudes.push({
+                const nuevaSolicitud = {
                     id: Date.now(),
                     nombre: document.getElementById('sol-nombre').value.trim(),
                     equipoId: equipoIdSel,
@@ -1092,8 +1093,18 @@
                     foto: fotoB64,
                     avisoPrivacidadAceptado: true,
                     fechaAceptacionAviso: new Date().toISOString()
-                });
-                guardarDB();
+                };
+                db.solicitudes.push(nuevaSolicitud);
+                const btnEnviar = this.querySelector('.btn-enviar-solicitud');
+                if (btnEnviar) { btnEnviar.disabled = true; btnEnviar.textContent = 'Enviando...'; }
+                try {
+                    await guardarDB();
+                } catch (err) {
+                    if (btnEnviar) { btnEnviar.disabled = false; btnEnviar.textContent = 'Enviar Solicitud'; }
+                    alert("⚠️ Tu solicitud NO llegó a la nube (por eso el administrador no la ve). Puede ser tu conexión a internet; revisa e inténtalo de nuevo.\n\nDetalle técnico para reportar: " + (err && err.message ? err.message : err));
+                    return;
+                }
+                if (btnEnviar) { btnEnviar.disabled = false; btnEnviar.textContent = 'Enviar Solicitud'; }
                 document.getElementById('sol-foto-preview').style.display = 'none';
                 this.reset(); alert("¡Solicitud enviada! El administrador revisará tu registro.");
             });
