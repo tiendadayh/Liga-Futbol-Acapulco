@@ -199,6 +199,9 @@
         [data-theme="dark"] tbody tr:nth-child(even) { background: rgba(255,255,255,0.025); }
         tbody tr:hover { background: rgba(209, 20, 15, 0.06); }
         .escudo-tab { width: 30px; height: 30px; object-fit: cover; border-radius: 50%; vertical-align: middle; margin-right: 10px; box-shadow: var(--shadow-xs); }
+        .equipo-celda { display: flex; align-items: center; gap: 8px; }
+        .equipo-celda .escudo-tab { margin-right: 0; flex-shrink: 0; }
+        .equipo-celda span { font-weight: 600; }
 
         .filter-container { display: flex; gap: 14px; margin-bottom: 22px; flex-wrap: wrap; }
         input, select {
@@ -368,8 +371,11 @@
             .container { margin: 20px auto; padding: 0 12px; }
             .card-section { padding: 18px; margin-bottom: 22px; }
             .header-section-flex { flex-wrap: wrap; gap: 8px; }
-            th, td { padding: 9px 8px; font-size: 0.85rem; }
+            th, td { padding: 9px 6px; font-size: 0.85rem; }
             th { position: static; }
+            .equipo-celda { flex-direction: column; gap: 4px; text-align: center; }
+            .equipo-celda .escudo-tab { width: 32px; height: 32px; margin: 0 auto; }
+            .equipo-celda span { font-size: 0.68rem; line-height: 1.15; white-space: normal; word-break: break-word; }
             .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
             .jugador-card, .equipo-card, .arbitro-card { padding: 10px; }
             .partido-escudo { width: 44px; height: 44px; }
@@ -1334,7 +1340,7 @@
             document.getElementById('tabla-posiciones-body').innerHTML = estadisticas.map((eq, idx) => `
                 <tr>
                     <td><b>${idx + 1}</b></td>
-                    <td><img class="escudo-tab" src="${eq.escudo}" alt="${eq.nombre}">${eq.nombre}</td>
+                    <td><div class="equipo-celda"><img class="escudo-tab" src="${eq.escudo}" alt="${eq.nombre}"><span>${eq.nombre}</span></div></td>
                     <td>${eq.pj}</td><td>${eq.pg}</td><td>${eq.pe}</td><td>${eq.pp}</td><td>${eq.gf}</td><td>${eq.gc}</td><td>${eq.dg}</td><td><b>${eq.pts}</b></td>
                     <td style="letter-spacing:2px; white-space:nowrap;">${eq.racha.slice(-5).map(r => iconoForma[r]).join('') || '—'}</td>
                 </tr>
@@ -1414,7 +1420,7 @@
             document.getElementById('tabla-ofensiva-body').innerHTML = ofensiva.length ? ofensiva.map((eq, idx) => `
                 <tr>
                     <td><b>${idx + 1}</b></td>
-                    <td><img class="escudo-tab" src="${eq.escudo}" alt="${eq.nombre}">${eq.nombre}</td>
+                    <td><div class="equipo-celda"><img class="escudo-tab" src="${eq.escudo}" alt="${eq.nombre}"><span>${eq.nombre}</span></div></td>
                     <td><b>${eq.gf}</b> ⚽ ${idx === 0 ? '🏆' : ''}</td>
                 </tr>
             `).join('') : '<tr><td colspan="3" style="color:gray;">Aún no hay partidos jugados.</td></tr>';
@@ -1422,7 +1428,7 @@
             document.getElementById('tabla-defensiva-body').innerHTML = defensiva.length ? defensiva.map((eq, idx) => `
                 <tr>
                     <td><b>${idx + 1}</b></td>
-                    <td><img class="escudo-tab" src="${eq.escudo}" alt="${eq.nombre}">${eq.nombre}</td>
+                    <td><div class="equipo-celda"><img class="escudo-tab" src="${eq.escudo}" alt="${eq.nombre}"><span>${eq.nombre}</span></div></td>
                     <td><b>${eq.gc}</b> 🛡️ ${idx === 0 ? '🏆' : ''}</td>
                 </tr>
             `).join('') : '<tr><td colspan="3" style="color:gray;">Aún no hay partidos jugados.</td></tr>';
