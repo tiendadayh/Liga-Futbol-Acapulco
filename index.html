@@ -372,10 +372,11 @@
             .card-section { padding: 18px; margin-bottom: 22px; }
             .header-section-flex { flex-wrap: wrap; gap: 8px; }
             th, td { padding: 9px 6px; font-size: 0.85rem; }
-            th { position: static; }
+            th { position: static; white-space: nowrap; }
             .equipo-celda { flex-direction: column; gap: 4px; text-align: center; }
             .equipo-celda .escudo-tab { width: 32px; height: 32px; margin: 0 auto; }
-            .equipo-celda span { font-size: 0.68rem; line-height: 1.15; white-space: normal; word-break: break-word; }
+            .equipo-celda span { font-size: 0.72rem; line-height: 1.2; white-space: nowrap; }
+            .tabla-equipos { min-width: 460px; }
             .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
             .jugador-card, .equipo-card, .arbitro-card { padding: 10px; }
             .partido-escudo { width: 44px; height: 44px; }
@@ -480,7 +481,7 @@
                 </div>
             </div>
             <div style="overflow-x:auto;">
-                <table>
+                <table class="tabla-equipos">
                     <thead>
                         <tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th><th>Forma</th></tr>
                     </thead>
@@ -496,7 +497,7 @@
                 <div>
                     <h3 style="margin:0 0 8px; color:#2e7d32;">⚔️ Mejor Ofensiva (Más Goles Anotados)</h3>
                     <div style="overflow-x:auto;">
-                        <table>
+                        <table class="tabla-equipos">
                             <thead><tr><th>Pos</th><th>Equipo</th><th>GF ⚽</th></tr></thead>
                             <tbody id="tabla-ofensiva-body"></tbody>
                         </table>
@@ -505,7 +506,7 @@
                 <div>
                     <h3 style="margin:0 0 8px; color:#c62828;">🛡️ Mejor Defensiva (Menos Goles Recibidos)</h3>
                     <div style="overflow-x:auto;">
-                        <table>
+                        <table class="tabla-equipos">
                             <thead><tr><th>Pos</th><th>Equipo</th><th>GC 🛡️</th></tr></thead>
                             <tbody id="tabla-defensiva-body"></tbody>
                         </table>
