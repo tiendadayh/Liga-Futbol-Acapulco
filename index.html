@@ -1195,9 +1195,15 @@
             const estiloTipo = {
                 aviso: { color: '#0d2a4d', etiqueta: '📢 Aviso' },
                 sancion: { color: '#c62828', etiqueta: '⚠️ Sanción' },
-                cronica: { color: '#1f8fd6', etiqueta: '📰 Crónica' }
+                cronica: { color: '#1f8fd6', etiqueta: '📰 Crónica' },
+                registro: { color: '#2e7d32', etiqueta: '🆕 Registro' },
+                traspaso: { color: '#6a1b9a', etiqueta: '🔄 Traspaso' }
             };
-            contNoticias.innerHTML = (db.comunicados || []).map(c => {
+            // Los avisos automáticos de registro/traspaso se muestran solo 3 días;
+            // pasado ese tiempo se ocultan aunque el dato aún no se haya publicado como borrado.
+            const TRES_DIAS_MS_TABLON = 3 * 24 * 60 * 60 * 1000;
+            const comunicadosVigentes = (db.comunicados || []).filter(c => !(c.autoGenerado && (Date.now() - (c.ts || 0) > TRES_DIAS_MS_TABLON)));
+            contNoticias.innerHTML = comunicadosVigentes.map(c => {
                 const et = estiloTipo[c.tipo] || estiloTipo.aviso;
                 return `
                 <div style="background:var(--card-bg, var(--light)); border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06)); display:flex; flex-direction:column;">

@@ -1615,7 +1615,34 @@
 
         normalizarDB(db);
 
+        // Los avisos de registro (equipo/jugador/árbitro) y traspasos se publican
+        // automáticamente en el Tablón y se autoeliminan pasados 3 días; los avisos
+        // manuales (formulario "Publicar Anuncio") no llevan esta marca y no expiran solos.
+        const TRES_DIAS_MS = 3 * 24 * 60 * 60 * 1000;
+
+        function agregarAvisoRegistro(tipo, titulo, contenido) {
+            if (!db.comunicados) db.comunicados = [];
+            db.comunicados.unshift({
+                id: Date.now() + Math.floor(Math.random() * 1000),
+                titulo: titulo,
+                tipo: tipo,
+                contenido: contenido,
+                imagen: '',
+                fecha: new Date().toLocaleDateString('es-MX'),
+                autoGenerado: true,
+                ts: Date.now()
+            });
+        }
+
+        function limpiarAvisosExpirados() {
+            if (!db.comunicados) return;
+            db.comunicados = db.comunicados.filter(c => !(c.autoGenerado && (Date.now() - (c.ts || 0) > TRES_DIAS_MS)));
+        }
+
+        limpiarAvisosExpirados();
+
         function guardarDB() {
+            limpiarAvisosExpirados();
             try {
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
             } catch (err) {
@@ -2240,8 +2267,10 @@
                     const escudoBase64 = await convertirImagenABase64(document.getElementById('admin-eq-escudo'));
                     const fotoBase64 = await convertirImagenABase64(document.getElementById('admin-eq-foto'));
                     const newId = Date.now();
-                    db.equipos.push({ id: newId, nombre: document.getElementById('admin-eq-nombre').value.trim(), escudo: escudoBase64, fotoGrupal: fotoBase64 });
+                    const nombreNuevoEquipo = document.getElementById('admin-eq-nombre').value.trim();
+                    db.equipos.push({ id: newId, nombre: nombreNuevoEquipo, escudo: escudoBase64, fotoGrupal: fotoBase64 });
                     db.finanzas[newId] = { adeudoArbitrajes: 0 };
+                    agregarAvisoRegistro('registro', '🆕 Nuevo equipo registrado', `El equipo "${nombreNuevoEquipo}" se ha registrado en la liga.`);
                     this.reset();
                     if (guardarDB() !== false) alert("Equipo registrado con éxito.");
                 } catch (err) {
@@ -2324,6 +2353,8 @@
                     nacionalidad: document.getElementById('admin-jug-nacionalidad').value.trim().toUpperCase() || 'MEXICANA',
                     foto: jugadorBase64, goles: 0, amarillas: 0, rojas: 0, xiIdeal: []
                 });
+                const nombreEquipoNuevoJug = db.equipos.find(e => e.id === equipoIdSel)?.nombre || 'Agente Libre';
+                agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${nombreSel} se une al equipo ${nombreEquipoNuevoJug}.`);
                 this.reset();
                 document.getElementById('admin-jug-foto-preview').style.display = 'none';
                 guardarDB(); alert("Jugador registrado.");
@@ -2369,7 +2400,9 @@
             document.getElementById('form-add-arbitro').addEventListener('submit', async function (e) {
                 e.preventDefault();
                 const fotoB64 = await convertirImagenABase64(document.getElementById('admin-arb-foto'));
-                db.arbitros.push({ id: Date.now(), nombre: document.getElementById('admin-arb-nombre').value.trim(), colegio: document.getElementById('admin-arb-colegio').value.trim() || 'Independiente', email: document.getElementById('admin-arb-email').value.trim().toLowerCase(), lugarNacimiento: document.getElementById('admin-arb-lugar-nac').value.trim(), fechaNacimiento: document.getElementById('admin-arb-fecha-nac').value, nacionalidad: document.getElementById('admin-arb-nacionalidad').value.trim() || 'MEXICANA', foto: fotoB64 });
+                const nombreNuevoArbitro = document.getElementById('admin-arb-nombre').value.trim();
+                db.arbitros.push({ id: Date.now(), nombre: nombreNuevoArbitro, colegio: document.getElementById('admin-arb-colegio').value.trim() || 'Independiente', email: document.getElementById('admin-arb-email').value.trim().toLowerCase(), lugarNacimiento: document.getElementById('admin-arb-lugar-nac').value.trim(), fechaNacimiento: document.getElementById('admin-arb-fecha-nac').value, nacionalidad: document.getElementById('admin-arb-nacionalidad').value.trim() || 'MEXICANA', foto: fotoB64 });
+                agregarAvisoRegistro('registro', '🆕 Nuevo árbitro registrado', `${nombreNuevoArbitro} se ha integrado al cuerpo arbitral de la liga.`);
                 this.reset(); guardarDB(); alert("Colegiado Registrado.");
             });
 
@@ -2490,6 +2523,8 @@
                 else { jugador.equipoId = parseInt(destino); nombreDestino = db.equipos.find(e => e.id === jugador.equipoId)?.nombre || 'Club'; }
 
                 db.historialFichajes.unshift({ id: Date.now(), jugador: jugador.nombre, origen: nombreOrigen, destino: nombreDestino, fecha: new Date().toLocaleDateString('es-MX') });
+                const tituloTraspaso = destino === 'libre' ? '🕊️ Jugador dejado en libertad' : '🔄 Traspaso de jugador';
+                agregarAvisoRegistro('traspaso', tituloTraspaso, `${jugador.nombre} pasa de ${nombreOrigen} a ${nombreDestino}.`);
                 this.reset(); guardarDB(); alert(`Transferencia ejecutada: ${jugador.nombre} -> ${nombreDestino}`);
             });
 
@@ -2611,6 +2646,8 @@
                 nacionalidad: (sol.nacionalidad || 'MEXICANA').toUpperCase(),
                 foto: sol.foto, goles: 0, amarillas: 0, rojas: 0, xiIdeal: []
             });
+            const nombreEquipoSol = db.equipos.find(e => e.id === sol.equipoId)?.nombre || 'Agente Libre';
+            agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${nombreSol} se une al equipo ${nombreEquipoSol}.`);
             db.solicitudes = db.solicitudes.filter(s => s.id !== id);
             marcarSolicitudResueltaSinPublicar(id);
             cerrarDetalleSolicitud();
@@ -3547,17 +3584,21 @@ ${cuerpo}`;
 
             const listaComunicados = document.getElementById('gestion-lista-comunicados');
             if (listaComunicados) {
-                const iconoTipo = { aviso: '📢', sancion: '⚠️', cronica: '📰' };
-                listaComunicados.innerHTML = (db.comunicados || []).length ? db.comunicados.map(c => `
+                const iconoTipo = { aviso: '📢', sancion: '⚠️', cronica: '📰', registro: '🆕', traspaso: '🔄' };
+                listaComunicados.innerHTML = (db.comunicados || []).length ? db.comunicados.map(c => {
+                    const diasRestantes = c.autoGenerado ? Math.max(0, Math.ceil((TRES_DIAS_MS - (Date.now() - (c.ts || 0))) / (24 * 60 * 60 * 1000))) : null;
+                    const notaAuto = c.autoGenerado ? ` · <span style="color:#888;">se quita solo en ${diasRestantes} día(s)</span>` : '';
+                    return `
                     <div class="gestion-fila">
                         <div class="gestion-info">
                             <strong>${iconoTipo[c.tipo] || '📢'} ${c.titulo}</strong>
-                            <span>${c.fecha || ''}</span>
+                            <span>${c.fecha || ''}${notaAuto}</span>
                         </div>
                         <div class="gestion-acciones">
                             <button type="button" class="btn-eliminar-fila" onclick="eliminarComunicado(${c.id})">🗑️</button>
                         </div>
-                    </div>`).join('') : '<p style="font-size:0.8rem; color:#888;">Sin avisos ni crónicas publicadas.</p>';
+                    </div>`;
+                }).join('') : '<p style="font-size:0.8rem; color:#888;">Sin avisos ni crónicas publicadas.</p>';
             }
 
             const listaPatrocinadores = document.getElementById('gestion-lista-patrocinadores');
