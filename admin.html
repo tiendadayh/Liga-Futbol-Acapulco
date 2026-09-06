@@ -734,6 +734,7 @@
                 <input type="file" id="admin-eq-escudo" accept="image/*">
                 <label>Foto Plantel:</label>
                 <input type="file" id="admin-eq-foto" accept="image/*">
+                <small style="display:block; color:#888; margin-top:-8px; margin-bottom:8px;">Tamaño recomendado: 1500x750 px (relación 2:1) para que se vea completa, sin recortes, en computadora y celular.</small>
                 <button type="submit">Agregar Equipo</button>
             </form>
         </div>
@@ -1045,7 +1046,7 @@
                     <span id="ficha-adm-eq-posicion"></span>
                 </div>
             </div>
-            <img id="ficha-adm-eq-foto-plantel" src="" alt="Foto del plantel" style="display:none; width:100%; aspect-ratio:3/2; object-fit:cover; object-position:center 20%; border-radius:10px; margin:10px 0;">
+            <img id="ficha-adm-eq-foto-plantel" src="" alt="Foto del plantel" style="display:none; width:100%; aspect-ratio:2/1; object-fit:cover; object-position:center center; border-radius:10px; margin:10px 0;">
             <div class="ficha-admin-stats">
                 <div><strong id="ficha-adm-eq-pj">0</strong><span>PJ</span></div>
                 <div><strong id="ficha-adm-eq-pts">0</strong><span>Pts</span></div>
@@ -1229,6 +1230,7 @@
                 <div id="edit-campo-equipo-foto-plantel" style="display:none;">
                     <label>Reemplazar foto del plantel/equipo (opcional, deja vacío para conservar la actual):</label>
                     <input type="file" id="edit-foto-plantel" accept="image/*">
+                    <small style="display:block; color:#888; margin-top:-8px; margin-bottom:8px;">Tamaño recomendado: 1500x750 px (relación 2:1) para que se vea completa, sin recortes.</small>
                     <label style="display:flex; align-items:center; gap:6px; font-weight:normal; margin:-4px 0 10px; font-size:0.85rem;">
                         <input type="checkbox" id="edit-quitar-foto-plantel" style="width:auto;"> 🗑️ Quitar la foto del plantel actual
                     </label>
