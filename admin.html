@@ -1610,6 +1610,7 @@
             if (obj.liguillaActiva === undefined) obj.liguillaActiva = false;
             if (!obj.config) obj.config = crearConfigCredencialDefault();
             if (obj.config.logoSitio === undefined) obj.config.logoSitio = '';
+            (obj.equipos || []).forEach(eq => { if (!eq.pin) eq.pin = String(Math.floor(100000 + Math.random() * 900000)); });
             return obj;
         }
 
@@ -1640,6 +1641,32 @@
         }
 
         limpiarAvisosExpirados();
+
+        // --- PIN de registro por equipo ---
+        // Cada equipo tiene un PIN de 6 dígitos que su dueño debe escribir a mano en el
+        // formulario público de "Solicitud de Registro de Jugador" (index.html) para
+        // desbloquearlo. Así, aunque el sitio siga siendo público, solo quien tenga el
+        // PIN de SU equipo puede enviar solicitudes a nombre de ese equipo.
+        function generarPinEquipo() {
+            return String(Math.floor(100000 + Math.random() * 900000));
+        }
+
+        function mostrarPinRegistroEquipo(id, esNuevo) {
+            const eq = db.equipos.find(e => e.id === id);
+            if (!eq) return;
+            if (!eq.pin) { eq.pin = generarPinEquipo(); guardarDB(); }
+            const encabezado = esNuevo ? `Equipo registrado con éxito.\n\n` : '';
+            alert(`${encabezado}PIN de registro de "${eq.nombre}": ${eq.pin}\n\nDaselo únicamente al dueño/representante del equipo. Lo debe escribir en la sección "Solicitud de Registro de Jugador" del sitio público para poder registrar a sus jugadores.`);
+        }
+
+        function regenerarPinEquipo(id) {
+            const eq = db.equipos.find(e => e.id === id);
+            if (!eq) return;
+            if (!confirm(`¿Generar un nuevo PIN para "${eq.nombre}"? El PIN anterior dejará de funcionar.`)) return;
+            eq.pin = generarPinEquipo();
+            guardarDB();
+            mostrarPinRegistroEquipo(id, false);
+        }
 
         function guardarDB() {
             limpiarAvisosExpirados();
@@ -2268,11 +2295,12 @@
                     const fotoBase64 = await convertirImagenABase64(document.getElementById('admin-eq-foto'));
                     const newId = Date.now();
                     const nombreNuevoEquipo = document.getElementById('admin-eq-nombre').value.trim();
-                    db.equipos.push({ id: newId, nombre: nombreNuevoEquipo, escudo: escudoBase64, fotoGrupal: fotoBase64 });
+                    const pinNuevoEquipo = generarPinEquipo();
+                    db.equipos.push({ id: newId, nombre: nombreNuevoEquipo, escudo: escudoBase64, fotoGrupal: fotoBase64, pin: pinNuevoEquipo });
                     db.finanzas[newId] = { adeudoArbitrajes: 0 };
                     agregarAvisoRegistro('registro', '🆕 Nuevo equipo registrado', `El equipo "${nombreNuevoEquipo}" se ha registrado en la liga.`);
                     this.reset();
-                    if (guardarDB() !== false) alert("Equipo registrado con éxito.");
+                    if (guardarDB() !== false) mostrarPinRegistroEquipo(newId, true);
                 } catch (err) {
                     alert('❌ No se pudo registrar el equipo. Detalle: ' + (err && err.message ? err.message : err));
                 } finally {
@@ -3480,6 +3508,8 @@ ${cuerpo}`;
                     </div>
                     <div class="gestion-acciones">
                         <button type="button" class="btn-ver-fila" title="Ver ficha completa" onclick="event.stopPropagation(); verFichaEquipoAdmin(${eq.id})">👁️</button>
+                        <button type="button" class="btn-editar-fila" title="Ver/mostrar PIN de registro para el dueño" onclick="event.stopPropagation(); mostrarPinRegistroEquipo(${eq.id}, false)">🔑</button>
+                        <button type="button" class="btn-editar-fila" title="Regenerar PIN de registro (invalida el anterior)" onclick="event.stopPropagation(); regenerarPinEquipo(${eq.id})">🔄</button>
                         <button type="button" class="btn-editar-fila" onclick="event.stopPropagation(); abrirEdicion('equipo', ${eq.id})">✏️</button>
                         <button type="button" class="btn-eliminar-fila" onclick="event.stopPropagation(); eliminarEquipo(${eq.id})">🗑️</button>
                     </div>

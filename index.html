@@ -612,11 +612,28 @@
         <!-- REGISTRO DE JUGADORES DESDE LA WEB PÚBLICA -->
         <section id="registro-sec" class="card-section" style="border-top-color: #4caf50;">
             <h2>📝 Solicitud de Registro de Jugador</h2>
-            <p style="font-size:0.85rem; color:gray;">¿Eres nuevo en la liga? Envía tus datos para ser aprobado por la administración.</p>
-            <form id="form-solicitud-web" class="form-solicitud-grid">
+            <p style="font-size:0.85rem; color:gray;">Este formulario es exclusivo para los dueños/representantes de cada equipo. Usa el PIN que te dio la administración de la liga para desbloquearlo.</p>
+
+            <div id="registro-gate" class="form-solicitud-grid" style="align-items:end;">
                 <div class="campo-solicitud">
                     <label>Club</label>
-                    <select id="sol-equipo" required><option value="">-- Selecciona Club --</option></select>
+                    <select id="gate-equipo" required><option value="">-- Selecciona tu Club --</option></select>
+                </div>
+                <div class="campo-solicitud">
+                    <label>PIN de tu equipo</label>
+                    <input type="text" id="gate-pin" inputmode="numeric" maxlength="6" placeholder="Ej. 123456">
+                </div>
+                <div class="campo-solicitud">
+                    <button type="button" class="btn-enviar-solicitud" onclick="desbloquearRegistroEquipo()">Desbloquear</button>
+                </div>
+                <p id="gate-error" class="campo-solicitud-full" style="color:#c62828; font-size:0.85rem; display:none;"></p>
+                <p class="campo-solicitud-full" style="font-size:0.8rem; color:gray;">¿No tienes tu PIN? Pídeselo al administrador de la liga.</p>
+            </div>
+
+            <form id="form-solicitud-web" class="form-solicitud-grid hidden">
+                <div class="campo-solicitud">
+                    <label>Club</label>
+                    <select id="sol-equipo" required disabled><option value="">-- Selecciona Club --</option></select>
                 </div>
                 <div class="campo-solicitud">
                     <label>Nombre completo</label>
@@ -1223,6 +1240,7 @@
             document.getElementById('h2h-equipo1').innerHTML = '<option value="">-- Club A --</option>' + optsEq;
             document.getElementById('h2h-equipo2').innerHTML = '<option value="">-- Club B --</option>' + optsEq;
             document.getElementById('sol-equipo').innerHTML = '<option value="">-- Selecciona Club --</option>' + optsEq;
+            document.getElementById('gate-equipo').innerHTML = '<option value="">-- Selecciona tu Club --</option>' + optsEq;
             document.getElementById('select-filtrar-equipo').innerHTML = '<option value="todos">Todos los Equipos</option>' + optsEq;
 
             actualizarTablaPosiciones();
@@ -1239,6 +1257,7 @@
             renderizarEquiposArbitros();
             renderizarBannerEnVivo();
             intentarAbrirFichaDesdeURL();
+            restaurarDesbloqueoRegistroDeSesion();
         }
 
         // Si la página se abrió con ?jugador=<id> (por ejemplo, al escanear el QR de una
@@ -1256,6 +1275,53 @@
             verFicha(id);
             const sec = document.getElementById('jugadores-sec');
             if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // --- Bloqueo de la Solicitud de Registro por PIN de equipo ---
+        // Solo el dueño/representante del equipo (quien tiene el PIN de 6 dígitos que
+        // le dio la administración) puede desbloquear el formulario público de registro
+        // de jugadores para SU equipo.
+        function desbloquearRegistroPorDatos(equipoId, pin) {
+            const eq = db.equipos.find(e => e.id === equipoId);
+            const errorEl = document.getElementById('gate-error');
+            if (!eq || !eq.pin || String(eq.pin) !== String(pin)) {
+                if (errorEl) { errorEl.textContent = 'PIN incorrecto o equipo inválido. Verifica con tu equipo/administración.'; errorEl.style.display = 'block'; }
+                return false;
+            }
+            document.getElementById('registro-gate').classList.add('hidden');
+            const form = document.getElementById('form-solicitud-web');
+            form.classList.remove('hidden');
+            document.getElementById('sol-equipo').innerHTML = `<option value="${eq.id}" selected>${eq.nombre}</option>`;
+            if (errorEl) errorEl.style.display = 'none';
+            try { sessionStorage.setItem('registro_equipo_desbloqueado', JSON.stringify({ equipoId: eq.id, pin: eq.pin })); } catch (err) { /* almacenamiento no disponible, no es crítico */ }
+            return true;
+        }
+
+        function desbloquearRegistroEquipo() {
+            const equipoIdSel = parseInt(document.getElementById('gate-equipo').value);
+            const pinSel = document.getElementById('gate-pin').value.trim();
+            const errorEl = document.getElementById('gate-error');
+            if (!equipoIdSel) {
+                if (errorEl) { errorEl.textContent = 'Selecciona tu equipo.'; errorEl.style.display = 'block'; }
+                return;
+            }
+            if (!pinSel) {
+                if (errorEl) { errorEl.textContent = 'Escribe el PIN que te dio la administración.'; errorEl.style.display = 'block'; }
+                return;
+            }
+            desbloquearRegistroPorDatos(equipoIdSel, pinSel);
+        }
+
+        // Si ya se había desbloqueado antes en esta misma sesión del navegador, no se
+        // vuelve a pedir el PIN (evita molestar si recarga la página varias veces).
+        let registroSesionYaIntentado = false;
+        function restaurarDesbloqueoRegistroDeSesion() {
+            if (registroSesionYaIntentado) return;
+            registroSesionYaIntentado = true;
+            let guardado = null;
+            try { guardado = JSON.parse(sessionStorage.getItem('registro_equipo_desbloqueado') || 'null'); } catch (err) { return; }
+            if (!guardado || !guardado.equipoId) return;
+            desbloquearRegistroPorDatos(guardado.equipoId, guardado.pin);
         }
 
         // Estados de un partido que se consideran "en curso" (se les muestra marcador
