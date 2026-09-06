@@ -1078,6 +1078,18 @@
                 });
             }
 
+            // Fuerza mayúsculas mientras se escribe en nombre, lugar de nacimiento y
+            // nacionalidad, igual a como se imprime en la credencial oficial.
+            ['sol-nombre', 'sol-lugar-nac', 'sol-nacionalidad'].forEach(function (idCampo) {
+                const el = document.getElementById(idCampo);
+                if (!el) return;
+                el.addEventListener('input', function () {
+                    const inicio = this.selectionStart, fin = this.selectionEnd;
+                    this.value = this.value.toUpperCase();
+                    try { this.setSelectionRange(inicio, fin); } catch (err) { /* algunos navegadores móviles no lo soportan */ }
+                });
+            });
+
             function numeroYaUsadoEnEquipo(equipoId, numero) {
                 if (!numero) return false;
                 const enJugadores = (db.jugadores || []).some(j => j.equipoId === equipoId && String(j.numero) === String(numero));
@@ -1106,14 +1118,14 @@
                 if(!db.solicitudes) db.solicitudes = [];
                 const nuevaSolicitud = {
                     id: Date.now(),
-                    nombre: document.getElementById('sol-nombre').value.trim(),
+                    nombre: document.getElementById('sol-nombre').value.trim().toUpperCase(),
                     equipoId: equipoIdSel,
                     posicion: document.getElementById('sol-posicion').value.trim(),
                     numero: numeroSel,
                     categoria: document.getElementById('sol-categoria').value,
-                    lugarNacimiento: document.getElementById('sol-lugar-nac').value.trim(),
+                    lugarNacimiento: document.getElementById('sol-lugar-nac').value.trim().toUpperCase(),
                     fechaNacimiento: document.getElementById('sol-fecha-nac').value,
-                    nacionalidad: document.getElementById('sol-nacionalidad').value.trim() || 'MEXICANA',
+                    nacionalidad: document.getElementById('sol-nacionalidad').value.trim().toUpperCase() || 'MEXICANA',
                     foto: fotoB64,
                     avisoPrivacidadAceptado: true,
                     fechaAceptacionAviso: new Date().toISOString()

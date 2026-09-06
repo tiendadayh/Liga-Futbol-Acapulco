@@ -1113,6 +1113,35 @@
         </div>
     </div>
 
+    <!-- MODAL: DETALLE DE SOLICITUD DE REGISTRO (vista previa de cómo quedará en su ficha) -->
+    <div id="modal-detalle-solicitud" class="modal-overlay" style="display:none;" onclick="if(event.target === this) cerrarDetalleSolicitud()">
+        <div class="modal-box" style="max-width:520px;">
+            <button type="button" class="close-modal-gestion" onclick="cerrarDetalleSolicitud()">×</button>
+            <div class="ficha-admin-banner">
+                <img id="sol-adm-foto" src="" alt="Foto">
+                <div>
+                    <h3 id="sol-adm-nombre"></h3>
+                    <span id="sol-adm-equipo"></span><br>
+                    <span class="ficha-admin-estado" style="background:#fff3cd; color:#8a6d00;">⏳ Solicitud pendiente</span>
+                </div>
+            </div>
+            <p id="sol-adm-aviso-duplicado" style="display:none; background:#fdecea; color:#c62828; font-size:0.8rem; font-weight:bold; padding:8px 10px; border-radius:6px; margin:10px 0 0;"></p>
+            <div class="ficha-admin-datos">
+                <div><span class="lbl">Número de playera</span><span class="val" id="sol-adm-numero">—</span></div>
+                <div><span class="lbl">Posición</span><span class="val" id="sol-adm-posicion">—</span></div>
+                <div><span class="lbl">Categoría</span><span class="val" id="sol-adm-categoria">—</span></div>
+                <div><span class="lbl">Edad</span><span class="val" id="sol-adm-edad">—</span></div>
+                <div><span class="lbl">Fecha de nacimiento</span><span class="val" id="sol-adm-fecha-nac">—</span></div>
+                <div><span class="lbl">Nacionalidad</span><span class="val" id="sol-adm-nacionalidad">—</span></div>
+                <div><span class="lbl">Lugar de nacimiento</span><span class="val" id="sol-adm-lugar-nac">—</span></div>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:14px;">
+                <button type="button" id="sol-adm-btn-aprobar" style="flex:1; background:var(--success);">✅ Aprobar</button>
+                <button type="button" id="sol-adm-btn-rechazar" style="flex:1; background:var(--primary);">❌ Rechazar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: FICHA COMPLETA DEL ÁRBITRO -->
     <div id="modal-ficha-arbitro" class="modal-overlay" style="display:none;" onclick="if(event.target === this) cerrarFichaArbitroAdmin()">
         <div class="modal-box" style="max-width:520px;">
@@ -2249,6 +2278,18 @@
                 });
             }
 
+            // Fuerza mayúsculas mientras se escribe en nombre, lugar de nacimiento y
+            // nacionalidad, igual a como se imprime en la credencial oficial.
+            ['admin-jug-nombre', 'admin-jug-lugar-nac', 'admin-jug-nacionalidad'].forEach(function (idCampo) {
+                const el = document.getElementById(idCampo);
+                if (!el) return;
+                el.addEventListener('input', function () {
+                    const inicio = this.selectionStart, fin = this.selectionEnd;
+                    this.value = this.value.toUpperCase();
+                    try { this.setSelectionRange(inicio, fin); } catch (err) { /* algunos navegadores móviles no lo soportan */ }
+                });
+            });
+
             document.getElementById('form-add-jugador').addEventListener('submit', async function (e) {
                 e.preventDefault();
                 if (db.registrosCerrados) return alert("Los registros están bloqueados administrativamente.");
@@ -2261,17 +2302,26 @@
                 if ((db.jugadores || []).filter(j => j.equipoId === equipoIdSel).length >= 15) {
                     return alert("Este equipo ya tiene 15 jugadores registrados, que es el máximo permitido por plantel.");
                 }
+                const nombreSel = document.getElementById('admin-jug-nombre').value.trim().toUpperCase();
+                if (!nombreSel) return alert("El nombre completo es obligatorio.");
+                const duplicado = nombreYaRegistrado(nombreSel);
+                if (duplicado) {
+                    const equipoDup = db.equipos.find(e => e.id === duplicado.equipoId)?.nombre || 'Agente Libre';
+                    if (!confirm(`⚠️ Ya existe un jugador registrado con el nombre "${nombreSel}" (equipo: ${equipoDup}). Revísalo antes de continuar.\n\n¿Deseas registrarlo de todas formas?`)) {
+                        return;
+                    }
+                }
                 const jugadorBase64 = await convertirImagenABase64(document.getElementById('admin-jug-foto'));
                 db.jugadores.push({
                     id: Date.now(),
-                    nombre: document.getElementById('admin-jug-nombre').value.trim(),
+                    nombre: nombreSel,
                     equipoId: equipoIdSel,
                     posicion: document.getElementById('admin-jug-posicion').value.trim() || 'Jugador',
                     numero: numeroSel,
                     categoria: document.getElementById('admin-jug-categoria').value,
-                    lugarNacimiento: document.getElementById('admin-jug-lugar-nac').value.trim(),
+                    lugarNacimiento: document.getElementById('admin-jug-lugar-nac').value.trim().toUpperCase(),
                     fechaNacimiento: document.getElementById('admin-jug-fecha-nac').value,
-                    nacionalidad: document.getElementById('admin-jug-nacionalidad').value.trim() || 'MEXICANA',
+                    nacionalidad: document.getElementById('admin-jug-nacionalidad').value.trim().toUpperCase() || 'MEXICANA',
                     foto: jugadorBase64, goles: 0, amarillas: 0, rojas: 0, xiIdeal: []
                 });
                 this.reset();
@@ -2463,26 +2513,81 @@
                 return;
             }
 
-            cont.innerHTML = db.solicitudes.map(s => `
-                <div style="background:#f4f4f4; padding:12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+            cont.innerHTML = db.solicitudes.map(s => {
+                const duplicado = nombreYaRegistrado(s.nombre);
+                return `
+                <div style="background:#f4f4f4; padding:12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div style="display:flex; gap:12px; align-items:center;">
                         <img src="${s.foto || 'https://placehold.co/50'}" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);" alt="${s.nombre || 'Solicitante'}">
                         <div>
                             <strong>${s.numero ? '#' + s.numero + ' · ' : ''}${s.nombre}</strong> (${s.posicion}${s.categoria ? ' · ' + s.categoria : ''})<br>
                             <small style="color:gray;">Equipo Solicitado: ${db.equipos.find(e => e.id === s.equipoId)?.nombre || 'Libre'}</small>
+                            ${duplicado ? '<br><small style="color:#c62828; font-weight:bold;">⚠️ Posible nombre duplicado, revisar</small>' : ''}
                         </div>
                     </div>
                     <div style="display:flex; gap:8px;">
+                        <button onclick="verDetalleSolicitud(${s.id})" style="background:#555; padding:8px 14px; font-size:0.85rem;">👁️ Ver detalle</button>
                         <button onclick="aprobarSolicitud(${s.id})" style="background:var(--success); padding:8px 14px; font-size:0.85rem;">Aprobar</button>
                         <button onclick="rechazarSolicitud(${s.id})" style="background:var(--primary); padding:8px 14px; font-size:0.85rem;">Rechazar</button>
                     </div>
                 </div>
-            `).join('');
+            `; }).join('');
         }
 
         function marcarSolicitudResueltaSinPublicar(id) {
             idsSolicitudesResueltasSinPublicar.add(id);
             localStorage.setItem('liga_premier_solicitudes_resueltas', JSON.stringify([...idsSolicitudesResueltasSinPublicar]));
+        }
+
+        // Busca si ya hay un jugador registrado con el mismo nombre (sin importar
+        // mayúsculas/minúsculas o espacios de sobra), para avisar al admin antes de
+        // registrar uno nuevo o aprobar una solicitud y evitar duplicados por error.
+        // excluirId sirve para ignorar al propio jugador cuando se está editando uno existente.
+        function nombreYaRegistrado(nombre, excluirId) {
+            const normalizado = (nombre || '').trim().toUpperCase();
+            if (!normalizado) return null;
+            return (db.jugadores || []).find(j => j.id !== excluirId && (j.nombre || '').trim().toUpperCase() === normalizado) || null;
+        }
+
+        // Muestra el detalle completo de una solicitud pública de registro, tal como
+        // quedaría en la ficha del jugador si se aprueba, para que el admin la revise
+        // con calma antes de aprobar o rechazar.
+        function verDetalleSolicitud(id) {
+            const s = (db.solicitudes || []).find(x => x.id === id);
+            if (!s) return;
+            document.getElementById('sol-adm-foto').src = s.foto || 'https://placehold.co/90';
+            document.getElementById('sol-adm-nombre').innerText = s.nombre || '—';
+            document.getElementById('sol-adm-equipo').innerText = db.equipos.find(e => e.id === s.equipoId)?.nombre || 'Agente Libre';
+            document.getElementById('sol-adm-numero').innerText = s.numero ? `#${s.numero}` : '—';
+            document.getElementById('sol-adm-posicion').innerText = s.posicion || '—';
+            document.getElementById('sol-adm-categoria').innerText = s.categoria || '—';
+            const edad = calcularEdad(s.fechaNacimiento);
+            document.getElementById('sol-adm-edad').innerText = edad !== null ? `${edad} años` : '—';
+            document.getElementById('sol-adm-fecha-nac').innerText = s.fechaNacimiento ? formatearFechaCarnet(s.fechaNacimiento) : '—';
+            document.getElementById('sol-adm-nacionalidad').innerText = s.nacionalidad || '—';
+            document.getElementById('sol-adm-lugar-nac').innerText = s.lugarNacimiento || '—';
+
+            const duplicado = nombreYaRegistrado(s.nombre);
+            const avisoDup = document.getElementById('sol-adm-aviso-duplicado');
+            if (duplicado) {
+                const equipoDup = db.equipos.find(e => e.id === duplicado.equipoId)?.nombre || 'Agente Libre';
+                avisoDup.textContent = `⚠️ Ya existe un jugador con este nombre registrado en: ${equipoDup}. Revísalo antes de aprobar.`;
+                avisoDup.style.display = 'block';
+            } else {
+                avisoDup.style.display = 'none';
+            }
+
+            const btnAprobar = document.getElementById('sol-adm-btn-aprobar');
+            const btnRechazar = document.getElementById('sol-adm-btn-rechazar');
+            if (btnAprobar) btnAprobar.onclick = () => aprobarSolicitud(s.id);
+            if (btnRechazar) btnRechazar.onclick = () => { if (confirm('¿Rechazar esta solicitud de registro?')) rechazarSolicitud(s.id); };
+
+            document.getElementById('modal-detalle-solicitud').style.display = 'flex';
+        }
+
+        function cerrarDetalleSolicitud() {
+            const modal = document.getElementById('modal-detalle-solicitud');
+            if (modal) modal.style.display = 'none';
         }
 
         function aprobarSolicitud(id) {
@@ -2491,21 +2596,31 @@
             if ((db.jugadores || []).filter(j => j.equipoId === sol.equipoId).length >= 15) {
                 return alert("Ese equipo ya tiene 15 jugadores registrados (máximo por plantel). Rechaza la solicitud o reasigna al jugador a otro equipo antes de aprobarla.");
             }
+            const nombreSol = (sol.nombre || '').trim().toUpperCase();
+            const duplicado = nombreYaRegistrado(nombreSol);
+            if (duplicado) {
+                const equipoDup = db.equipos.find(e => e.id === duplicado.equipoId)?.nombre || 'Agente Libre';
+                if (!confirm(`⚠️ Ya existe un jugador registrado con el nombre "${nombreSol}" (equipo: ${equipoDup}). Revísalo antes de continuar.\n\n¿Deseas aprobar esta solicitud de todas formas?`)) {
+                    return;
+                }
+            }
             db.jugadores.push({
-                id: Date.now(), nombre: sol.nombre, equipoId: sol.equipoId, posicion: sol.posicion,
+                id: Date.now(), nombre: nombreSol, equipoId: sol.equipoId, posicion: sol.posicion,
                 numero: sol.numero || '', categoria: sol.categoria || 'Especial',
-                lugarNacimiento: sol.lugarNacimiento || '', fechaNacimiento: sol.fechaNacimiento || '',
-                nacionalidad: sol.nacionalidad || 'MEXICANA',
+                lugarNacimiento: (sol.lugarNacimiento || '').toUpperCase(), fechaNacimiento: sol.fechaNacimiento || '',
+                nacionalidad: (sol.nacionalidad || 'MEXICANA').toUpperCase(),
                 foto: sol.foto, goles: 0, amarillas: 0, rojas: 0, xiIdeal: []
             });
             db.solicitudes = db.solicitudes.filter(s => s.id !== id);
             marcarSolicitudResueltaSinPublicar(id);
-            guardarDB(); alert(`Jugador ${sol.nombre} aprobado e integrado al plantel. Recuerda presionar "📤 Publicar cambios" para que quede oficial.`);
+            cerrarDetalleSolicitud();
+            guardarDB(); alert(`Jugador ${nombreSol} aprobado e integrado al plantel. Recuerda presionar "📤 Publicar cambios" para que quede oficial.`);
         }
 
         function rechazarSolicitud(id) {
             db.solicitudes = db.solicitudes.filter(s => s.id !== id);
             marcarSolicitudResueltaSinPublicar(id);
+            cerrarDetalleSolicitud();
             guardarDB();
         }
 
