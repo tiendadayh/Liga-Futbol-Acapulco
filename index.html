@@ -913,6 +913,30 @@
                 .finally(() => { recibiendoDeFirebase = false; });
         }
 
+        // --- Envío de Solicitudes de Registro públicas: escritura acotada ---
+        // A diferencia de guardarDB() (que sube TODO el árbol de datos y por eso necesita
+        // permiso de administrador), esta función SOLO toca liga_premier_db/solicitudes.
+        // Así, en las reglas de seguridad de Firebase se puede permitir esta escritura
+        // pública (sin iniciar sesión) sin tener que abrir el resto de la base de datos
+        // (equipos, jugadores, partidos, finanzas, etc.), que sigue protegida.
+        function enviarSolicitudAFirebase(nuevaSolicitud) {
+            recibiendoDeFirebase = true;
+            return firebaseDbRef.child('solicitudes').once('value')
+                .then(snapshot => {
+                    const actuales = snapshot.val() || [];
+                    const arrActuales = Array.isArray(actuales) ? actuales.slice() : Object.values(actuales);
+                    arrActuales.push(nuevaSolicitud);
+                    return firebaseDbRef.child('solicitudes').set(arrActuales);
+                })
+                .then(() => {
+                    if (!Array.isArray(db.solicitudes)) db.solicitudes = [];
+                    db.solicitudes.push(nuevaSolicitud);
+                    localStorage.setItem('liga_premier_db', JSON.stringify(db));
+                })
+                .catch(err => { console.warn('No se pudo sincronizar la solicitud con Firebase', err); throw err; })
+                .finally(() => { recibiendoDeFirebase = false; });
+        }
+
         // --- Sincronización automática en tiempo real con Firebase ---
         // Cuando admin.html publica cambios, este sitio público los recibe solo,
         // sin recargar la página, sin importar el dispositivo.
@@ -1094,11 +1118,10 @@
                     avisoPrivacidadAceptado: true,
                     fechaAceptacionAviso: new Date().toISOString()
                 };
-                db.solicitudes.push(nuevaSolicitud);
                 const btnEnviar = this.querySelector('.btn-enviar-solicitud');
                 if (btnEnviar) { btnEnviar.disabled = true; btnEnviar.textContent = 'Enviando...'; }
                 try {
-                    await guardarDB();
+                    await enviarSolicitudAFirebase(nuevaSolicitud);
                 } catch (err) {
                     if (btnEnviar) { btnEnviar.disabled = false; btnEnviar.textContent = 'Enviar Solicitud'; }
                     alert("⚠️ Tu solicitud NO llegó a la nube (por eso el administrador no la ve). Puede ser tu conexión a internet; revisa e inténtalo de nuevo.\n\nDetalle técnico para reportar: " + (err && err.message ? err.message : err));
