@@ -700,12 +700,43 @@
                     <tr style="background:#f4f4f4;">
                         <th style="padding:10px;">Equipo</th>
                         <th>Pago Arbitraje</th>
+                        <th>Multas por Tarjetas</th>
                         <th>Estado de Juego</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-control-financiero"></tbody>
             </table>
         </div>
+    </div>
+
+    <!-- MÓDULO: CENTRO DE DISCIPLINA (suspensiones por tarjetas) -->
+    <div class="admin-box" style="margin-bottom: 25px; border-top-color: #b91c1c;">
+        <h3>🟨🟥 Centro de Disciplina</h3>
+        <p style="font-size:0.85rem; color:#555;">
+            Se genera solo con las tarjetas que cierra el árbitro: 3 amarillas acumuladas en partidos distintos o
+            doble amarilla = 1 partido de suspensión y $100 de multa; roja directa = 1 partido por defecto (falta
+            táctica) y $150 de multa — si fue por insultar al árbitro, escupir o iniciar una riña, edítala aquí para
+            ponerle de 2 a 4 partidos o expulsión definitiva del torneo. Las amarillas acumuladas se borran solas al
+            terminar la Jornada 9 (fin de fase regular).
+        </p>
+        <div style="overflow-x:auto;">
+            <table style="width:100%; text-align:left; border-collapse:collapse; font-size:0.85rem;">
+                <thead>
+                    <tr style="background:#f4f4f4;">
+                        <th style="padding:8px;">Jugador</th>
+                        <th>Equipo</th>
+                        <th>Jornada</th>
+                        <th>Tipo</th>
+                        <th>Motivo</th>
+                        <th>Partidos de castigo</th>
+                        <th>Estado</th>
+                        <th>Multa</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-centro-disciplina"></tbody>
+            </table>
+        </div>
+        <p id="disciplina-vacio" style="color:gray; font-size:0.85rem; display:none; margin-top:10px;">No hay tarjetas rojas ni suspensiones registradas todavía.</p>
     </div>
 
     <div class="admin-grid">
@@ -1600,6 +1631,8 @@
             if (!obj.comunicados) obj.comunicados = [];
             if (!obj.patrocinadores) obj.patrocinadores = [];
             if (!obj.xiIdealAdmin) obj.xiIdealAdmin = {};
+            if (!obj.disciplinaOverrides) obj.disciplinaOverrides = {};
+            if (!obj.avisosDisciplinaEstado) obj.avisosDisciplinaEstado = {};
             if (obj.registrosCerrados === undefined) obj.registrosCerrados = false;
             if (obj.liguillaActiva === undefined) obj.liguillaActiva = false;
             if (!obj.config) obj.config = crearConfigCredencialDefault();
@@ -1695,6 +1728,7 @@
         }
 
         function guardarDB() {
+            revisarAvisosDisciplina();
             limpiarAvisosExpirados();
             try {
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
@@ -1707,6 +1741,7 @@
             actualizarFormularios();
             renderizarSolicitudes();
             renderizarFinanzas();
+            renderizarDisciplina();
             renderizarGestion();
             renderizarResumenDia();
             renderizarCorreccionEstadisticas();
@@ -2058,24 +2093,158 @@
             return `la Jornada ${j}`;
         }
 
-        function esJugadorSuspendidoEnJornada(jugador, jornadaActual) {
-            let amarillasAcumuladas = 0;
-            let suspendido = false;
-            let tarjetasPrevias = (db.partidos || [])
-                .filter(p => p.jugado && p.jornada < jornadaActual && p.tarjetasDetalle)
-                .flatMap(p => p.tarjetasDetalle.filter(t => t.jugadorId === jugador.id));
+        // ===== CENTRO DE DISCIPLINA: tarjetas, suspensiones y multas =====
+        // La jornada 9 es la última de la fase regular; de la 98 en adelante es Liguilla
+        // (98=Cuartos, 99=Semifinal, 100=Gran Final). Al cruzar ese límite se "limpian"
+        // las amarillas acumuladas, como en la mayoría de las ligas locales.
+        const FASE_REGULAR_MAX_JORNADA = 9;
 
-            tarjetasPrevias.forEach(t => {
-                if (t.tipo === 'roja') suspendido = true;
-                if (t.tipo === 'amarilla') amarillasAcumuladas++;
+        // Junta, por jugador, un evento por cada partido jugado en el que recibió tarjetas.
+        function eventosTarjetasJugador(jugadorId, dbRef) {
+            const eventos = [];
+            (dbRef.partidos || []).forEach(p => {
+                if (!p.jugado || !p.tarjetasDetalle) return;
+                const detalles = p.tarjetasDetalle.filter(t => t.jugadorId === jugadorId);
+                if (!detalles.length) return;
+                eventos.push({
+                    partidoId: p.id,
+                    jornada: p.jornada,
+                    amarillas: detalles.filter(t => t.tipo === 'amarilla').length,
+                    dobleAmarilla: detalles.some(t => t.tipo === 'roja_doble'),
+                    rojaDirecta: detalles.some(t => t.tipo === 'roja')
+                });
             });
-            if (amarillasAcumuladas >= 3) suspendido = true;
-            return suspendido;
+            return eventos.sort((a, b) => (a.jornada - b.jornada) || (a.partidoId - b.partidoId));
+        }
+
+        // Recorre el historial de tarjetas del jugador en orden y va generando las sanciones
+        // (3 amarillas acumuladas, doble amarilla, roja directa), aplicando la "limpieza" de
+        // amarillas al pasar de fase regular a Liguilla.
+        function calcularSancionesJugador(jugadorId, dbRef) {
+            let contador = 0, faseAnterior = null;
+            const sanciones = [];
+            eventosTarjetasJugador(jugadorId, dbRef).forEach(ev => {
+                const fase = ev.jornada <= FASE_REGULAR_MAX_JORNADA ? 'regular' : 'liguilla';
+                if (faseAnterior === 'regular' && fase === 'liguilla') contador = 0;
+                faseAnterior = fase;
+
+                if (ev.dobleAmarilla) {
+                    sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'doble_amarilla', partidosCastigo: 1, expulsionDefinitiva: false, motivo: 'Doble amarilla (expulsión)', multaMonto: 100 });
+                    contador = 0;
+                } else {
+                    for (let i = 0; i < ev.amarillas; i++) {
+                        contador++;
+                        if (contador >= 3) {
+                            sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'amarillas_acumuladas', partidosCastigo: 1, expulsionDefinitiva: false, motivo: '3 amarillas acumuladas', multaMonto: 100 });
+                            contador = 0;
+                        }
+                    }
+                }
+                if (ev.rojaDirecta) {
+                    const ov = (dbRef.disciplinaOverrides || {})[`${ev.partidoId}_${jugadorId}`];
+                    sanciones.push({
+                        partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'roja_directa',
+                        partidosCastigo: ov?.expulsionDefinitiva ? Infinity : (ov?.partidosCastigo || 1),
+                        expulsionDefinitiva: !!ov?.expulsionDefinitiva,
+                        motivo: ov?.motivo || 'Falta táctica (1 partido por defecto)',
+                        multaMonto: 150
+                    });
+                    contador = 0;
+                }
+            });
+            return sanciones;
+        }
+
+        // Da el estado de suspensión de un jugador de cara a la jornada indicada:
+        // suma los partidos que aún le faltan por cumplir de todas sus sanciones activas.
+        function estadoSuspensionJugador(jugador, dbRef, jornadaActual) {
+            const partidosEquipo = (dbRef.partidos || [])
+                .filter(p => p.jugado && (p.localId === jugador.equipoId || p.visitaId === jugador.equipoId))
+                .sort((a, b) => (a.jornada - b.jornada) || (a.id - b.id));
+
+            let partidosPendientes = 0, expulsionDefinitiva = false;
+            const detalle = [];
+            calcularSancionesJugador(jugador.id, dbRef).forEach(s => {
+                const jugadosDespues = partidosEquipo.filter(p => p.jornada > s.jornada && p.jornada < jornadaActual).length;
+                const restante = s.expulsionDefinitiva ? Infinity : Math.max(0, s.partidosCastigo - jugadosDespues);
+                if (restante > 0) {
+                    if (s.expulsionDefinitiva) { expulsionDefinitiva = true; }
+                    else { partidosPendientes += restante; }
+                    detalle.push({ ...s, restante });
+                }
+            });
+            return { suspendido: expulsionDefinitiva || partidosPendientes > 0, partidosPendientes, expulsionDefinitiva, detalle };
+        }
+
+        function esJugadorSuspendidoEnJornada(jugador, jornadaActual) {
+            return estadoSuspensionJugador(jugador, db, jornadaActual).suspendido;
         }
 
         function esJugadorSuspendidoActual(jugador) {
             const jornadaRef = Math.max(0, ...db.partidos.filter(p => p.jugado).map(p => p.jornada)) + 1;
             return esJugadorSuspendidoEnJornada(jugador, jornadaRef);
+        }
+
+        // Suma en pesos todas las multas por tarjetas que le corresponden al plantel actual de un equipo.
+        function totalMultasCalculadas(equipoId, dbRef) {
+            return (dbRef.jugadores || [])
+                .filter(j => j.equipoId === equipoId)
+                .reduce((sum, j) => sum + calcularSancionesJugador(j.id, dbRef).reduce((s2, s) => s2 + (s.multaMonto || 0), 0), 0);
+        }
+
+        // Lo que el equipo debe pagar ahora mismo (lo calculado menos lo que ya se liquidó antes).
+        function multaPendienteEquipo(equipoId, dbRef) {
+            const total = totalMultasCalculadas(equipoId, dbRef);
+            const liquidado = (dbRef.finanzas[equipoId]?.multasLiquidadas) || 0;
+            return Math.max(0, total - liquidado);
+        }
+
+        // ===== AVISOS AUTOMÁTICOS DE SUSPENSIÓN (Tablón de Avisos) =====
+        // Un jugador sancionado queda "bloqueado" hasta que cumpla sus partidos de castigo Y su
+        // equipo pague la multa por tarjetas. Esta función compara ese estado contra el último
+        // conocido para publicar un aviso en el Tablón cuando el jugador queda suspendido (ese aviso
+        // NO se autoborra solo, permanece hasta que el jugador quede habilitado o el admin lo borre
+        // a mano), y otro aviso distinto y temporal (se autoborra a los 3 días) cuando por fin queda
+        // habilitado (partidos cumplidos + multa pagada).
+        function revisarAvisosDisciplina() {
+            if (!db.avisosDisciplinaEstado) db.avisosDisciplinaEstado = {};
+            const estadoPrevio = db.avisosDisciplinaEstado;
+            const nuevoEstado = {};
+            const jornadaRef = Math.max(0, ...db.partidos.filter(p => p.jugado).map(p => p.jornada)) + 1;
+
+            (db.jugadores || []).forEach(j => {
+                const sanciones = calcularSancionesJugador(j.id, db);
+                if (!sanciones.length) return; // nunca ha sido sancionado: no aplica aviso
+
+                const estadoPartidos = estadoSuspensionJugador(j, db, jornadaRef);
+                const multaPendiente = multaPendienteEquipo(j.equipoId, db) > 0;
+                const bloqueado = estadoPartidos.suspendido || multaPendiente;
+                const previo = estadoPrevio[j.id] || {};
+                const equipo = db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Agente Libre';
+
+                if (bloqueado && previo.estado !== 'bloqueado') {
+                    const motivos = [];
+                    if (estadoPartidos.expulsionDefinitiva) motivos.push('tiene expulsión definitiva del torneo');
+                    else if (estadoPartidos.partidosPendientes > 0) motivos.push(`le falta${estadoPartidos.partidosPendientes > 1 ? 'n' : ''} ${estadoPartidos.partidosPendientes} partido${estadoPartidos.partidosPendientes > 1 ? 's' : ''} de sanción por cumplir`);
+                    if (multaPendiente) motivos.push('tiene pendiente el pago de la multa');
+                    const comunicadoId = Date.now() + Math.floor(Math.random() * 1000);
+                    db.comunicados.unshift({
+                        id: comunicadoId, titulo: `🚫 ${j.nombre} suspendido`, tipo: 'sancion',
+                        contenido: `${j.nombre} (${equipo}) está suspendido: ${motivos.join(' y ')}. No podrá jugar hasta completar sus partidos de sanción y pagar la multa correspondiente.`,
+                        imagen: '', fecha: new Date().toLocaleDateString('es-MX')
+                    });
+                    nuevoEstado[j.id] = { estado: 'bloqueado', comunicadoId };
+                } else if (!bloqueado && previo.estado === 'bloqueado') {
+                    if (previo.comunicadoId) db.comunicados = db.comunicados.filter(c => c.id !== previo.comunicadoId);
+                    agregarAvisoRegistro('habilitado', `✅ ${j.nombre} ya puede jugar`,
+                        `${j.nombre} (${equipo}) cumplió su sanción y ya pagó la multa. Queda habilitado para jugar en la siguiente jornada.`);
+                    nuevoEstado[j.id] = { estado: 'libre' };
+                } else {
+                    nuevoEstado[j.id] = bloqueado ? previo : { estado: 'libre' };
+                }
+            });
+
+            db.avisosDisciplinaEstado = nuevoEstado;
         }
 
         // Calcula la edad a partir de una fecha de nacimiento (YYYY-MM-DD).
@@ -2119,8 +2288,15 @@
             document.getElementById('ficha-adm-equipo').innerText = db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Agente Libre';
 
             const estadoEl = document.getElementById('ficha-adm-estado');
-            if (esJugadorSuspendidoActual(j)) {
-                estadoEl.innerText = '❌ Suspendido';
+            const jornadaRefFicha = Math.max(0, ...db.partidos.filter(p => p.jugado).map(p => p.jornada)) + 1;
+            const estadoSusp = estadoSuspensionJugador(j, db, jornadaRefFicha);
+            const multaPendienteFicha = multaPendienteEquipo(j.equipoId, db) > 0 && calcularSancionesJugador(j.id, db).length > 0;
+            if (estadoSusp.suspendido || multaPendienteFicha) {
+                const partesEstado = [];
+                if (estadoSusp.expulsionDefinitiva) partesEstado.push('expulsión definitiva del torneo');
+                else if (estadoSusp.suspendido) partesEstado.push(`le falta${estadoSusp.partidosPendientes > 1 ? 'n' : ''} ${estadoSusp.partidosPendientes} partido${estadoSusp.partidosPendientes > 1 ? 's' : ''}`);
+                if (multaPendienteFicha) partesEstado.push('multa pendiente de pago');
+                estadoEl.innerText = `❌ Suspendido (${partesEstado.join(' y ')})`;
                 estadoEl.className = 'ficha-admin-estado susp';
             } else {
                 estadoEl.innerText = '✅ Habilitado';
@@ -2239,6 +2415,7 @@
             actualizarFormularios();
             renderizarSolicitudes();
             renderizarFinanzas();
+            renderizarDisciplina();
             renderizarGestion();
             renderizarResumenDia();
             renderizarCorreccionEstadisticas();
@@ -2322,7 +2499,7 @@
                     const nombreNuevoEquipo = document.getElementById('admin-eq-nombre').value.trim();
                     const pinNuevoEquipo = generarPin6Digitos();
                     db.equipos.push({ id: newId, nombre: nombreNuevoEquipo, escudo: escudoBase64, fotoGrupal: fotoBase64, pin: pinNuevoEquipo });
-                    db.finanzas[newId] = { adeudoArbitrajes: 0 };
+                    db.finanzas[newId] = { adeudoArbitrajes: 0, multasLiquidadas: 0 };
                     agregarAvisoRegistro('registro', '🆕 Nuevo equipo registrado', `El equipo "${nombreNuevoEquipo}" se ha registrado en la liga.`);
                     this.reset();
                     if (guardarDB() !== false) mostrarPinRegistroEquipo(newId, true);
@@ -2444,6 +2621,14 @@
                 if (finVis && (finVis.adeudoArbitrajes || 0) > 0) {
                     if (!confirm(`⚠️ ATENCIÓN: El equipo Visitante presenta ${finVis.adeudoArbitrajes || 0} arbitraje(s) pendiente(s) de pago. ¿Deseas programarlo de todas formas?`)) return;
                 }
+                const multaLoc = multaPendienteEquipo(locId, db);
+                const multaVis = multaPendienteEquipo(visId, db);
+                if (multaLoc > 0) {
+                    if (!confirm(`⚠️ ATENCIÓN: El equipo Local tiene $${multaLoc} de multas por tarjetas sin pagar. ¿Deseas programarlo de todas formas?`)) return;
+                }
+                if (multaVis > 0) {
+                    if (!confirm(`⚠️ ATENCIÓN: El equipo Visitante tiene $${multaVis} de multas por tarjetas sin pagar. ¿Deseas programarlo de todas formas?`)) return;
+                }
 
                 const campoSeleccionado = db.campos.find(c => c.id === parseInt(document.getElementById('admin-part-estadio').value));
 
@@ -2467,6 +2652,20 @@
                 const fotoB64 = await convertirImagenABase64(document.getElementById('admin-cancha-foto'));
                 db.campos.push({ id: Date.now(), nombre: document.getElementById('admin-cancha-nombre').value.trim(), direccion: document.getElementById('admin-cancha-direccion').value.trim(), foto: fotoB64 });
                 this.reset(); guardarDB(); alert("Cancha registrada correctamente.");
+            });
+
+            // Calendario oficial del torneo: al elegir la jornada en "Programar Encuentro",
+            // se autocompleta la fecha con el domingo oficial correspondiente (el admin puede
+            // cambiarla a mano si un partido en particular se recorre).
+            const FECHAS_JORNADA = {
+                1: '2026-09-13', 2: '2026-09-20', 3: '2026-09-27', 4: '2026-10-04',
+                5: '2026-10-11', 6: '2026-10-18', 7: '2026-10-25', 8: '2026-11-01',
+                9: '2026-11-08'
+            };
+            document.getElementById('admin-part-jornada').addEventListener('change', function () {
+                const fechaCampo = document.getElementById('admin-part-fecha');
+                const fechaSugerida = FECHAS_JORNADA[parseInt(this.value)];
+                if (fechaSugerida && !fechaCampo.value) fechaCampo.value = fechaSugerida;
             });
 
             document.getElementById('admin-part-estadio').addEventListener('change', function () {
@@ -2722,7 +2921,8 @@
             tbody.innerHTML = db.equipos.map(eq => {
                 const f = asegurarFinanzas(eq.id);
                 const adeudo = f.adeudoArbitrajes || 0;
-                const habilitado = adeudo === 0;
+                const multa = multaPendienteEquipo(eq.id, db);
+                const habilitado = adeudo === 0 && multa === 0;
 
                 return `
                     <tr style="border-bottom:1px solid #eee;">
@@ -2736,13 +2936,21 @@
                             <div style="font-size:0.65rem; color:#888; margin-top:3px;">Se registra automático desde la cédula del árbitro.</div>
                         </td>
                         <td>
+                            ${multa === 0
+                        ? `<span class="badge-status badge-ok">✅ Sin multas</span>`
+                        : `<span class="badge-status badge-pending" style="margin-right:5px;">⚠️ Debe $${multa}</span>
+                                   <button type="button" onclick="saldarMultas(${eq.id})" style="padding:5px 8px; font-size:0.7rem; background:#28a745;">💰 Registrar Pago</button>`
+                    }
+                            <div style="font-size:0.65rem; color:#888; margin-top:3px;">Se calcula solo con las tarjetas de sus jugadores (ver Centro de Disciplina).</div>
+                        </td>
+                        <td>
                             <span class="badge-status ${habilitado ? 'badge-ok' : 'badge-pending'}">
                                 ${habilitado ? '🟢 Habilitado' : '🔒 Bloqueado'}
                             </span>
                         </td>
                     </tr>
                 `;
-            }).join('') || '<tr><td colspan="3" style="color:gray; padding:12px;">No hay equipos registrados.</td></tr>';
+            }).join('') || '<tr><td colspan="4" style="color:gray; padding:12px;">No hay equipos registrados.</td></tr>';
         }
 
         function toggleFinanza(eqId, campo) {
@@ -2752,9 +2960,113 @@
         }
 
         function asegurarFinanzas(eqId) {
-            if (!db.finanzas[eqId]) db.finanzas[eqId] = { adeudoArbitrajes: 0 };
+            if (!db.finanzas[eqId]) db.finanzas[eqId] = { adeudoArbitrajes: 0, multasLiquidadas: 0 };
             if (db.finanzas[eqId].adeudoArbitrajes === undefined) db.finanzas[eqId].adeudoArbitrajes = 0;
+            if (db.finanzas[eqId].multasLiquidadas === undefined) db.finanzas[eqId].multasLiquidadas = 0;
             return db.finanzas[eqId];
+        }
+
+        // Registra el pago de TODAS las multas por tarjetas pendientes del equipo hasta hoy
+        // (si después se le suman nuevas tarjetas, se vuelve a generar un nuevo pendiente).
+        function saldarMultas(eqId) {
+            const f = asegurarFinanzas(eqId);
+            const total = totalMultasCalculadas(eqId, db);
+            if (total <= (f.multasLiquidadas || 0)) return;
+            f.multasLiquidadas = total;
+            guardarDB();
+            alert("Pago de multas por tarjetas registrado.");
+        }
+
+        const ETIQUETA_TIPO_SANCION = {
+            amarillas_acumuladas: '🟨 3 amarillas',
+            doble_amarilla: '🟨🟨 Doble amarilla',
+            roja_directa: '🟥 Roja directa'
+        };
+
+        // Arma la lista de TODAS las sanciones (de todos los jugadores) para el Centro de Disciplina,
+        // más recientes primero.
+        function listaCompletaSanciones() {
+            const filas = [];
+            (db.jugadores || []).forEach(j => {
+                calcularSancionesJugador(j.id, db).forEach(s => filas.push({ jugador: j, sancion: s }));
+            });
+            return filas.sort((a, b) => b.sancion.jornada - a.sancion.jornada || b.sancion.partidoId - a.sancion.partidoId);
+        }
+
+        function renderizarDisciplina() {
+            const tbody = document.getElementById('tabla-centro-disciplina');
+            const vacio = document.getElementById('disciplina-vacio');
+            if (!tbody) return;
+            const filas = listaCompletaSanciones();
+            if (!filas.length) {
+                tbody.innerHTML = '';
+                vacio.style.display = 'block';
+                return;
+            }
+            vacio.style.display = 'none';
+
+            const jornadaRef = Math.max(0, ...db.partidos.filter(p => p.jugado).map(p => p.jornada)) + 1;
+
+            tbody.innerHTML = filas.map(({ jugador: j, sancion: s }) => {
+                const equipo = db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre';
+                const key = `${s.partidoId}_${j.id}`;
+                const editable = s.tipo === 'roja_directa';
+
+                // Partidos ya cumplidos desde esta sanción hasta la jornada de referencia actual.
+                const partidosEquipo = (db.partidos || [])
+                    .filter(p => p.jugado && (p.localId === j.equipoId || p.visitaId === j.equipoId))
+                    .sort((a, b) => (a.jornada - b.jornada) || (a.id - b.id));
+                const cumplidos = partidosEquipo.filter(p => p.jornada > s.jornada && p.jornada < jornadaRef).length;
+                const restante = s.expulsionDefinitiva ? null : Math.max(0, s.partidosCastigo - cumplidos);
+                const estadoTxt = s.expulsionDefinitiva
+                    ? '⛔ Expulsión definitiva'
+                    : (restante > 0 ? `❌ Le faltan ${restante}` : '✅ Cumplida');
+
+                const selectorPartidos = editable ? `
+                    <select onchange="actualizarSancionRoja(${s.partidoId}, ${j.id}, this.value, null)" style="font-size:0.8rem; padding:3px;">
+                        ${[1, 2, 3, 4].map(n => `<option value="${n}" ${!s.expulsionDefinitiva && s.partidosCastigo === n ? 'selected' : ''}>${n} partido${n > 1 ? 's' : ''}</option>`).join('')}
+                        <option value="definitiva" ${s.expulsionDefinitiva ? 'selected' : ''}>Expulsión definitiva</option>
+                    </select>` : `${s.partidosCastigo} partido${s.partidosCastigo > 1 ? 's' : ''}`;
+
+                const motivoCelda = editable ? `
+                    <input type="text" value="${(s.motivo || '').replace(/"/g, '&quot;')}" placeholder="Motivo (opcional)"
+                        onchange="actualizarSancionRoja(${s.partidoId}, ${j.id}, null, this.value)"
+                        style="width:150px; font-size:0.8rem; padding:3px;">` : s.motivo;
+
+                return `
+                    <tr style="border-bottom:1px solid #eee;">
+                        <td style="padding:6px;">${j.nombre}</td>
+                        <td style="padding:6px; color:#666;">${equipo}</td>
+                        <td style="padding:6px; text-align:center;">${etiquetaJornadaCorta(s.jornada)}</td>
+                        <td style="padding:6px;">${ETIQUETA_TIPO_SANCION[s.tipo] || s.tipo}</td>
+                        <td style="padding:6px;">${motivoCelda}</td>
+                        <td style="padding:6px;">${selectorPartidos}</td>
+                        <td style="padding:6px;">${estadoTxt}</td>
+                        <td style="padding:6px;">$${s.multaMonto}</td>
+                    </tr>`;
+            }).join('');
+        }
+
+        // Guarda el override de una roja directa (partidos de castigo y/o motivo). Pasa null en el
+        // parámetro que no cambió.
+        function actualizarSancionRoja(partidoId, jugadorId, valorPartidos, valorMotivo) {
+            const key = `${partidoId}_${jugadorId}`;
+            if (!db.disciplinaOverrides) db.disciplinaOverrides = {};
+            const actual = db.disciplinaOverrides[key] || {};
+            const nuevo = { partidosCastigo: actual.partidosCastigo || 1, expulsionDefinitiva: !!actual.expulsionDefinitiva, motivo: actual.motivo || '' };
+
+            if (valorPartidos !== null) {
+                if (valorPartidos === 'definitiva') {
+                    nuevo.expulsionDefinitiva = true;
+                } else {
+                    nuevo.expulsionDefinitiva = false;
+                    nuevo.partidosCastigo = parseInt(valorPartidos) || 1;
+                }
+            }
+            if (valorMotivo !== null) nuevo.motivo = valorMotivo.trim();
+
+            db.disciplinaOverrides[key] = nuevo;
+            guardarDB();
         }
 
         function registrarPagoArbitraje(eqId, pagado) {
@@ -3308,11 +3620,11 @@ ${cuerpo}`;
 
             estadisticas = estadisticas.filter(eq => {
                 const fin = db.finanzas[eq.id];
-                return !fin || (fin.adeudoArbitrajes || 0) === 0;
+                return (!fin || (fin.adeudoArbitrajes || 0) === 0) && multaPendienteEquipo(eq.id, db) === 0;
             });
 
             estadisticas.sort((a, b) => b.pts - a.pts || b.dg - a.dg);
-            if (estadisticas.length < 8) return alert("Se requieren por lo menos 8 equipos habilitados (sin adeudos) para iniciar los Cuartos de Final.");
+            if (estadisticas.length < 8) return alert("Se requieren por lo menos 8 equipos habilitados (sin adeudos ni multas) para iniciar los Cuartos de Final.");
             if (!db.arbitros || db.arbitros.length === 0) return alert("Error: Registra árbitros antes de la liguilla.");
 
             const top8 = estadisticas.slice(0, 8);

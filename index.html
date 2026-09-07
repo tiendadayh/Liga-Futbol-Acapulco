@@ -913,6 +913,7 @@
             if (!obj.xiIdealAdmin) obj.xiIdealAdmin = {};
             if (obj.registrosCerrados === undefined) obj.registrosCerrados = false;
             if (obj.liguillaActiva === undefined) obj.liguillaActiva = false;
+            if (!obj.disciplinaOverrides) obj.disciplinaOverrides = {};
             return obj;
         }
         normalizarDB(db);
@@ -1212,6 +1213,7 @@
             const estiloTipo = {
                 aviso: { color: '#0d2a4d', etiqueta: '📢 Aviso' },
                 sancion: { color: '#c62828', etiqueta: '⚠️ Sanción' },
+                habilitado: { color: '#2e7d32', etiqueta: '✅ Habilitado' },
                 cronica: { color: '#1f8fd6', etiqueta: '📰 Crónica' },
                 registro: { color: '#2e7d32', etiqueta: '🆕 Registro' },
                 traspaso: { color: '#6a1b9a', etiqueta: '🔄 Traspaso' }
@@ -1752,8 +1754,7 @@
         function actualizarVistaDisciplina() {
             const jugadoresOrdenados = [...db.jugadores].sort((a, b) => ((b.rojas || 0) * 3 + (b.amarillas || 0)) - ((a.rojas || 0) * 3 + (a.amarillas || 0)));
             document.getElementById('tabla-disciplina-body').innerHTML = jugadoresOrdenados.map((j, idx) => {
-                const susp = esJugadorSuspendidoActual(j);
-                return `<tr><td>${idx + 1}</td><td><img class="foto-tabla" src="${j.foto || 'https://placehold.co/34'}" alt="">${j.nombre}</td><td>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</td><td>${j.amarillas || 0}</td><td>${j.rojas || 0}</td><td>${susp ? '❌ Suspendido' : '🟢 Habilitado'}</td></tr>`;
+                return `<tr><td>${idx + 1}</td><td><img class="foto-tabla" src="${j.foto || 'https://placehold.co/34'}" alt="">${j.nombre}</td><td>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</td><td>${j.amarillas || 0}</td><td>${j.rojas || 0}</td><td>${textoEstadoSuspensionJugador(j)}</td></tr>`;
             }).join('');
         }
 
@@ -1764,19 +1765,90 @@
             document.getElementById('grid-jugadores').innerHTML = filtrados.map(j => `<div class="jugador-card" onclick="verFicha(${j.id})"><img src="${j.foto || 'https://placehold.co/100'}" alt="${j.nombre}"><h3>${j.nombre}</h3><p>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</p></div>`).join('');
         }
 
+        // ===== DISCIPLINA (solo lectura): mismas reglas que admin.html/arbitro.html — 3 amarillas
+        // acumuladas, doble amarilla o roja directa = suspensión, con "limpieza" al terminar la
+        // Jornada 9 (fin de fase regular; 98=Cuartos, 99=Semifinal, 100=Gran Final). =====
+        const FASE_REGULAR_MAX_JORNADA = 9;
+
+        function eventosTarjetasJugador(jugadorId, dbRef) {
+            const eventos = [];
+            (dbRef.partidos || []).forEach(p => {
+                if (!p.jugado || !p.tarjetasDetalle) return;
+                const detalles = p.tarjetasDetalle.filter(t => t.jugadorId === jugadorId);
+                if (!detalles.length) return;
+                eventos.push({
+                    partidoId: p.id,
+                    jornada: p.jornada,
+                    amarillas: detalles.filter(t => t.tipo === 'amarilla').length,
+                    dobleAmarilla: detalles.some(t => t.tipo === 'roja_doble'),
+                    rojaDirecta: detalles.some(t => t.tipo === 'roja')
+                });
+            });
+            return eventos.sort((a, b) => (a.jornada - b.jornada) || (a.partidoId - b.partidoId));
+        }
+
+        function calcularSancionesJugador(jugadorId, dbRef) {
+            let contador = 0, faseAnterior = null;
+            const sanciones = [];
+            eventosTarjetasJugador(jugadorId, dbRef).forEach(ev => {
+                const fase = ev.jornada <= FASE_REGULAR_MAX_JORNADA ? 'regular' : 'liguilla';
+                if (faseAnterior === 'regular' && fase === 'liguilla') contador = 0;
+                faseAnterior = fase;
+
+                if (ev.dobleAmarilla) {
+                    sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'doble_amarilla', partidosCastigo: 1, expulsionDefinitiva: false });
+                    contador = 0;
+                } else {
+                    for (let i = 0; i < ev.amarillas; i++) {
+                        contador++;
+                        if (contador >= 3) {
+                            sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'amarillas_acumuladas', partidosCastigo: 1, expulsionDefinitiva: false });
+                            contador = 0;
+                        }
+                    }
+                }
+                if (ev.rojaDirecta) {
+                    const ov = (dbRef.disciplinaOverrides || {})[`${ev.partidoId}_${jugadorId}`];
+                    sanciones.push({
+                        partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'roja_directa',
+                        partidosCastigo: ov?.expulsionDefinitiva ? Infinity : (ov?.partidosCastigo || 1),
+                        expulsionDefinitiva: !!ov?.expulsionDefinitiva
+                    });
+                    contador = 0;
+                }
+            });
+            return sanciones;
+        }
+
+        function estadoSuspensionJugador(jugador, dbRef, jornadaActual) {
+            const partidosEquipo = (dbRef.partidos || [])
+                .filter(p => p.jugado && (p.localId === jugador.equipoId || p.visitaId === jugador.equipoId))
+                .sort((a, b) => (a.jornada - b.jornada) || (a.id - b.id));
+
+            let partidosPendientes = 0, expulsionDefinitiva = false;
+            calcularSancionesJugador(jugador.id, dbRef).forEach(s => {
+                const jugadosDespues = partidosEquipo.filter(p => p.jornada > s.jornada && p.jornada < jornadaActual).length;
+                const restante = s.expulsionDefinitiva ? Infinity : Math.max(0, s.partidosCastigo - jugadosDespues);
+                if (restante > 0) {
+                    if (s.expulsionDefinitiva) expulsionDefinitiva = true;
+                    else partidosPendientes += restante;
+                }
+            });
+            return { suspendido: expulsionDefinitiva || partidosPendientes > 0, partidosPendientes, expulsionDefinitiva };
+        }
+
         function esJugadorSuspendidoActual(jugador) {
             const jornadaRef = Math.max(0, ...db.partidos.filter(p => p.jugado).map(p => p.jornada)) + 1;
-            let amarillasAcumuladas = 0;
-            let suspendido = false;
-            const tarjetasPrevias = (db.partidos || [])
-                .filter(p => p.jugado && p.jornada < jornadaRef && p.tarjetasDetalle)
-                .flatMap(p => p.tarjetasDetalle.filter(t => t.jugadorId === jugador.id));
-            tarjetasPrevias.forEach(t => {
-                if (t.tipo === 'roja') suspendido = true;
-                if (t.tipo === 'amarilla') amarillasAcumuladas++;
-            });
-            if (amarillasAcumuladas >= 3) suspendido = true;
-            return suspendido;
+            return estadoSuspensionJugador(jugador, db, jornadaRef).suspendido;
+        }
+
+        // Versión con detalle (texto listo para mostrar) para las fichas públicas.
+        function textoEstadoSuspensionJugador(jugador) {
+            const jornadaRef = Math.max(0, ...db.partidos.filter(p => p.jugado).map(p => p.jornada)) + 1;
+            const estado = estadoSuspensionJugador(jugador, db, jornadaRef);
+            if (!estado.suspendido) return '🟢 Habilitado';
+            if (estado.expulsionDefinitiva) return '⛔ Expulsión definitiva';
+            return `❌ Suspendido (le falta${estado.partidosPendientes > 1 ? 'n' : ''} ${estado.partidosPendientes} partido${estado.partidosPendientes > 1 ? 's' : ''})`;
         }
 
         // Calcula la edad a partir de una fecha de nacimiento (YYYY-MM-DD).
@@ -1902,7 +1974,7 @@
 
             const estadoEl = document.getElementById('modal-estado');
             if (esJugadorSuspendidoActual(j)) {
-                estadoEl.innerText = '❌ Suspendido';
+                estadoEl.innerText = textoEstadoSuspensionJugador(j);
                 estadoEl.className = 'ficha-tecnica-estado estado-susp';
             } else {
                 estadoEl.innerText = '✅ Habilitado';
