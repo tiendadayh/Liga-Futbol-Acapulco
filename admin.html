@@ -774,7 +774,7 @@
             <p style="font-size:0.8rem; color:#555; margin-top:-8px;">Estos datos se usan en todas las credenciales oficiales que imprimas. Se guardan una sola vez por temporada.</p>
             <form id="form-config-credencial">
                 <label>Nombre de la Liga (como debe aparecer en la credencial):</label>
-                <input type="text" id="cfg-nombre-liga" placeholder="Ej. LIGA DE FUTBOL COSMAR SPORT CLUB A.C.">
+                <input type="text" id="cfg-nombre-liga" placeholder="Ej. LIGA DE FUTBOL COSMAR SPORT CLUB">
                 <label>Encabezado línea 1 (Ej. FEDERACIÓN MEXICANA DE FÚTBOL ASOC., A.C.):</label>
                 <input type="text" id="cfg-asociacion" placeholder="Ej. FEDERACIÓN MEXICANA DE FÚTBOL ASOC., A.C.">
                 <label>Encabezado línea 2 (Ej. SECTOR AFICIONADO ASOCIACIÓN GUERRERO):</label>
@@ -1565,7 +1565,7 @@
 
         function crearConfigCredencialDefault() {
             return {
-                nombreLiga: 'LIGA DE FUTBOL COSMAR SPORT CLUB A.C.',
+                nombreLiga: 'LIGA DE FUTBOL COSMAR SPORT CLUB',
                 asociacion: '',
                 asociacion2: '',
                 temporada: '',
@@ -1606,6 +1606,15 @@
             if (obj.config.logoSitio === undefined) obj.config.logoSitio = '';
             (obj.equipos || []).forEach(eq => { if (!eq.pin) eq.pin = String(Math.floor(100000 + Math.random() * 900000)); });
             (obj.arbitros || []).forEach(arb => { if (!arb.pin) arb.pin = String(Math.floor(100000 + Math.random() * 900000)); });
+            // Folio secuencial del N° CAM (00001, 00002...): si es la primera vez que se
+            // corre esto, se les asigna a los jugadores YA registrados un folio en el
+            // orden en que fueron dados de alta (por su id, que es la fecha de registro),
+            // y el contador queda listo para seguir numerando a los que se registren después.
+            if (obj.contadorFolioJugadores === undefined) {
+                const jugadoresPorFecha = [...(obj.jugadores || [])].sort((a, b) => a.id - b.id);
+                jugadoresPorFecha.forEach((j, idx) => { if (!j.folioNum) j.folioNum = idx + 1; });
+                obj.contadorFolioJugadores = jugadoresPorFecha.length;
+            }
             return obj;
         }
 
@@ -2385,6 +2394,7 @@
                     }
                 }
                 const jugadorBase64 = await convertirImagenABase64(document.getElementById('admin-jug-foto'));
+                db.contadorFolioJugadores = (db.contadorFolioJugadores || 0) + 1;
                 db.jugadores.push({
                     id: Date.now(),
                     nombre: nombreSel,
@@ -2395,7 +2405,7 @@
                     lugarNacimiento: document.getElementById('admin-jug-lugar-nac').value.trim().toUpperCase(),
                     fechaNacimiento: document.getElementById('admin-jug-fecha-nac').value,
                     nacionalidad: document.getElementById('admin-jug-nacionalidad').value.trim().toUpperCase() || 'MEXICANA',
-                    foto: jugadorBase64, goles: 0, amarillas: 0, rojas: 0, xiIdeal: []
+                    foto: jugadorBase64, goles: 0, amarillas: 0, rojas: 0, xiIdeal: [], folioNum: db.contadorFolioJugadores
                 });
                 const nombreEquipoNuevoJug = db.equipos.find(e => e.id === equipoIdSel)?.nombre || 'Agente Libre';
                 agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${nombreSel} se une al equipo ${nombreEquipoNuevoJug}.`);
@@ -2684,12 +2694,13 @@
                     return;
                 }
             }
+            db.contadorFolioJugadores = (db.contadorFolioJugadores || 0) + 1;
             db.jugadores.push({
                 id: Date.now(), nombre: nombreSol, equipoId: sol.equipoId, posicion: sol.posicion,
                 numero: sol.numero || '', categoria: sol.categoria || 'Especial',
                 lugarNacimiento: (sol.lugarNacimiento || '').toUpperCase(), fechaNacimiento: sol.fechaNacimiento || '',
                 nacionalidad: (sol.nacionalidad || 'MEXICANA').toUpperCase(),
-                foto: sol.foto, goles: 0, amarillas: 0, rojas: 0, xiIdeal: []
+                foto: sol.foto, goles: 0, amarillas: 0, rojas: 0, xiIdeal: [], folioNum: db.contadorFolioJugadores
             });
             const nombreEquipoSol = db.equipos.find(e => e.id === sol.equipoId)?.nombre || 'Agente Libre';
             agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${nombreSol} se une al equipo ${nombreEquipoSol}.`);
@@ -2829,7 +2840,7 @@
 
         function generarCarnetHTML(j, eq, qrDataUrl) {
             const c = db.config || crearConfigCredencialDefault();
-            const folio = `LPA-${j.id.toString().slice(-5)}`;
+            const folio = `LFCSC-${String(j.folioNum || 1).padStart(5, '0')}`;
             const bloqueQR = qrDataUrl
                 ? `<div class="carnet-qr-box"><img src="${qrDataUrl}" alt="Código QR del perfil del jugador"><span>Escanea para ver el perfil</span></div>`
                 : '';
@@ -2856,7 +2867,7 @@
                             <p><strong>FECHA DE NACIMIENTO:</strong> ${formatearFechaCarnet(j.fechaNacimiento)}</p>
                             <p><strong>FECHA DE EXPEDICIÓN:</strong> ${formatearFechaCarnet(c.fechaExpedicion)}</p>
                             <p><strong>NACIONALIDAD:</strong> ${j.nacionalidad || 'MEXICANA'}</p>
-                            <p class="carnet-datos-liga">${c.nombreLiga || 'LIGA DE FUTBOL COSMAR SPORT CLUB A.C.'}</p>
+                            <p class="carnet-datos-liga">${c.nombreLiga || 'LIGA DE FUTBOL COSMAR SPORT CLUB'}</p>
                         </div>
                     </div>
                     <div class="carnet-footer">
@@ -2889,7 +2900,7 @@
             win.document.head.appendChild(style);
 
             win.document.body.innerHTML = `
-                <h2 style="text-align:center; color:#0b2f5c;">${(db.config && db.config.nombreLiga) || 'LIGA DE FUTBOL COSMAR SPORT CLUB A.C.'} - CREDENCIALES OFICIALES</h2>
+                <h2 style="text-align:center; color:#0b2f5c;">${(db.config && db.config.nombreLiga) || 'LIGA DE FUTBOL COSMAR SPORT CLUB'} - CREDENCIALES OFICIALES</h2>
                 <div style="text-align:center;">
                     ${jugantes.map((j, idx) => generarCarnetHTML(j, eq, qrs[idx])).join('')}
                 </div>
@@ -3088,7 +3099,7 @@
             p.facebookPagina = pagina;
             guardarDB();
             actualizarFormularios();
-            document.getElementById('fb-live-estado').innerText = '✅ Guardado y publicado en el sitio público.';
+            document.getElementById('fb-live-estado').innerText = '✅ Guardado. No olvides presionar "📤 Publicar cambios" para que se vea en el sitio público.';
         }
 
         // Quita la marca de en vivo por Facebook del partido seleccionado (deja de mostrarse en el sitio público).

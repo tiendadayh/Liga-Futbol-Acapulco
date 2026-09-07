@@ -2087,6 +2087,10 @@
             partido.jugado = true;
             partido.estadoVivo = 'finalizado';
             partido.tarjetasDetalle = [];
+            // Si estaba marcado como transmisión en vivo por Facebook, se apaga solo al
+            // finalizar (la página que transmitió se conserva, para que el sitio público
+            // muestre "se transmitió por Facebook" en vez de seguir diciendo "EN VIVO").
+            if (partido.facebookEnVivo) partido.facebookEnVivo = false;
 
             partido.cedula = {
                 temporada: document.getElementById('ced-temporada').value.trim(),
