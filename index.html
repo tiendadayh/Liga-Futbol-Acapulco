@@ -184,6 +184,9 @@
         [data-theme="dark"] .card-section { border-color: rgba(255,255,255,0.06); }
         .header-section-flex { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 3px solid var(--secondary); padding-bottom: 10px; margin-bottom: 18px; }
         .header-section-flex h2 { border: none; margin: 0; padding: 0; color: var(--primary); }
+        /* Los títulos de cada sección (Mejor Ofensiva y Defensiva, Solicitud de Registro, etc.)
+           se achican solos en pantallas angostas para no partirse en dos líneas. */
+        .card-section > h2 { font-size: clamp(1.02rem, 4.6vw, 1.5rem); line-height: 1.25; white-space: normal; }
         .btn-export {
             background: linear-gradient(135deg, var(--success), #21a598); color: white; border: none; padding: 9px 16px;
             border-radius: var(--radius-sm); cursor: pointer; font-weight: 700; box-shadow: var(--shadow-xs);
@@ -240,7 +243,7 @@
         .badge-en-vivo {
             position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--primary, #d1140f);
             color: white; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.5px; padding: 6px 16px; border-radius: var(--radius-full);
-            display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-glow); z-index: 2;
+            display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-glow); z-index: 2; white-space: nowrap;
         }
         .badge-en-vivo .dot-vivo { width: 7px; height: 7px; border-radius: 50%; background: white; animation: pulso-vivo 1.2s infinite; }
         @keyframes pulso-vivo { 0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.7); } 70% { box-shadow: 0 0 0 6px rgba(255,255,255,0); } 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); } }
@@ -398,6 +401,7 @@
             .cancha { height: 280px; }
             .ficha-tecnica-foto { width: 84px; height: 84px; }
             .buscador-global-bar { padding: 10px 14px; }
+            .badge-en-vivo { font-size: 0.62rem; padding: 5px 12px; letter-spacing: 0.2px; }
         }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
