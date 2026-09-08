@@ -475,7 +475,7 @@
             <div class="filter-container">
                 <select id="select-jornada-filtro">
                     <option value="1">Jornada 1</option><option value="2">Jornada 2</option><option value="3">Jornada 3</option><option value="4">Jornada 4</option><option value="5">Jornada 5</option><option value="6">Jornada 6</option><option value="7">Jornada 7</option><option value="8">Jornada 8</option><option value="9">Jornada 9</option>
-                    <option value="98">Cuartos de Final</option><option value="99">Semifinal</option><option value="100">Gran Final</option>
+                    <option value="98">Cuartos de Final (Ida)</option><option value="99">Cuartos de Final (Vuelta)</option><option value="100">Semifinal (Ida)</option><option value="101">Semifinal (Vuelta)</option><option value="102">Gran Final</option>
                 </select>
             </div>
             <div id="lista-partidos-jornada"></div>
@@ -1513,17 +1513,22 @@
         }
 
         // Convierte el número interno de jornada en la etiqueta que se muestra al público.
-        // 1-9: temporada regular. 98: Cuartos de Final. 99: Semifinal. 100: Gran Final.
+        // 1-9: temporada regular. 98/99: Cuartos de Final (Ida/Vuelta). 100/101: Semifinal
+        // (Ida/Vuelta). 102: Gran Final.
         function etiquetaJornada(j) {
-            if (j === 98) return 'Cuartos de Final';
-            if (j === 99) return 'Semifinal';
-            if (j === 100) return 'Gran Final';
+            if (j === 98) return 'Cuartos de Final (Ida)';
+            if (j === 99) return 'Cuartos de Final (Vuelta)';
+            if (j === 100) return 'Semifinal (Ida)';
+            if (j === 101) return 'Semifinal (Vuelta)';
+            if (j === 102) return 'Gran Final';
             return `Jornada ${j}`;
         }
         function etiquetaJornadaCorta(j) {
-            if (j === 98) return 'CF';
-            if (j === 99) return 'SF';
-            if (j === 100) return 'F';
+            if (j === 98) return 'CF-I';
+            if (j === 99) return 'CF-V';
+            if (j === 100) return 'SF-I';
+            if (j === 101) return 'SF-V';
+            if (j === 102) return 'F';
             return `J${j}`;
         }
 
@@ -1541,6 +1546,31 @@
             `;
         }
 
+        // Tarjeta para una llave a Ida y Vuelta: muestra el resultado de cada partido y,
+        // cuando ambos ya se jugaron, el marcador global (y penales si el global quedó empatado).
+        function renderizarLlaveDobleLeg(ida, vuelta, titulo) {
+            if (!ida) return '';
+            const nombreEq = id => db.equipos.find(e => e.id === id)?.nombre || 'Clasificado';
+            const aId = ida.localId, bId = ida.visitaId; // ida: A local, B visita
+            const idaTxt = ida.jugado ? `${ida.golesLocal} - ${ida.golesVisita}` : 'Por jugar';
+            const vueltaTxt = vuelta ? (vuelta.jugado ? `${vuelta.golesLocal} - ${vuelta.golesVisita}` : 'Por jugar') : '—';
+            let aggTxt = '';
+            if (ida.jugado && vuelta && vuelta.jugado) {
+                const golesA = (ida.golesLocal || 0) + (vuelta.golesVisita || 0);
+                const golesB = (ida.golesVisita || 0) + (vuelta.golesLocal || 0);
+                aggTxt = `Global: ${golesA} - ${golesB}`;
+                if (golesA === golesB && vuelta.penaltis) aggTxt += ` (Pen: ${vuelta.penaltis.local}-${vuelta.penaltis.visita})`;
+            }
+            return `
+                <div class="bracket-match">
+                    <div class="bracket-title">${titulo}</div>
+                    <div style="display:flex; justify-content:space-between; margin:6px 0;"><span>${nombreEq(aId)}</span><span>${nombreEq(bId)}</span></div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:#666; margin:4px 0;"><span>Ida: ${idaTxt}</span><span>Vuelta: ${vueltaTxt}</span></div>
+                    ${aggTxt ? `<div style="text-align:center; font-size:0.78rem; color:var(--primary); font-weight:bold; margin-top:4px;">${aggTxt}</div>` : ''}
+                </div>
+            `;
+        }
+
         function actualizarVisibilidadLiguilla() {
             const seccion = document.getElementById('bracket-sec');
             const navLink = document.getElementById('nav-link-bracket');
@@ -1551,23 +1581,25 @@
 
         function renderizarBracketLiguilla() {
             const bracket = document.getElementById('bracket-tree');
-            const cuartos = db.partidos.filter(p => p.jornada === 98);
-            const semis = db.partidos.filter(p => p.jornada === 99);
-            const final = db.partidos.filter(p => p.jornada === 100);
+            const cuartosIda = db.partidos.filter(p => p.jornada === 98).sort((a, b) => (a.llaveId ?? 0) - (b.llaveId ?? 0));
+            const cuartosVuelta = db.partidos.filter(p => p.jornada === 99);
+            const semisIda = db.partidos.filter(p => p.jornada === 100).sort((a, b) => (a.llaveId ?? 0) - (b.llaveId ?? 0));
+            const semisVuelta = db.partidos.filter(p => p.jornada === 101);
+            const final = db.partidos.filter(p => p.jornada === 102);
 
-            if (cuartos.length === 0 && semis.length === 0 && final.length === 0) {
+            if (cuartosIda.length === 0 && semisIda.length === 0 && final.length === 0) {
                 bracket.innerHTML = '<p style="color:gray;">La Liguilla no ha iniciado oficialmente.</p>';
                 return;
             }
 
             let html = '';
-            if (cuartos.length) {
-                html += `<div style="width:100%;"><h3 style="text-align:center; color:var(--primary); margin-bottom:10px;">Cuartos de Final</h3>
-                    <div class="bracket-container">${cuartos.map((p, idx) => renderizarBracketMatch(p, `Cuarto de Final ${idx + 1}`)).join('')}</div></div>`;
+            if (cuartosIda.length) {
+                html += `<div style="width:100%;"><h3 style="text-align:center; color:var(--primary); margin-bottom:10px;">Cuartos de Final (Ida y Vuelta)</h3>
+                    <div class="bracket-container">${cuartosIda.map((ida, idx) => renderizarLlaveDobleLeg(ida, cuartosVuelta.find(v => v.llaveId === ida.llaveId), `Cuarto de Final ${idx + 1}`)).join('')}</div></div>`;
             }
-            if (semis.length) {
-                html += `<div style="width:100%;"><h3 style="text-align:center; color:var(--primary); margin:20px 0 10px;">Semifinal</h3>
-                    <div class="bracket-container">${semis.map((p, idx) => renderizarBracketMatch(p, `Semifinal ${idx + 1}`)).join('')}</div></div>`;
+            if (semisIda.length) {
+                html += `<div style="width:100%;"><h3 style="text-align:center; color:var(--primary); margin:20px 0 10px;">Semifinal (Ida y Vuelta)</h3>
+                    <div class="bracket-container">${semisIda.map((ida, idx) => renderizarLlaveDobleLeg(ida, semisVuelta.find(v => v.llaveId === ida.llaveId), `Semifinal ${idx + 1}`)).join('')}</div></div>`;
             }
             if (final.length) {
                 html += `<div style="width:100%;"><h3 style="text-align:center; color:var(--primary); margin:20px 0 10px;">Gran Final</h3>

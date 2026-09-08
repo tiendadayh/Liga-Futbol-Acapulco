@@ -657,14 +657,14 @@
             <p id="liguilla-msg-inactiva" style="font-size:0.85rem; color:#888; display:none;">Activa la casilla de arriba cuando termine la temporada regular para habilitar el Cuadro de Liguilla (se mostrará en el sitio público y en el calendario).</p>
             <div id="liguilla-controles" style="display:none;">
                 <p style="font-size:0.85rem; color:#555;">Torneo de 9 jornadas. Al terminar la temporada regular, arma los
-                    Cuartos de Final con los 8 mejores equipos habilitados (sin adeudo); cuando esos 4 partidos estén
-                    jugados, arma la Semifinal con sus ganadores. La Gran Final se programa manualmente arriba, en
-                    "Programar Encuentro", con los 2 finalistas.</p>
+                    Cuartos de Final (Ida y Vuelta) con los 8 mejores equipos habilitados (sin adeudo); cuando esos 8
+                    partidos estén jugados, arma la Semifinal (Ida y Vuelta) con los ganadores por marcador global. La
+                    Gran Final se programa manualmente arriba, en "Programar Encuentro", con los 2 finalistas.</p>
                 <button onclick="generarLiguillaAutomatica()"
                     style="background:var(--warning); color:#0b2f5c; width:100%; margin-bottom:8px;">🚀 Lanzar Cuartos de
-                    Final</button>
+                    Final (Ida y Vuelta)</button>
                 <button onclick="generarSemifinalAutomatica()"
-                    style="background:#0b2f5c; color:#fff; width:100%;">🥈 Lanzar Semifinal (con ganadores de Cuartos)</button>
+                    style="background:#0b2f5c; color:#fff; width:100%;">🥈 Lanzar Semifinal (Ida y Vuelta, con ganadores de Cuartos)</button>
             </div>
         </div>
 
@@ -884,9 +884,11 @@
                     <option value="7">Jornada 7</option>
                     <option value="8">Jornada 8</option>
                     <option value="9">Jornada 9</option>
-                    <option value="98">Cuartos de Final</option>
-                    <option value="99">Semifinal</option>
-                    <option value="100">Gran Final</option>
+                    <option value="98">Cuartos de Final (Ida)</option>
+                    <option value="99">Cuartos de Final (Vuelta)</option>
+                    <option value="100">Semifinal (Ida)</option>
+                    <option value="101">Semifinal (Vuelta)</option>
+                    <option value="102">Gran Final</option>
                 </select>
                 <select id="admin-part-local" required></select>
                 <select id="admin-part-visita" required></select>
@@ -2073,30 +2075,37 @@
         }
 
         // Convierte el número interno de jornada en la etiqueta que se muestra al usuario.
-        // 1-9: temporada regular. 98: Cuartos de Final. 99: Semifinal. 100: Gran Final.
+        // 1-9: temporada regular. 98/99: Cuartos de Final (Ida/Vuelta). 100/101: Semifinal
+        // (Ida/Vuelta). 102: Gran Final.
         function etiquetaJornada(j) {
-            if (j === 98) return 'Cuartos de Final';
-            if (j === 99) return 'Semifinal';
-            if (j === 100) return 'Gran Final';
+            if (j === 98) return 'Cuartos de Final (Ida)';
+            if (j === 99) return 'Cuartos de Final (Vuelta)';
+            if (j === 100) return 'Semifinal (Ida)';
+            if (j === 101) return 'Semifinal (Vuelta)';
+            if (j === 102) return 'Gran Final';
             return `Jornada ${j}`;
         }
         function etiquetaJornadaCorta(j) {
-            if (j === 98) return 'CF';
-            if (j === 99) return 'SF';
-            if (j === 100) return 'F';
+            if (j === 98) return 'CF-I';
+            if (j === 99) return 'CF-V';
+            if (j === 100) return 'SF-I';
+            if (j === 101) return 'SF-V';
+            if (j === 102) return 'F';
             return `J${j}`;
         }
         function fraseJornada(j) {
-            if (j === 98) return 'los Cuartos de Final';
-            if (j === 99) return 'la Semifinal';
-            if (j === 100) return 'la Gran Final';
+            if (j === 98) return 'los Cuartos de Final (Ida)';
+            if (j === 99) return 'los Cuartos de Final (Vuelta)';
+            if (j === 100) return 'la Semifinal (Ida)';
+            if (j === 101) return 'la Semifinal (Vuelta)';
+            if (j === 102) return 'la Gran Final';
             return `la Jornada ${j}`;
         }
 
         // ===== CENTRO DE DISCIPLINA: tarjetas, suspensiones y multas =====
         // La jornada 9 es la última de la fase regular; de la 98 en adelante es Liguilla
-        // (98=Cuartos, 99=Semifinal, 100=Gran Final). Al cruzar ese límite se "limpian"
-        // las amarillas acumuladas, como en la mayoría de las ligas locales.
+        // (98/99=Cuartos Ida/Vuelta, 100/101=Semifinal Ida/Vuelta, 102=Gran Final). Al cruzar
+        // ese límite se "limpian" las amarillas acumuladas, como en la mayoría de las ligas locales.
         const FASE_REGULAR_MAX_JORNADA = 9;
 
         // Junta, por jugador, un evento por cada partido jugado en el que recibió tarjetas.
@@ -2660,7 +2669,8 @@
             const FECHAS_JORNADA = {
                 1: '2026-09-13', 2: '2026-09-20', 3: '2026-09-27', 4: '2026-10-04',
                 5: '2026-10-11', 6: '2026-10-18', 7: '2026-10-25', 8: '2026-11-01',
-                9: '2026-11-08'
+                9: '2026-11-08',
+                98: '2026-11-15', 99: '2026-11-22', 100: '2026-11-29', 101: '2026-12-06', 102: '2026-12-13'
             };
             document.getElementById('admin-part-jornada').addEventListener('change', function () {
                 const fechaCampo = document.getElementById('admin-part-fecha');
@@ -3606,8 +3616,25 @@
 ${cuerpo}`;
         }
 
-        // PASO 1: arma los Cuartos de Final (jornada 98) con los 8 mejores equipos
-        // habilitados de la temporada regular (jornadas 1-9): 1°vs8°, 2°vs7°, 3°vs6°, 4°vs5°.
+        // Determina quién avanza en una llave a doble partido (ida y vuelta), sumando los
+        // goles de ambos encuentros. Si el global queda empatado, se decide por los penales
+        // registrados en el partido de VUELTA (donde debe cargarse la tanda si aplica).
+        function ganadorLlaveIdaVuelta(ida, vuelta) {
+            if (!ida || !vuelta || !ida.jugado || !vuelta.jugado) return null;
+            // ida: local = equipo A, visita = equipo B. vuelta: local = B, visita = A (se invierte la sede).
+            const golesA = (ida.golesLocal || 0) + (vuelta.golesVisita || 0);
+            const golesB = (ida.golesVisita || 0) + (vuelta.golesLocal || 0);
+            if (golesA > golesB) return ida.localId;
+            if (golesB > golesA) return ida.visitaId;
+            if (vuelta.penaltis && vuelta.penaltis.local !== vuelta.penaltis.visita) {
+                return vuelta.penaltis.local > vuelta.penaltis.visita ? vuelta.localId : vuelta.visitaId;
+            }
+            return null;
+        }
+
+        // PASO 1: arma los Cuartos de Final (Ida jornada 98, Vuelta jornada 99) con los 8 mejores
+        // equipos habilitados de la temporada regular (jornadas 1-9): 1°vs8°, 2°vs7°, 3°vs6°, 4°vs5°.
+        // Cada llave se juega a ida y vuelta (se suman los goles de ambos partidos).
         function generarLiguillaAutomatica() {
             let estadisticas = db.equipos.map(eq => ({ id: eq.id, nombre: eq.nombre, pts: 0, dg: 0, gf: 0 }));
             db.partidos.filter(p => p.jugado && p.jornada < 90).forEach(p => {
@@ -3642,6 +3669,7 @@ ${cuerpo}`;
             divModal.innerHTML = `
                 <div style="background:white; padding:25px; border-radius:12px; max-width:450px; width:90%;">
                     <h3 style="margin-top:0; color:#0b2f5c;">🏁 Designación Arbitral - Cuartos de Final</h3>
+                    <p style="font-size:0.78rem; color:#666; margin-top:-6px;">Se jugará a Ida y Vuelta. El árbitro elegido aquí queda asignado a ambos partidos de la llave.</p>
                     ${llaves.map((ll, idx) => `
                     <div style="margin-bottom:15px;">
                         <label style="font-weight:bold;">Llave ${idx + 1} (${ll.seed}): ${ll.a.nombre} vs ${ll.b.nombre}</label>
@@ -3662,36 +3690,31 @@ ${cuerpo}`;
 
                 // Se relanzan los Cuartos: se limpia cualquier Cuartos/Semifinal/Final previa.
                 db.partidos = db.partidos.filter(p => p.jornada < 90);
+                const base = Date.now();
                 llaves.forEach((ll, idx) => {
-                    db.partidos.push({ id: Date.now() + idx, jornada: 98, localId: ll.a.id, visitaId: ll.b.id, jugado: false, golesLocal: 0, golesVisita: 0, estadoVivo: 'programado', tarjetasDetalle: [], arbitro: arbitrosElegidos[idx] });
+                    // Ida: A de local. Vuelta: B de local (se invierte la sede).
+                    db.partidos.push({ id: base + idx * 2, llaveId: idx, jornada: 98, localId: ll.a.id, visitaId: ll.b.id, jugado: false, golesLocal: 0, golesVisita: 0, estadoVivo: 'programado', tarjetasDetalle: [], arbitro: arbitrosElegidos[idx] });
+                    db.partidos.push({ id: base + idx * 2 + 1, llaveId: idx, jornada: 99, localId: ll.b.id, visitaId: ll.a.id, jugado: false, golesLocal: 0, golesVisita: 0, estadoVivo: 'programado', tarjetasDetalle: [], arbitro: arbitrosElegidos[idx] });
                 });
 
                 db.liguillaActiva = true;
                 divModal.remove();
                 guardarDB();
-                alert("¡Cuartos de Final lanzados! Cuando se jueguen los 4 partidos, usa \"Lanzar Semifinal\".");
+                alert("¡Cuartos de Final lanzados (Ida y Vuelta)! Cuando se jueguen los 8 partidos, usa \"Lanzar Semifinal\".");
             };
         }
 
-        // PASO 2: una vez jugados los 4 Cuartos de Final (jornada 98), arma la
-        // Semifinal (jornada 99) con sus 4 ganadores: ganador(1v8) vs ganador(4v5),
-        // ganador(2v7) vs ganador(3v6).
+        // PASO 2: una vez jugados los 4 Cuartos de Final a Ida y Vuelta (jornadas 98 y 99), arma
+        // la Semifinal (Ida jornada 100, Vuelta jornada 101) con sus 4 ganadores por global de
+        // goles: ganador(1v8) vs ganador(4v5), ganador(2v7) vs ganador(3v6).
         function generarSemifinalAutomatica() {
-            const cuartos = db.partidos.filter(p => p.jornada === 98);
-            if (cuartos.length < 4) return alert("Primero debes lanzar y completar los 4 partidos de Cuartos de Final.");
-            if (cuartos.some(p => !p.jugado)) return alert("Aún faltan partidos de Cuartos de Final por jugarse.");
+            const cuartosIda = db.partidos.filter(p => p.jornada === 98).sort((a, b) => (a.llaveId ?? 0) - (b.llaveId ?? 0));
+            const cuartosVuelta = db.partidos.filter(p => p.jornada === 99);
+            if (cuartosIda.length < 4 || cuartosVuelta.length < 4) return alert("Primero debes lanzar y completar los 4 partidos de Ida y los 4 de Vuelta de Cuartos de Final.");
+            if (cuartosIda.some(p => !p.jugado) || cuartosVuelta.some(p => !p.jugado)) return alert("Aún faltan partidos de Cuartos de Final (Ida o Vuelta) por jugarse.");
 
-            function ganador(p) {
-                if (p.golesLocal > p.golesVisita) return p.localId;
-                if (p.golesVisita > p.golesLocal) return p.visitaId;
-                if (p.penaltis && p.penaltis.local !== p.penaltis.visita) {
-                    return p.penaltis.local > p.penaltis.visita ? p.localId : p.visitaId;
-                }
-                return null;
-            }
-
-            const ganadores = cuartos.map(ganador);
-            if (ganadores.some(g => g === null)) return alert("Hay un partido de Cuartos de Final empatado sin resultado de penaltis. Regístralo antes de continuar.");
+            const ganadores = cuartosIda.map(ida => ganadorLlaveIdaVuelta(ida, cuartosVuelta.find(v => v.llaveId === ida.llaveId)));
+            if (ganadores.some(g => g === null)) return alert("Hay una llave de Cuartos empatada en el marcador global, sin resultado de penales registrado en el partido de Vuelta. Regístralo antes de continuar.");
 
             const nombreEquipo = id => db.equipos.find(e => e.id === id)?.nombre || 'Clasificado';
             if (!db.arbitros || db.arbitros.length === 0) return alert("Error: Registra árbitros antes de la Semifinal.");
@@ -3708,6 +3731,7 @@ ${cuerpo}`;
             divModal.innerHTML = `
                 <div style="background:white; padding:25px; border-radius:12px; max-width:450px; width:90%;">
                     <h3 style="margin-top:0; color:#0b2f5c;">🏁 Designación Arbitral - Semifinal</h3>
+                    <p style="font-size:0.78rem; color:#666; margin-top:-6px;">Se jugará a Ida y Vuelta. El árbitro elegido aquí queda asignado a ambos partidos de la llave.</p>
                     ${parejas.map((pp, idx) => `
                     <div style="margin-bottom:20px;">
                         <label style="font-weight:bold;">Semifinal ${idx + 1}: ${nombreEquipo(pp.aId)} vs ${nombreEquipo(pp.bId)}</label>
@@ -3727,14 +3751,17 @@ ${cuerpo}`;
                 const arbitrosElegidos = parejas.map((pp, idx) => document.getElementById(`sel-arb-semifinal${idx}`).value);
 
                 // Se relanza la Semifinal: se limpia una Semifinal/Final previa, se conservan los Cuartos ya jugados.
-                db.partidos = db.partidos.filter(p => p.jornada < 90 || p.jornada === 98);
+                db.partidos = db.partidos.filter(p => p.jornada < 90 || p.jornada === 98 || p.jornada === 99);
+                const base = Date.now();
                 parejas.forEach((pp, idx) => {
-                    db.partidos.push({ id: Date.now() + idx, jornada: 99, localId: pp.aId, visitaId: pp.bId, jugado: false, golesLocal: 0, golesVisita: 0, estadoVivo: 'programado', tarjetasDetalle: [], arbitro: arbitrosElegidos[idx] });
+                    // Ida: A de local. Vuelta: B de local (se invierte la sede).
+                    db.partidos.push({ id: base + idx * 2, llaveId: idx, jornada: 100, localId: pp.aId, visitaId: pp.bId, jugado: false, golesLocal: 0, golesVisita: 0, estadoVivo: 'programado', tarjetasDetalle: [], arbitro: arbitrosElegidos[idx] });
+                    db.partidos.push({ id: base + idx * 2 + 1, llaveId: idx, jornada: 101, localId: pp.bId, visitaId: pp.aId, jugado: false, golesLocal: 0, golesVisita: 0, estadoVivo: 'programado', tarjetasDetalle: [], arbitro: arbitrosElegidos[idx] });
                 });
 
                 divModal.remove();
                 guardarDB();
-                alert("¡Semifinal lanzada! Cuando se conozcan los 2 finalistas, programa la Gran Final desde \"Programar Encuentro\".");
+                alert("¡Semifinal lanzada (Ida y Vuelta)! Cuando se conozca al ganador del global de cada llave, programa la Gran Final desde \"Programar Encuentro\".");
             };
         }
 

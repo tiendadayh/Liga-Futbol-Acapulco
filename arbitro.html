@@ -1346,17 +1346,22 @@
         }
 
         // Convierte el número interno de jornada en la etiqueta que se muestra al árbitro.
-        // 1-9: temporada regular. 98: Cuartos de Final. 99: Semifinal. 100: Gran Final.
+        // 1-9: temporada regular. 98/99: Cuartos de Final (Ida/Vuelta). 100/101: Semifinal
+        // (Ida/Vuelta). 102: Gran Final.
         function etiquetaJornada(j) {
-            if (j === 98) return 'Cuartos de Final';
-            if (j === 99) return 'Semifinal';
-            if (j === 100) return 'Gran Final';
+            if (j === 98) return 'Cuartos de Final (Ida)';
+            if (j === 99) return 'Cuartos de Final (Vuelta)';
+            if (j === 100) return 'Semifinal (Ida)';
+            if (j === 101) return 'Semifinal (Vuelta)';
+            if (j === 102) return 'Gran Final';
             return `Jornada ${j}`;
         }
         function etiquetaJornadaCorta(j) {
-            if (j === 98) return 'CF';
-            if (j === 99) return 'SF';
-            if (j === 100) return 'F';
+            if (j === 98) return 'CF-I';
+            if (j === 99) return 'CF-V';
+            if (j === 100) return 'SF-I';
+            if (j === 101) return 'SF-V';
+            if (j === 102) return 'F';
             return `J${j}`;
         }
 
