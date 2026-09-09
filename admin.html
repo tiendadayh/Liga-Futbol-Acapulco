@@ -2938,7 +2938,7 @@
                 return `
                 <div style="background:#f4f4f4; padding:12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div style="display:flex; gap:12px; align-items:center;">
-                        <img src="${s.foto || 'https://placehold.co/50'}" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);" alt="${s.nombre || 'Solicitante'}">
+                        <img src="${s.foto || 'https://placehold.co/50'}" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);" alt="${s.nombre || 'Solicitante'}" loading="lazy">
                         <div>
                             <strong>${s.numero ? '#' + s.numero + ' · ' : ''}${s.nombre}</strong> (${s.posicion}${s.categoria ? ' · ' + s.categoria : ''})<br>
                             <small style="color:gray;">Equipo Solicitado: ${db.equipos.find(e => e.id === s.equipoId)?.nombre || 'Libre'}</small>
@@ -3989,7 +3989,7 @@ ${cuerpo}`;
 
             listaEquipos.innerHTML = db.equipos.length ? db.equipos.map(eq => `
                 <div class="gestion-fila gestion-fila-clickable gestion-fila-equipo" onclick="verFichaEquipoAdmin(${eq.id})" title="Toca para ver la ficha completa">
-                    <img src="${eq.escudo || 'https://placehold.co/40'}" alt="${eq.nombre}">
+                    <img src="${eq.escudo || 'https://placehold.co/40'}" alt="${eq.nombre}" loading="lazy">
                     <div class="gestion-info">
                         <strong>${eq.nombre}</strong>
                         <span>${db.jugadores.filter(j => j.equipoId === eq.id).length} jugadores</span>
@@ -4008,7 +4008,7 @@ ${cuerpo}`;
             const jugadoresFiltrados = db.jugadores.filter(j => j.nombre.toLowerCase().includes(filtroTxt));
             listaJugadores.innerHTML = jugadoresFiltrados.length ? jugadoresFiltrados.map(j => `
                 <div class="gestion-fila">
-                    <img src="${j.foto || 'https://placehold.co/40'}" alt="${j.nombre}">
+                    <img src="${j.foto || 'https://placehold.co/40'}" alt="${j.nombre}" loading="lazy">
                     <div class="gestion-info">
                         <strong>${j.numero ? '#' + j.numero + ' · ' : ''}${j.nombre}</strong>
                         <span>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Agente Libre'} · ${j.posicion || ''}</span>
@@ -4024,7 +4024,7 @@ ${cuerpo}`;
 
             listaArbitros.innerHTML = db.arbitros.length ? db.arbitros.map(a => `
                 <div class="gestion-fila">
-                    <img src="${a.foto || 'https://placehold.co/40'}" alt="${a.nombre}">
+                    <img src="${a.foto || 'https://placehold.co/40'}" alt="${a.nombre}" loading="lazy">
                     <div class="gestion-info">
                         <strong>${a.nombre}</strong>
                         <span>${a.colegio || ''}</span>
@@ -4090,7 +4090,7 @@ ${cuerpo}`;
             if (listaCanchas) {
                 listaCanchas.innerHTML = db.campos.length ? db.campos.map(c => `
                     <div class="gestion-fila">
-                        <img src="${c.foto || 'https://placehold.co/44x34'}" class="foto-cancha" alt="Foto de la cancha ${c.nombre}">
+                        <img src="${c.foto || 'https://placehold.co/44x34'}" class="foto-cancha" alt="Foto de la cancha ${c.nombre}" loading="lazy">
                         <div class="gestion-info">
                             <strong>${c.nombre}</strong>
                             <span>${c.direccion || 'Sin dirección registrada'}</span>
@@ -4125,7 +4125,7 @@ ${cuerpo}`;
             if (listaPatrocinadores) {
                 listaPatrocinadores.innerHTML = (db.patrocinadores || []).length ? db.patrocinadores.map(p => `
                     <div class="gestion-fila">
-                        <img src="${p.logo || 'https://placehold.co/40'}" alt="Logo de ${p.nombre}">
+                        <img src="${p.logo || 'https://placehold.co/40'}" alt="Logo de ${p.nombre}" loading="lazy">
                         <div class="gestion-info">
                             <strong>${p.nombre}</strong>
                             <span>${p.link ? '🔗 ' + p.link : 'Sin enlace'}</span>
@@ -4298,7 +4298,7 @@ ${cuerpo}`;
             const lista = document.getElementById('ficha-adm-eq-plantilla');
             lista.innerHTML = jugadores.length ? jugadores.map(j => `
                 <div class="gestion-fila">
-                    <img src="${j.foto || 'https://placehold.co/40'}" alt="${j.nombre}">
+                    <img src="${j.foto || 'https://placehold.co/40'}" alt="${j.nombre}" loading="lazy">
                     <div class="gestion-info">
                         <strong>${j.numero ? '#' + j.numero + ' · ' : ''}${j.nombre}</strong>
                         <span>${j.posicion || 'Jugador'} · ⚽ ${j.goles || 0} · 🟨 ${j.amarillas || 0} · 🟥 ${j.rojas || 0}</span>
