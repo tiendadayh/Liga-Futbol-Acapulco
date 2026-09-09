@@ -54,6 +54,9 @@
         h1, h2, h3 { font-family: var(--font-display); letter-spacing: 0.2px; }
 
         * { scrollbar-width: thin; scrollbar-color: var(--primary) transparent; }
+        /* Evita que el navegador reajuste la posición de la página cuando
+           el banner EN VIVO aparece dinámicamente desde Firebase. */
+        html, body, #banner-en-vivo { overflow-anchor: none; }
         ::-webkit-scrollbar { width: 9px; height: 9px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--secondary); border-radius: 10px; }
@@ -314,7 +317,14 @@
         .btn-enviar-solicitud:active { transform: translateY(0) scale(0.98); }
 
         /* --- Banner de partido EN VIVO en portada --- */
-        #banner-en-vivo { background: var(--gradient-primary); }
+        #banner-en-vivo {
+            background: var(--gradient-primary);
+            position: relative;
+            z-index: 5;
+            width: 100%;
+            margin: 0;
+            overflow-anchor: none;
+        }
         .banner-en-vivo-item { max-width: 1200px; margin: 0 auto; color: white; font-size: 0.85rem; padding: 11px 20px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; text-align: center; font-weight: 600; transition: background var(--transition-fast); }
         .banner-en-vivo-item:hover { background: rgba(255,255,255,0.1); }
         .banner-en-vivo-dot { width: 9px; height: 9px; border-radius: 50%; background: white; flex-shrink: 0; animation: pulso-vivo 1.2s infinite; }
@@ -407,6 +417,21 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
+    <script>
+        // La página siempre inicia desde arriba y no conserva el scroll anterior.
+        // Esto evita que el banner EN VIVO quede visualmente encima de la cabecera
+        // cuando Firebase cambia su altura durante la carga.
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+
+        window.addEventListener('load', function () {
+            window.scrollTo(0, 0);
+            setTimeout(function () {
+                window.scrollTo(0, 0);
+            }, 50);
+        });
+    </script>
 </head>
 <body>
 
