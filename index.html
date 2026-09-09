@@ -437,6 +437,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
     <script>
         // La página siempre inicia desde arriba y no conserva el scroll anterior.
         // Esto evita que el banner EN VIVO quede visualmente encima de la cabecera
@@ -536,7 +537,7 @@
             <div class="header-section-flex">
                 <h2>Tabla de Posiciones</h2>
                 <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                    <button class="btn-export" onclick="compartirTablaPosicionesImagen()" style="background:var(--secondary, #1f8fd6);">📤 Compartir Imagen</button>
+                    <button class="btn-export" onclick="descargarTablaPosicionesImagen()" style="background:#2e7d32;">⬇️ Descargar Imagen</button>
                 </div>
             </div>
             <div style="overflow-x:auto;">
@@ -663,7 +664,9 @@
         <section id="reglamento-sec" class="card-section" style="border-top-color: #0d2a4d;">
             <div class="header-section-flex">
                 <h2>📖 Reglamento Oficial</h2>
-                <button type="button" onclick="imprimirReglamento()" style="width:auto; background:#0d2a4d;">🖨️ Descargar / Imprimir PDF</button>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button type="button" onclick="descargarReglamentoPDF()" style="width:auto; background:#2e7d32;">⬇️ Descargar PDF</button>
+                </div>
             </div>
             <div id="reglamento-publico-body"></div>
         </section>
@@ -1327,37 +1330,89 @@
             cont.innerHTML = contenidoReglamentoHTML();
         }
 
-        // Abre una ventana aparte solo con el reglamento, ya formateada para imprimir /
-        // "Guardar como PDF" desde el diálogo de impresión del navegador.
-        function imprimirReglamento() {
-            const nombreLiga = (db.config && db.config.nombreLiga) || 'Liga de Fútbol';
-            const ventana = window.open('', '_blank');
-            ventana.document.write(`
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Reglamento Oficial - ${nombreLiga}</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; color:#222; padding:30px; max-width:700px; margin:0 auto; }
-                        h1 { color:#0d2a4d; text-align:center; margin-bottom:4px; }
-                        p.sub { text-align:center; color:#666; margin-top:0; margin-bottom:24px; }
-                        h4 { color:#0d2a4d; margin:20px 0 8px; }
-                        .ficha-tecnica-datos { display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; margin-bottom:10px; }
-                        .lbl { display:block; font-size:0.75rem; color:var(--text-muted); }
-                        .val { display:block; font-weight:bold; }
-                        @media print { body { padding:10px; } }
-                    </style>
-                </head>
-                <body>
-                    <h1>📖 Reglamento Oficial</h1>
-                    <p class="sub">${nombreLiga}</p>
-                    ${contenidoReglamentoHTML()}
-                </body>
-                </html>
-            `);
-            ventana.document.close();
-            ventana.focus();
-            setTimeout(() => ventana.print(), 400);
+        // Genera y descarga un PDF real del Reglamento Oficial en un solo toque, sin
+        // depender del diálogo de impresión del navegador (que en varios celulares
+        // resulta confuso para guardar el archivo).
+        function descargarReglamentoPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+            const nombreLiga = (db.config && db.config.nombreLiga) || 'Liga de Futbol CoSmar SPORT CLUB';
+            const margenX = 50;
+            const anchoUtil = 515;
+            let y = 60;
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(18);
+            doc.setTextColor(13, 42, 77);
+            doc.text('Reglamento Oficial', 297.5, y, { align: 'center' });
+            y += 20;
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            doc.setTextColor(100);
+            doc.text(nombreLiga, 297.5, y, { align: 'center' });
+            y += 34;
+
+            const tituloSeccion = (texto) => {
+                if (y > 730) { doc.addPage(); y = 60; }
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(13);
+                doc.setTextColor(13, 42, 77);
+                doc.text(texto, margenX, y);
+                y += 18;
+            };
+            const fila = (etiqueta, valor) => {
+                if (y > 755) { doc.addPage(); y = 60; }
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10.5);
+                doc.setTextColor(60);
+                doc.text(`${etiqueta}:`, margenX, y);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(20);
+                doc.text(`${valor}`, margenX + 200, y);
+                y += 17;
+            };
+            const parrafo = (texto, cursiva) => {
+                doc.setFont('helvetica', cursiva ? 'italic' : 'normal');
+                doc.setFontSize(cursiva ? 9 : 10.5);
+                doc.setTextColor(cursiva ? 110 : 30);
+                const lineas = doc.splitTextToSize(texto, anchoUtil);
+                lineas.forEach(linea => {
+                    if (y > 760) { doc.addPage(); y = 60; }
+                    doc.text(linea, margenX, y);
+                    y += cursiva ? 12 : 14;
+                });
+            };
+
+            tituloSeccion('Formato del partido');
+            fila('Duración', `${reg(db, 'numTiempos')} tiempos de ${reg(db, 'duracionMinutos')} min`);
+            fila('Tolerancia de llegada', `${reg(db, 'toleranciaMinutos')} min`);
+            fila('Jugadores', `${reg(db, 'jugadoresTitulares')} titulares + ${reg(db, 'jugadoresSuplentes')} suplentes`);
+            fila('Categoría', reg(db, 'categoriaTexto') || '—');
+            if (reg(db, 'balonOficial')) fila('Balón oficial', reg(db, 'balonOficial'));
+            y += 12;
+
+            tituloSeccion('Cuotas');
+            const cuotaTxt = v => v > 0 ? `$${v}` : 'Sin costo';
+            fila('Arbitraje por partido', cuotaTxt(reg(db, 'cuotaArbitraje')));
+            fila('Inscripción por equipo', cuotaTxt(reg(db, 'cuotaInscripcionEquipo')));
+            fila('Inscripción por jugador', cuotaTxt(reg(db, 'cuotaInscripcionJugador')));
+            y += 12;
+
+            tituloSeccion('Sanciones y multas');
+            fila(`${reg(db, 'amarillasParaAcumulada')} amarillas acumuladas`, `${reg(db, 'partidosAmarillasAcumuladas')} partido(s) + $${reg(db, 'multaAmarillasAcumuladas')}`);
+            fila('Doble amarilla', `${reg(db, 'partidosDobleAmarilla')} partido(s) + $${reg(db, 'multaDobleAmarilla')}`);
+            fila('Roja directa', `${reg(db, 'partidosRojaDirecta')} partido(s) por defecto + $${reg(db, 'multaRojaDirecta')}`);
+            y += 6;
+            parrafo('Una roja directa puede subir de partidos (hasta expulsión definitiva del torneo) si fue por insultar al árbitro, escupir o iniciar una riña; lo decide la administración de la liga caso por caso.', true);
+            y += 10;
+
+            const notasReg = reg(db, 'notasAdicionales');
+            if (notasReg) {
+                tituloSeccion('Notas adicionales');
+                parrafo(notasReg, false);
+            }
+
+            doc.save(`reglamento-oficial-${new Date().toISOString().slice(0, 10)}.pdf`);
         }
 
         function actualizarVistaTodo() {
@@ -1379,16 +1434,32 @@
             const comunicadosVigentes = (db.comunicados || []).filter(c => !(c.autoGenerado && (Date.now() - (c.ts || 0) > TRES_DIAS_MS_TABLON)));
             contNoticias.innerHTML = comunicadosVigentes.map(c => {
                 const et = estiloTipo[c.tipo] || estiloTipo.aviso;
+                // Si el aviso trae jugadorId y ese jugador sigue existiendo, la tarjeta
+                // muestra su foto y es clicable para abrir su ficha pública completa.
+                const jugadorAviso = c.jugadorId ? (db.jugadores || []).find(j => j.id === c.jugadorId) : null;
+                const fotoJugador = jugadorAviso ? (jugadorAviso.foto || c.imagen) : null;
+                const equipoAviso = jugadorAviso ? (db.equipos.find(e => e.id === jugadorAviso.equipoId)?.nombre || 'Agente Libre') : '';
+                const abrirFicha = jugadorAviso ? `onclick="verFicha(${jugadorAviso.id})"` : '';
                 return `
-                <div style="background:var(--card-bg, var(--light)); border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06)); display:flex; flex-direction:column;">
-                    ${c.imagen ? `<img src="${c.imagen}" alt="${c.titulo}" style="width:100%; height:150px; object-fit:cover;" loading="lazy">` : ''}
+                <div ${abrirFicha} style="background:var(--card-bg, var(--light)); border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06)); display:flex; flex-direction:column; ${jugadorAviso ? 'cursor:pointer; transition:transform .15s, box-shadow .15s;' : ''}" ${jugadorAviso ? `onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 18px -4px rgba(0,0,0,0.15)';" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06))';"` : ''}>
+                    ${jugadorAviso
+                        ? `<div style="display:flex; align-items:center; gap:10px; padding:15px 15px 0;">
+                               <img src="${fotoJugador || 'https://placehold.co/60'}" alt="${jugadorAviso.nombre}" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid ${et.color}; flex-shrink:0;" loading="lazy">
+                               <div style="display:flex; flex-direction:column; gap:2px; min-width:0;">
+                                   <span style="font-size:0.72rem; font-weight:700; color:#fff; background:${et.color}; padding:3px 10px; border-radius:999px; width:fit-content;">${et.etiqueta}</span>
+                                   <span style="font-size:0.78rem; font-weight:600; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${jugadorAviso.nombre} · ${equipoAviso}</span>
+                               </div>
+                           </div>`
+                        : (c.imagen ? `<img src="${c.imagen}" alt="${c.titulo}" style="width:100%; height:150px; object-fit:cover;" loading="lazy">` : '')
+                    }
                     <div style="padding:15px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
-                            <span style="font-size:0.72rem; font-weight:700; color:#fff; background:${et.color}; padding:3px 10px; border-radius:999px;">${et.etiqueta}</span>
+                        <div style="display:flex; justify-content:${jugadorAviso ? 'flex-end' : 'space-between'}; align-items:center; gap:8px; margin-bottom:6px;">
+                            ${jugadorAviso ? '' : `<span style="font-size:0.72rem; font-weight:700; color:#fff; background:${et.color}; padding:3px 10px; border-radius:999px;">${et.etiqueta}</span>`}
                             ${c.fecha ? `<span style="font-size:0.75rem; color:var(--text-muted);">${c.fecha}</span>` : ''}
                         </div>
                         <h4 style="margin:0 0 6px;">${c.titulo}</h4>
                         <p style="font-size:0.85rem; white-space:pre-line; margin:0;">${c.contenido}</p>
+                        ${jugadorAviso ? `<p style="font-size:0.78rem; font-weight:600; color:${et.color}; margin:10px 0 0;">👁️ Ver ficha completa del jugador →</p>` : ''}
                     </div>
                 </div>`;
             }).join('') || '<p style="color:var(--text-muted);">No hay avisos recientes.</p>';
@@ -2554,9 +2625,11 @@
         // equipo) y la comparte con el sistema operativo (WhatsApp/Instagram) o la descarga
         // si el navegador no soporta compartir archivos. Reutiliza el mismo patrón visual
         // que "Compartir Resultado".
-        async function compartirTablaPosicionesImagen() {
+        // Genera la imagen PNG de la Tabla de Posiciones y devuelve el blob listo para
+        // compartir o descargar. Devuelve null si aún no hay equipos registrados.
+        async function generarBlobTablaPosiciones() {
             const estadisticas = calcularTablaPosiciones();
-            if (!estadisticas.length) return alert('Aún no hay equipos registrados.');
+            if (!estadisticas.length) return null;
 
             const cargarImagen = (src) => new Promise((resolve) => {
                 const img = new Image();
@@ -2673,27 +2746,30 @@
             ctx.fillStyle = '#94a3b8';
             ctx.fillText('Sitio Oficial · Liga de Futbol CoSmar SPORT CLUB', W / 2, H - 22);
 
-            canvas.toBlob(async (blob) => {
-                if (!blob) return;
-                const nombreArchivo = `tabla-posiciones-${new Date().toISOString().slice(0, 10)}.png`;
-                const archivo = new File([blob], nombreArchivo, { type: 'image/png' });
+            const nombreArchivo = `tabla-posiciones-${new Date().toISOString().slice(0, 10)}.png`;
+            return new Promise(resolve => {
+                canvas.toBlob(blob => resolve(blob ? { blob, nombreArchivo } : null), 'image/png');
+            });
+        }
 
-                if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
-                    try {
-                        await navigator.share({ files: [archivo], title: 'Tabla de Posiciones', text: 'Tabla de Posiciones · Liga de Futbol CoSmar SPORT CLUB' });
-                        return;
-                    } catch (err) { /* si el usuario cancela el share, caemos a la descarga */ }
-                }
+        // Fuerza la descarga directa del archivo (sin pasar por el cuadro de compartir
+        // del sistema), útil cuando el usuario solo quiere guardar la imagen en su galería.
+        function descargarBlobComoArchivo(blob, nombreArchivo) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = nombreArchivo;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
 
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = nombreArchivo;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 'image/png');
+        // Descarga directa de la imagen de la Tabla de Posiciones.
+        async function descargarTablaPosicionesImagen() {
+            const resultado = await generarBlobTablaPosiciones();
+            if (!resultado) return alert('Aún no hay equipos registrados.');
+            descargarBlobComoArchivo(resultado.blob, resultado.nombreArchivo);
         }
 
         function exportarTablaCSV() {

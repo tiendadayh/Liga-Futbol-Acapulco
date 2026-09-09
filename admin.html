@@ -382,6 +382,13 @@
         .ficha-admin-hist-tabla td { padding:4px; text-align:center; border-bottom:1px solid var(--border); }
         .ficha-admin-hist-tabla td.rival { text-align:left; }
 
+        /* --- Tarjeta de ficha para cada solicitud en el tablón de registro --- */
+        .solicitud-ficha-card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:18px; box-shadow:0 2px 8px rgba(0,0,0,0.07); }
+        .solicitud-ficha-card .ficha-admin-banner { margin:-18px -18px 16px; padding:18px; }
+        .solicitud-ficha-card .ficha-admin-botones { display:flex; gap:8px; flex-wrap:wrap; }
+        .solicitud-ficha-card .ficha-admin-botones button { flex:1; min-width:105px; padding:9px 8px; font-size:0.8rem; }
+        .solicitud-ficha-aviso-dup { background:#fdecea; color:#c62828; font-size:0.78rem; font-weight:bold; padding:8px 10px; border-radius:6px; margin:0 0 14px; }
+
         /* --- Filas clicables (ver plantel del equipo) --- */
         .gestion-fila-clickable { cursor: pointer; transition: background 0.15s, transform 0.15s; }
         .gestion-fila-clickable:hover { background: #eef1f5; transform: translateX(2px); }
@@ -537,6 +544,25 @@
             }
         }
 
+        /* ===== SOMBRA DE SCROLL EN TABLAS ANCHAS ===== */
+        div[style*="overflow-x:auto"] {
+            background:
+                linear-gradient(to right, var(--card-bg) 30%, rgba(0,0,0,0)) 0 0,
+                linear-gradient(to left, var(--card-bg) 30%, rgba(0,0,0,0)) 100% 0,
+                linear-gradient(to right, rgba(11,47,92,0.15), rgba(0,0,0,0)) 0 0,
+                linear-gradient(to left, rgba(11,47,92,0.15), rgba(0,0,0,0)) 100% 0;
+            background-repeat: no-repeat;
+            background-size: 24px 100%, 24px 100%, 10px 100%, 10px 100%;
+            background-attachment: local, local, scroll, scroll;
+        }
+
+        /* ===== DISEÑO RESPONSIVO (TABLET) ===== */
+        @media (max-width: 1024px) and (min-width: 769px) {
+            body { padding: 18px; }
+            .admin-grid { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+            .admin-box { padding: 18px; }
+        }
+
         /* ===== DISEÑO RESPONSIVO (MÓVIL / TABLET) ===== */
         @media (max-width: 768px) {
             body { padding: 12px; }
@@ -561,6 +587,13 @@
             header p { font-size: 0.8rem; }
             .admin-box { padding: 12px; }
             input, select, textarea { font-size: 16px; } /* evita zoom automático en iPhone */
+            /* Fichas (jugador, árbitro, solicitud) más legibles y ordenadas en pantallas chicas */
+            .ficha-admin-datos { grid-template-columns: 1fr; gap: 10px; }
+            .ficha-admin-stats { grid-template-columns: repeat(2, 1fr); }
+            .ficha-admin-banner { flex-direction: column; text-align: center; }
+            .ficha-admin-banner img { margin: 0 auto; }
+            .solicitud-ficha-card { padding: 14px; }
+            .solicitud-ficha-card .ficha-admin-banner { margin: -14px -14px 14px; }
         }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
@@ -1066,6 +1099,7 @@
             <div>
                 <h4 style="margin:0 0 8px; color:var(--dark);">📢 Avisos y Crónicas</h4>
                 <p style="font-size:0.75rem; color:#888; margin:-4px 0 8px;">Elimina lo publicado en el Tablón del sitio público.</p>
+                <button type="button" onclick="repararFichasEnAvisosAntiguos()" style="margin-bottom:10px; background:#555; padding:8px 12px; font-size:0.78rem;">🔄 Vincular ficha de jugador en avisos anteriores</button>
                 <div id="gestion-lista-comunicados" class="gestion-lista"></div>
             </div>
             <div>
@@ -1719,9 +1753,12 @@
         // manuales (formulario "Publicar Anuncio") no llevan esta marca y no expiran solos.
         const TRES_DIAS_MS = 3 * 24 * 60 * 60 * 1000;
 
-        function agregarAvisoRegistro(tipo, titulo, contenido) {
+        // "extra" permite adjuntar datos opcionales al aviso, como el id del jugador
+        // (jugadorId) y su foto (imagen), para que en el sitio público el aviso muestre
+        // la foto del jugador y sea clicable hacia su ficha completa.
+        function agregarAvisoRegistro(tipo, titulo, contenido, extra) {
             if (!db.comunicados) db.comunicados = [];
-            db.comunicados.unshift({
+            db.comunicados.unshift(Object.assign({
                 id: Date.now() + Math.floor(Math.random() * 1000),
                 titulo: titulo,
                 tipo: tipo,
@@ -1730,7 +1767,7 @@
                 fecha: new Date().toLocaleDateString('es-MX'),
                 autoGenerado: true,
                 ts: Date.now()
-            });
+            }, extra || {}));
         }
 
         function limpiarAvisosExpirados() {
@@ -2299,13 +2336,13 @@
                     db.comunicados.unshift({
                         id: comunicadoId, titulo: `🚫 ${j.nombre} suspendido`, tipo: 'sancion',
                         contenido: `${j.nombre} (${equipo}) está suspendido: ${motivos.join(' y ')}. No podrá jugar hasta completar sus partidos de sanción y pagar la multa correspondiente.`,
-                        imagen: '', fecha: new Date().toLocaleDateString('es-MX')
+                        imagen: j.foto || '', fecha: new Date().toLocaleDateString('es-MX'), jugadorId: j.id
                     });
                     nuevoEstado[j.id] = { estado: 'bloqueado', comunicadoId };
                 } else if (!bloqueado && previo.estado === 'bloqueado') {
                     if (previo.comunicadoId) db.comunicados = db.comunicados.filter(c => c.id !== previo.comunicadoId);
                     agregarAvisoRegistro('habilitado', `✅ ${j.nombre} ya puede jugar`,
-                        `${j.nombre} (${equipo}) cumplió su sanción y ya pagó la multa. Queda habilitado para jugar en la siguiente jornada.`);
+                        `${j.nombre} (${equipo}) cumplió su sanción y ya pagó la multa. Queda habilitado para jugar en la siguiente jornada.`, { jugadorId: j.id, imagen: j.foto || '' });
                     nuevoEstado[j.id] = { estado: 'libre' };
                 } else {
                     nuevoEstado[j.id] = bloqueado ? previo : { estado: 'libre' };
@@ -2702,8 +2739,9 @@
                 }
                 const jugadorBase64 = await convertirImagenABase64(document.getElementById('admin-jug-foto'));
                 db.contadorFolioJugadores = (db.contadorFolioJugadores || 0) + 1;
+                const nuevoJugadorId = Date.now();
                 db.jugadores.push({
-                    id: Date.now(),
+                    id: nuevoJugadorId,
                     nombre: nombreSel,
                     equipoId: equipoIdSel,
                     posicion: document.getElementById('admin-jug-posicion').value.trim() || 'Jugador',
@@ -2715,7 +2753,7 @@
                     foto: jugadorBase64, goles: 0, amarillas: 0, rojas: 0, xiIdeal: [], folioNum: db.contadorFolioJugadores
                 });
                 const nombreEquipoNuevoJug = db.equipos.find(e => e.id === equipoIdSel)?.nombre || 'Agente Libre';
-                agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${nombreSel} se une al equipo ${nombreEquipoNuevoJug}.`);
+                agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${nombreSel} se une al equipo ${nombreEquipoNuevoJug}.`, { jugadorId: nuevoJugadorId, imagen: jugadorBase64 || '' });
                 this.reset();
                 document.getElementById('admin-jug-foto-preview').style.display = 'none';
                 guardarDB(); alert("Jugador registrado.");
@@ -2909,7 +2947,7 @@
 
                 db.historialFichajes.unshift({ id: Date.now(), jugador: jugador.nombre, origen: nombreOrigen, destino: nombreDestino, fecha: new Date().toLocaleDateString('es-MX') });
                 const tituloTraspaso = destino === 'libre' ? '🕊️ Jugador dejado en libertad' : '🔄 Traspaso de jugador';
-                agregarAvisoRegistro('traspaso', tituloTraspaso, `${jugador.nombre} pasa de ${nombreOrigen} a ${nombreDestino}.`);
+                agregarAvisoRegistro('traspaso', tituloTraspaso, `${jugador.nombre} pasa de ${nombreOrigen} a ${nombreDestino}.`, { jugadorId: jugador.id, imagen: jugador.foto || '' });
                 this.reset(); guardarDB(); alert(`Transferencia ejecutada: ${jugador.nombre} -> ${nombreDestino}`);
             });
 
@@ -2935,20 +2973,33 @@
 
             cont.innerHTML = db.solicitudes.map(s => {
                 const duplicado = nombreYaRegistrado(s.nombre);
+                const equipo = db.equipos.find(e => e.id === s.equipoId)?.nombre || 'Agente Libre';
+                const edad = calcularEdad(s.fechaNacimiento);
                 return `
-                <div style="background:#f4f4f4; padding:12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div style="display:flex; gap:12px; align-items:center;">
-                        <img src="${s.foto || 'https://placehold.co/50'}" style="width:45px; height:45px; border-radius:50%; object-fit:cover; border:2px solid var(--primary);" alt="${s.nombre || 'Solicitante'}" loading="lazy">
+                <div class="solicitud-ficha-card">
+                    <div class="ficha-admin-banner">
+                        <img src="${s.foto || 'https://placehold.co/90'}" alt="${s.nombre || 'Solicitante'}" loading="lazy">
                         <div>
-                            <strong>${s.numero ? '#' + s.numero + ' · ' : ''}${s.nombre}</strong> (${s.posicion}${s.categoria ? ' · ' + s.categoria : ''})<br>
-                            <small style="color:gray;">Equipo Solicitado: ${db.equipos.find(e => e.id === s.equipoId)?.nombre || 'Libre'}</small>
-                            ${duplicado ? '<br><small style="color:#c62828; font-weight:bold;">⚠️ Posible nombre duplicado, revisar</small>' : ''}
+                            <h3>${s.numero ? '#' + s.numero + ' · ' : ''}${s.nombre || 'Sin nombre'}</h3>
+                            <span>${equipo}${s.posicion ? ' · ' + s.posicion : ''}</span><br>
+                            <span class="ficha-admin-estado" style="background:#fff3cd; color:#8a6d00;">⏳ Solicitud pendiente</span>
                         </div>
                     </div>
-                    <div style="display:flex; gap:8px;">
-                        <button onclick="verDetalleSolicitud(${s.id})" style="background:#555; padding:8px 14px; font-size:0.85rem;">👁️ Ver detalle</button>
-                        <button onclick="aprobarSolicitud(${s.id})" style="background:var(--success); padding:8px 14px; font-size:0.85rem;">Aprobar</button>
-                        <button onclick="rechazarSolicitud(${s.id})" style="background:var(--primary); padding:8px 14px; font-size:0.85rem;">Rechazar</button>
+                    ${duplicado ? '<p class="solicitud-ficha-aviso-dup">⚠️ Posible nombre duplicado, revisar</p>' : ''}
+                    <div class="ficha-admin-datos">
+                        <div><span class="lbl">Número de playera</span><span class="val">${s.numero ? '#' + s.numero : '—'}</span></div>
+                        <div><span class="lbl">Posición</span><span class="val">${s.posicion || '—'}</span></div>
+                        <div><span class="lbl">Categoría</span><span class="val">${s.categoria || '—'}</span></div>
+                        <div><span class="lbl">Edad</span><span class="val">${edad !== null ? edad + ' años' : '—'}</span></div>
+                        <div><span class="lbl">Fecha de nacimiento</span><span class="val">${s.fechaNacimiento ? formatearFechaCarnet(s.fechaNacimiento) : '—'}</span></div>
+                        <div><span class="lbl">Nacionalidad</span><span class="val">${s.nacionalidad || '—'}</span></div>
+                        <div><span class="lbl">Lugar de nacimiento</span><span class="val">${s.lugarNacimiento || '—'}</span></div>
+                        <div><span class="lbl">Equipo solicitado</span><span class="val">${equipo}</span></div>
+                    </div>
+                    <div class="ficha-admin-botones">
+                        <button onclick="verDetalleSolicitud(${s.id})" style="background:#555;">👁️ Ver detalle</button>
+                        <button onclick="aprobarSolicitud(${s.id})" style="background:var(--success);">✅ Aprobar</button>
+                        <button onclick="rechazarSolicitud(${s.id})" style="background:var(--primary);">❌ Rechazar</button>
                     </div>
                 </div>
             `; }).join('');
@@ -3025,15 +3076,16 @@
                 }
             }
             db.contadorFolioJugadores = (db.contadorFolioJugadores || 0) + 1;
+            const nuevoJugadorIdSol = Date.now();
             db.jugadores.push({
-                id: Date.now(), nombre: nombreSol, equipoId: sol.equipoId, posicion: sol.posicion,
+                id: nuevoJugadorIdSol, nombre: nombreSol, equipoId: sol.equipoId, posicion: sol.posicion,
                 numero: sol.numero || '', categoria: sol.categoria || 'Especial',
                 lugarNacimiento: (sol.lugarNacimiento || '').toUpperCase(), fechaNacimiento: sol.fechaNacimiento || '',
                 nacionalidad: (sol.nacionalidad || 'MEXICANA').toUpperCase(),
                 foto: sol.foto, goles: 0, amarillas: 0, rojas: 0, xiIdeal: [], folioNum: db.contadorFolioJugadores
             });
             const nombreEquipoSol = db.equipos.find(e => e.id === sol.equipoId)?.nombre || 'Agente Libre';
-            agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${nombreSol} se une al equipo ${nombreEquipoSol}.`);
+            agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${nombreSol} se une al equipo ${nombreEquipoSol}.`, { jugadorId: nuevoJugadorIdSol, imagen: sol.foto || '' });
             db.solicitudes = db.solicitudes.filter(s => s.id !== id);
             marcarSolicitudResueltaSinPublicar(id);
             cerrarDetalleSolicitud();
@@ -4390,6 +4442,53 @@ ${cuerpo}`;
             db.comunicados = db.comunicados.filter(x => x.id !== id);
             guardarDB();
             alert("Publicación eliminada del Tablón.");
+        }
+
+        // Repara avisos de Registro/Traspaso/Disciplina publicados ANTES de que el sistema
+        // guardara el jugadorId y la foto: reconoce al jugador por su nombre dentro del
+        // texto del aviso y, si lo encuentra sin ambigüedad, le vincula su ficha y foto.
+        // Segura de ejecutar varias veces: solo toca avisos que aún no tengan jugadorId.
+        function repararFichasEnAvisosAntiguos() {
+            const extraerNombre = (c) => {
+                if (c.tipo === 'registro') {
+                    const m = /^(.*?) se une al equipo /.exec(c.contenido || '');
+                    return m ? m[1].trim() : null;
+                }
+                if (c.tipo === 'traspaso') {
+                    const m = /^(.*?) pasa de /.exec(c.contenido || '');
+                    return m ? m[1].trim() : null;
+                }
+                if (c.tipo === 'sancion') {
+                    const m = /^🚫 (.*?) suspendido$/.exec(c.titulo || '');
+                    return m ? m[1].trim() : null;
+                }
+                if (c.tipo === 'habilitado') {
+                    const m = /^✅ (.*?) ya puede jugar$/.exec(c.titulo || '');
+                    return m ? m[1].trim() : null;
+                }
+                return null;
+            };
+
+            let reparados = 0;
+            (db.comunicados || []).forEach(c => {
+                if (c.jugadorId) return; // ya tiene ficha vinculada
+                const nombre = extraerNombre(c);
+                if (!nombre) return;
+                const nombreNorm = nombre.toUpperCase();
+                const coincidencias = (db.jugadores || []).filter(j => (j.nombre || '').trim().toUpperCase() === nombreNorm);
+                if (coincidencias.length === 1) {
+                    c.jugadorId = coincidencias[0].id;
+                    if (!c.imagen) c.imagen = coincidencias[0].foto || '';
+                    reparados++;
+                }
+            });
+
+            if (reparados > 0) {
+                guardarDB();
+                alert(`Listo: se vinculó la ficha del jugador en ${reparados} aviso(s) anterior(es). Recuerda presionar "📤 Publicar cambios" para que se vea en el sitio público.`);
+            } else {
+                alert('No se encontraron avisos antiguos pendientes de reparar (o ya estaban vinculados a una ficha).');
+            }
         }
 
         function eliminarPatrocinador(id) {
