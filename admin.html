@@ -709,16 +709,52 @@
         </div>
     </div>
 
+    <!-- MÓDULO: REGLAMENTO OFICIAL DE LA LIGA (editable) -->
+    <div class="admin-box" style="margin-bottom: 25px; border-top-color: #0d2a4d;">
+        <h3>📖 Reglamento Oficial de la Liga</h3>
+        <p style="font-size:0.85rem; color:#555;">Todo lo de aquí es editable. Se guarda en la nube y se refleja
+            automáticamente en el sitio público (sección "Reglamento Oficial") y en las multas/suspensiones que
+            calcula el sistema (Centro de Disciplina, avisos del Tablón y el bloqueo de alineación del árbitro).</p>
+
+        <h4 style="color:#0d2a4d; margin:18px 0 8px;">⚽ Formato del partido</h4>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:14px;">
+            <div><label>Duración por tiempo (min)</label><input type="number" id="reg-duracion-minutos" min="1"></div>
+            <div><label>Número de tiempos</label><input type="number" id="reg-num-tiempos" min="1"></div>
+            <div><label>Tolerancia de llegada (min)</label><input type="number" id="reg-tolerancia" min="0"></div>
+            <div><label>Jugadores titulares</label><input type="number" id="reg-titulares" min="1"></div>
+            <div><label>Suplentes máximo</label><input type="number" id="reg-suplentes" min="0"></div>
+            <div><label>Categoría</label><input type="text" id="reg-categoria" placeholder="Ej. Libre, Varonil 30+..."></div>
+            <div><label>Balón oficial</label><input type="text" id="reg-balon" placeholder="Ej. No. 5, marca..."></div>
+        </div>
+
+        <h4 style="color:#0d2a4d; margin:18px 0 8px;">💵 Cuotas</h4>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:14px;">
+            <div><label>Arbitraje por partido ($)</label><input type="number" id="reg-cuota-arbitraje" min="0"></div>
+            <div><label>Inscripción por equipo ($)</label><input type="number" id="reg-cuota-inscripcion-equipo" min="0"></div>
+            <div><label>Inscripción por jugador ($)</label><input type="number" id="reg-cuota-inscripcion-jugador" min="0"></div>
+        </div>
+
+        <h4 style="color:#0d2a4d; margin:18px 0 8px;">🟨🟥 Sanciones y multas</h4>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:14px;">
+            <div><label>Amarillas para acumulada</label><input type="number" id="reg-amarillas-para-acumulada" min="2"></div>
+            <div><label>Partidos por acumulada</label><input type="number" id="reg-partidos-acumuladas" min="0"></div>
+            <div><label>Multa por acumulada ($)</label><input type="number" id="reg-multa-acumuladas" min="0"></div>
+            <div><label>Partidos por doble amarilla</label><input type="number" id="reg-partidos-doble-amarilla" min="0"></div>
+            <div><label>Multa por doble amarilla ($)</label><input type="number" id="reg-multa-doble-amarilla" min="0"></div>
+            <div><label>Partidos por roja directa</label><input type="number" id="reg-partidos-roja" min="0"></div>
+            <div><label>Multa por roja directa ($)</label><input type="number" id="reg-multa-roja" min="0"></div>
+        </div>
+
+        <h4 style="color:#0d2a4d; margin:18px 0 8px;">📝 Notas adicionales</h4>
+        <textarea id="reg-notas" rows="4" style="width:100%; padding:11px 14px; box-sizing:border-box; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:0.95rem;" placeholder="Cualquier otra regla que quieras que aparezca en el reglamento público (uniforme, horarios, conducta, etc.)"></textarea>
+
+        <button onclick="guardarReglamento()" style="background:#0d2a4d; color:#fff; width:100%; margin-top:15px;">💾 Guardar Reglamento</button>
+    </div>
+
     <!-- MÓDULO: CENTRO DE DISCIPLINA (suspensiones por tarjetas) -->
     <div class="admin-box" style="margin-bottom: 25px; border-top-color: #b91c1c;">
         <h3>🟨🟥 Centro de Disciplina</h3>
-        <p style="font-size:0.85rem; color:#555;">
-            Se genera solo con las tarjetas que cierra el árbitro: 3 amarillas acumuladas en partidos distintos o
-            doble amarilla = 1 partido de suspensión y $100 de multa; roja directa = 1 partido por defecto (falta
-            táctica) y $150 de multa — si fue por insultar al árbitro, escupir o iniciar una riña, edítala aquí para
-            ponerle de 2 a 4 partidos o expulsión definitiva del torneo. Las amarillas acumuladas se borran solas al
-            terminar la Jornada 9 (fin de fase regular).
-        </p>
+        <p id="disciplina-reglas-texto" style="font-size:0.85rem; color:#555;"></p>
         <div style="overflow-x:auto;">
             <table style="width:100%; text-align:left; border-collapse:collapse; font-size:0.85rem;">
                 <thead>
@@ -1483,7 +1519,9 @@
         // cuando el admin presione "Quitar".
         const LOGO_LIGA_DEFAULT = document.querySelector('.admin-header-logo') ? document.querySelector('.admin-header-logo').src : '';
         // ---- PWA: registro de service worker e instalación como app ----
-        if ('serviceWorker' in navigator) {
+        if ('serviceWorker' in navigator && !['localhost', '127.0.0.1'].includes(location.hostname)) {
+            // El Service Worker solo se registra en el sitio publicado (no en Live Server),
+            // para que mientras programas siempre veas tus cambios al instante.
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').catch(() => {});
             });
@@ -1609,6 +1647,26 @@
             };
         }
 
+        // ===== REGLAMENTO OFICIAL DE LA LIGA (editable desde este panel) =====
+        // Valores por defecto que se usan mientras el admin no haya guardado los suyos propios.
+        // reg(dbRef, campo) siempre regresa el valor guardado en db.reglamento, o si no existe
+        // (o está vacío), el valor por defecto de aquí — así nunca truena aunque falte el campo.
+        const REGLAMENTO_DEFAULTS = {
+            duracionMinutos: 25, numTiempos: 2, toleranciaMinutos: 10,
+            jugadoresTitulares: 7, jugadoresSuplentes: 5,
+            cuotaArbitraje: 300, cuotaInscripcionEquipo: 0, cuotaInscripcionJugador: 0,
+            balonOficial: '', categoriaTexto: 'Libre',
+            amarillasParaAcumulada: 3,
+            partidosDobleAmarilla: 1, multaDobleAmarilla: 100,
+            partidosAmarillasAcumuladas: 1, multaAmarillasAcumuladas: 100,
+            partidosRojaDirecta: 1, multaRojaDirecta: 150,
+            notasAdicionales: ''
+        };
+        function reg(dbRef, campo) {
+            const v = dbRef.reglamento && dbRef.reglamento[campo];
+            return (v === undefined || v === null || v === '') ? REGLAMENTO_DEFAULTS[campo] : v;
+        }
+
         let db = JSON.parse(localStorage.getItem('liga_premier_db')) || {
             equipos: [], jugadores: [], partidos: [], comunicados: [],
             arbitros: [], campos: [], xiIdealAdmin: {}, registrosCerrados: false, liguillaActiva: false,
@@ -1635,6 +1693,7 @@
             if (!obj.xiIdealAdmin) obj.xiIdealAdmin = {};
             if (!obj.disciplinaOverrides) obj.disciplinaOverrides = {};
             if (!obj.avisosDisciplinaEstado) obj.avisosDisciplinaEstado = {};
+            if (!obj.reglamento) obj.reglamento = {};
             if (obj.registrosCerrados === undefined) obj.registrosCerrados = false;
             if (obj.liguillaActiva === undefined) obj.liguillaActiva = false;
             if (!obj.config) obj.config = crearConfigCredencialDefault();
@@ -2138,13 +2197,13 @@
                 faseAnterior = fase;
 
                 if (ev.dobleAmarilla) {
-                    sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'doble_amarilla', partidosCastigo: 1, expulsionDefinitiva: false, motivo: 'Doble amarilla (expulsión)', multaMonto: 100 });
+                    sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'doble_amarilla', partidosCastigo: reg(dbRef, 'partidosDobleAmarilla'), expulsionDefinitiva: false, motivo: 'Doble amarilla (expulsión)', multaMonto: reg(dbRef, 'multaDobleAmarilla') });
                     contador = 0;
                 } else {
                     for (let i = 0; i < ev.amarillas; i++) {
                         contador++;
-                        if (contador >= 3) {
-                            sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'amarillas_acumuladas', partidosCastigo: 1, expulsionDefinitiva: false, motivo: '3 amarillas acumuladas', multaMonto: 100 });
+                        if (contador >= reg(dbRef, 'amarillasParaAcumulada')) {
+                            sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'amarillas_acumuladas', partidosCastigo: reg(dbRef, 'partidosAmarillasAcumuladas'), expulsionDefinitiva: false, motivo: `${reg(dbRef, 'amarillasParaAcumulada')} amarillas acumuladas`, multaMonto: reg(dbRef, 'multaAmarillasAcumuladas') });
                             contador = 0;
                         }
                     }
@@ -2153,10 +2212,10 @@
                     const ov = (dbRef.disciplinaOverrides || {})[`${ev.partidoId}_${jugadorId}`];
                     sanciones.push({
                         partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'roja_directa',
-                        partidosCastigo: ov?.expulsionDefinitiva ? Infinity : (ov?.partidosCastigo || 1),
+                        partidosCastigo: ov?.expulsionDefinitiva ? Infinity : (ov?.partidosCastigo || reg(dbRef, 'partidosRojaDirecta')),
                         expulsionDefinitiva: !!ov?.expulsionDefinitiva,
-                        motivo: ov?.motivo || 'Falta táctica (1 partido por defecto)',
-                        multaMonto: 150
+                        motivo: ov?.motivo || `Falta táctica (${reg(dbRef, 'partidosRojaDirecta')} partido(s) por defecto)`,
+                        multaMonto: reg(dbRef, 'multaRojaDirecta')
                     });
                     contador = 0;
                 }
@@ -2430,6 +2489,7 @@
             renderizarCorreccionEstadisticas();
             actualizarVisibilidadLiguillaAdmin();
             cargarConfigFormulario();
+            cargarReglamentoFormulario();
         });
 
         function cargarConfigFormulario() {
@@ -2447,6 +2507,67 @@
             document.getElementById('cfg-presidente').value = c.presidente || '';
             document.getElementById('cfg-url-publica').value = c.urlPublica || '';
             actualizarPreviewEscudoCredencial();
+        }
+
+        // Carga en el formulario del Reglamento los valores guardados en db.reglamento
+        // (o el valor por defecto de REGLAMENTO_DEFAULTS si el admin nunca lo ha tocado).
+        function cargarReglamentoFormulario() {
+            const campo = document.getElementById('reg-duracion-minutos');
+            if (!campo) return; // el formulario todavía no existe en el DOM
+            campo.value = reg(db, 'duracionMinutos');
+            document.getElementById('reg-num-tiempos').value = reg(db, 'numTiempos');
+            document.getElementById('reg-tolerancia').value = reg(db, 'toleranciaMinutos');
+            document.getElementById('reg-titulares').value = reg(db, 'jugadoresTitulares');
+            document.getElementById('reg-suplentes').value = reg(db, 'jugadoresSuplentes');
+            document.getElementById('reg-categoria').value = reg(db, 'categoriaTexto');
+            document.getElementById('reg-balon').value = reg(db, 'balonOficial');
+            document.getElementById('reg-cuota-arbitraje').value = reg(db, 'cuotaArbitraje');
+            document.getElementById('reg-cuota-inscripcion-equipo').value = reg(db, 'cuotaInscripcionEquipo');
+            document.getElementById('reg-cuota-inscripcion-jugador').value = reg(db, 'cuotaInscripcionJugador');
+            document.getElementById('reg-amarillas-para-acumulada').value = reg(db, 'amarillasParaAcumulada');
+            document.getElementById('reg-partidos-acumuladas').value = reg(db, 'partidosAmarillasAcumuladas');
+            document.getElementById('reg-multa-acumuladas').value = reg(db, 'multaAmarillasAcumuladas');
+            document.getElementById('reg-partidos-doble-amarilla').value = reg(db, 'partidosDobleAmarilla');
+            document.getElementById('reg-multa-doble-amarilla').value = reg(db, 'multaDobleAmarilla');
+            document.getElementById('reg-partidos-roja').value = reg(db, 'partidosRojaDirecta');
+            document.getElementById('reg-multa-roja').value = reg(db, 'multaRojaDirecta');
+            document.getElementById('reg-notas').value = reg(db, 'notasAdicionales');
+            actualizarTextoReglasDisciplina();
+        }
+
+        // Reescribe la descripción del Centro de Disciplina con las reglas ACTUALES del Reglamento,
+        // para que nunca quede desactualizada aunque el admin cambie los números.
+        function actualizarTextoReglasDisciplina() {
+            const p = document.getElementById('disciplina-reglas-texto');
+            if (!p) return;
+            p.innerText = `Se genera solo con las tarjetas que cierra el árbitro: ${reg(db, 'amarillasParaAcumulada')} amarillas acumuladas en partidos distintos = ${reg(db, 'partidosAmarillasAcumuladas')} partido(s) de suspensión y $${reg(db, 'multaAmarillasAcumuladas')} de multa; doble amarilla = ${reg(db, 'partidosDobleAmarilla')} partido(s) y $${reg(db, 'multaDobleAmarilla')} de multa; roja directa = ${reg(db, 'partidosRojaDirecta')} partido(s) por defecto (falta táctica) y $${reg(db, 'multaRojaDirecta')} de multa — si fue por insultar al árbitro, escupir o iniciar una riña, edítala en la tabla de abajo para ponerle más partidos o expulsión definitiva del torneo. Las amarillas acumuladas se borran solas al terminar la Jornada 9 (fin de fase regular). Estos números se editan en "📖 Reglamento Oficial de la Liga".`;
+        }
+
+        // Lee el formulario del Reglamento, lo guarda en db.reglamento y publica los cambios.
+        function guardarReglamento() {
+            db.reglamento = {
+                duracionMinutos: parseInt(document.getElementById('reg-duracion-minutos').value) || REGLAMENTO_DEFAULTS.duracionMinutos,
+                numTiempos: parseInt(document.getElementById('reg-num-tiempos').value) || REGLAMENTO_DEFAULTS.numTiempos,
+                toleranciaMinutos: parseInt(document.getElementById('reg-tolerancia').value) || 0,
+                jugadoresTitulares: parseInt(document.getElementById('reg-titulares').value) || REGLAMENTO_DEFAULTS.jugadoresTitulares,
+                jugadoresSuplentes: parseInt(document.getElementById('reg-suplentes').value) || 0,
+                categoriaTexto: document.getElementById('reg-categoria').value.trim(),
+                balonOficial: document.getElementById('reg-balon').value.trim(),
+                cuotaArbitraje: parseInt(document.getElementById('reg-cuota-arbitraje').value) || 0,
+                cuotaInscripcionEquipo: parseInt(document.getElementById('reg-cuota-inscripcion-equipo').value) || 0,
+                cuotaInscripcionJugador: parseInt(document.getElementById('reg-cuota-inscripcion-jugador').value) || 0,
+                amarillasParaAcumulada: parseInt(document.getElementById('reg-amarillas-para-acumulada').value) || REGLAMENTO_DEFAULTS.amarillasParaAcumulada,
+                partidosAmarillasAcumuladas: parseInt(document.getElementById('reg-partidos-acumuladas').value) || 0,
+                multaAmarillasAcumuladas: parseInt(document.getElementById('reg-multa-acumuladas').value) || 0,
+                partidosDobleAmarilla: parseInt(document.getElementById('reg-partidos-doble-amarilla').value) || 0,
+                multaDobleAmarilla: parseInt(document.getElementById('reg-multa-doble-amarilla').value) || 0,
+                partidosRojaDirecta: parseInt(document.getElementById('reg-partidos-roja').value) || 0,
+                multaRojaDirecta: parseInt(document.getElementById('reg-multa-roja').value) || 0,
+                notasAdicionales: document.getElementById('reg-notas').value.trim()
+            };
+            actualizarTextoReglasDisciplina();
+            guardarDB();
+            alert('✅ Reglamento guardado y publicado.');
         }
 
         function actualizarPreviewEscudoCredencial() {

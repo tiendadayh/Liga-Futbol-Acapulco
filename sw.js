@@ -3,7 +3,7 @@
 // si hay un mal momento de señal. Los datos en vivo siguen viniendo
 // de Firebase, esto solo cachea las páginas y los íconos.
 
-const CACHE_NAME = 'liga-acapulco-v1';
+const CACHE_NAME = 'liga-acapulco-v2';
 const APP_SHELL = [
     './index.html',
     './admin.html',
