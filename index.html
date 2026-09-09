@@ -445,7 +445,6 @@
             <a href="#xi-sec">XI MVP</a>
             <a href="#jugadores-sec">Jugadores</a>
             <a href="#equipos-arbitros-sec">Equipos y Árbitros</a>
-            <a href="#reglamento-sec">Reglamento</a>
             <a href="#registro-sec">Inscribirse</a>
         </div>
     </nav>
@@ -612,15 +611,6 @@
 
             <h2 style="margin-top:30px;">🎙️ Árbitros Oficiales</h2>
             <div id="grid-arbitros-publico" class="grid"></div>
-        </section>
-
-        <!-- REGLAMENTO OFICIAL (editable desde el admin, siempre al día) -->
-        <section id="reglamento-sec" class="card-section" style="border-top-color: #0d2a4d;">
-            <div class="header-section-flex">
-                <h2>📖 Reglamento Oficial</h2>
-                <button type="button" onclick="imprimirReglamento()" style="width:auto; background:#0d2a4d;">🖨️ Descargar / Imprimir PDF</button>
-            </div>
-            <div id="reglamento-publico-body"></div>
         </section>
 
         <!-- REGISTRO DE JUGADORES DESDE LA WEB PÚBLICA -->
@@ -874,9 +864,7 @@
         // --- Logo del sitio (encabezado) personalizable desde admin.html ---
         const LOGO_LIGA_DEFAULT = document.querySelector('.site-header-logo') ? document.querySelector('.site-header-logo').src : '';
         // ---- PWA: registro de service worker e instalación como app ----
-        if ('serviceWorker' in navigator && !['localhost', '127.0.0.1'].includes(location.hostname)) {
-            // El Service Worker solo se registra en el sitio publicado (no en Live Server),
-            // para que mientras programas siempre veas tus cambios al instante.
+        if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').catch(() => {});
             });
@@ -909,28 +897,10 @@
             logo.src = (db.config && db.config.logoSitio) ? db.config.logoSitio : LOGO_LIGA_DEFAULT;
         }
 
-        // Mismos valores por defecto del Reglamento que admin.html (ver ahí el detalle). Se
-        // usan mientras el admin no haya guardado los suyos propios en db.reglamento.
-        const REGLAMENTO_DEFAULTS = {
-            duracionMinutos: 25, numTiempos: 2, toleranciaMinutos: 10,
-            jugadoresTitulares: 7, jugadoresSuplentes: 5,
-            cuotaArbitraje: 300, cuotaInscripcionEquipo: 0, cuotaInscripcionJugador: 0,
-            balonOficial: '', categoriaTexto: 'Libre',
-            amarillasParaAcumulada: 3,
-            partidosDobleAmarilla: 1, multaDobleAmarilla: 100,
-            partidosAmarillasAcumuladas: 1, multaAmarillasAcumuladas: 100,
-            partidosRojaDirecta: 1, multaRojaDirecta: 150,
-            notasAdicionales: ''
-        };
-        function reg(dbRef, campo) {
-            const v = dbRef.reglamento && dbRef.reglamento[campo];
-            return (v === undefined || v === null || v === '') ? REGLAMENTO_DEFAULTS[campo] : v;
-        }
-
         let db = JSON.parse(localStorage.getItem('liga_premier_db')) || { 
             equipos: [], jugadores: [], partidos: [], comunicados: [], 
             arbitros: [], campos: [], xiIdealAdmin: {}, registrosCerrados: false, liguillaActiva: false,
-            historialFichajes: [], solicitudes: [], votosMvp: {}, reglamento: {}
+            historialFichajes: [], solicitudes: [], votosMvp: {}
         };
 
         function normalizarDB(obj) {
@@ -948,7 +918,6 @@
             if (obj.registrosCerrados === undefined) obj.registrosCerrados = false;
             if (obj.liguillaActiva === undefined) obj.liguillaActiva = false;
             if (!obj.disciplinaOverrides) obj.disciplinaOverrides = {};
-            if (!obj.reglamento) obj.reglamento = {};
             return obj;
         }
         normalizarDB(db);
@@ -1241,84 +1210,9 @@
             wrap.classList.remove('hidden');
         }
 
-        // Arma el contenido visual de "📖 Reglamento Oficial" a partir de db.reglamento
-        // (con los valores por defecto de REGLAMENTO_DEFAULTS mientras el admin no guarde el suyo).
-        function contenidoReglamentoHTML() {
-            const dato = (etiqueta, valor) => `<div><span style="display:block; font-size:0.75rem; color:#888;">${etiqueta}</span><span style="display:block; font-weight:bold;">${valor}</span></div>`;
-            const filaCuota = (etiqueta, valor) => dato(etiqueta, valor > 0 ? '$' + valor : 'Sin costo');
-            const rejilla = contenido => `<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:8px 16px; margin-bottom:10px;">${contenido}</div>`;
-            const notas = reg(db, 'notasAdicionales');
-            return `
-                <h4 style="color:#0d2a4d; margin:16px 0 8px;">⚽ Formato del partido</h4>
-                ${rejilla(
-                    dato('Duración', `${reg(db, 'numTiempos')} tiempos de ${reg(db, 'duracionMinutos')} min`) +
-                    dato('Tolerancia de llegada', `${reg(db, 'toleranciaMinutos')} min`) +
-                    dato('Jugadores', `${reg(db, 'jugadoresTitulares')} titulares + ${reg(db, 'jugadoresSuplentes')} suplentes`) +
-                    dato('Categoría', reg(db, 'categoriaTexto') || '—') +
-                    (reg(db, 'balonOficial') ? dato('Balón oficial', reg(db, 'balonOficial')) : '')
-                )}
-
-                <h4 style="color:#0d2a4d; margin:16px 0 8px;">💵 Cuotas</h4>
-                ${rejilla(
-                    filaCuota('Arbitraje por partido', reg(db, 'cuotaArbitraje')) +
-                    filaCuota('Inscripción por equipo', reg(db, 'cuotaInscripcionEquipo')) +
-                    filaCuota('Inscripción por jugador', reg(db, 'cuotaInscripcionJugador'))
-                )}
-
-                <h4 style="color:#0d2a4d; margin:16px 0 8px;">🟨🟥 Sanciones y multas</h4>
-                ${rejilla(
-                    dato(`${reg(db, 'amarillasParaAcumulada')} amarillas acumuladas`, `${reg(db, 'partidosAmarillasAcumuladas')} partido(s) + $${reg(db, 'multaAmarillasAcumuladas')}`) +
-                    dato('Doble amarilla', `${reg(db, 'partidosDobleAmarilla')} partido(s) + $${reg(db, 'multaDobleAmarilla')}`) +
-                    dato('Roja directa', `${reg(db, 'partidosRojaDirecta')} partido(s) por defecto + $${reg(db, 'multaRojaDirecta')}`)
-                )}
-                <p style="font-size:0.78rem; color:gray;">Una roja directa puede subir de partidos (hasta expulsión definitiva del torneo) si fue por insultar al árbitro, escupir o iniciar una riña; lo decide la administración de la liga caso por caso.</p>
-                ${notas ? `<h4 style="color:#0d2a4d; margin:16px 0 8px;">📝 Notas adicionales</h4><p style="white-space:pre-line;">${notas}</p>` : ''}
-            `;
-        }
-
-        function renderizarReglamentoPublico() {
-            const cont = document.getElementById('reglamento-publico-body');
-            if (!cont) return;
-            cont.innerHTML = contenidoReglamentoHTML();
-        }
-
-        // Abre una ventana aparte solo con el reglamento, ya formateada para imprimir /
-        // "Guardar como PDF" desde el diálogo de impresión del navegador.
-        function imprimirReglamento() {
-            const nombreLiga = (db.config && db.config.nombreLiga) || 'Liga de Fútbol';
-            const ventana = window.open('', '_blank');
-            ventana.document.write(`
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <title>Reglamento Oficial - ${nombreLiga}</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; color:#222; padding:30px; max-width:700px; margin:0 auto; }
-                        h1 { color:#0d2a4d; text-align:center; margin-bottom:4px; }
-                        p.sub { text-align:center; color:#666; margin-top:0; margin-bottom:24px; }
-                        h4 { color:#0d2a4d; margin:20px 0 8px; }
-                        .ficha-tecnica-datos { display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; margin-bottom:10px; }
-                        .lbl { display:block; font-size:0.75rem; color:#888; }
-                        .val { display:block; font-weight:bold; }
-                        @media print { body { padding:10px; } }
-                    </style>
-                </head>
-                <body>
-                    <h1>📖 Reglamento Oficial</h1>
-                    <p class="sub">${nombreLiga}</p>
-                    ${contenidoReglamentoHTML()}
-                </body>
-                </html>
-            `);
-            ventana.document.close();
-            ventana.focus();
-            setTimeout(() => ventana.print(), 400);
-        }
-
         function actualizarVistaTodo() {
             aplicarLogoSitio();
             renderizarPatrocinadores();
-            renderizarReglamentoPublico();
             const contNoticias = document.getElementById('noticias-contenedor');
             const estiloTipo = {
                 aviso: { color: '#0d2a4d', etiqueta: '📢 Aviso' },
@@ -1938,13 +1832,13 @@
                 faseAnterior = fase;
 
                 if (ev.dobleAmarilla) {
-                    sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'doble_amarilla', partidosCastigo: reg(dbRef, 'partidosDobleAmarilla'), expulsionDefinitiva: false });
+                    sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'doble_amarilla', partidosCastigo: 1, expulsionDefinitiva: false });
                     contador = 0;
                 } else {
                     for (let i = 0; i < ev.amarillas; i++) {
                         contador++;
-                        if (contador >= reg(dbRef, 'amarillasParaAcumulada')) {
-                            sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'amarillas_acumuladas', partidosCastigo: reg(dbRef, 'partidosAmarillasAcumuladas'), expulsionDefinitiva: false });
+                        if (contador >= 3) {
+                            sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'amarillas_acumuladas', partidosCastigo: 1, expulsionDefinitiva: false });
                             contador = 0;
                         }
                     }
@@ -1953,7 +1847,7 @@
                     const ov = (dbRef.disciplinaOverrides || {})[`${ev.partidoId}_${jugadorId}`];
                     sanciones.push({
                         partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'roja_directa',
-                        partidosCastigo: ov?.expulsionDefinitiva ? Infinity : (ov?.partidosCastigo || reg(dbRef, 'partidosRojaDirecta')),
+                        partidosCastigo: ov?.expulsionDefinitiva ? Infinity : (ov?.partidosCastigo || 1),
                         expulsionDefinitiva: !!ov?.expulsionDefinitiva
                     });
                     contador = 0;

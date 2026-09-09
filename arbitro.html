@@ -857,9 +857,7 @@
         // --- Logo del sitio (encabezado) personalizable desde admin.html ---
         const LOGO_LIGA_DEFAULT = document.querySelector('.arbitro-header-logo') ? document.querySelector('.arbitro-header-logo').src : '';
         // ---- PWA: registro de service worker e instalación como app ----
-        if ('serviceWorker' in navigator && !['localhost', '127.0.0.1'].includes(location.hostname)) {
-            // El Service Worker solo se registra en el sitio publicado (no en Live Server),
-            // para que mientras programas siempre veas tus cambios al instante.
+        if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').catch(() => {});
             });
@@ -930,28 +928,10 @@
             aplicarIdentidadPorPin();
         }
 
-        // Mismos valores por defecto del Reglamento que admin.html (ver ahí el detalle). Se
-        // usan mientras el admin no haya guardado los suyos propios en db.reglamento.
-        const REGLAMENTO_DEFAULTS = {
-            duracionMinutos: 25, numTiempos: 2, toleranciaMinutos: 10,
-            jugadoresTitulares: 7, jugadoresSuplentes: 5,
-            cuotaArbitraje: 300, cuotaInscripcionEquipo: 0, cuotaInscripcionJugador: 0,
-            balonOficial: '', categoriaTexto: 'Libre',
-            amarillasParaAcumulada: 3,
-            partidosDobleAmarilla: 1, multaDobleAmarilla: 100,
-            partidosAmarillasAcumuladas: 1, multaAmarillasAcumuladas: 100,
-            partidosRojaDirecta: 1, multaRojaDirecta: 150,
-            notasAdicionales: ''
-        };
-        function reg(dbRef, campo) {
-            const v = dbRef.reglamento && dbRef.reglamento[campo];
-            return (v === undefined || v === null || v === '') ? REGLAMENTO_DEFAULTS[campo] : v;
-        }
-
         let db = JSON.parse(localStorage.getItem('liga_premier_db')) || {
             equipos: [], jugadores: [], partidos: [], comunicados: [],
             arbitros: [], xiIdealAdmin: {}, registrosCerrados: false, liguillaActiva: false,
-            historialFichajes: [], solicitudes: [], finanzas: {}, votosMvp: {}, reglamento: {}
+            historialFichajes: [], solicitudes: [], finanzas: {}, votosMvp: {}
         };
         function normalizarDB(obj) {
             if (!obj.equipos) obj.equipos = [];
@@ -968,7 +948,6 @@
             if (obj.registrosCerrados === undefined) obj.registrosCerrados = false;
             if (obj.liguillaActiva === undefined) obj.liguillaActiva = false;
             if (!obj.disciplinaOverrides) obj.disciplinaOverrides = {};
-            if (!obj.reglamento) obj.reglamento = {};
             return obj;
         }
         normalizarDB(db);
@@ -1166,13 +1145,13 @@
                 faseAnterior = fase;
 
                 if (ev.dobleAmarilla) {
-                    sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'doble_amarilla', partidosCastigo: reg(dbRef, 'partidosDobleAmarilla'), expulsionDefinitiva: false, multaMonto: reg(dbRef, 'multaDobleAmarilla') });
+                    sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'doble_amarilla', partidosCastigo: 1, expulsionDefinitiva: false, multaMonto: 100 });
                     contador = 0;
                 } else {
                     for (let i = 0; i < ev.amarillas; i++) {
                         contador++;
-                        if (contador >= reg(dbRef, 'amarillasParaAcumulada')) {
-                            sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'amarillas_acumuladas', partidosCastigo: reg(dbRef, 'partidosAmarillasAcumuladas'), expulsionDefinitiva: false, multaMonto: reg(dbRef, 'multaAmarillasAcumuladas') });
+                        if (contador >= 3) {
+                            sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'amarillas_acumuladas', partidosCastigo: 1, expulsionDefinitiva: false, multaMonto: 100 });
                             contador = 0;
                         }
                     }
@@ -1181,9 +1160,9 @@
                     const ov = (dbRef.disciplinaOverrides || {})[`${ev.partidoId}_${jugadorId}`];
                     sanciones.push({
                         partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'roja_directa',
-                        partidosCastigo: ov?.expulsionDefinitiva ? Infinity : (ov?.partidosCastigo || reg(dbRef, 'partidosRojaDirecta')),
+                        partidosCastigo: ov?.expulsionDefinitiva ? Infinity : (ov?.partidosCastigo || 1),
                         expulsionDefinitiva: !!ov?.expulsionDefinitiva,
-                        multaMonto: reg(dbRef, 'multaRojaDirecta')
+                        multaMonto: 150
                     });
                     contador = 0;
                 }
