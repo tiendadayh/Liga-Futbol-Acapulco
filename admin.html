@@ -811,8 +811,9 @@
     <div class="admin-grid">
         <!-- CREAR COMUNICADO / AVISO -->
         <div class="admin-box">
-            <h3>Publicar Anuncio / Sanción</h3>
+            <h3 id="titulo-form-comunicado">Publicar Anuncio / Sanción</h3>
             <form id="form-comunicado">
+                <input type="hidden" id="editcom-id" value="">
                 <input type="text" id="com-titulo" placeholder="Título del Aviso" required>
                 <select id="com-tipo">
                     <option value="aviso">📢 Aviso General / Logística</option>
@@ -821,7 +822,11 @@
                 <textarea id="com-contenido" rows="3" placeholder="Redactar el texto aquí..." required></textarea>
                 <label>Portada:</label>
                 <input type="file" id="com-foto" accept="image/*">
-                <button type="submit">Publicar en Tablón</button>
+                <small id="nota-foto-actual-comunicado" style="display:none; color:#888;">Deja este campo vacío para conservar la imagen actual.</small>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+                    <button type="submit" id="btn-submit-comunicado">Publicar en Tablón</button>
+                    <button type="button" id="btn-cancelar-edicion-comunicado" style="display:none; background:#888;" onclick="cancelarEdicionComunicado()">Cancelar edición</button>
+                </div>
             </form>
         </div>
 
@@ -1023,6 +1028,8 @@
                 </select>
                 <button type="submit" style="background:var(--secondary);">Ejecutar Traspaso</button>
             </form>
+            <h4 style="margin:18px 0 8px; font-size:0.9rem; color:var(--secondary);">Historial de Fichajes</h4>
+            <div id="gestion-lista-fichajes" class="gestion-lista"></div>
         </div>
     </div>
 
@@ -1362,6 +1369,26 @@
                     </label>
                 </div>
 
+                <button type="submit">💾 Guardar Cambios</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDITAR REGISTRO DE FICHAJE -->
+    <div id="modal-editar-fichaje" class="modal-overlay" style="display:none;" onclick="if(event.target === this) cerrarEdicionFichaje()">
+        <div class="modal-box">
+            <button type="button" class="close-modal-gestion" onclick="cerrarEdicionFichaje()">×</button>
+            <h3>✏️ Editar Fichaje</h3>
+            <form id="form-editar-fichaje">
+                <input type="hidden" id="editfichaje-id">
+                <label>Jugador:</label>
+                <input type="text" id="editfichaje-jugador" required>
+                <label>Origen:</label>
+                <input type="text" id="editfichaje-origen" placeholder="Ej. Agente Libre o nombre de equipo">
+                <label>Destino:</label>
+                <input type="text" id="editfichaje-destino" placeholder="Ej. Agente Libre o nombre de equipo">
+                <label>Fecha:</label>
+                <input type="text" id="editfichaje-fecha" placeholder="dd/mm/aaaa">
                 <button type="submit">💾 Guardar Cambios</button>
             </form>
         </div>
@@ -2649,9 +2676,22 @@
         function setupFormularios() {
             document.getElementById('form-comunicado').addEventListener('submit', async function (e) {
                 e.preventDefault();
+                const idEditando = document.getElementById('editcom-id').value;
                 const fotoB64 = await convertirImagenABase64(document.getElementById('com-foto'));
-                db.comunicados.unshift({ id: Date.now(), titulo: document.getElementById('com-titulo').value.trim(), tipo: document.getElementById('com-tipo').value, contenido: document.getElementById('com-contenido').value.trim(), imagen: fotoB64, fecha: new Date().toLocaleDateString('es-MX') });
-                this.reset(); guardarDB(); alert("Anuncio publicado.");
+                if (idEditando) {
+                    const c = (db.comunicados || []).find(x => x.id === parseInt(idEditando));
+                    if (!c) { cancelarEdicionComunicado(); return; }
+                    c.titulo = document.getElementById('com-titulo').value.trim();
+                    c.tipo = document.getElementById('com-tipo').value;
+                    c.contenido = document.getElementById('com-contenido').value.trim();
+                    if (fotoB64) c.imagen = fotoB64;
+                    cancelarEdicionComunicado();
+                    guardarDB();
+                    alert("Aviso actualizado.");
+                } else {
+                    db.comunicados.unshift({ id: Date.now(), titulo: document.getElementById('com-titulo').value.trim(), tipo: document.getElementById('com-tipo').value, contenido: document.getElementById('com-contenido').value.trim(), imagen: fotoB64, fecha: new Date().toLocaleDateString('es-MX') });
+                    this.reset(); guardarDB(); alert("Anuncio publicado.");
+                }
             });
 
             document.getElementById('form-add-equipo').addEventListener('submit', async function (e) {
@@ -2801,6 +2841,13 @@
                 const campoSeleccionado = db.campos.find(c => c.id === parseInt(document.getElementById('admin-part-estadio').value));
 
                 db.partidos.push({ id: Date.now(), jornada: parseInt(document.getElementById('admin-part-jornada').value), localId: locId, visitaId: visId, golesLocal: 0, golesVisita: 0, jugado: false, estadoVivo: 'programado', fecha: document.getElementById('admin-part-fecha').value, hora: document.getElementById('admin-part-hora').value, estadio: campoSeleccionado ? campoSeleccionado.nombre : '', campoId: campoSeleccionado ? campoSeleccionado.id : null, arbitro: document.getElementById('admin-part-arbitro').value, eventos: [], tarjetasDetalle: [], mvpJugadorId: null, penaltis: null });
+                const nombreLocPartido = db.equipos.find(e => e.id === locId)?.nombre || 'Local';
+                const nombreVisPartido = db.equipos.find(e => e.id === visId)?.nombre || 'Visita';
+                const jornadaTxtPartido = etiquetaJornada(parseInt(document.getElementById('admin-part-jornada').value));
+                const fechaPartidoTxt = document.getElementById('admin-part-fecha').value;
+                const horaPartidoTxt = document.getElementById('admin-part-hora').value;
+                agregarAvisoRegistro('aviso', '📅 Nuevo partido programado',
+                    `${nombreLocPartido} vs ${nombreVisPartido} · ${jornadaTxtPartido}${fechaPartidoTxt ? ' · ' + fechaPartidoTxt : ''}${horaPartidoTxt ? ' ' + horaPartidoTxt : ''}${campoSeleccionado ? ' · ' + campoSeleccionado.nombre : ''}.`);
                 this.reset(); document.getElementById('cancha-preview-partido').classList.add('hidden'); guardarDB(); alert("Partido Programado.");
             });
 
@@ -2949,6 +2996,20 @@
                 const tituloTraspaso = destino === 'libre' ? '🕊️ Jugador dejado en libertad' : '🔄 Traspaso de jugador';
                 agregarAvisoRegistro('traspaso', tituloTraspaso, `${jugador.nombre} pasa de ${nombreOrigen} a ${nombreDestino}.`, { jugadorId: jugador.id, imagen: jugador.foto || '' });
                 this.reset(); guardarDB(); alert(`Transferencia ejecutada: ${jugador.nombre} -> ${nombreDestino}`);
+            });
+
+            document.getElementById('form-editar-fichaje').addEventListener('submit', function (e) {
+                e.preventDefault();
+                const id = parseInt(document.getElementById('editfichaje-id').value);
+                const f = (db.historialFichajes || []).find(x => x.id === id);
+                if (!f) return;
+                f.jugador = document.getElementById('editfichaje-jugador').value.trim();
+                f.origen = document.getElementById('editfichaje-origen').value.trim();
+                f.destino = document.getElementById('editfichaje-destino').value.trim();
+                f.fecha = document.getElementById('editfichaje-fecha').value.trim();
+                cerrarEdicionFichaje();
+                guardarDB();
+                alert("Fichaje actualizado.");
             });
 
         }
@@ -4160,6 +4221,7 @@ ${cuerpo}`;
                 listaComunicados.innerHTML = (db.comunicados || []).length ? db.comunicados.map(c => {
                     const diasRestantes = c.autoGenerado ? Math.max(0, Math.ceil((TRES_DIAS_MS - (Date.now() - (c.ts || 0))) / (24 * 60 * 60 * 1000))) : null;
                     const notaAuto = c.autoGenerado ? ` · <span style="color:#888;">se quita solo en ${diasRestantes} día(s)</span>` : '';
+                    const esEditable = c.tipo === 'aviso' || c.tipo === 'sancion';
                     return `
                     <div class="gestion-fila">
                         <div class="gestion-info">
@@ -4167,10 +4229,26 @@ ${cuerpo}`;
                             <span>${c.fecha || ''}${notaAuto}</span>
                         </div>
                         <div class="gestion-acciones">
+                            ${esEditable ? `<button type="button" class="btn-editar-fila" onclick="editarComunicado(${c.id})">✏️</button>` : ''}
                             <button type="button" class="btn-eliminar-fila" onclick="eliminarComunicado(${c.id})">🗑️</button>
                         </div>
                     </div>`;
                 }).join('') : '<p style="font-size:0.8rem; color:#888;">Sin avisos ni crónicas publicadas.</p>';
+            }
+
+            const listaFichajes = document.getElementById('gestion-lista-fichajes');
+            if (listaFichajes) {
+                listaFichajes.innerHTML = (db.historialFichajes || []).length ? db.historialFichajes.map(f => `
+                    <div class="gestion-fila">
+                        <div class="gestion-info">
+                            <strong>${f.jugador}</strong>
+                            <span>${f.origen || '—'} → ${f.destino || '—'} · ${f.fecha || ''}</span>
+                        </div>
+                        <div class="gestion-acciones">
+                            <button type="button" class="btn-editar-fila" onclick="editarFichaje(${f.id})">✏️</button>
+                            <button type="button" class="btn-eliminar-fila" onclick="eliminarFichaje(${f.id})">🗑️</button>
+                        </div>
+                    </div>`).join('') : '<p style="font-size:0.8rem; color:#888;">Sin fichajes registrados todavía.</p>';
             }
 
             const listaPatrocinadores = document.getElementById('gestion-lista-patrocinadores');
@@ -4442,6 +4520,57 @@ ${cuerpo}`;
             db.comunicados = db.comunicados.filter(x => x.id !== id);
             guardarDB();
             alert("Publicación eliminada del Tablón.");
+        }
+
+        // Precarga el formulario de "Publicar Anuncio / Sanción" con los datos de un aviso ya
+        // publicado (solo tipo 'aviso' o 'sancion', que son los que se crean desde este mismo
+        // formulario) para poder corregirlo en vez de tener que borrarlo y volver a redactarlo.
+        function editarComunicado(id) {
+            const c = (db.comunicados || []).find(x => x.id === id);
+            if (!c) return;
+            document.getElementById('editcom-id').value = c.id;
+            document.getElementById('com-titulo').value = c.titulo || '';
+            document.getElementById('com-tipo').value = c.tipo || 'aviso';
+            document.getElementById('com-contenido').value = c.contenido || '';
+            document.getElementById('com-foto').value = '';
+            document.getElementById('nota-foto-actual-comunicado').style.display = c.imagen ? 'block' : 'none';
+            document.getElementById('titulo-form-comunicado').innerText = '✏️ Editando Aviso';
+            document.getElementById('btn-submit-comunicado').innerText = '💾 Guardar Cambios';
+            document.getElementById('btn-cancelar-edicion-comunicado').style.display = 'inline-block';
+            document.getElementById('form-comunicado').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function cancelarEdicionComunicado() {
+            document.getElementById('editcom-id').value = '';
+            document.getElementById('form-comunicado').reset();
+            document.getElementById('titulo-form-comunicado').innerText = 'Publicar Anuncio / Sanción';
+            document.getElementById('btn-submit-comunicado').innerText = 'Publicar en Tablón';
+            document.getElementById('btn-cancelar-edicion-comunicado').style.display = 'none';
+            document.getElementById('nota-foto-actual-comunicado').style.display = 'none';
+        }
+
+        function editarFichaje(id) {
+            const f = (db.historialFichajes || []).find(x => x.id === id);
+            if (!f) return;
+            document.getElementById('editfichaje-id').value = f.id;
+            document.getElementById('editfichaje-jugador').value = f.jugador || '';
+            document.getElementById('editfichaje-origen').value = f.origen || '';
+            document.getElementById('editfichaje-destino').value = f.destino || '';
+            document.getElementById('editfichaje-fecha').value = f.fecha || '';
+            document.getElementById('modal-editar-fichaje').style.display = 'flex';
+        }
+
+        function cerrarEdicionFichaje() {
+            document.getElementById('modal-editar-fichaje').style.display = 'none';
+        }
+
+        function eliminarFichaje(id) {
+            const f = (db.historialFichajes || []).find(x => x.id === id);
+            if (!f) return;
+            if (!confirm(`¿Eliminar el registro de fichaje de "${f.jugador}"?`)) return;
+            db.historialFichajes = (db.historialFichajes || []).filter(x => x.id !== id);
+            guardarDB();
+            alert("Registro de fichaje eliminado.");
         }
 
         // Repara avisos de Registro/Traspaso/Disciplina publicados ANTES de que el sistema
