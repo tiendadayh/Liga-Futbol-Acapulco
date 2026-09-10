@@ -528,9 +528,20 @@
             <div id="noticias-contenedor" class="grid"></div>
         </section>
 
+        <!-- ENCUESTA RÁPIDA PÚBLICA -->
+        <section id="encuesta-sec" class="card-section hidden" style="border-top-color:#9c27b0;">
+            <h2>🗳️ Encuesta Rápida</h2>
+            <div id="encuesta-contenedor"></div>
+        </section>
+
         <!-- JORNADAS, VIVO Y VOTACIÓN MVP -->
         <section id="jornadas-sec" class="card-section">
-            <h2>Calendario & Resultados En Vivo</h2>
+            <div class="header-section-flex">
+                <h2>Calendario & Resultados En Vivo</h2>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="btn-export" onclick="compartirCarteleraJornada()" style="background:#ff9800;">📤 Compartir Cartelera</button>
+                </div>
+            </div>
             <div class="filter-container">
                 <select id="select-jornada-filtro">
                     <option value="1">Jornada 1</option><option value="2">Jornada 2</option><option value="3">Jornada 3</option><option value="4">Jornada 4</option><option value="5">Jornada 5</option><option value="6">Jornada 6</option><option value="7">Jornada 7</option><option value="8">Jornada 8</option><option value="9">Jornada 9</option>
@@ -997,7 +1008,7 @@
         let db = JSON.parse(localStorage.getItem('liga_premier_db')) || { 
             equipos: [], jugadores: [], partidos: [], comunicados: [], 
             arbitros: [], campos: [], xiIdealAdmin: {}, registrosCerrados: false, liguillaActiva: false,
-            historialFichajes: [], solicitudes: [], votosMvp: {}, reglamento: {}
+            historialFichajes: [], solicitudes: [], votosMvp: {}, reglamento: {}, encuesta: { activa: false }, encuestaVotos: {}
         };
 
         function normalizarDB(obj) {
@@ -1016,6 +1027,8 @@
             if (obj.liguillaActiva === undefined) obj.liguillaActiva = false;
             if (!obj.disciplinaOverrides) obj.disciplinaOverrides = {};
             if (!obj.reglamento) obj.reglamento = {};
+            if (!obj.encuesta) obj.encuesta = { activa: false };
+            if (!obj.encuestaVotos) obj.encuestaVotos = {};
             return obj;
         }
         normalizarDB(db);
@@ -1505,6 +1518,7 @@
             renderXI();
             renderizarEquiposArbitros();
             renderizarBannerEnVivo();
+            renderizarEncuesta();
             intentarAbrirFichaDesdeURL();
             restaurarDesbloqueoRegistroDeSesion();
         }
@@ -1584,6 +1598,84 @@
             segundo_tiempo: '2DO TIEMPO',
             en_curso: 'EN VIVO'
         };
+
+        // --- Encuesta Rápida Pública ---
+        // Muestra la encuesta publicada por el admin (db.encuesta) si está activa.
+        // Mientras no se haya votado ni esté cerrada, muestra los botones para votar;
+        // después muestra las barras de resultado en vivo (sincronizadas por Firebase).
+        function renderizarEncuesta() {
+            const sec = document.getElementById('encuesta-sec');
+            const cont = document.getElementById('encuesta-contenedor');
+            if (!sec || !cont) return;
+            const enc = db.encuesta;
+            if (!enc || !enc.activa || !enc.opciones || enc.opciones.length < 2) {
+                sec.classList.add('hidden');
+                return;
+            }
+            sec.classList.remove('hidden');
+
+            const votos = db.encuestaVotos || {};
+            const total = enc.opciones.reduce((s, o) => s + (votos[o.id] || 0), 0);
+            const claveVoto = 'voto_encuesta_' + enc.id;
+            const yaVoto = !!localStorage.getItem(claveVoto);
+            const mostrarResultados = enc.cerrada || yaVoto;
+
+            let html = `<p style="font-size:1.05rem; font-weight:700; color:var(--dark, #0b2f5c); text-align:center; margin-bottom:16px;">${enc.pregunta}</p>`;
+
+            if (mostrarResultados) {
+                html += enc.opciones.map(o => {
+                    const v = votos[o.id] || 0;
+                    const pct = total ? Math.round(v / total * 100) : 0;
+                    return `
+                    <div style="margin-bottom:12px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.88rem; margin-bottom:4px; gap:8px;">
+                            <span style="display:flex; align-items:center; gap:6px; font-weight:600;">${o.escudo ? `<img src="${o.escudo}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;" loading="lazy">` : ''}${o.texto}</span>
+                            <span style="color:var(--text-muted); white-space:nowrap;">${pct}% · ${v} voto${v === 1 ? '' : 's'}</span>
+                        </div>
+                        <div style="background:var(--border); border-radius:8px; height:16px; overflow:hidden;">
+                            <div style="width:${pct}%; background:linear-gradient(90deg, #9c27b0, #d1140f); height:100%; transition:width .4s;"></div>
+                        </div>
+                    </div>`;
+                }).join('');
+                html += `<p style="text-align:center; font-size:0.78rem; color:var(--text-muted); margin-top:10px;">${enc.cerrada ? '🔒 Votación cerrada.' : '✅ Ya votaste. Resultados en vivo.'} Total: ${total} voto${total === 1 ? '' : 's'}.</p>`;
+            } else {
+                html += `<div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
+                    ${enc.opciones.map(o => `
+                        <button type="button" onclick="votarEncuesta(${o.id})" style="display:flex; align-items:center; gap:8px; background:#fff; border:2px solid #9c27b0; color:#9c27b0; padding:10px 18px; border-radius:999px; font-weight:700; font-size:0.9rem; cursor:pointer;">
+                            ${o.escudo ? `<img src="${o.escudo}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;" loading="lazy">` : ''}${o.texto}
+                        </button>`).join('')}
+                </div>
+                <p style="text-align:center; font-size:0.75rem; color:var(--text-muted); margin-top:10px;">Vota una vez · Los resultados se actualizan en vivo.</p>`;
+            }
+
+            cont.innerHTML = html;
+        }
+
+        // Registra un voto SOLO en el nodo 'encuestaVotos' de Firebase (igual que las
+        // solicitudes públicas), para no requerir permiso de escritura sobre toda la base
+        // de datos. Usa una transacción para que los votos simultáneos de varias personas
+        // se sumen correctamente sin pisarse entre sí.
+        function votarEncuesta(opcionId) {
+            const enc = db.encuesta;
+            if (!enc || !enc.activa || enc.cerrada) return;
+            const claveVoto = 'voto_encuesta_' + enc.id;
+            if (localStorage.getItem(claveVoto)) return renderizarEncuesta();
+
+            recibiendoDeFirebase = true;
+            firebaseDbRef.child('encuestaVotos').child(String(opcionId)).transaction(actual => (actual || 0) + 1)
+                .then(() => {
+                    if (!db.encuestaVotos) db.encuestaVotos = {};
+                    db.encuestaVotos[opcionId] = (db.encuestaVotos[opcionId] || 0) + 1;
+                    localStorage.setItem(claveVoto, '1');
+                    localStorage.setItem('liga_premier_db', JSON.stringify(db));
+                    renderizarEncuesta();
+                })
+                .catch(err => {
+                    console.warn('No se pudo registrar el voto', err);
+                    alert('No se pudo registrar tu voto. Intenta de nuevo.');
+                })
+                .finally(() => { recibiendoDeFirebase = false; });
+        }
 
         // --- Banner de partido EN VIVO en la portada ---
         function renderizarBannerEnVivo() {
@@ -2631,6 +2723,178 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }, 'image/png');
+        }
+
+        // Genera una imagen tipo "cartelera" con TODOS los partidos de la jornada
+        // seleccionada (escudos, marcador o VS, fecha/hora/cancha de cada uno), lista
+        // para compartir en WhatsApp/redes. Devuelve null si esa jornada no tiene partidos.
+        async function generarBlobCartelera(jornada) {
+            const partidos = (db.partidos || []).filter(p => p.jornada === jornada && !p.oculto);
+            if (!partidos.length) return null;
+
+            const cargarImagen = (src) => new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => resolve(img);
+                img.onerror = () => resolve(null);
+                img.src = src || 'https://placehold.co/100';
+            });
+
+            const datosPartidos = await Promise.all(partidos.map(async p => {
+                const equipoL = db.equipos.find(e => e.id === p.localId);
+                const equipoV = db.equipos.find(e => e.id === p.visitaId);
+                const [imgL, imgV] = await Promise.all([cargarImagen(equipoL?.escudo), cargarImagen(equipoV?.escudo)]);
+                return { p, nameL: equipoL?.nombre || 'Local', nameV: equipoV?.nombre || 'Visita', imgL, imgV };
+            }));
+
+            const W = 1080;
+            const headerAlto = 240;
+            const cardAlto = 230;
+            const cardGap = 18;
+            const footerAlto = 60;
+            const H = headerAlto + datosPartidos.length * (cardAlto + cardGap) - cardGap + footerAlto;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = W; canvas.height = H;
+            const ctx = canvas.getContext('2d');
+
+            const grad = ctx.createLinearGradient(0, 0, 0, H);
+            grad.addColorStop(0, '#0b2f5c');
+            grad.addColorStop(1, '#123a66');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, W, H);
+
+            ctx.fillStyle = '#d1140f';
+            ctx.fillRect(0, 0, W, 14);
+
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'alphabetic';
+            ctx.fillStyle = '#f0b429';
+            ctx.font = 'bold 36px Arial';
+            ctx.fillText('LIGA DE FUTBOL COSMAR SPORT CLUB', W / 2, 70);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 28px Arial';
+            ctx.fillText('🗓️ CARTELERA DE LA JORNADA', W / 2, 112);
+            ctx.fillStyle = '#f0b429';
+            ctx.font = 'bold 44px Arial';
+            ctx.fillText(etiquetaJornada(jornada).toUpperCase(), W / 2, 165);
+
+            // Rango de fechas de la jornada (si los partidos ya tienen fecha capturada).
+            const fechasValidas = datosPartidos.map(d => d.p.fecha).filter(Boolean).sort();
+            if (fechasValidas.length) {
+                const fmt = (f) => { const d = new Date(f + 'T00:00:00'); return isNaN(d) ? f : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }); };
+                const rango = fechasValidas[0] === fechasValidas[fechasValidas.length - 1]
+                    ? fmt(fechasValidas[0])
+                    : `Del ${fmt(fechasValidas[0])} al ${fmt(fechasValidas[fechasValidas.length - 1])}`;
+                ctx.font = '20px Arial';
+                ctx.fillStyle = '#cbd5e1';
+                ctx.fillText(rango, W / 2, 200);
+            }
+
+            ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+            ctx.beginPath(); ctx.moveTo(40, headerAlto - 15); ctx.lineTo(W - 40, headerAlto - 15); ctx.stroke();
+
+            const centerX = W / 2;
+            const localX = 150;
+            const visitaX = W - 150;
+
+            datosPartidos.forEach((d, idx) => {
+                const { p, nameL, nameV, imgL, imgV } = d;
+                const cardTop = headerAlto + idx * (cardAlto + cardGap);
+
+                ctx.fillStyle = 'rgba(255,255,255,0.06)';
+                if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(40, cardTop, W - 80, cardAlto, 14); ctx.fill(); }
+                else { ctx.fillRect(40, cardTop, W - 80, cardAlto); }
+
+                const enVivo = ESTADOS_PARTIDO_EN_VIVO.includes(p.estadoVivo) && !p.jugado;
+                let estadoTxt = 'PROGRAMADO', estadoColor = '#1f8fd6';
+                if (p.jugado) { estadoTxt = 'FINALIZADO'; estadoColor = '#2ec4b6'; }
+                else if (p.estadoVivo === 'medio_tiempo') { estadoTxt = 'MEDIO TIEMPO'; estadoColor = '#e0932e'; }
+                else if (enVivo) { estadoTxt = ETIQUETAS_ESTADO_PARTIDO[p.estadoVivo] || 'EN VIVO'; estadoColor = '#d1140f'; }
+
+                ctx.font = 'bold 16px Arial';
+                const badgeW = ctx.measureText(estadoTxt).width + 32;
+                ctx.fillStyle = estadoColor;
+                const badgeY = cardTop + 16;
+                if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(centerX - badgeW / 2, badgeY, badgeW, 30, 15); ctx.fill(); }
+                else { ctx.fillRect(centerX - badgeW / 2, badgeY, badgeW, 30); }
+                ctx.fillStyle = '#0b2f5c';
+                ctx.fillText(estadoTxt, centerX, badgeY + 21);
+
+                const escudoCy = cardTop + 95;
+                const escudoSize = 80;
+                function dibujarEscudo(img, cx) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(cx, escudoCy, escudoSize / 2, 0, Math.PI * 2);
+                    ctx.closePath();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fill();
+                    ctx.clip();
+                    if (img) ctx.drawImage(img, cx - escudoSize / 2, escudoCy - escudoSize / 2, escudoSize, escudoSize);
+                    ctx.restore();
+                    ctx.beginPath();
+                    ctx.arc(cx, escudoCy, escudoSize / 2, 0, Math.PI * 2);
+                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = '#f0b429';
+                    ctx.stroke();
+                }
+                dibujarEscudo(imgL, localX);
+                dibujarEscudo(imgV, visitaX);
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 20px Arial';
+                ajustarTextoAncho(ctx, nameL, localX, escudoCy + 60, 220);
+                ajustarTextoAncho(ctx, nameV, visitaX, escudoCy + 60, 220);
+
+                ctx.font = 'bold 46px Arial';
+                ctx.fillStyle = (p.jugado || enVivo) ? '#f0b429' : '#ffffff';
+                const centroTxt = (p.jugado || enVivo) ? `${p.golesLocal ?? 0} - ${p.golesVisita ?? 0}` : 'VS';
+                ctx.fillText(centroTxt, centerX, escudoCy + 12);
+
+                ctx.font = '17px Arial';
+                ctx.fillStyle = '#cbd5e1';
+                ctx.fillText(`📅 ${p.fecha || 'Fecha por definir'}   🕐 ${p.hora || 'Hora por definir'}`, centerX, cardTop + cardAlto - 46);
+                ctx.font = '16px Arial';
+                ctx.fillStyle = '#94a3b8';
+                ajustarTextoAncho(ctx, `🏟️ ${p.estadio || 'Campo por definir'}`, centerX, cardTop + cardAlto - 20, 420);
+            });
+
+            ctx.textAlign = 'center';
+            ctx.font = 'italic 18px Arial';
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText('Sitio Oficial · Liga de Futbol CoSmar SPORT CLUB', W / 2, H - 22);
+
+            const nombreArchivo = `cartelera-${etiquetaJornadaCorta(jornada)}-${new Date().toISOString().slice(0, 10)}.png`.replace(/\s+/g, '-');
+            return new Promise(resolve => {
+                canvas.toBlob(blob => resolve(blob ? { blob, nombreArchivo } : null), 'image/png');
+            });
+        }
+
+        // Comparte (o descarga, si el navegador no soporta compartir archivos) la
+        // cartelera de la jornada actualmente seleccionada en el filtro del calendario.
+        async function compartirCarteleraJornada() {
+            const jornada = parseInt(document.getElementById('select-jornada-filtro').value);
+            const resultado = await generarBlobCartelera(jornada);
+            if (!resultado) return alert('No hay partidos programados para esta jornada.');
+            const { blob, nombreArchivo } = resultado;
+            const archivo = new File([blob], nombreArchivo, { type: 'image/png' });
+
+            if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+                try {
+                    await navigator.share({ files: [archivo], title: `Cartelera · ${etiquetaJornada(jornada)}`, text: `Cartelera de la ${etiquetaJornada(jornada)} · Liga de Futbol CoSmar SPORT CLUB` });
+                    return;
+                } catch (err) { /* si el usuario cancela el share, caemos a la descarga */ }
+            }
+
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = nombreArchivo;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
 
         function verCedulaPublica(partidoId) {

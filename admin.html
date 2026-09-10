@@ -1458,6 +1458,37 @@
         <p id="fb-live-estado" style="font-size:0.78rem; color:#6b7280; margin-top:8px;"></p>
     </div>
 
+    <!-- MÓDULO: ENCUESTA RÁPIDA PÚBLICA -->
+    <div class="admin-box" style="margin-top: 25px; border-top-color: #9c27b0;">
+        <h3>🗳️ Encuesta Rápida Pública</h3>
+        <p style="font-size:0.8rem; color:#6b7280; margin-top:-6px;">Crea una encuesta para generar interacción antes de una fecha importante (ej. "¿Quién gana el clásico de esta jornada?"). Se muestra en el sitio público y cualquier visitante puede votar una vez por dispositivo. Los votos se ven aquí en vivo, pero la pregunta y las opciones solo se hacen públicas hasta que presiones "📤 Publicar cambios".</p>
+
+        <div id="encuesta-estado-actual" style="font-size:0.82rem; background:#f8f9fa; padding:8px 12px; border-radius:8px; margin-bottom:14px;"></div>
+
+        <label>Pregunta de la encuesta:</label>
+        <input type="text" id="encuesta-pregunta" placeholder='Ej. ¿Quién gana el clásico de esta jornada?'>
+
+        <label style="margin-top:10px; display:block;">Opciones:</label>
+        <div id="encuesta-opciones-lista" style="margin-top:6px; display:flex; flex-direction:column; gap:8px;"></div>
+
+        <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+            <select id="encuesta-nueva-opcion-equipo" style="flex:1; min-width:220px;">
+                <option value="">-- Agregar opción desde equipo registrado --</option>
+            </select>
+            <button type="button" onclick="agregarOpcionEncuestaDesdeEquipo()">➕ Agregar Equipo</button>
+            <button type="button" onclick="agregarOpcionEncuestaManual()" style="background:#6b7280;">➕ Opción de Texto (ej. Empate)</button>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
+            <button type="button" onclick="publicarEncuesta()" style="background:#9c27b0;">🗳️ Publicar Nueva Encuesta</button>
+            <button type="button" onclick="cerrarVotacionEncuesta()" style="background:#e0932e;">🔒 Cerrar Votación</button>
+            <button type="button" onclick="eliminarEncuesta()" style="background:#c62828;">🗑️ Eliminar Encuesta</button>
+        </div>
+
+        <h4 style="margin-bottom:6px;">Resultados en vivo:</h4>
+        <div id="encuesta-resultados-admin" style="font-size:0.85rem; color:#888;">Sin datos todavía.</div>
+    </div>
+
 
     <!-- CÉDULA ARBITRAL (SOLO LECTURA) Y CRÓNICA IA -->
     <div class="admin-box" style="margin-top: 25px; border-top-color: #1f8fd6;">
@@ -1573,6 +1604,14 @@
                 reproducirSonidoNuevaSolicitud();
                 mostrarAvisoAutoguardado('📥 ¡Nueva solicitud de registro recibida!');
             }
+        });
+
+        // --- Votos de la Encuesta Rápida: igual que las solicitudes, se escuchan en vivo
+        // (sin esperar a "Publicar cambios") para que veas los resultados llegar en tiempo real. ---
+        firebaseDbRef.child('encuestaVotos').on('value', function (snapshot) {
+            db.encuestaVotos = snapshot.val() || {};
+            localStorage.setItem('liga_premier_db', JSON.stringify(db));
+            renderizarEncuestaAdmin();
         });
 
         // --- Logo del sitio (encabezado) personalizable ---
@@ -1731,7 +1770,8 @@
         let db = JSON.parse(localStorage.getItem('liga_premier_db')) || {
             equipos: [], jugadores: [], partidos: [], comunicados: [],
             arbitros: [], campos: [], xiIdealAdmin: {}, registrosCerrados: false, liguillaActiva: false,
-            historialFichajes: [], solicitudes: [], finanzas: {}, votosMvp: {}, config: crearConfigCredencialDefault()
+            historialFichajes: [], solicitudes: [], finanzas: {}, votosMvp: {}, config: crearConfigCredencialDefault(),
+            encuesta: { activa: false }, encuestaVotos: {}
         };
 
         // Se asegura de que TODOS los campos que la app espera existan siempre en db,
@@ -1755,6 +1795,8 @@
             if (!obj.disciplinaOverrides) obj.disciplinaOverrides = {};
             if (!obj.avisosDisciplinaEstado) obj.avisosDisciplinaEstado = {};
             if (!obj.reglamento) obj.reglamento = {};
+            if (!obj.encuesta) obj.encuesta = { activa: false };
+            if (!obj.encuestaVotos) obj.encuestaVotos = {};
             if (obj.registrosCerrados === undefined) obj.registrosCerrados = false;
             if (obj.liguillaActiva === undefined) obj.liguillaActiva = false;
             if (!obj.config) obj.config = crearConfigCredencialDefault();
@@ -2077,6 +2119,7 @@
                 renderizarGestion();
             renderizarResumenDia();
             renderizarCorreccionEstadisticas();
+                cargarEncuestaFormulario();
                 mostrarFirebaseStatus('✅ Datos actualizados desde la nube.', false);
             }).catch(err => {
                 mostrarFirebaseStatus('❌ No se pudo traer la información. (' + err.message + ')', true);
@@ -2099,6 +2142,7 @@
                 renderizarGestion();
             renderizarResumenDia();
             renderizarCorreccionEstadisticas();
+                cargarEncuestaFormulario();
             }
         }).catch(() => { /* si falla, seguimos con lo que había en localStorage */ });
 
@@ -2554,6 +2598,7 @@
             actualizarVisibilidadLiguillaAdmin();
             cargarConfigFormulario();
             cargarReglamentoFormulario();
+            cargarEncuestaFormulario();
         });
 
         function cargarConfigFormulario() {
@@ -3673,6 +3718,142 @@
             document.getElementById('fb-live-estado').innerText = 'Se quitó la transmisión de este partido.';
         }
 
+        // ===================== ENCUESTA RÁPIDA PÚBLICA =====================
+        // encuestaOpcionesDraft es el borrador que se edita en pantalla ANTES de publicar
+        // (no toca db.encuesta hasta que el admin presiona "Publicar Nueva Encuesta").
+        let encuestaOpcionesDraft = [];
+
+        // Carga en el formulario la encuesta actualmente guardada (si existe), para que
+        // el admin pueda ver/editar la que ya está corriendo antes de crear una nueva.
+        function cargarEncuestaFormulario() {
+            const campoPregunta = document.getElementById('encuesta-pregunta');
+            if (!campoPregunta) return; // el formulario todavía no existe en el DOM
+            const enc = db.encuesta;
+            campoPregunta.value = (enc && enc.activa) ? (enc.pregunta || '') : '';
+            encuestaOpcionesDraft = (enc && enc.activa && Array.isArray(enc.opciones)) ? JSON.parse(JSON.stringify(enc.opciones)) : [];
+            renderizarOpcionesEncuestaDraft();
+            renderizarEncuestaAdmin();
+        }
+
+        function renderizarOpcionesEncuestaDraft() {
+            const cont = document.getElementById('encuesta-opciones-lista');
+            if (!cont) return;
+            cont.innerHTML = encuestaOpcionesDraft.map((o, idx) => `
+                <div style="display:flex; align-items:center; gap:8px; background:#f8f9fa; padding:6px 10px; border-radius:8px;">
+                    ${o.escudo ? `<img src="${o.escudo}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;">` : ''}
+                    <input type="text" value="${(o.texto || '').replace(/"/g, '&quot;')}" oninput="actualizarTextoOpcionEncuestaDraft(${idx}, this.value)" style="flex:1; padding:6px; border:1px solid var(--border); border-radius:6px;">
+                    <button type="button" onclick="quitarOpcionEncuestaDraft(${idx})" style="background:#c62828; padding:4px 10px;">✕</button>
+                </div>
+            `).join('') || '<p style="font-size:0.78rem; color:#888; margin:0;">Agrega al menos 2 opciones (desde un equipo registrado o de texto libre).</p>';
+        }
+
+        function actualizarTextoOpcionEncuestaDraft(idx, valor) {
+            if (encuestaOpcionesDraft[idx]) encuestaOpcionesDraft[idx].texto = valor;
+        }
+
+        function quitarOpcionEncuestaDraft(idx) {
+            encuestaOpcionesDraft.splice(idx, 1);
+            renderizarOpcionesEncuestaDraft();
+        }
+
+        function agregarOpcionEncuestaDesdeEquipo() {
+            const sel = document.getElementById('encuesta-nueva-opcion-equipo');
+            const eqId = parseInt(sel.value);
+            if (!eqId) return alert('Selecciona primero un equipo.');
+            const eq = db.equipos.find(e => e.id === eqId);
+            if (!eq) return;
+            encuestaOpcionesDraft.push({ id: Date.now() + encuestaOpcionesDraft.length, texto: eq.nombre, escudo: eq.escudo || null, equipoId: eq.id });
+            sel.value = '';
+            renderizarOpcionesEncuestaDraft();
+        }
+
+        function agregarOpcionEncuestaManual() {
+            const texto = prompt('Texto de la opción (ej. Empate):');
+            if (!texto || !texto.trim()) return;
+            encuestaOpcionesDraft.push({ id: Date.now() + encuestaOpcionesDraft.length, texto: texto.trim(), escudo: null, equipoId: null });
+            renderizarOpcionesEncuestaDraft();
+        }
+
+        // Publica una encuesta NUEVA: reemplaza la pregunta/opciones y reinicia los votos
+        // en 0 (los votos anteriores quedan guardados en el historial local del navegador,
+        // pero la encuesta pública arranca de cero). Requiere "Publicar cambios" después
+        // para que se vea en el sitio público.
+        function publicarEncuesta() {
+            const pregunta = document.getElementById('encuesta-pregunta').value.trim();
+            if (!pregunta) return alert('Escribe la pregunta de la encuesta.');
+            if (encuestaOpcionesDraft.length < 2) return alert('Agrega al menos 2 opciones.');
+            if (encuestaOpcionesDraft.some(o => !o.texto || !o.texto.trim())) return alert('Ninguna opción puede quedar con el texto vacío.');
+            if (!confirm('¿Publicar esta encuesta? Esto reemplazará la encuesta anterior (si había una) y reiniciará los votos en el sitio público.')) return;
+
+            db.encuesta = {
+                id: Date.now(),
+                pregunta,
+                opciones: encuestaOpcionesDraft.map(o => ({ id: o.id, texto: o.texto.trim(), escudo: o.escudo || null, equipoId: o.equipoId || null })),
+                activa: true,
+                cerrada: false,
+                creada: new Date().toISOString()
+            };
+            db.encuestaVotos = {};
+            guardarDB();
+            cargarEncuestaFormulario();
+            alert('✅ Encuesta guardada. No olvides presionar "📤 Publicar cambios" para que se vea en el sitio público.');
+        }
+
+        // Cierra la votación (deja de aceptar votos) pero mantiene los resultados visibles
+        // en el sitio público hasta que se elimine la encuesta.
+        function cerrarVotacionEncuesta() {
+            if (!db.encuesta || !db.encuesta.activa) return alert('No hay ninguna encuesta activa.');
+            if (db.encuesta.cerrada) return alert('Esa encuesta ya está cerrada.');
+            db.encuesta.cerrada = true;
+            guardarDB();
+            renderizarEncuestaAdmin();
+            alert('🔒 Votación cerrada. Los resultados seguirán visibles hasta que elimines la encuesta. No olvides "Publicar cambios".');
+        }
+
+        // Quita por completo la encuesta del sitio público y limpia el formulario.
+        function eliminarEncuesta() {
+            if (!db.encuesta || !db.encuesta.activa) return alert('No hay ninguna encuesta para eliminar.');
+            if (!confirm('¿Eliminar la encuesta del sitio público? Se perderán sus resultados.')) return;
+            db.encuesta = { activa: false };
+            db.encuestaVotos = {};
+            encuestaOpcionesDraft = [];
+            document.getElementById('encuesta-pregunta').value = '';
+            guardarDB();
+            renderizarOpcionesEncuestaDraft();
+            renderizarEncuestaAdmin();
+            alert('🗑️ Encuesta eliminada. No olvides "Publicar cambios".');
+        }
+
+        // Muestra el estado actual y las barras de resultado en vivo (se refresca solo
+        // cuando llegan votos nuevos desde Firebase, sin esperar a "Publicar cambios").
+        function renderizarEncuestaAdmin() {
+            const estadoEl = document.getElementById('encuesta-estado-actual');
+            const cont = document.getElementById('encuesta-resultados-admin');
+            if (!estadoEl || !cont) return;
+            const enc = db.encuesta;
+            if (!enc || !enc.activa) {
+                estadoEl.innerHTML = '<span style="color:#888;">No hay ninguna encuesta publicada actualmente.</span>';
+                cont.innerHTML = 'Sin datos todavía.';
+                return;
+            }
+            const votos = db.encuestaVotos || {};
+            const total = (enc.opciones || []).reduce((s, o) => s + (votos[o.id] || 0), 0);
+            estadoEl.innerHTML = `<b>Pregunta actual:</b> ${enc.pregunta} — <span style="color:${enc.cerrada ? '#c62828' : '#2e7d32'}; font-weight:600;">${enc.cerrada ? '🔒 Votación cerrada' : '🟢 Votando'}</span> · ${total} voto${total === 1 ? '' : 's'} en total`;
+            cont.innerHTML = (enc.opciones || []).map(o => {
+                const v = votos[o.id] || 0;
+                const pct = total ? Math.round(v / total * 100) : 0;
+                return `<div style="margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:3px;">
+                        <span>${o.escudo ? `<img src="${o.escudo}" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px;object-fit:cover;">` : ''}${o.texto}</span>
+                        <span>${v} voto${v === 1 ? '' : 's'} · ${pct}%</span>
+                    </div>
+                    <div style="background:#e2e8f0; border-radius:6px; height:14px; overflow:hidden;">
+                        <div style="width:${pct}%; background:#9c27b0; height:100%;"></div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
 
         function mostrarCedulaAdmin(partidoId) {
             const viewer = document.getElementById('admin-cedula-viewer');
@@ -4031,6 +4212,10 @@ ${cuerpo}`;
             const selFbLive = document.getElementById('fb-live-partido-select');
             if (selFbLive) {
                 selFbLive.innerHTML = '<option value="">-- Selecciona Partido --</option>' + db.partidos.map(p => `<option value="${p.id}">${p.jugado ? '✅' : '📅'} ${etiquetaJornadaCorta(p.jornada)}: ${db.equipos.find(e => e.id === p.localId)?.nombre} vs ${db.equipos.find(e => e.id === p.visitaId)?.nombre}${p.facebookEnVivo ? ' 🔴' : ''}</option>`).join('');
+            }
+            const selEncuestaEquipo = document.getElementById('encuesta-nueva-opcion-equipo');
+            if (selEncuestaEquipo) {
+                selEncuestaEquipo.innerHTML = '<option value="">-- Agregar opción desde equipo registrado --</option>' + db.equipos.map(eq => `<option value="${eq.id}">${eq.nombre}</option>`).join('');
             }
         }
 
