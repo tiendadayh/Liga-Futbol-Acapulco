@@ -1818,9 +1818,9 @@
         normalizarDB(db);
 
         // Los avisos de registro (equipo/jugador/árbitro) y traspasos se publican
-        // automáticamente en el Tablón y se autoeliminan pasados 3 días; los avisos
+        // automáticamente en el Tablón y se autoeliminan pasados 2 días; los avisos
         // manuales (formulario "Publicar Anuncio") no llevan esta marca y no expiran solos.
-        const TRES_DIAS_MS = 3 * 24 * 60 * 60 * 1000;
+        const TRES_DIAS_MS = 2 * 24 * 60 * 60 * 1000;
 
         // "extra" permite adjuntar datos opcionales al aviso, como el id del jugador
         // (jugadorId) y su foto (imagen), para que en el sitio público el aviso muestre
@@ -2380,7 +2380,7 @@
         // equipo pague la multa por tarjetas. Esta función compara ese estado contra el último
         // conocido para publicar un aviso en el Tablón cuando el jugador queda suspendido (ese aviso
         // NO se autoborra solo, permanece hasta que el jugador quede habilitado o el admin lo borre
-        // a mano), y otro aviso distinto y temporal (se autoborra a los 3 días) cuando por fin queda
+        // a mano), y otro aviso distinto y temporal (se autoborra a los 2 días) cuando por fin queda
         // habilitado (partidos cumplidos + multa pagada).
         function revisarAvisosDisciplina() {
             if (!db.avisosDisciplinaEstado) db.avisosDisciplinaEstado = {};
@@ -2902,7 +2902,7 @@
                 const nombreNuevoArbitro = document.getElementById('admin-arb-nombre').value.trim();
                 const pinNuevoArbitro = generarPin6Digitos();
                 db.arbitros.push({ id: Date.now(), nombre: nombreNuevoArbitro, colegio: document.getElementById('admin-arb-colegio').value.trim() || 'Independiente', lugarNacimiento: document.getElementById('admin-arb-lugar-nac').value.trim(), fechaNacimiento: document.getElementById('admin-arb-fecha-nac').value, nacionalidad: document.getElementById('admin-arb-nacionalidad').value.trim() || 'MEXICANA', foto: fotoB64, pin: pinNuevoArbitro });
-                agregarAvisoRegistro('registro', '🆕 Nuevo árbitro registrado', `${nombreNuevoArbitro} se ha integrado al cuerpo arbitral de la liga.`);
+                agregarAvisoRegistro('registro', '🆕 Nuevo árbitro registrado', `${nombreNuevoArbitro} se ha integrado al cuerpo arbitral de la liga.`, { imagen: fotoB64 || '' });
                 this.reset();
                 if (guardarDB() !== false) mostrarPinArbitro(db.arbitros[db.arbitros.length - 1].id, true);
             });
