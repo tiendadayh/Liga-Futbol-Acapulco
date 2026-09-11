@@ -4078,17 +4078,32 @@ ${cuerpo}`;
                 { a: top8[3], b: top8[4], seed: '4° vs 5°' }
             ];
 
+            const opcionesCanchas = '<option value="">-- Selecciona Cancha --</option>' + (db.campos || []).map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+
             const divModal = document.createElement('div');
             divModal.id = "modal-designacion-liguilla";
             divModal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center; z-index:9999; overflow:auto; padding:20px 0;";
             divModal.innerHTML = `
-                <div style="background:white; padding:25px; border-radius:12px; max-width:450px; width:90%;">
-                    <h3 style="margin-top:0; color:#0b2f5c;">🏁 Designación Arbitral - Cuartos de Final</h3>
-                    <p style="font-size:0.78rem; color:#666; margin-top:-6px;">Se jugará a Ida y Vuelta. El árbitro elegido aquí queda asignado a ambos partidos de la llave.</p>
+                <div style="background:white; padding:25px; border-radius:12px; max-width:480px; width:90%;">
+                    <h3 style="margin-top:0; color:#0b2f5c;">🏁 Designación Arbitral y Horarios - Cuartos de Final</h3>
+                    <p style="font-size:0.78rem; color:#666; margin-top:-6px;">Se jugará a Ida y Vuelta. El árbitro elegido aquí queda asignado a ambos partidos de la llave. El horario es opcional: puedes dejarlo en blanco y programarlo después desde "Programar Encuentro".</p>
                     ${llaves.map((ll, idx) => `
-                    <div style="margin-bottom:15px;">
-                        <label style="font-weight:bold;">Llave ${idx + 1} (${ll.seed}): ${ll.a.nombre} vs ${ll.b.nombre}</label>
-                        <select id="sel-arb-cuartos${idx}" style="width:100%; padding:10px;">${opcionesArbitros}</select>
+                    <div style="margin-bottom:16px; border:1px solid #eee; border-radius:8px; padding:10px;">
+                        <label style="font-weight:bold; display:block; margin-bottom:6px;">Llave ${idx + 1} (${ll.seed}): ${ll.a.nombre} vs ${ll.b.nombre}</label>
+                        <select id="sel-arb-cuartos${idx}" style="width:100%; padding:10px; margin-bottom:8px;">${opcionesArbitros}</select>
+                        <select id="sel-cancha-cuartos${idx}" style="width:100%; padding:10px; margin-bottom:8px;">${opcionesCanchas}</select>
+                        <div style="display:flex; gap:8px; margin-bottom:6px;">
+                            <div style="flex:1;">
+                                <label style="font-size:0.72rem; color:#666;">📅 Ida</label>
+                                <input type="date" id="fecha-ida-cuartos${idx}" style="width:100%; padding:8px;">
+                                <input type="time" id="hora-ida-cuartos${idx}" style="width:100%; padding:8px; margin-top:4px;">
+                            </div>
+                            <div style="flex:1;">
+                                <label style="font-size:0.72rem; color:#666;">📅 Vuelta</label>
+                                <input type="date" id="fecha-vuelta-cuartos${idx}" style="width:100%; padding:8px;">
+                                <input type="time" id="hora-vuelta-cuartos${idx}" style="width:100%; padding:8px; margin-top:4px;">
+                            </div>
+                        </div>
                     </div>`).join('')}
                     <div style="display:flex; gap:10px;">
                         <button id="btn-cancelar-liguilla" style="flex:1; background:#6c757d;">Cancelar</button>
@@ -4102,14 +4117,26 @@ ${cuerpo}`;
             document.getElementById('btn-cancelar-liguilla').onclick = function () { divModal.remove(); };
             document.getElementById('btn-confirmar-liguilla').onclick = function () {
                 const arbitrosElegidos = llaves.map((ll, idx) => document.getElementById(`sel-arb-cuartos${idx}`).value);
+                const datosLlaves = llaves.map((ll, idx) => {
+                    const campoSel = db.campos.find(c => c.id === parseInt(document.getElementById(`sel-cancha-cuartos${idx}`).value));
+                    return {
+                        fechaIda: document.getElementById(`fecha-ida-cuartos${idx}`).value,
+                        horaIda: document.getElementById(`hora-ida-cuartos${idx}`).value,
+                        fechaVuelta: document.getElementById(`fecha-vuelta-cuartos${idx}`).value,
+                        horaVuelta: document.getElementById(`hora-vuelta-cuartos${idx}`).value,
+                        estadio: campoSel ? campoSel.nombre : '',
+                        campoId: campoSel ? campoSel.id : null
+                    };
+                });
 
                 // Se relanzan los Cuartos: se limpia cualquier Cuartos/Semifinal/Final previa.
                 db.partidos = db.partidos.filter(p => p.jornada < 90);
                 const base = Date.now();
                 llaves.forEach((ll, idx) => {
+                    const dl = datosLlaves[idx];
                     // Ida: A de local. Vuelta: B de local (se invierte la sede).
-                    db.partidos.push({ id: base + idx * 2, llaveId: idx, jornada: 98, localId: ll.a.id, visitaId: ll.b.id, jugado: false, golesLocal: 0, golesVisita: 0, estadoVivo: 'programado', tarjetasDetalle: [], arbitro: arbitrosElegidos[idx] });
-                    db.partidos.push({ id: base + idx * 2 + 1, llaveId: idx, jornada: 99, localId: ll.b.id, visitaId: ll.a.id, jugado: false, golesLocal: 0, golesVisita: 0, estadoVivo: 'programado', tarjetasDetalle: [], arbitro: arbitrosElegidos[idx] });
+                    db.partidos.push({ id: base + idx * 2, llaveId: idx, jornada: 98, localId: ll.a.id, visitaId: ll.b.id, jugado: false, golesLocal: 0, golesVisita: 0, estadoVivo: 'programado', tarjetasDetalle: [], arbitro: arbitrosElegidos[idx], fecha: dl.fechaIda, hora: dl.horaIda, estadio: dl.estadio, campoId: dl.campoId });
+                    db.partidos.push({ id: base + idx * 2 + 1, llaveId: idx, jornada: 99, localId: ll.b.id, visitaId: ll.a.id, jugado: false, golesLocal: 0, golesVisita: 0, estadoVivo: 'programado', tarjetasDetalle: [], arbitro: arbitrosElegidos[idx], fecha: dl.fechaVuelta, hora: dl.horaVuelta, estadio: dl.estadio, campoId: dl.campoId });
                 });
 
                 db.liguillaActiva = true;
@@ -4139,18 +4166,32 @@ ${cuerpo}`;
                 { aId: ganadores[1], bId: ganadores[2] }
             ];
             const opcionesArbitros = db.arbitros.map(a => `<option value="${a.nombre}">${a.nombre} (${a.colegio})</option>`).join('');
+            const opcionesCanchasSF = '<option value="">-- Selecciona Cancha --</option>' + (db.campos || []).map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
 
             const divModal = document.createElement('div');
             divModal.id = "modal-designacion-semifinal";
-            divModal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center; z-index:9999;";
+            divModal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center; z-index:9999; overflow:auto; padding:20px 0;";
             divModal.innerHTML = `
-                <div style="background:white; padding:25px; border-radius:12px; max-width:450px; width:90%;">
-                    <h3 style="margin-top:0; color:#0b2f5c;">🏁 Designación Arbitral - Semifinal</h3>
-                    <p style="font-size:0.78rem; color:#666; margin-top:-6px;">Se jugará a Ida y Vuelta. El árbitro elegido aquí queda asignado a ambos partidos de la llave.</p>
+                <div style="background:white; padding:25px; border-radius:12px; max-width:480px; width:90%;">
+                    <h3 style="margin-top:0; color:#0b2f5c;">🏁 Designación Arbitral y Horarios - Semifinal</h3>
+                    <p style="font-size:0.78rem; color:#666; margin-top:-6px;">Se jugará a Ida y Vuelta. El árbitro elegido aquí queda asignado a ambos partidos de la llave. El horario es opcional: puedes dejarlo en blanco y programarlo después desde "Programar Encuentro".</p>
                     ${parejas.map((pp, idx) => `
-                    <div style="margin-bottom:20px;">
-                        <label style="font-weight:bold;">Semifinal ${idx + 1}: ${nombreEquipo(pp.aId)} vs ${nombreEquipo(pp.bId)}</label>
-                        <select id="sel-arb-semifinal${idx}" style="width:100%; padding:10px;">${opcionesArbitros}</select>
+                    <div style="margin-bottom:16px; border:1px solid #eee; border-radius:8px; padding:10px;">
+                        <label style="font-weight:bold; display:block; margin-bottom:6px;">Semifinal ${idx + 1}: ${nombreEquipo(pp.aId)} vs ${nombreEquipo(pp.bId)}</label>
+                        <select id="sel-arb-semifinal${idx}" style="width:100%; padding:10px; margin-bottom:8px;">${opcionesArbitros}</select>
+                        <select id="sel-cancha-semifinal${idx}" style="width:100%; padding:10px; margin-bottom:8px;">${opcionesCanchasSF}</select>
+                        <div style="display:flex; gap:8px; margin-bottom:6px;">
+                            <div style="flex:1;">
+                                <label style="font-size:0.72rem; color:#666;">📅 Ida</label>
+                                <input type="date" id="fecha-ida-semifinal${idx}" style="width:100%; padding:8px;">
+                                <input type="time" id="hora-ida-semifinal${idx}" style="width:100%; padding:8px; margin-top:4px;">
+                            </div>
+                            <div style="flex:1;">
+                                <label style="font-size:0.72rem; color:#666;">📅 Vuelta</label>
+                                <input type="date" id="fecha-vuelta-semifinal${idx}" style="width:100%; padding:8px;">
+                                <input type="time" id="hora-vuelta-semifinal${idx}" style="width:100%; padding:8px; margin-top:4px;">
+                            </div>
+                        </div>
                     </div>`).join('')}
                     <div style="display:flex; gap:10px;">
                         <button id="btn-cancelar-semifinal" style="flex:1; background:#6c757d;">Cancelar</button>
@@ -4164,14 +4205,26 @@ ${cuerpo}`;
             document.getElementById('btn-cancelar-semifinal').onclick = function () { divModal.remove(); };
             document.getElementById('btn-confirmar-semifinal').onclick = function () {
                 const arbitrosElegidos = parejas.map((pp, idx) => document.getElementById(`sel-arb-semifinal${idx}`).value);
+                const datosParejas = parejas.map((pp, idx) => {
+                    const campoSel = db.campos.find(c => c.id === parseInt(document.getElementById(`sel-cancha-semifinal${idx}`).value));
+                    return {
+                        fechaIda: document.getElementById(`fecha-ida-semifinal${idx}`).value,
+                        horaIda: document.getElementById(`hora-ida-semifinal${idx}`).value,
+                        fechaVuelta: document.getElementById(`fecha-vuelta-semifinal${idx}`).value,
+                        horaVuelta: document.getElementById(`hora-vuelta-semifinal${idx}`).value,
+                        estadio: campoSel ? campoSel.nombre : '',
+                        campoId: campoSel ? campoSel.id : null
+                    };
+                });
 
                 // Se relanza la Semifinal: se limpia una Semifinal/Final previa, se conservan los Cuartos ya jugados.
                 db.partidos = db.partidos.filter(p => p.jornada < 90 || p.jornada === 98 || p.jornada === 99);
                 const base = Date.now();
                 parejas.forEach((pp, idx) => {
+                    const dp = datosParejas[idx];
                     // Ida: A de local. Vuelta: B de local (se invierte la sede).
-                    db.partidos.push({ id: base + idx * 2, llaveId: idx, jornada: 100, localId: pp.aId, visitaId: pp.bId, jugado: false, golesLocal: 0, golesVisita: 0, estadoVivo: 'programado', tarjetasDetalle: [], arbitro: arbitrosElegidos[idx] });
-                    db.partidos.push({ id: base + idx * 2 + 1, llaveId: idx, jornada: 101, localId: pp.bId, visitaId: pp.aId, jugado: false, golesLocal: 0, golesVisita: 0, estadoVivo: 'programado', tarjetasDetalle: [], arbitro: arbitrosElegidos[idx] });
+                    db.partidos.push({ id: base + idx * 2, llaveId: idx, jornada: 100, localId: pp.aId, visitaId: pp.bId, jugado: false, golesLocal: 0, golesVisita: 0, estadoVivo: 'programado', tarjetasDetalle: [], arbitro: arbitrosElegidos[idx], fecha: dp.fechaIda, hora: dp.horaIda, estadio: dp.estadio, campoId: dp.campoId });
+                    db.partidos.push({ id: base + idx * 2 + 1, llaveId: idx, jornada: 101, localId: pp.bId, visitaId: pp.aId, jugado: false, golesLocal: 0, golesVisita: 0, estadoVivo: 'programado', tarjetasDetalle: [], arbitro: arbitrosElegidos[idx], fecha: dp.fechaVuelta, hora: dp.horaVuelta, estadio: dp.estadio, campoId: dp.campoId });
                 });
 
                 divModal.remove();

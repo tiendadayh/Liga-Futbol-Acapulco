@@ -273,6 +273,50 @@
         .bracket-match { background: var(--card-bg); border: 2px solid var(--primary); border-radius: var(--radius-md); padding: 16px; width: 280px; box-shadow: var(--shadow-sm); }
         .bracket-title { font-weight: 700; color: var(--primary); text-align: center; margin-bottom: 10px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.4px; }
 
+        /* ===== Cuadro de Liguilla - árbol de eliminación directa ===== */
+        .pob-wrap { overflow-x: auto; padding-bottom: 10px; margin-top: 10px; }
+        .pob-wrap::-webkit-scrollbar { height: 8px; }
+        .pob-grid {
+            display: grid;
+            grid-template-columns: minmax(180px,1fr) 32px minmax(180px,1fr) 32px minmax(196px,1.05fr) 32px minmax(180px,1fr) 32px minmax(180px,1fr);
+            grid-template-rows: repeat(3, minmax(128px, auto));
+            align-items: stretch;
+            min-width: 980px;
+            padding: 30px 4px 4px;
+        }
+        .pob-round-label {
+            grid-row: 1; align-self: start; margin-top: -26px;
+            font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.5px;
+            font-size: 0.72rem; font-weight: 700; color: var(--secondary); text-align: center;
+        }
+        .pob-match {
+            background: var(--card-bg); border: 2px solid var(--border); border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm); padding: 10px 12px; align-self: center; width: 100%; max-width: 236px;
+            justify-self: center; transition: var(--transition-fast); position: relative;
+        }
+        .pob-match:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--secondary); }
+        .pob-match.pob-final { border-color: var(--accent); border-width: 3px; background: linear-gradient(160deg, var(--card-bg) 60%, rgba(240,180,41,0.12)); box-shadow: var(--shadow-glow); }
+        .pob-match.pob-vacio { opacity: 0.6; border-style: dashed; }
+        .pob-match-title { font-weight: 700; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.4px; color: var(--primary); text-align: center; margin-bottom: 8px; }
+        .pob-team { display: flex; align-items: center; gap: 8px; padding: 3px 0; cursor: pointer; border-radius: 6px; transition: var(--transition-fast); }
+        .pob-team:hover { background: rgba(209,20,15,0.06); }
+        .pob-team img { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; background: white; border: 1px solid var(--border); flex-shrink: 0; }
+        .pob-team-name { flex: 1; font-size: 0.78rem; font-weight: 600; color: var(--text); line-height: 1.15; }
+        .pob-team-score { font-family: var(--font-display); font-weight: 700; font-size: 1rem; color: var(--primary); min-width: 18px; text-align: center; }
+        .pob-leg-scores { display: flex; justify-content: space-between; font-size: 0.66rem; color: var(--text-muted); margin-top: 7px; padding-top: 6px; border-top: 1px dashed var(--border); }
+        .pob-agg { text-align: center; font-size: 0.7rem; font-weight: 700; color: var(--primary); margin-top: 6px; background: rgba(209,20,15,0.07); border-radius: 6px; padding: 3px 4px; }
+        .pob-meta { text-align: center; font-size: 0.62rem; color: var(--text-muted); margin-top: 5px; }
+        .pob-status { text-align: center; font-size: 0.62rem; font-weight: 700; color: var(--secondary); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.3px; }
+
+        .pob-connector { position: relative; grid-row: 1 / span 3; }
+        .pob-connector .pc-top { position: absolute; top: 16.6667%; left: 0; width: 50%; height: 2px; background: var(--border); }
+        .pob-connector .pc-bottom { position: absolute; top: 83.3333%; left: 0; width: 50%; height: 2px; background: var(--border); }
+        .pob-connector .pc-vert { position: absolute; top: 16.6667%; bottom: 16.6667%; left: 50%; width: 2px; background: var(--border); }
+        .pob-connector .pc-out { position: absolute; top: 50%; left: 50%; width: 50%; height: 2px; background: var(--border); }
+        .pob-connector.pob-mirror { transform: scaleX(-1); }
+        .pob-connector-simple { grid-row: 2; align-self: center; position: relative; height: 2px; }
+        .pob-connector-simple::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--border); }
+
         .cancha { background: linear-gradient(160deg, #2a9d8f 0%, #21847a 100%); border: 4px solid white; border-radius: var(--radius-lg); height: 500px; position: relative; margin-top: 20px; overflow: hidden; box-shadow: var(--shadow-md); }
         .linea-medio { position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: rgba(255,255,255,0.5); }
         .circulo-medio { position: absolute; top: 50%; left: 50%; width: 100px; height: 100px; border: 2px solid rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); }
@@ -425,6 +469,9 @@
             .partido-nombre-equipo { font-size: 0.75rem; }
             .cancha { height: 340px; }
             .bracket-match { width: 100%; max-width: 320px; }
+            .pob-grid { min-width: 880px; grid-template-rows: repeat(3, minmax(110px, auto)); }
+            .pob-match { max-width: 200px; padding: 8px 10px; }
+            .pob-team img { width: 24px; height: 24px; }
             .modal-content { padding: 20px; }
             .cedula-info-grid { grid-template-columns: 1fr !important; }
             input, select { font-size: 16px; }
@@ -519,7 +566,8 @@
         <!-- BRACKET LIGUILLA (primero cuando está activa la fase de liguilla) -->
         <section id="bracket-sec" class="card-section hidden" style="border-top-color: #e0932e;">
             <h2>🏆 Cuadro de Liguilla</h2>
-            <div id="bracket-tree" class="bracket-container"></div>
+            <p style="text-align:center; color:var(--text-muted); font-size:0.85rem; margin-top:-8px;">Camino a la Gran Final — desliza el cuadro hacia los lados en pantallas pequeñas</p>
+            <div class="pob-wrap"><div id="bracket-tree" class="pob-grid"></div></div>
         </section>
 
         <!-- TABLÓN DE ANUNCIOS -->
@@ -1903,43 +1951,20 @@
             return `J${j}`;
         }
 
-        function renderizarBracketMatch(p, titulo) {
-            const loc = db.equipos.find(e => e.id === p.localId)?.nombre || 'Clasificado';
-            const vis = db.equipos.find(e => e.id === p.visitaId)?.nombre || 'Clasificado';
-            const pen = p.penaltis ? ` (Pen: ${p.penaltis.local}-${p.penaltis.visita})` : '';
-            return `
-                <div class="bracket-match">
-                    <div class="bracket-title">${titulo}</div>
-                    <div style="display:flex; justify-content:space-between; margin:8px 0;"><span>${loc}</span><strong>${p.jugado ? p.golesLocal : ''}</strong></div>
-                    <div style="display:flex; justify-content:space-between; margin:8px 0;"><span>${vis}</span><strong>${p.jugado ? p.golesVisita : ''}</strong></div>
-                    <div style="text-align:center; font-size:0.75rem; color:var(--primary); font-weight:bold;">${p.jugado ? 'Finalizado' + pen : 'Programado'}</div>
-                </div>
-            `;
-        }
-
-        // Tarjeta para una llave a Ida y Vuelta: muestra el resultado de cada partido y,
-        // cuando ambos ya se jugaron, el marcador global (y penales si el global quedó empatado).
-        function renderizarLlaveDobleLeg(ida, vuelta, titulo) {
-            if (!ida) return '';
-            const nombreEq = id => db.equipos.find(e => e.id === id)?.nombre || 'Clasificado';
-            const aId = ida.localId, bId = ida.visitaId; // ida: A local, B visita
-            const idaTxt = ida.jugado ? `${ida.golesLocal} - ${ida.golesVisita}` : 'Por jugar';
-            const vueltaTxt = vuelta ? (vuelta.jugado ? `${vuelta.golesLocal} - ${vuelta.golesVisita}` : 'Por jugar') : '—';
-            let aggTxt = '';
-            if (ida.jugado && vuelta && vuelta.jugado) {
-                const golesA = (ida.golesLocal || 0) + (vuelta.golesVisita || 0);
-                const golesB = (ida.golesVisita || 0) + (vuelta.golesLocal || 0);
-                aggTxt = `Global: ${golesA} - ${golesB}`;
-                if (golesA === golesB && vuelta.penaltis) aggTxt += ` (Pen: ${vuelta.penaltis.local}-${vuelta.penaltis.visita})`;
+        // Determina quién avanza en una llave a doble partido (ida y vuelta), sumando los
+        // goles de ambos encuentros. Si el global queda empatado, se decide por los penales
+        // registrados en el partido de VUELTA. Se usa para mostrar en el cuadro público quién
+        // clasifica a la siguiente ronda aunque el admin aún no haya "lanzado" esa ronda.
+        function ganadorLlaveIdaVuelta(ida, vuelta) {
+            if (!ida || !vuelta || !ida.jugado || !vuelta.jugado) return null;
+            const golesA = (ida.golesLocal || 0) + (vuelta.golesVisita || 0);
+            const golesB = (ida.golesVisita || 0) + (vuelta.golesLocal || 0);
+            if (golesA > golesB) return ida.localId;
+            if (golesB > golesA) return ida.visitaId;
+            if (vuelta.penaltis && vuelta.penaltis.local !== vuelta.penaltis.visita) {
+                return vuelta.penaltis.local > vuelta.penaltis.visita ? vuelta.localId : vuelta.visitaId;
             }
-            return `
-                <div class="bracket-match">
-                    <div class="bracket-title">${titulo}</div>
-                    <div style="display:flex; justify-content:space-between; margin:6px 0;"><span>${nombreEq(aId)}</span><span>${nombreEq(bId)}</span></div>
-                    <div style="display:flex; justify-content:space-between; font-size:0.78rem; color:#666; margin:4px 0;"><span>Ida: ${idaTxt}</span><span>Vuelta: ${vueltaTxt}</span></div>
-                    ${aggTxt ? `<div style="text-align:center; font-size:0.78rem; color:var(--primary); font-weight:bold; margin-top:4px;">${aggTxt}</div>` : ''}
-                </div>
-            `;
+            return null;
         }
 
         function actualizarVisibilidadLiguilla() {
@@ -1950,32 +1975,128 @@
             if (navLink) navLink.classList.toggle('hidden', !enLiguilla);
         }
 
+        // Tarjeta de un partido/llave del cuadro de liguilla (árbol de eliminación directa).
+        // Si se pasan `ida`/`vuelta` reales se muestra el marcador de cada partido, el global y
+        // el horario; si aún no existen (ronda no lanzada) se dibuja como "por definir" usando
+        // los equipos que ya se conocen (placeholders) para que el cuadro completo sea visible
+        // desde el arranque de la liguilla.
+        function pobTarjetaLlave({ ida, vuelta, titulo, nombreA, nombreB, escudoA, escudoB, esFinal }) {
+            const clases = 'pob-match' + (esFinal ? ' pob-final' : '') + (!ida ? ' pob-vacio' : '');
+            const idaJugado = ida && ida.jugado;
+            const vueltaJugado = vuelta && vuelta.jugado;
+
+            const filaEquipo = (id, nombre, escudo, goles) => `
+                <div class="pob-team" ${id ? `onclick="verEquipo(${id})"` : ''}>
+                    <img src="${escudo || 'https://placehold.co/28'}" alt="${nombre}" loading="lazy">
+                    <span class="pob-team-name">${nombre}</span>
+                    <span class="pob-team-score">${goles === null || goles === undefined ? '' : goles}</span>
+                </div>`;
+
+            let golesGlobalA = null, golesGlobalB = null, penalesTxt = '';
+            if (idaJugado && vueltaJugado) {
+                golesGlobalA = (ida.golesLocal || 0) + (vuelta.golesVisita || 0);
+                golesGlobalB = (ida.golesVisita || 0) + (vuelta.golesLocal || 0);
+                if (golesGlobalA === golesGlobalB && vuelta.penaltis) penalesTxt = ` (Pen: ${vuelta.penaltis.local}-${vuelta.penaltis.visita})`;
+            }
+
+            let piePartido = '';
+            if (!ida) {
+                piePartido = `<div class="pob-status">Clasificación pendiente</div>`;
+            } else if (esFinal) {
+                piePartido = ida.jugado
+                    ? `<div class="pob-status">¡Finalizado!${ida.penaltis ? ` (Pen: ${ida.penaltis.local}-${ida.penaltis.visita})` : ''}</div>`
+                    : `<div class="pob-meta">📅 ${ida.fecha || 'Fecha por definir'} · 🕐 ${ida.hora || 'Hora por definir'}</div>`;
+            } else {
+                const idaTxt = idaJugado ? `${ida.golesLocal}-${ida.golesVisita}` : (ida.fecha ? `${ida.fecha}${ida.hora ? ' ' + ida.hora : ''}` : 'Por jugar');
+                const vueltaTxt = vuelta ? (vueltaJugado ? `${vuelta.golesLocal}-${vuelta.golesVisita}` : (vuelta.fecha ? `${vuelta.fecha}${vuelta.hora ? ' ' + vuelta.hora : ''}` : 'Por jugar')) : 'Por jugar';
+                piePartido = `<div class="pob-leg-scores"><span>Ida: ${idaTxt}</span><span>Vuelta: ${vueltaTxt}</span></div>`;
+                if (golesGlobalA !== null) piePartido += `<div class="pob-agg">Global: ${golesGlobalA}-${golesGlobalB}${penalesTxt}</div>`;
+            }
+
+            return `
+                <div class="${clases}">
+                    <div class="pob-match-title">${titulo}</div>
+                    ${filaEquipo(ida ? ida.localId : null, nombreA, escudoA, esFinal ? (ida && ida.jugado ? ida.golesLocal : null) : null)}
+                    ${filaEquipo(ida ? ida.visitaId : null, nombreB, escudoB, esFinal ? (ida && ida.jugado ? ida.golesVisita : null) : null)}
+                    ${piePartido}
+                </div>`;
+        }
+
         function renderizarBracketLiguilla() {
             const bracket = document.getElementById('bracket-tree');
+            const nombreEq = id => db.equipos.find(e => e.id === id)?.nombre || 'Por definir';
+            const escudoEq = id => db.equipos.find(e => e.id === id)?.escudo || 'https://placehold.co/28';
+
             const cuartosIda = db.partidos.filter(p => p.jornada === 98).sort((a, b) => (a.llaveId ?? 0) - (b.llaveId ?? 0));
             const cuartosVuelta = db.partidos.filter(p => p.jornada === 99);
             const semisIda = db.partidos.filter(p => p.jornada === 100).sort((a, b) => (a.llaveId ?? 0) - (b.llaveId ?? 0));
             const semisVuelta = db.partidos.filter(p => p.jornada === 101);
-            const final = db.partidos.filter(p => p.jornada === 102);
+            const final = db.partidos.find(p => p.jornada === 102) || null;
 
-            if (cuartosIda.length === 0 && semisIda.length === 0 && final.length === 0) {
-                bracket.innerHTML = '<p style="color:var(--text-muted);">La Liguilla no ha iniciado oficialmente.</p>';
+            if (cuartosIda.length === 0) {
+                bracket.innerHTML = '<p style="color:var(--text-muted); text-align:center; grid-column:1/-1;">La Liguilla no ha iniciado oficialmente.</p>';
                 return;
             }
 
-            let html = '';
-            if (cuartosIda.length) {
-                html += `<div style="width:100%;"><h3 style="text-align:center; color:var(--primary); margin-bottom:10px;">Cuartos de Final (Ida y Vuelta)</h3>
-                    <div class="bracket-container">${cuartosIda.map((ida, idx) => renderizarLlaveDobleLeg(ida, cuartosVuelta.find(v => v.llaveId === ida.llaveId), `Cuarto de Final ${idx + 1}`)).join('')}</div></div>`;
-            }
-            if (semisIda.length) {
-                html += `<div style="width:100%;"><h3 style="text-align:center; color:var(--primary); margin:20px 0 10px;">Semifinal (Ida y Vuelta)</h3>
-                    <div class="bracket-container">${semisIda.map((ida, idx) => renderizarLlaveDobleLeg(ida, semisVuelta.find(v => v.llaveId === ida.llaveId), `Semifinal ${idx + 1}`)).join('')}</div></div>`;
-            }
-            if (final.length) {
-                html += `<div style="width:100%;"><h3 style="text-align:center; color:var(--primary); margin:20px 0 10px;">Gran Final</h3>
-                    <div class="bracket-container">${final.map(p => renderizarBracketMatch(p, 'Gran Final')).join('')}</div></div>`;
-            }
+            // Datos de cada llave de Cuartos (0 a 3), tal como se generan en el panel admin.
+            const llaveCuartos = idx => {
+                const ida = cuartosIda.find(p => p.llaveId === idx) || null;
+                const vuelta = cuartosVuelta.find(p => p.llaveId === idx) || null;
+                return { ida, vuelta };
+            };
+            const c = [0, 1, 2, 3].map(llaveCuartos);
+
+            // Ganador (o "por definir") de cada llave de Cuartos, para armar la Semifinal en
+            // el cuadro incluso antes de que el admin la "lance" oficialmente.
+            const ganadorCuartos = idx => {
+                const { ida, vuelta } = c[idx];
+                const gId = ganadorLlaveIdaVuelta(ida, vuelta);
+                return gId ? { id: gId, nombre: nombreEq(gId), escudo: escudoEq(gId) } : { id: null, nombre: `Ganador Cuarto ${idx + 1}`, escudo: '' };
+            };
+
+            // Semifinal 0 = ganador(llave0) vs ganador(llave3). Semifinal 1 = ganador(llave1) vs ganador(llave2)
+            // (mismo criterio que usa el panel admin al lanzar la Semifinal).
+            const semiPlan = [[0, 3], [1, 2]];
+            const s = semiPlan.map(([aIdx, bIdx], idx) => {
+                const ida = semisIda.find(p => p.llaveId === idx) || null;
+                const vuelta = semisVuelta.find(p => p.llaveId === idx) || null;
+                const gA = ganadorCuartos(aIdx), gB = ganadorCuartos(bIdx);
+                return { ida, vuelta, nombreA: ida ? nombreEq(ida.localId) : gA.nombre, nombreB: ida ? nombreEq(ida.visitaId) : gB.nombre, escudoA: ida ? escudoEq(ida.localId) : gA.escudo, escudoB: ida ? escudoEq(ida.visitaId) : gB.escudo };
+            });
+
+            const ganadorSemi = idx => {
+                const { ida, vuelta, nombreA, nombreB } = s[idx];
+                const gId = ganadorLlaveIdaVuelta(ida, vuelta);
+                if (gId) return { id: gId, nombre: nombreEq(gId), escudo: escudoEq(gId) };
+                return { id: null, nombre: `Ganador Semifinal ${idx + 1}`, escudo: '' };
+            };
+            const gS0 = ganadorSemi(0), gS1 = ganadorSemi(1);
+            const finalNombreA = final ? nombreEq(final.localId) : gS0.nombre;
+            const finalNombreB = final ? nombreEq(final.visitaId) : gS1.nombre;
+            const finalEscudoA = final ? escudoEq(final.localId) : gS0.escudo;
+            const finalEscudoB = final ? escudoEq(final.visitaId) : gS1.escudo;
+
+            const w = (col, row) => `grid-column:${col}; grid-row:${row}; align-self:center;`;
+            // Tarjeta de un Cuarto de Final, tolerante a datos incompletos (por si alguna llave
+            // no llegó a crearse) para que el cuadro nunca se rompa.
+            const cardCuartos = (idx, titulo) => {
+                const { ida, vuelta } = c[idx];
+                if (!ida) return pobTarjetaLlave({ ida: null, vuelta: null, titulo, nombreA: 'Por definir', nombreB: 'Por definir', escudoA: '', escudoB: '' });
+                return pobTarjetaLlave({ ida, vuelta, titulo, nombreA: nombreEq(ida.localId), nombreB: nombreEq(ida.visitaId), escudoA: escudoEq(ida.localId), escudoB: escudoEq(ida.visitaId) });
+            };
+            const html = `
+                <div style="${w(1, 1)}">${cardCuartos(0, 'Cuarto de Final 1')}</div>
+                <div style="${w(1, 3)}">${cardCuartos(3, 'Cuarto de Final 4')}</div>
+                <div class="pob-connector" style="grid-column:2;"><span class="pc-top"></span><span class="pc-bottom"></span><span class="pc-vert"></span><span class="pc-out"></span></div>
+                <div style="${w(3, 2)}">${pobTarjetaLlave({ ida: s[0].ida, vuelta: s[0].vuelta, titulo: 'Semifinal 1', nombreA: s[0].nombreA, nombreB: s[0].nombreB, escudoA: s[0].escudoA, escudoB: s[0].escudoB })}</div>
+                <div class="pob-connector-simple" style="grid-column:4;"></div>
+                <div style="${w(5, 2)}">${pobTarjetaLlave({ ida: final, vuelta: null, titulo: '🏆 Gran Final', nombreA: finalNombreA, nombreB: finalNombreB, escudoA: finalEscudoA, escudoB: finalEscudoB, esFinal: true })}</div>
+                <div class="pob-connector-simple" style="grid-column:6;"></div>
+                <div style="${w(7, 2)}">${pobTarjetaLlave({ ida: s[1].ida, vuelta: s[1].vuelta, titulo: 'Semifinal 2', nombreA: s[1].nombreA, nombreB: s[1].nombreB, escudoA: s[1].escudoA, escudoB: s[1].escudoB })}</div>
+                <div class="pob-connector pob-mirror" style="grid-column:8;"><span class="pc-top"></span><span class="pc-bottom"></span><span class="pc-vert"></span><span class="pc-out"></span></div>
+                <div style="${w(9, 1)}">${cardCuartos(1, 'Cuarto de Final 2')}</div>
+                <div style="${w(9, 3)}">${cardCuartos(2, 'Cuarto de Final 3')}</div>
+            `;
             bracket.innerHTML = html;
         }
 
