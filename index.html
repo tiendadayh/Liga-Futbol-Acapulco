@@ -2025,12 +2025,20 @@
 
         // Encoge el Cuadro de Liguilla (con transform:scale) para que quepa completo en
         // el ancho de la pantalla, sin necesidad de deslizar hacia los lados. En pantallas
-        // donde sí cabe a tamaño normal, se deja igual. Se recalcula cada vez que se
-        // redibuja el cuadro (nuevos resultados) y cada vez que cambia el tamaño de la ventana.
+        // donde sí cabe a tamaño normal, se deja igual.
+        // Se guarda el último ancho usado para no recalcular si solo cambió el alto de la
+        // ventana (por ejemplo cuando el navegador del celular oculta/muestra su barra al
+        // hacer scroll): eso era lo que provocaba que el cuadro "saltara"/se viera en blanco
+        // un instante al bajar la página.
+        let anchoBracketPrevio = null;
         function ajustarEscalaBracket() {
             const wrap = document.getElementById('bracket-wrap');
             const grid = document.getElementById('bracket-tree');
             if (!wrap || !grid) return;
+
+            const anchoActual = window.innerWidth;
+            if (anchoActual === anchoBracketPrevio) return;
+            anchoBracketPrevio = anchoActual;
 
             // Se mide el tamaño real (sin escalar) antes de decidir cuánto encoger.
             grid.style.transform = 'none';
