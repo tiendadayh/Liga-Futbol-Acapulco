@@ -2026,18 +2026,21 @@
         // Encoge el Cuadro de Liguilla (con transform:scale) para que quepa completo en
         // el ancho de la pantalla, sin necesidad de deslizar hacia los lados. En pantallas
         // donde sí cabe a tamaño normal, se deja igual.
-        // Se guarda el último ancho usado para no recalcular si solo cambió el alto de la
-        // ventana (por ejemplo cuando el navegador del celular oculta/muestra su barra al
-        // hacer scroll): eso era lo que provocaba que el cuadro "saltara"/se viera en blanco
-        // un instante al bajar la página.
+        // IMPORTANTE: cuando se llama porque el cuadro se volvió a dibujar (nuevos resultados/
+        // datos de Firebase) SIEMPRE debe recalcular, aunque el ancho no haya cambiado, porque
+        // el contenido (alto) pudo cambiar. Pero cuando la llaman los listeners de 'resize'/
+        // 'orientationchange' del navegador (que en celular se disparan solo por ocultarse la
+        // barra de direcciones al hacer scroll, sin que el ancho real cambie), no debe hacer
+        // nada si el ancho es el mismo de antes: eso era lo que provocaba que el cuadro
+        // "saltara"/se viera en blanco un instante al bajar la página.
         let anchoBracketPrevio = null;
-        function ajustarEscalaBracket() {
+        function ajustarEscalaBracket(soloSiCambioAncho) {
             const wrap = document.getElementById('bracket-wrap');
             const grid = document.getElementById('bracket-tree');
             if (!wrap || !grid) return;
 
             const anchoActual = window.innerWidth;
-            if (anchoActual === anchoBracketPrevio) return;
+            if (soloSiCambioAncho && anchoActual === anchoBracketPrevio) return;
             anchoBracketPrevio = anchoActual;
 
             // Se mide el tamaño real (sin escalar) antes de decidir cuánto encoger.
@@ -2059,8 +2062,8 @@
             wrap.style.height = Math.ceil(altoNatural * escala) + 'px';
             wrap.style.overflowX = 'hidden';
         }
-        window.addEventListener('resize', ajustarEscalaBracket);
-        window.addEventListener('orientationchange', ajustarEscalaBracket);
+        window.addEventListener('resize', () => ajustarEscalaBracket(true));
+        window.addEventListener('orientationchange', () => ajustarEscalaBracket(true));
 
         function renderizarBracketLiguilla() {
             const bracket = document.getElementById('bracket-tree');
