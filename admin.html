@@ -245,12 +245,45 @@
         }
 
         .gestion-lista {
-            max-height: 320px;
+            max-height: 520px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 8px;
-            padding-right: 4px;
+            padding-right: 14px;
+        }
+
+        /* Barra de scroll visible y arrastrable (funciona con mouse y con el dedo en celular).
+           Se dibuja con position:fixed y se calcula su posición en JS a partir del elemento
+           que tiene el scroll, así siempre queda pegada a su lista sin importar en qué
+           columna/tarjeta esté ni si hay un modal abierto encima. */
+        .barra-scroll-track {
+            position: fixed;
+            width: 8px;
+            background: #e2e8f0;
+            border-radius: var(--radius-full);
+            z-index: 10000;
+        }
+
+        .barra-scroll-thumb {
+            position: absolute;
+            right: 0;
+            width: 8px;
+            min-height: 28px;
+            background: var(--dark);
+            border-radius: var(--radius-full);
+            cursor: grab;
+        }
+
+        .barra-scroll-thumb:active {
+            cursor: grabbing;
+            background: var(--primary);
+        }
+
+        .modal-scroll-box {
+            max-height: 82vh;
+            overflow-y: auto;
+            padding-right: 16px !important;
         }
 
         .gestion-fila {
@@ -698,6 +731,9 @@
                     Final (Ida y Vuelta)</button>
                 <button onclick="generarSemifinalAutomatica()"
                     style="background:#0b2f5c; color:#fff; width:100%;">🥈 Lanzar Semifinal (Ida y Vuelta, con ganadores de Cuartos)</button>
+                <button onclick="limpiarDuplicadosLiguilla()"
+                    style="background:#c62828; color:#fff; width:100%; margin-top:8px;">🧹 Eliminar duplicados de la Liguilla</button>
+                <p style="font-size:0.72rem; color:#888; margin:6px 0 0;">Úsalo si ves más partidos de los que deberían en Cuartos/Semifinal (por ejemplo "5 partidos" en vez de 4) — quita los repetidos y deja solo el más completo de cada cruce.</p>
             </div>
         </div>
 
@@ -2599,6 +2635,7 @@
             cargarConfigFormulario();
             cargarReglamentoFormulario();
             cargarEncuestaFormulario();
+            activarBarrasScrollGestion();
         });
 
         function cargarConfigFormulario() {
@@ -4084,7 +4121,7 @@ ${cuerpo}`;
             divModal.id = "modal-designacion-liguilla";
             divModal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center; z-index:9999; overflow:auto; padding:20px 0;";
             divModal.innerHTML = `
-                <div style="background:white; padding:25px; border-radius:12px; max-width:480px; width:90%;">
+                <div class="modal-scroll-box" style="background:white; padding:25px; border-radius:12px; max-width:480px; width:90%; position:relative;">
                     <h3 style="margin-top:0; color:#0b2f5c;">🏁 Designación Arbitral y Horarios - Cuartos de Final</h3>
                     <p style="font-size:0.78rem; color:#666; margin-top:-6px;">Se jugará a Ida y Vuelta. El árbitro elegido aquí queda asignado a ambos partidos de la llave. El horario es opcional: puedes dejarlo en blanco y programarlo después desde "Programar Encuentro".</p>
                     ${llaves.map((ll, idx) => `
@@ -4113,8 +4150,10 @@ ${cuerpo}`;
             `;
 
             document.body.appendChild(divModal);
+            const barraCuartos = activarBarraScroll(divModal.querySelector('.modal-scroll-box'));
+            const cerrarModalCuartos = () => { divModal.remove(); barraCuartos?.remove(); };
 
-            document.getElementById('btn-cancelar-liguilla').onclick = function () { divModal.remove(); };
+            document.getElementById('btn-cancelar-liguilla').onclick = function () { cerrarModalCuartos(); };
             document.getElementById('btn-confirmar-liguilla').onclick = function () {
                 const arbitrosElegidos = llaves.map((ll, idx) => document.getElementById(`sel-arb-cuartos${idx}`).value);
                 const datosLlaves = llaves.map((ll, idx) => {
@@ -4140,7 +4179,7 @@ ${cuerpo}`;
                 });
 
                 db.liguillaActiva = true;
-                divModal.remove();
+                cerrarModalCuartos();
                 guardarDB();
                 alert("¡Cuartos de Final lanzados (Ida y Vuelta)! Cuando se jueguen los 8 partidos, usa \"Lanzar Semifinal\".");
             };
@@ -4172,7 +4211,7 @@ ${cuerpo}`;
             divModal.id = "modal-designacion-semifinal";
             divModal.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center; z-index:9999; overflow:auto; padding:20px 0;";
             divModal.innerHTML = `
-                <div style="background:white; padding:25px; border-radius:12px; max-width:480px; width:90%;">
+                <div class="modal-scroll-box" style="background:white; padding:25px; border-radius:12px; max-width:480px; width:90%; position:relative;">
                     <h3 style="margin-top:0; color:#0b2f5c;">🏁 Designación Arbitral y Horarios - Semifinal</h3>
                     <p style="font-size:0.78rem; color:#666; margin-top:-6px;">Se jugará a Ida y Vuelta. El árbitro elegido aquí queda asignado a ambos partidos de la llave. El horario es opcional: puedes dejarlo en blanco y programarlo después desde "Programar Encuentro".</p>
                     ${parejas.map((pp, idx) => `
@@ -4201,8 +4240,10 @@ ${cuerpo}`;
             `;
 
             document.body.appendChild(divModal);
+            const barraSemifinal = activarBarraScroll(divModal.querySelector('.modal-scroll-box'));
+            const cerrarModalSemifinal = () => { divModal.remove(); barraSemifinal?.remove(); };
 
-            document.getElementById('btn-cancelar-semifinal').onclick = function () { divModal.remove(); };
+            document.getElementById('btn-cancelar-semifinal').onclick = function () { cerrarModalSemifinal(); };
             document.getElementById('btn-confirmar-semifinal').onclick = function () {
                 const arbitrosElegidos = parejas.map((pp, idx) => document.getElementById(`sel-arb-semifinal${idx}`).value);
                 const datosParejas = parejas.map((pp, idx) => {
@@ -4228,6 +4269,7 @@ ${cuerpo}`;
                 });
 
                 divModal.remove();
+                barraSemifinal?.remove();
                 guardarDB();
                 alert("¡Semifinal lanzada (Ida y Vuelta)! Cuando se conozca al ganador del global de cada llave, programa la Gran Final desde \"Programar Encuentro\".");
             };
@@ -4330,6 +4372,104 @@ ${cuerpo}`;
             const n = parseInt(valor);
             j[campo] = isNaN(n) || n < 0 ? 0 : n;
             guardarDB();
+        }
+
+        /* ===== Barra de scroll visible y arrastrable (para listas largas y modales de designación) =====
+           Funciona con mouse (arrastrar) y con el dedo en celular (touch), y se actualiza sola
+           cuando el contenido cambia (nuevas filas, jornadas que se abren/cierran, etc).
+           Se dibuja aparte (position:fixed) y se posiciona en cada momento según el tamaño y
+           lugar real de la lista, para que siempre coincida con ella sin importar en qué
+           columna esté. Devuelve la barra por si el que la llama necesita quitarla luego
+           (por ejemplo, al cerrar un modal). */
+        function activarBarraScroll(el) {
+            if (!el || el.dataset.barraScrollLista) return null;
+            el.dataset.barraScrollLista = '1';
+
+            const track = document.createElement('div');
+            track.className = 'barra-scroll-track';
+            const thumb = document.createElement('div');
+            thumb.className = 'barra-scroll-thumb';
+            track.appendChild(thumb);
+            document.body.appendChild(track);
+
+            function actualizarBarra() {
+                if (!el.isConnected) {
+                    track.remove();
+                    const i = window.__registroBarrasScroll.indexOf(actualizarBarra);
+                    if (i !== -1) window.__registroBarrasScroll.splice(i, 1);
+                    return;
+                }
+                const rect = el.getBoundingClientRect();
+                const visible = el.clientHeight;
+                const total = el.scrollHeight;
+                if (total <= visible + 2 || rect.width === 0) { track.style.display = 'none'; return; }
+                track.style.display = 'block';
+                track.style.top = rect.top + 'px';
+                track.style.left = (rect.right - 10) + 'px';
+                track.style.height = rect.height + 'px';
+                const alturaThumb = Math.max(28, (visible / total) * visible);
+                const maxScroll = total - visible;
+                const maxThumbTop = visible - alturaThumb;
+                const top = maxScroll > 0 ? (el.scrollTop / maxScroll) * maxThumbTop : 0;
+                thumb.style.height = alturaThumb + 'px';
+                thumb.style.top = top + 'px';
+            }
+
+            el.addEventListener('scroll', actualizarBarra);
+            window.addEventListener('resize', actualizarBarra);
+            window.addEventListener('scroll', actualizarBarra, true);
+            el.addEventListener('toggle', actualizarBarra, true);
+            new MutationObserver(actualizarBarra).observe(el, { childList: true, subtree: true, attributes: true });
+            if (window.ResizeObserver) { try { new ResizeObserver(actualizarBarra).observe(el); } catch (e) { } }
+
+            // Red de seguridad: además de reaccionar a scroll/resize/cambios de contenido,
+            // se revisa sola cada cierto tiempo por si algún cambio no disparó los eventos de arriba
+            // (por ejemplo datos que llegan de Firebase después de cargar la página).
+            window.__registroBarrasScroll = window.__registroBarrasScroll || [];
+            window.__registroBarrasScroll.push(actualizarBarra);
+            if (!window.__intervalBarrasScroll) {
+                window.__intervalBarrasScroll = setInterval(() => {
+                    window.__registroBarrasScroll.forEach(fn => fn());
+                }, 400);
+            }
+
+
+            let arrastrando = false, startY = 0, startScroll = 0;
+            function empezarArrastre(y) { arrastrando = true; startY = y; startScroll = el.scrollTop; }
+            function moverArrastre(y) {
+                if (!arrastrando) return;
+                const visible = el.clientHeight, total = el.scrollHeight;
+                const alturaThumb = thumb.offsetHeight;
+                const maxScroll = total - visible;
+                const maxThumbTop = visible - alturaThumb;
+                if (maxThumbTop <= 0) return;
+                el.scrollTop = startScroll + (y - startY) * (maxScroll / maxThumbTop);
+            }
+            function terminarArrastre() { arrastrando = false; }
+
+            thumb.addEventListener('mousedown', e => { empezarArrastre(e.clientY); e.preventDefault(); });
+            document.addEventListener('mousemove', e => moverArrastre(e.clientY));
+            document.addEventListener('mouseup', terminarArrastre);
+            thumb.addEventListener('touchstart', e => empezarArrastre(e.touches[0].clientY), { passive: true });
+            document.addEventListener('touchmove', e => { if (arrastrando) moverArrastre(e.touches[0].clientY); }, { passive: true });
+            document.addEventListener('touchend', terminarArrastre);
+
+            track.addEventListener('click', e => {
+                if (e.target === thumb) return;
+                const rectT = track.getBoundingClientRect();
+                const clickY = e.clientY - rectT.top;
+                const alturaThumb = thumb.offsetHeight;
+                const visible = el.clientHeight, total = el.scrollHeight;
+                const maxScroll = total - visible;
+                el.scrollTop = Math.max(0, Math.min(maxScroll, ((clickY - alturaThumb / 2) / (visible - alturaThumb)) * maxScroll));
+            });
+
+            actualizarBarra();
+            return track;
+        }
+
+        function activarBarrasScrollGestion() {
+            document.querySelectorAll('.gestion-lista').forEach(activarBarraScroll);
         }
 
         function renderizarGestion() {
@@ -4874,6 +5014,32 @@ ${cuerpo}`;
             if (!p) return;
             p.oculto = !p.oculto;
             guardarDB();
+        }
+
+        // Quita partidos duplicados de la Liguilla (mismo cruce/llave repetido en la misma ronda),
+        // conservando el más completo (con cédula cerrada > jugado > el más reciente).
+        function limpiarDuplicadosLiguilla() {
+            const rondas = [98, 99, 100, 101, 102];
+            const idsAEliminar = [];
+            rondas.forEach(j => {
+                const grupos = {};
+                db.partidos.filter(p => p.jornada === j).forEach(p => {
+                    const clave = p.llaveId ?? 0; // la Final (102) no usa llaveId, se agrupa toda junta
+                    (grupos[clave] = grupos[clave] || []).push(p);
+                });
+                Object.values(grupos).forEach(arr => {
+                    if (arr.length <= 1) return;
+                    const puntaje = x => (x.cedula ? 2 : 0) + (x.jugado ? 1 : 0);
+                    arr.sort((a, b) => puntaje(b) - puntaje(a) || (b.id || 0) - (a.id || 0));
+                    arr.slice(1).forEach(p => idsAEliminar.push(p.id));
+                });
+            });
+            if (idsAEliminar.length === 0) { alert('No se encontraron partidos duplicados en la Liguilla. Todo está en orden.'); return; }
+            if (!confirm(`Se encontraron ${idsAEliminar.length} partido(s) duplicado(s) en la Liguilla (mismo cruce repetido dentro de la misma ronda). Se dejará solo el más completo de cada uno y se borrarán los demás. ¿Continuar?`)) return;
+            db.partidos = db.partidos.filter(p => !idsAEliminar.includes(p.id));
+            guardarDB();
+            renderizarGestion();
+            alert(`Listo, se eliminaron ${idsAEliminar.length} partido(s) duplicado(s) de la Liguilla.`);
         }
 
         function eliminarPartido(id) {

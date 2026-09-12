@@ -566,8 +566,8 @@
         <!-- BRACKET LIGUILLA (primero cuando está activa la fase de liguilla) -->
         <section id="bracket-sec" class="card-section hidden" style="border-top-color: #e0932e;">
             <h2>🏆 Cuadro de Liguilla</h2>
-            <p style="text-align:center; color:var(--text-muted); font-size:0.85rem; margin-top:-8px;">Camino a la Gran Final — desliza el cuadro hacia los lados en pantallas pequeñas</p>
-            <div class="pob-wrap"><div id="bracket-tree" class="pob-grid"></div></div>
+            <p style="text-align:center; color:var(--text-muted); font-size:0.85rem; margin-top:-8px;">Camino a la Gran Final — el cuadro se ajusta solo para verse completo en tu pantalla</p>
+            <div class="pob-wrap" id="bracket-wrap"><div id="bracket-tree" class="pob-grid"></div></div>
         </section>
 
         <!-- TABLÓN DE ANUNCIOS -->
@@ -1558,6 +1558,7 @@
             renderizarGraficaGolesJornada();
             actualizarVisibilidadLiguilla();
             renderizarBracketLiguilla();
+            ajustarEscalaBracket();
             renderizarPorteros();
             actualizarVistaJornadas();
             actualizarVistaGoleo();
@@ -2021,6 +2022,37 @@
                     ${piePartido}
                 </div>`;
         }
+
+        // Encoge el Cuadro de Liguilla (con transform:scale) para que quepa completo en
+        // el ancho de la pantalla, sin necesidad de deslizar hacia los lados. En pantallas
+        // donde sí cabe a tamaño normal, se deja igual. Se recalcula cada vez que se
+        // redibuja el cuadro (nuevos resultados) y cada vez que cambia el tamaño de la ventana.
+        function ajustarEscalaBracket() {
+            const wrap = document.getElementById('bracket-wrap');
+            const grid = document.getElementById('bracket-tree');
+            if (!wrap || !grid) return;
+
+            // Se mide el tamaño real (sin escalar) antes de decidir cuánto encoger.
+            grid.style.transform = 'none';
+            wrap.style.height = '';
+            const anchoDisponible = wrap.clientWidth;
+            const anchoNatural = grid.scrollWidth;
+            const altoNatural = grid.scrollHeight;
+            if (!anchoNatural || !anchoDisponible) return;
+
+            if (anchoDisponible >= anchoNatural) {
+                wrap.style.overflowX = 'auto';
+                return;
+            }
+
+            const escala = anchoDisponible / anchoNatural;
+            grid.style.transformOrigin = 'top left';
+            grid.style.transform = `scale(${escala})`;
+            wrap.style.height = Math.ceil(altoNatural * escala) + 'px';
+            wrap.style.overflowX = 'hidden';
+        }
+        window.addEventListener('resize', ajustarEscalaBracket);
+        window.addEventListener('orientationchange', ajustarEscalaBracket);
 
         function renderizarBracketLiguilla() {
             const bracket = document.getElementById('bracket-tree');
