@@ -469,17 +469,9 @@
             .partido-nombre-equipo { font-size: 0.75rem; }
             .cancha { height: 340px; }
             .bracket-match { width: 100%; max-width: 320px; }
-            /* En móvil el cuadro se apila en una sola columna, con tarjetas a tamaño completo
-               (nada de transform:scale ni min-width forzado, así no se encoge ni salta al hacer scroll). */
-            .pob-wrap { overflow-x: visible; }
-            .pob-grid { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 6px 2px 4px; }
-            .pob-round-label { display: none; }
-            .pob-connector, .pob-connector-simple { display: none; }
-            .pob-match { max-width: 100%; width: 100%; padding: 14px 16px; }
-            .pob-match-title { font-size: 0.75rem; }
-            .pob-team img { width: 32px; height: 32px; }
-            .pob-team-name { font-size: 0.88rem; }
-            .pob-team-score { font-size: 1.15rem; }
+            .pob-grid { min-width: 880px; grid-template-rows: repeat(3, minmax(110px, auto)); }
+            .pob-match { max-width: 200px; padding: 8px 10px; }
+            .pob-team img { width: 24px; height: 24px; }
             .modal-content { padding: 20px; }
             .cedula-info-grid { grid-template-columns: 1fr !important; }
             input, select { font-size: 16px; }
@@ -2032,30 +2024,13 @@
         }
 
         // Encoge el Cuadro de Liguilla (con transform:scale) para que quepa completo en
-        // el ancho de la pantalla, sin necesidad de deslizar hacia los lados. Solo aplica en
-        // pantallas de escritorio/tablet (>768px); en móvil el cuadro se apila en una sola
-        // columna a tamaño completo (ver CSS), así que ahí no se toca nada.
-        // Se guarda el último ancho usado para no recalcular si solo cambió el alto de la
-        // ventana (por ejemplo cuando el navegador del celular oculta/muestra su barra al
-        // hacer scroll): eso era lo que provocaba que el cuadro "saltara"/se viera en blanco
-        // un instante al bajar la página.
-        let anchoBracketPrevio = null;
+        // el ancho de la pantalla, sin necesidad de deslizar hacia los lados. En pantallas
+        // donde sí cabe a tamaño normal, se deja igual. Se recalcula cada vez que se
+        // redibuja el cuadro (nuevos resultados) y cada vez que cambia el tamaño de la ventana.
         function ajustarEscalaBracket() {
             const wrap = document.getElementById('bracket-wrap');
             const grid = document.getElementById('bracket-tree');
             if (!wrap || !grid) return;
-
-            if (window.innerWidth <= 768) {
-                grid.style.transform = 'none';
-                wrap.style.height = '';
-                wrap.style.overflowX = 'visible';
-                anchoBracketPrevio = null;
-                return;
-            }
-
-            const anchoActual = window.innerWidth;
-            if (anchoActual === anchoBracketPrevio) return;
-            anchoBracketPrevio = anchoActual;
 
             // Se mide el tamaño real (sin escalar) antes de decidir cuánto encoger.
             grid.style.transform = 'none';
