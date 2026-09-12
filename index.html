@@ -469,23 +469,9 @@
             .partido-nombre-equipo { font-size: 0.75rem; }
             .cancha { height: 340px; }
             .bracket-match { width: 100%; max-width: 320px; }
-            /* En móvil el cuadro va de arriba hacia abajo (una sola columna), en el orden
-               lógico Cuarto1→Cuarto4→Semifinal1→Cuarto2→Cuarto3→Semifinal2→Gran Final,
-               usando el "order" que ya trae cada tarjeta desde el JS. Nada de transform:scale
-               aquí, así que no se encoge ni se recalcula con el resize (sin saltos). */
-            .pob-wrap { overflow-x: visible; }
-            .pob-grid { display: flex; flex-direction: column; align-items: center; min-width: 0; padding: 6px 4px 4px; }
-            .pob-round-label { display: none; }
-            .pob-connector, .pob-connector-simple { display: none; }
-            .pob-match { max-width: 340px; width: 100%; padding: 14px 16px; margin-bottom: 34px; position: relative; }
-            .pob-match:not(.pob-final)::after {
-                content: '↓'; position: absolute; left: 50%; bottom: -30px; transform: translateX(-50%);
-                font-size: 1.3rem; font-weight: 700; color: var(--secondary); line-height: 1;
-            }
-            .pob-match-title { font-size: 0.8rem; }
-            .pob-team img { width: 34px; height: 34px; }
-            .pob-team-name { font-size: 0.92rem; }
-            .pob-team-score { font-size: 1.2rem; }
+            .pob-grid { min-width: 880px; grid-template-rows: repeat(3, minmax(110px, auto)); }
+            .pob-match { max-width: 200px; padding: 8px 10px; }
+            .pob-team img { width: 24px; height: 24px; }
             .modal-content { padding: 20px; }
             .cedula-info-grid { grid-template-columns: 1fr !important; }
             input, select { font-size: 16px; }
@@ -2133,10 +2119,7 @@
             const finalEscudoA = final ? escudoEq(final.localId) : gS0.escudo;
             const finalEscudoB = final ? escudoEq(final.visitaId) : gS1.escudo;
 
-            // El 3er parámetro (order) solo se usa en móvil (ver CSS), donde el cuadro se
-            // apila de arriba hacia abajo en vez de ir hacia los lados; en PC no afecta nada
-            // porque ahí la posición la da grid-column/grid-row de forma explícita.
-            const w = (col, row, order) => `grid-column:${col}; grid-row:${row}; align-self:center;${order ? ` order:${order};` : ''}`;
+            const w = (col, row) => `grid-column:${col}; grid-row:${row}; align-self:center;`;
             // Tarjeta de un Cuarto de Final, tolerante a datos incompletos (por si alguna llave
             // no llegó a crearse) para que el cuadro nunca se rompa.
             const cardCuartos = (idx, titulo) => {
@@ -2145,17 +2128,17 @@
                 return pobTarjetaLlave({ ida, vuelta, titulo, nombreA: nombreEq(ida.localId), nombreB: nombreEq(ida.visitaId), escudoA: escudoEq(ida.localId), escudoB: escudoEq(ida.visitaId) });
             };
             const html = `
-                <div style="${w(1, 1, 1)}">${cardCuartos(0, 'Cuarto de Final 1')}</div>
-                <div style="${w(1, 3, 2)}">${cardCuartos(3, 'Cuarto de Final 4')}</div>
+                <div style="${w(1, 1)}">${cardCuartos(0, 'Cuarto de Final 1')}</div>
+                <div style="${w(1, 3)}">${cardCuartos(3, 'Cuarto de Final 4')}</div>
                 <div class="pob-connector" style="grid-column:2;"><span class="pc-top"></span><span class="pc-bottom"></span><span class="pc-vert"></span><span class="pc-out"></span></div>
-                <div style="${w(3, 2, 3)}">${pobTarjetaLlave({ ida: s[0].ida, vuelta: s[0].vuelta, titulo: 'Semifinal 1', nombreA: s[0].nombreA, nombreB: s[0].nombreB, escudoA: s[0].escudoA, escudoB: s[0].escudoB })}</div>
+                <div style="${w(3, 2)}">${pobTarjetaLlave({ ida: s[0].ida, vuelta: s[0].vuelta, titulo: 'Semifinal 1', nombreA: s[0].nombreA, nombreB: s[0].nombreB, escudoA: s[0].escudoA, escudoB: s[0].escudoB })}</div>
                 <div class="pob-connector-simple" style="grid-column:4;"></div>
-                <div style="${w(5, 2, 7)}">${pobTarjetaLlave({ ida: final, vuelta: null, titulo: '🏆 Gran Final', nombreA: finalNombreA, nombreB: finalNombreB, escudoA: finalEscudoA, escudoB: finalEscudoB, esFinal: true })}</div>
+                <div style="${w(5, 2)}">${pobTarjetaLlave({ ida: final, vuelta: null, titulo: '🏆 Gran Final', nombreA: finalNombreA, nombreB: finalNombreB, escudoA: finalEscudoA, escudoB: finalEscudoB, esFinal: true })}</div>
                 <div class="pob-connector-simple" style="grid-column:6;"></div>
-                <div style="${w(7, 2, 6)}">${pobTarjetaLlave({ ida: s[1].ida, vuelta: s[1].vuelta, titulo: 'Semifinal 2', nombreA: s[1].nombreA, nombreB: s[1].nombreB, escudoA: s[1].escudoA, escudoB: s[1].escudoB })}</div>
+                <div style="${w(7, 2)}">${pobTarjetaLlave({ ida: s[1].ida, vuelta: s[1].vuelta, titulo: 'Semifinal 2', nombreA: s[1].nombreA, nombreB: s[1].nombreB, escudoA: s[1].escudoA, escudoB: s[1].escudoB })}</div>
                 <div class="pob-connector pob-mirror" style="grid-column:8;"><span class="pc-top"></span><span class="pc-bottom"></span><span class="pc-vert"></span><span class="pc-out"></span></div>
-                <div style="${w(9, 1, 4)}">${cardCuartos(1, 'Cuarto de Final 2')}</div>
-                <div style="${w(9, 3, 5)}">${cardCuartos(2, 'Cuarto de Final 3')}</div>
+                <div style="${w(9, 1)}">${cardCuartos(1, 'Cuarto de Final 2')}</div>
+                <div style="${w(9, 3)}">${cardCuartos(2, 'Cuarto de Final 3')}</div>
             `;
             bracket.innerHTML = html;
         }
