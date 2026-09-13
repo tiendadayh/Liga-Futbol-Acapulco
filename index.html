@@ -106,12 +106,14 @@
 
         nav {
             background-color: rgba(11, 47, 92, 0.92); backdrop-filter: blur(8px); display: flex; justify-content: center;
-            flex-wrap: wrap; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+            flex-wrap: wrap; flex-direction: column; align-items: stretch; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.15);
         }
-        .nav-links { display: flex; flex-wrap: wrap; justify-content: center; }
+        .nav-links { display: none; flex-direction: column; width: 100%; }
+        .nav-links.nav-links-open { display: flex; }
         nav a {
             color: white; padding: 15px 18px; text-decoration: none; font-weight: 700; text-transform: uppercase;
             font-size: 0.78rem; letter-spacing: 0.4px; position: relative; transition: color var(--transition-fast);
+            text-align: left; border-top: 1px solid rgba(255,255,255,0.08);
         }
         nav a::after {
             content: ""; position: absolute; left: 18px; right: 18px; bottom: 8px; height: 2px; background: var(--accent);
@@ -120,7 +122,7 @@
         nav a:hover { color: var(--accent); background: rgba(255,255,255,0.06); }
         nav a:hover::after { transform: scaleX(1); }
         .nav-toggle {
-            display: none; width: 100%; background: none; border: none; color: white; font-weight: 700;
+            display: flex; width: 100%; background: none; border: none; color: white; font-weight: 700;
             text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; padding: 14px 18px;
             cursor: pointer; align-items: center; gap: 10px; text-align: left;
         }
@@ -449,11 +451,7 @@
             .site-header-logo { width: 54px; height: 54px; }
             .theme-switch { top: 12px; right: 12px; padding: 6px 10px; font-size: 0.75rem; }
             .install-btn { top: 12px; left: 12px; padding: 6px 10px; font-size: 0.75rem; }
-            nav { flex-direction: column; align-items: stretch; }
-            .nav-toggle { display: flex; }
-            .nav-links { display: none; flex-direction: column; width: 100%; }
-            .nav-links.nav-links-open { display: flex; }
-            nav a { padding: 12px 18px; font-size: 0.72rem; text-align: left; border-top: 1px solid rgba(255,255,255,0.08); }
+            nav a { padding: 12px 18px; font-size: 0.72rem; }
             .container { margin: 20px auto; padding: 0 12px; }
             .card-section { padding: 18px; margin-bottom: 22px; }
             .header-section-flex { flex-wrap: wrap; gap: 8px; }
@@ -473,7 +471,6 @@
             .pob-match { max-width: 200px; padding: 8px 10px; }
             .pob-team img { width: 24px; height: 24px; }
             .modal-content { padding: 20px; }
-            .cedula-info-grid { grid-template-columns: 1fr !important; }
             input, select { font-size: 16px; }
         }
 
@@ -491,7 +488,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
     <script>
         // La página siempre inicia desde arriba y no conserva el scroll anterior.
         // Esto evita que el banner EN VIVO quede visualmente encima de la cabecera
@@ -540,7 +536,6 @@
             <a href="#goleo-sec">Goleo</a>
             <a href="#disciplina-sec">Disciplina</a>
             <a href="#porteros-sec">Guante de Oro</a>
-            <a href="#goles-jornada-sec">Goles por Jornada</a>
             <a href="#headtohead-sec">Cara a Cara</a>
             <a href="#xi-sec">XI MVP</a>
             <a href="#jugadores-sec">Jugadores</a>
@@ -688,16 +683,6 @@
             </div>
         </section>
 
-        <!-- GRÁFICA DE GOLES POR JORNADA -->
-        <section id="goles-jornada-sec" class="card-section" style="border-top-color: var(--secondary);">
-            <h2>📊 Goles por Jornada</h2>
-            <p style="font-size:0.85rem; color:#6b7280; margin-top:-6px;">Total de goles anotados en cada jornada disputada del torneo. Elige un equipo para ver solo sus goles.</p>
-            <select id="grafica-goles-equipo-select" onchange="renderizarGraficaGolesJornada()" style="margin-top:8px; max-width:280px;">
-                <option value="">⚽ Todos los equipos (total del torneo)</option>
-            </select>
-            <div id="grafica-goles-jornada" style="overflow-x:auto; margin-top:12px;"></div>
-        </section>
-
         <!-- COMPARADOR HEAD TO HEAD -->
         <section id="headtohead-sec" class="card-section" style="border-top-color: #3f51b5;">
             <h2>⚔️ Comparador Cara a Cara</h2>
@@ -740,12 +725,7 @@
 
         <!-- REGLAMENTO OFICIAL (editable desde el admin, siempre al día) -->
         <section id="reglamento-sec" class="card-section" style="border-top-color: #0d2a4d;">
-            <div class="header-section-flex">
-                <h2>📖 Reglamento Oficial</h2>
-                <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                    <button type="button" onclick="descargarReglamentoPDF()" style="width:auto; background:#2e7d32;">⬇️ Descargar PDF</button>
-                </div>
-            </div>
+            <h2>📖 Reglamento Oficial</h2>
             <div id="reglamento-publico-body"></div>
         </section>
 
@@ -842,14 +822,6 @@
                 <button type="submit" class="btn-enviar-solicitud campo-solicitud-full">Enviar Solicitud</button>
             </form>
         </section>
-    </div>
-
-    <!-- MODAL CÉDULA OFICIAL -->
-    <div id="cedula-modal" class="modal hidden" onclick="if(event.target === this) cerrarModal('cedula-modal')">
-        <div class="modal-content" style="max-width:650px; text-align:left;">
-            <button class="close-modal" onclick="cerrarModal('cedula-modal')">×</button>
-            <div id="cedula-modal-body"></div>
-        </div>
     </div>
 
     <!-- MODAL FICHA TÉCNICA -->
@@ -1344,9 +1316,9 @@
             btn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
         }
 
-        // Cierra el menú móvil al elegir una sección (para no tapar el contenido)
+        // Cierra el menú al elegir una sección (para no tapar el contenido), en cualquier tamaño de pantalla
         document.getElementById('nav-links').addEventListener('click', (e) => {
-            if (e.target.tagName === 'A' && window.matchMedia('(max-width: 768px)').matches) {
+            if (e.target.tagName === 'A') {
                 document.getElementById('nav-links').classList.remove('nav-links-open');
                 document.getElementById('nav-toggle-btn').setAttribute('aria-expanded', 'false');
             }
@@ -1410,91 +1382,6 @@
             cont.innerHTML = contenidoReglamentoHTML();
         }
 
-        // Genera y descarga un PDF real del Reglamento Oficial en un solo toque, sin
-        // depender del diálogo de impresión del navegador (que en varios celulares
-        // resulta confuso para guardar el archivo).
-        function descargarReglamentoPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ unit: 'pt', format: 'letter' });
-            const nombreLiga = (db.config && db.config.nombreLiga) || 'Liga de Futbol CoSmar SPORT CLUB';
-            const margenX = 50;
-            const anchoUtil = 515;
-            let y = 60;
-
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(18);
-            doc.setTextColor(13, 42, 77);
-            doc.text('Reglamento Oficial', 297.5, y, { align: 'center' });
-            y += 20;
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(11);
-            doc.setTextColor(100);
-            doc.text(nombreLiga, 297.5, y, { align: 'center' });
-            y += 34;
-
-            const tituloSeccion = (texto) => {
-                if (y > 730) { doc.addPage(); y = 60; }
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(13);
-                doc.setTextColor(13, 42, 77);
-                doc.text(texto, margenX, y);
-                y += 18;
-            };
-            const fila = (etiqueta, valor) => {
-                if (y > 755) { doc.addPage(); y = 60; }
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(10.5);
-                doc.setTextColor(60);
-                doc.text(`${etiqueta}:`, margenX, y);
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(20);
-                doc.text(`${valor}`, margenX + 200, y);
-                y += 17;
-            };
-            const parrafo = (texto, cursiva) => {
-                doc.setFont('helvetica', cursiva ? 'italic' : 'normal');
-                doc.setFontSize(cursiva ? 9 : 10.5);
-                doc.setTextColor(cursiva ? 110 : 30);
-                const lineas = doc.splitTextToSize(texto, anchoUtil);
-                lineas.forEach(linea => {
-                    if (y > 760) { doc.addPage(); y = 60; }
-                    doc.text(linea, margenX, y);
-                    y += cursiva ? 12 : 14;
-                });
-            };
-
-            tituloSeccion('Formato del partido');
-            fila('Duración', `${reg(db, 'numTiempos')} tiempos de ${reg(db, 'duracionMinutos')} min`);
-            fila('Tolerancia de llegada', `${reg(db, 'toleranciaMinutos')} min`);
-            fila('Jugadores', `${reg(db, 'jugadoresTitulares')} titulares + ${reg(db, 'jugadoresSuplentes')} suplentes`);
-            fila('Categoría', reg(db, 'categoriaTexto') || '—');
-            if (reg(db, 'balonOficial')) fila('Balón oficial', reg(db, 'balonOficial'));
-            y += 12;
-
-            tituloSeccion('Cuotas');
-            const cuotaTxt = v => v > 0 ? `$${v}` : 'Sin costo';
-            fila('Arbitraje por partido', cuotaTxt(reg(db, 'cuotaArbitraje')));
-            fila('Inscripción por equipo', cuotaTxt(reg(db, 'cuotaInscripcionEquipo')));
-            fila('Inscripción por jugador', cuotaTxt(reg(db, 'cuotaInscripcionJugador')));
-            y += 12;
-
-            tituloSeccion('Sanciones y multas');
-            fila(`${reg(db, 'amarillasParaAcumulada')} amarillas acumuladas`, `${reg(db, 'partidosAmarillasAcumuladas')} partido(s) + $${reg(db, 'multaAmarillasAcumuladas')}`);
-            fila('Doble amarilla', `${reg(db, 'partidosDobleAmarilla')} partido(s) + $${reg(db, 'multaDobleAmarilla')}`);
-            fila('Roja directa', `${reg(db, 'partidosRojaDirecta')} partido(s) por defecto + $${reg(db, 'multaRojaDirecta')}`);
-            y += 6;
-            parrafo('Una roja directa puede subir de partidos (hasta expulsión definitiva del torneo) si fue por insultar al árbitro, escupir o iniciar una riña; lo decide la administración de la liga caso por caso.', true);
-            y += 10;
-
-            const notasReg = reg(db, 'notasAdicionales');
-            if (notasReg) {
-                tituloSeccion('Notas adicionales');
-                parrafo(notasReg, false);
-            }
-
-            doc.save(`reglamento-oficial-${new Date().toISOString().slice(0, 10)}.pdf`);
-        }
-
         function actualizarVistaTodo() {
             aplicarLogoSitio();
             renderizarPatrocinadores();
@@ -1555,7 +1442,6 @@
 
             actualizarTablaPosiciones();
             renderizarOfensivaDefensiva();
-            renderizarGraficaGolesJornada();
             actualizarVisibilidadLiguilla();
             renderizarBracketLiguilla();
             ajustarEscalaBracket();
@@ -1818,70 +1704,6 @@
                     <td style="letter-spacing:2px; white-space:nowrap;">${eq.racha.slice(-5).map(r => iconoForma[r]).join('') || '—'}</td>
                 </tr>
             `).join('');
-        }
-
-        // Dibuja una gráfica de barras (SVG) con el total de goles anotados en cada jornada disputada.
-        // Si se elige un equipo en el selector, muestra solo los goles anotados por ese equipo (a favor).
-        function renderizarGraficaGolesJornada() {
-            const cont = document.getElementById('grafica-goles-jornada');
-            const sel = document.getElementById('grafica-goles-equipo-select');
-
-            // Llena el selector de equipos una sola vez (si ya tiene opciones más allá de "Todos", no lo vuelve a llenar)
-            if (sel && sel.options.length <= 1) {
-                sel.innerHTML = '<option value="">⚽ Todos los equipos (total del torneo)</option>' +
-                    db.equipos.map(eq => `<option value="${eq.id}">${eq.nombre}</option>`).join('');
-            }
-
-            const equipoId = sel ? parseInt(sel.value) : NaN;
-            const equipoSel = !isNaN(equipoId) ? db.equipos.find(e => e.id === equipoId) : null;
-
-            const jugados = db.partidos.filter(p => p.jugado && p.jornada && (!equipoSel || p.localId === equipoSel.id || p.visitaId === equipoSel.id));
-            if (!jugados.length) {
-                cont.innerHTML = `<p style="color:var(--text-muted);">${equipoSel ? `${equipoSel.nombre} aún no tiene partidos jugados.` : 'Aún no hay partidos jugados.'}</p>`;
-                return;
-            }
-
-            const porJornada = {};
-            jugados.forEach(p => {
-                const golesSumar = equipoSel
-                    ? (p.localId === equipoSel.id ? (p.golesLocal || 0) : (p.golesVisita || 0))
-                    : (p.golesLocal || 0) + (p.golesVisita || 0);
-                porJornada[p.jornada] = (porJornada[p.jornada] || 0) + golesSumar;
-            });
-
-            const jornadas = Object.keys(porJornada).map(Number).sort((a, b) => a - b);
-            const maxGoles = Math.max(...jornadas.map(j => porJornada[j]), 1);
-            const totalGoles = jornadas.reduce((s, j) => s + porJornada[j], 0);
-            const colorBarra = equipoSel ? 'var(--secondary)' : 'var(--primary)';
-
-            const anchoBarra = 46, espacio = 22, altoGrafica = 180;
-            const anchoSvg = jornadas.length * (anchoBarra + espacio) + espacio;
-
-            const barras = jornadas.map((j, idx) => {
-                const goles = porJornada[j];
-                const alto = (goles / maxGoles) * (altoGrafica - 30);
-                const x = espacio + idx * (anchoBarra + espacio);
-                const y = altoGrafica - alto;
-                return `
-                    <g>
-                        <rect x="${x}" y="${y}" width="${anchoBarra}" height="${alto}" rx="4" fill="${colorBarra}"></rect>
-                        <text x="${x + anchoBarra / 2}" y="${y - 6}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--text)">${goles}</text>
-                        <text x="${x + anchoBarra / 2}" y="${altoGrafica + 18}" text-anchor="middle" font-size="11" fill="var(--text)">J${j}</text>
-                    </g>
-                `;
-            }).join('');
-
-            const etiquetaResumen = equipoSel
-                ? `${equipoSel.nombre} — Promedio: <b>${(totalGoles / jornadas.length).toFixed(1)}</b> goles por jornada · Total: <b>${totalGoles}</b> goles en ${jornadas.length} jornada${jornadas.length === 1 ? '' : 's'} jugada${jornadas.length === 1 ? '' : 's'}`
-                : `Promedio: <b>${(totalGoles / jornadas.length).toFixed(1)}</b> goles por jornada · Total: <b>${totalGoles}</b> goles en ${jornadas.length} jornada${jornadas.length === 1 ? '' : 's'}`;
-
-            cont.innerHTML = `
-                <svg viewBox="0 0 ${anchoSvg} ${altoGrafica + 30}" width="${anchoSvg}" height="${altoGrafica + 30}" style="display:block;">
-                    <line x1="0" y1="${altoGrafica}" x2="${anchoSvg}" y2="${altoGrafica}" stroke="var(--border)" stroke-width="1"></line>
-                    ${barras}
-                </svg>
-                <p style="font-size:0.78rem; color:#6b7280; margin-top:6px;">${etiquetaResumen}</p>
-            `;
         }
 
         function renderizarOfensivaDefensiva() {
@@ -2186,7 +2008,6 @@
                 const escudoV = equipoV?.escudo || 'https://placehold.co/54';
                 const pen = p.penaltis ? `<br><small>(Penaltis: ${p.penaltis.local} - ${p.penaltis.visita})</small>` : '';
 
-                const cedulaBtn = (p.jugado && p.cedula) ? `<div style="text-align:center; margin-top:8px;"><button onclick="verCedulaPublica(${p.id})" style="background:var(--dark, #0b2f5c); color:white; border:none; padding:6px 14px; border-radius:20px; font-size:0.75rem; cursor:pointer;">📋 Ver Cédula Oficial</button></div>` : '';
                 const compartirBtn = p.jugado ? `<div style="text-align:center; margin-top:8px;"><button onclick="compartirResultadoPartido(${p.id})" style="background:var(--secondary, #1f8fd6); color:white; border:none; padding:6px 14px; border-radius:20px; font-size:0.75rem; cursor:pointer;">📤 Compartir Resultado</button></div>` : '';
 
                 let mvpHtml = '';
@@ -2296,7 +2117,6 @@
                         ${facebookLiveHtml}
                         ${alineacionesHtml}
                         ${mvpHtml}
-                        ${cedulaBtn}
                         ${compartirBtn}
                     </div>
                 `;
@@ -2602,7 +2422,7 @@
         }
 
         function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); }
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { cerrarModal('ficha-modal'); cerrarModal('cedula-modal'); cerrarModal('modal-equipo'); cerrarModal('modal-arbitro'); cerrarModal('modal-cancha'); } });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { cerrarModal('ficha-modal'); cerrarModal('modal-equipo'); cerrarModal('modal-arbitro'); cerrarModal('modal-cancha'); } });
 
         function verEquipo(id) {
             const eq = db.equipos.find(e => e.id === id);
@@ -3061,71 +2881,6 @@
             URL.revokeObjectURL(url);
         }
 
-        function verCedulaPublica(partidoId) {
-            const p = db.partidos.find(part => part.id === partidoId);
-            if (!p || !p.cedula) return;
-            const loc = db.equipos.find(e => e.id === p.localId)?.nombre || 'Local';
-            const vis = db.equipos.find(e => e.id === p.visitaId)?.nombre || 'Visita';
-            const c = p.cedula;
-
-            const jugadoresPartido = db.jugadores.filter(j => j.equipoId === p.localId || j.equipoId === p.visitaId);
-            const tarjetas = p.tarjetasDetalle || [];
-            const filasJugadores = jugadoresPartido.map(j => {
-                const am = tarjetas.filter(t => t.jugadorId === j.id && t.tipo === 'amarilla').length;
-                const rj = tarjetas.filter(t => t.jugadorId === j.id && t.tipo === 'roja').length;
-                const eq = j.equipoId === p.localId ? loc : vis;
-                if (!am && !rj && j.goles === undefined) return '';
-                return `<tr><td>${j.nombre}</td><td style="text-align:center;">${eq}</td><td style="text-align:center;">${am ? '🟨'.repeat(am) : '-'}</td><td style="text-align:center;">${rj ? '🟥' : '-'}</td></tr>`;
-            }).join('');
-
-            const mvp = p.mvpJugadorId ? db.jugadores.find(j => j.id === p.mvpJugadorId)?.nombre : null;
-
-            document.getElementById('cedula-modal-body').innerHTML = `
-                <div style="text-align:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:12px;">
-                    <strong style="font-size:1.05rem;">Liga de Futbol CoSmar SPORT CLUB - Cédula Oficial</strong><br>
-                    <span style="font-size:0.8rem; color:#666;">Temporada ${c.temporada || '-'} · ${etiquetaJornada(p.jornada)}</span>
-                </div>
-                <p style="text-align:center; font-size:1.1rem;"><b>${loc}</b> ${p.golesLocal ?? 0} - ${p.golesVisita ?? 0} <b>${vis}</b>${p.penaltis ? ` <br><small>(Penaltis: ${p.penaltis.local}-${p.penaltis.visita})</small>` : ''}</p>
-                <p style="font-size:0.85rem; color:#444;">📅 ${c.fecha || '-'} · 🕐 ${c.hora || '-'} · 🏟️ ${c.campo || '-'} · 📍 ${c.ciudad || '-'}</p>
-                <p style="font-size:0.85rem; color:#444;">👤 Árbitro: <b>${c.arbitro || p.arbitro || '-'}</b> · Asistente 1: ${c.asistente1 || '-'} · Asistente 2: ${c.asistente2 || '-'} · 4º Árbitro: ${c.cuartoArbitro || '-'}</p>
-                <p style="font-size:0.85rem; color:#444;">⏱️ 1er Tiempo: ${c.primerTiempoInicio || '-'} a ${c.primerTiempoFin || '-'} · 2do Tiempo: ${c.segundoTiempoInicio || '-'} a ${c.segundoTiempoFin || '-'}</p>
-
-                <div style="overflow-x:auto;">
-                <table style="width:100%; border-collapse:collapse; margin-top:12px; font-size:0.85rem;">
-                    <thead><tr style="background:#f0f4f8;"><th style="padding:6px; text-align:left;">Jugador</th><th>Equipo</th><th>Amonestación</th><th>Expulsión</th></tr></thead>
-                    <tbody>${filasJugadores || '<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:8px;">Sin incidencias registradas</td></tr>'}</tbody>
-                </table>
-                </div>
-
-                <div class="cedula-info-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:12px; font-size:0.85rem;">
-                    <div><b>${loc}</b><br>Entrenador: ${c.entrenadorLocal || '-'}<br>Capitán: ${c.capitanLocal || '-'}</div>
-                    <div><b>${vis}</b><br>Entrenador: ${c.entrenadorVisita || '-'}<br>Capitán: ${c.capitanVisita || '-'}</div>
-                </div>
-
-                ${(p.titularesLocal && p.titularesLocal.length) || (p.titularesVisita && p.titularesVisita.length) ? `
-                <div style="margin-top:12px; font-size:0.85rem;">
-                    <b>🧩 Alineación Titular</b>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:6px;">
-                        <div><b>${loc}</b><br>${(p.titularesLocal || []).map(id => db.jugadores.find(j => j.id === id)?.nombre).filter(Boolean).join('<br>') || '-'}</div>
-                        <div><b>${vis}</b><br>${(p.titularesVisita || []).map(id => db.jugadores.find(j => j.id === id)?.nombre).filter(Boolean).join('<br>') || '-'}</div>
-                    </div>
-                </div>` : ''}
-
-                <div style="margin-top:12px; font-size:0.85rem;">
-                    <b>🔁 Cambios ${loc}:</b> ${c.cambiosLocal ? c.cambiosLocal.replace(/\n/g,'<br>') : '-'}<br>
-                    <b>🔁 Cambios ${vis}:</b> ${c.cambiosVisita ? c.cambiosVisita.replace(/\n/g,'<br>') : '-'}
-                </div>
-
-                ${mvp ? `<p style="margin-top:12px; font-size:0.85rem;">⭐ <b>MVP Oficial:</b> ${mvp}</p>` : ''}
-
-                <div style="margin-top:12px; font-size:0.85rem;">
-                    <b>⚠️ Amonestados / Expulsados:</b> ${c.amonestados ? c.amonestados.replace(/\n/g,'<br>') : 'Sin registro.'}
-                </div>
-                <p style="font-size:0.85rem; margin-top:8px;">🌱 Terreno de Juego: <b>${c.estadoTerreno || '-'}</b> · 📣 Conducta del Público: <b>${c.conductaPublico || '-'}</b></p>
-                <div style="margin-top:8px; font-size:0.85rem;"><b>📝 Incidentes:</b> ${c.incidentes ? c.incidentes.replace(/\n/g,'<br>') : 'Sin incidentes reportados.'}</div>
-            `;
-            document.getElementById('cedula-modal').classList.remove('hidden');
-        }
         // Genera una imagen tipo "tabla de posiciones" (escudos, PJ/PG/PE/PP/DG/Pts de cada
         // equipo) y la comparte con el sistema operativo (WhatsApp/Instagram) o la descarga
         // si el navegador no soporta compartir archivos. Reutiliza el mismo patrón visual
