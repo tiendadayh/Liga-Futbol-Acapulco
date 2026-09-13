@@ -192,13 +192,68 @@
         /* Los títulos de cada sección (Mejor Ofensiva y Defensiva, Solicitud de Registro, etc.)
            se achican solos en pantallas angostas para no partirse en dos líneas. */
         .card-section > h2 { font-size: clamp(1.02rem, 4.6vw, 1.5rem); line-height: 1.25; white-space: normal; }
+
+        /* ============================================================
+           SISTEMA DE BOTONES UNIFICADO
+           Un solo esqueleto (.btn) + variantes de color (.btn-primary,
+           .btn-secondary, .btn-success, .btn-outline) + modificadores de
+           tamaño/forma (.btn-sm, .btn-pill). Antes cada botón traía su
+           propio style="background:..." suelto en el HTML; ahora todo
+           color/estado vive aquí para que cambiar la paleta sea un
+           cambio en un solo lugar.
+           ============================================================ */
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+            color: white; border: none; padding: 9px 16px; font-family: var(--font-body);
+            border-radius: var(--radius-sm); cursor: pointer; font-weight: 700; font-size: 0.85rem;
+            box-shadow: var(--shadow-xs); text-decoration: none;
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+        }
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.06); }
+        .btn:active { transform: translateY(0) scale(0.98); }
+        .btn-sm { padding: 6px 14px; font-size: 0.75rem; }
+        .btn-pill { border-radius: var(--radius-full); }
+
+        .btn-primary { background: var(--gradient-primary); }
+        .btn-primary:hover { box-shadow: var(--shadow-glow); }
+
+        .btn-secondary { background: var(--secondary); }
+        .btn-secondary:hover { box-shadow: 0 8px 18px -4px rgba(31,143,214,0.45); }
+
+        .btn-success { background: linear-gradient(135deg, var(--success), #21a598); }
+        .btn-success:hover { box-shadow: 0 8px 18px -4px rgba(46,196,182,0.45); }
+
+        .btn-warning { background: linear-gradient(135deg, var(--warning), #c9781f); color: var(--dark); }
+        .btn-warning:hover { box-shadow: 0 8px 18px -4px rgba(224,147,46,0.45); }
+
+        /* Botón "hueco": fondo claro, borde y texto del color que se pase en
+           --btn-color (o var(--secondary) si no se especifica). Se usa para
+           acciones opcionales/de elección, como votar en una encuesta. */
+        .btn-outline {
+            background: var(--card-bg); border: 2px solid var(--btn-color, var(--secondary));
+            color: var(--btn-color, var(--secondary)); box-shadow: none;
+        }
+        .btn-outline:hover { background: var(--btn-color, var(--secondary)); color: white; }
+
+        /* Alias de compatibilidad: mismo look que .btn.btn-success, para no
+           tener que tocar cada referencia existente al botón "Descargar/Exportar". */
         .btn-export {
+            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
             background: linear-gradient(135deg, var(--success), #21a598); color: white; border: none; padding: 9px 16px;
-            border-radius: var(--radius-sm); cursor: pointer; font-weight: 700; box-shadow: var(--shadow-xs);
+            border-radius: var(--radius-sm); cursor: pointer; font-weight: 700; font-size: 0.85rem; box-shadow: var(--shadow-xs);
             transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
         }
         .btn-export:hover { transform: translateY(-2px); filter: brightness(1.06); box-shadow: 0 8px 18px -4px rgba(46,196,182,0.45); }
         .btn-export:active { transform: translateY(0) scale(0.98); }
+
+
+        /* Badge de "etiqueta" (tipo de aviso, categoría, etc.): mismo look
+           para todas, el color de cada tipo se pasa por la variable
+           --tag-color en vez de reescribir todo el style cada vez. */
+        .badge-tag {
+            font-size: 0.72rem; font-weight: 700; color: #fff; background: var(--tag-color, var(--primary));
+            padding: 3px 10px; border-radius: var(--radius-full); width: fit-content; display: inline-block;
+        }
 
         table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 10px; border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-xs); }
         th, td { padding: 13px 12px; text-align: left; border-bottom: 1px solid var(--border); }
@@ -362,6 +417,63 @@
         .btn-enviar-solicitud:hover { transform: translateY(-2px); filter: brightness(1.06); box-shadow: 0 8px 18px -4px rgba(46,196,182,0.45); }
         .btn-enviar-solicitud:active { transform: translateY(0) scale(0.98); }
 
+        /* --- Mini marcador / cuenta regresiva del header (siempre visible) --- */
+        .mini-marcador-bar {
+            background: rgba(6, 12, 26, 0.55); backdrop-filter: blur(6px); border-top: 1px solid rgba(255,255,255,0.12);
+            position: relative; z-index: 3; overflow: hidden;
+        }
+        .mini-marcador-inner {
+            max-width: 900px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; justify-content: center;
+            gap: 14px; flex-wrap: wrap; cursor: pointer; color: white;
+        }
+        .mm-etiqueta {
+            display: flex; align-items: center; gap: 6px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.6px; color: rgba(255,255,255,0.75); white-space: nowrap;
+        }
+        .mm-etiqueta.mm-vivo { color: #ff8a8a; }
+        .mm-dot-vivo { width: 8px; height: 8px; border-radius: 50%; background: #ff3b3b; flex-shrink: 0; animation: pulso-vivo 1.2s infinite; }
+        .mm-equipos { display: flex; align-items: center; gap: 8px; font-family: var(--font-display); }
+        .mm-equipo { display: flex; align-items: center; gap: 6px; }
+        .mm-escudo { width: 26px; height: 26px; object-fit: cover; border-radius: 6px; background: white; flex-shrink: 0; }
+        .mm-nombre { font-size: 0.82rem; font-weight: 600; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .mm-marcador { font-size: 1.05rem; font-weight: 700; color: var(--accent); background: rgba(255,255,255,0.1); padding: 3px 12px; border-radius: var(--radius-full); }
+        .mm-cuenta { display: flex; gap: 6px; }
+        .mm-cuenta-item { display: flex; flex-direction: column; align-items: center; background: rgba(255,255,255,0.1); border-radius: var(--radius-sm); padding: 3px 7px; min-width: 34px; }
+        .mm-cuenta-num { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; line-height: 1; color: var(--accent); }
+        .mm-cuenta-lbl { font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.3px; color: rgba(255,255,255,0.65); }
+        .mm-extra { font-size: 0.7rem; color: rgba(255,255,255,0.6); white-space: nowrap; }
+        @media (max-width: 480px) {
+            .mini-marcador-inner { gap: 8px; padding: 8px 10px; }
+            .mm-nombre { max-width: 72px; font-size: 0.74rem; }
+            .mm-escudo { width: 22px; height: 22px; }
+            .mm-cuenta-item { min-width: 28px; padding: 2px 5px; }
+        }
+
+        /* --- Podio (top 3) para rankings destacados --- */
+        .podio-wrap { display: flex; align-items: flex-end; justify-content: center; gap: 12px; margin: 4px 0 24px; flex-wrap: nowrap; }
+        .podio-puesto { display: flex; flex-direction: column; align-items: center; text-align: center; background: var(--light); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 10px 12px; flex: 1 1 0; min-width: 0; position: relative; transition: transform var(--transition-fast); }
+        .podio-puesto:hover { transform: translateY(-3px); }
+        .podio-puesto.oro { order: 2; border-top: 3px solid #f0b429; padding-top: 20px; }
+        .podio-puesto.plata { order: 1; border-top: 3px solid #b9c2cf; }
+        .podio-puesto.bronce { order: 3; border-top: 3px solid #c17a3d; }
+        .podio-medalla { font-size: 1.3rem; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); }
+        .podio-foto { width: 62px; height: 62px; border-radius: 50%; object-fit: cover; border: 3px solid var(--card-bg); box-shadow: var(--shadow-sm); margin-bottom: 8px; background: white; }
+        .podio-puesto.oro .podio-foto { width: 76px; height: 76px; border-color: #f0b429; }
+        .podio-nombre { font-weight: 700; font-size: 0.85rem; color: var(--text); line-height: 1.2; }
+        .podio-equipo { font-size: 0.72rem; color: var(--text-muted); margin: 2px 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+        .podio-valor { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: var(--primary); }
+        .podio-valor small { display: block; font-size: 0.6rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+        @media (max-width: 480px) {
+            .podio-wrap { gap: 6px; }
+            .podio-puesto { padding: 10px 4px 8px; }
+            .podio-puesto.oro { padding-top: 16px; }
+            .podio-foto { width: 48px; height: 48px; }
+            .podio-puesto.oro .podio-foto { width: 60px; height: 60px; }
+            .podio-nombre { font-size: 0.72rem; }
+            .podio-equipo { font-size: 0.62rem; }
+            .podio-valor { font-size: 0.95rem; }
+        }
+
         /* --- Banner de partido EN VIVO en portada --- */
         #banner-en-vivo {
             background: var(--gradient-primary);
@@ -484,6 +596,61 @@
             .buscador-global-bar { padding: 10px 14px; }
             .badge-en-vivo { font-size: 0.62rem; padding: 5px 12px; letter-spacing: 0.2px; }
         }
+        /* --- Footer del sitio --- */
+        .site-footer {
+            background: var(--gradient-header); color: rgba(255,255,255,0.85); position: relative; overflow: hidden;
+            margin-top: 40px; padding: 0;
+        }
+        .site-footer::before {
+            content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--warning) 50%, var(--secondary) 100%);
+        }
+        .footer-top {
+            max-width: 1200px; margin: 0 auto; padding: 40px 20px 24px; display: grid;
+            grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 28px;
+        }
+        .footer-brand { display: flex; flex-direction: column; gap: 10px; }
+        .footer-logo { width: 58px; height: 58px; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4)); }
+        .footer-brand h3 { margin: 0; font-size: 1.05rem; color: white; letter-spacing: 0.3px; }
+        .footer-brand p { margin: 0; font-size: 0.82rem; line-height: 1.5; color: rgba(255,255,255,0.65); max-width: 320px; }
+        .footer-redes { display: flex; gap: 10px; margin-top: 4px; }
+        .footer-redes a {
+            width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex;
+            align-items: center; justify-content: center; color: white; text-decoration: none; font-size: 0.95rem;
+            transition: var(--transition-fast); border: 1px solid rgba(255,255,255,0.15);
+        }
+        .footer-redes a:hover { background: var(--accent); color: var(--dark); transform: translateY(-2px); }
+        .footer-col h4 {
+            color: var(--accent); font-family: var(--font-display); font-size: 0.82rem; text-transform: uppercase;
+            letter-spacing: 0.6px; margin: 0 0 14px;
+        }
+        .footer-col { display: flex; flex-direction: column; gap: 9px; }
+        .footer-col a { color: rgba(255,255,255,0.72); text-decoration: none; font-size: 0.84rem; transition: color var(--transition-fast), padding-left var(--transition-fast); width: fit-content; }
+        .footer-col a:hover { color: var(--accent); padding-left: 4px; }
+        .footer-contacto-item { display: flex; align-items: flex-start; gap: 8px; font-size: 0.82rem; color: rgba(255,255,255,0.72); }
+        .footer-divider { border: none; border-top: 1px solid rgba(255,255,255,0.12); margin: 0; }
+        .footer-bottom {
+            max-width: 1200px; margin: 0 auto; padding: 18px 20px 24px; display: flex; align-items: center;
+            justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 0.76rem; color: rgba(255,255,255,0.6);
+        }
+        .footer-bottom a { color: rgba(255,255,255,0.6); text-decoration: underline; }
+        .footer-bottom a:hover { color: var(--accent); }
+        .footer-credito { display: flex; align-items: center; gap: 6px; }
+        .footer-back-top {
+            display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.1); color: white;
+            border: 1px solid rgba(255,255,255,0.18); padding: 6px 14px; border-radius: var(--radius-full);
+            text-decoration: none; font-size: 0.75rem; font-weight: 700; transition: var(--transition-fast);
+        }
+        .footer-back-top:hover { background: var(--accent); color: var(--dark); border-color: var(--accent); }
+
+        @media (max-width: 860px) {
+            .footer-top { grid-template-columns: 1fr 1fr; }
+            .footer-brand { grid-column: 1 / -1; }
+        }
+        @media (max-width: 480px) {
+            .footer-top { grid-template-columns: 1fr; padding: 32px 18px 18px; gap: 22px; }
+            .footer-bottom { flex-direction: column; text-align: center; padding: 16px 18px 20px; }
+        }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
@@ -518,6 +685,8 @@
             </div>
         </div>
     </header>
+
+    <div id="mini-marcador-header" class="mini-marcador-bar hidden"></div>
 
     <div id="patrocinadores-carrusel-wrap" class="patrocinadores-bar hidden">
         <div class="patrocinadores-track" id="patrocinadores-track"></div>
@@ -582,7 +751,7 @@
             <div class="header-section-flex">
                 <h2>Calendario & Resultados En Vivo</h2>
                 <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                    <button class="btn-export" onclick="compartirCarteleraJornada()" style="background:#ff9800;">📤 Compartir Cartelera</button>
+                    <button class="btn btn-warning" onclick="compartirCarteleraJornada()">📤 Compartir Cartelera</button>
                 </div>
             </div>
             <div class="filter-container">
@@ -599,7 +768,7 @@
             <div class="header-section-flex">
                 <h2>Tabla de Posiciones</h2>
                 <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                    <button class="btn-export" onclick="descargarTablaPosicionesImagen()" style="background:#2e7d32;">⬇️ Descargar Imagen</button>
+                    <button class="btn btn-success" onclick="descargarTablaPosicionesImagen()">⬇️ Descargar Imagen</button>
                 </div>
             </div>
             <div style="overflow-x:auto;">
@@ -640,6 +809,7 @@
         <!-- GOLEO INDIVIDUAL -->
         <section id="goleo-sec" class="card-section">
             <h2>Goleo Individual</h2>
+            <div class="podio-wrap" id="podio-goleo"></div>
             <div style="overflow-x:auto;">
                 <table>
                     <thead><tr><th>Pos</th><th>Jugador</th><th>Equipo</th><th>Goles ⚽</th></tr></thead>
@@ -662,6 +832,8 @@
             </div>
 
             <h3 style="margin:0 0 8px;">Disciplina Individual</h3>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-4px;">Top 3 con más tarjetas acumuladas (1 punto por amarilla, 3 por roja).</p>
+            <div class="podio-wrap" id="podio-disciplina"></div>
             <div style="overflow-x:auto;">
                 <table>
                     <thead><tr><th>Pos</th><th>Jugador</th><th>Equipo</th><th>🟨 Amarillas</th><th>🟥 Rojas</th><th>Estatus</th></tr></thead>
@@ -673,6 +845,7 @@
         <!-- PORTEROS MENOS GOLEADOS (GUANTE DE ORO) -->
         <section id="porteros-sec" class="card-section" style="border-top-color: #ff9800;">
             <h2>🧤 Portero Con Menos Goles</h2>
+            <div class="podio-wrap" id="podio-porteros"></div>
             <div style="overflow-x:auto;">
                 <table>
                     <thead>
@@ -689,7 +862,7 @@
             <div class="filter-container">
                 <select id="h2h-equipo1"><option value="">-- Selecciona Club A --</option></select>
                 <select id="h2h-equipo2"><option value="">-- Selecciona Club B --</option></select>
-                <button onclick="compararHeadToHead()" class="btn-export" style="background:#3f51b5;">Comparar Histórico</button>
+                <button onclick="compararHeadToHead()" class="btn btn-secondary">Comparar Histórico</button>
             </div>
             <div id="h2h-resultado-box" style="margin-top:15px; display:none; background:var(--light); padding:15px; border-radius:8px;"></div>
         </section>
@@ -824,6 +997,52 @@
         </section>
     </div>
 
+    <!-- FOOTER -->
+    <footer class="site-footer" id="site-footer">
+        <div class="footer-top">
+            <div class="footer-brand">
+                <img src="icon-512.png" alt="Escudo Liga de Futbol CoSmar Sport Club" class="footer-logo">
+                <h3>LIGA DE FUTBOL COSMAR SPORT CLUB</h3>
+                <p>Portal oficial del torneo: calendario, resultados en vivo, tabla de posiciones, estadísticas y fichas de jugadores, actualizados al instante.</p>
+                <div class="footer-redes">
+                    <a href="#tablon-sec" title="Tablón de Avisos" aria-label="Tablón de Avisos">📢</a>
+                    <a href="#jornadas-sec" title="Calendario en Vivo" aria-label="Calendario en Vivo">📅</a>
+                    <a href="#registro-sec" title="Inscribirse" aria-label="Inscribirse">📝</a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h4>Torneo</h4>
+                <a href="#tablon-sec">Tablón de Avisos</a>
+                <a href="#jornadas-sec">Calendario & Resultados</a>
+                <a href="#posiciones-sec">Tabla de Posiciones</a>
+                <a href="#ofensiva-defensiva-sec">Ofensiva / Defensiva</a>
+                <a href="#reglamento-sec">Reglamento</a>
+            </div>
+            <div class="footer-col">
+                <h4>Estadísticas</h4>
+                <a href="#goleo-sec">Goleo Individual</a>
+                <a href="#disciplina-sec">Disciplina</a>
+                <a href="#porteros-sec">Guante de Oro</a>
+                <a href="#headtohead-sec">Comparador Cara a Cara</a>
+                <a href="#xi-sec">XI MVP de la Semana</a>
+            </div>
+            <div class="footer-col">
+                <h4>Comunidad</h4>
+                <a href="#jugadores-sec">Fichas de Jugadores</a>
+                <a href="#equipos-arbitros-sec">Equipos y Árbitros</a>
+                <a href="#registro-sec">Inscribirse a la Liga</a>
+                <span class="footer-contacto-item">✉️ Consulta directamente con la directiva de la liga para dudas de inscripción.</span>
+            </div>
+        </div>
+        <hr class="footer-divider">
+        <div class="footer-bottom">
+            <p>© <span id="footer-anio"></span> Liga de Futbol CoSmar Sport Club. Todos los derechos reservados.</p>
+            <p class="footer-credito">Sitio desarrollado por Alexis Brayan Carlos Ponce</p>
+            <a href="#" class="footer-back-top" onclick="window.scrollTo({top:0, behavior:'smooth'}); return false;">⬆️ Volver arriba</a>
+        </div>
+    </footer>
+    <script>document.getElementById('footer-anio').textContent = new Date().getFullYear();</script>
+
     <!-- MODAL FICHA TÉCNICA -->
     <div id="ficha-modal" class="modal hidden" onclick="if(event.target === this) cerrarModal('ficha-modal')">
         <div class="modal-content ficha-tecnica-content" style="max-width:560px;">
@@ -835,7 +1054,7 @@
             <h3 id="modal-nombre" class="ficha-tecnica-nombre"></h3>
             <p id="ficha-modal-equipo" class="ficha-tecnica-equipo"></p>
             <p id="modal-posicion" class="ficha-tecnica-posicion"></p>
-            <button type="button" onclick="compartirPerfilJugadorActual()" style="background:var(--secondary, #1f8fd6); color:white; border:none; padding:6px 14px; border-radius:20px; font-size:0.75rem; cursor:pointer; margin:0 0 10px;">🔗 Compartir este perfil</button>
+            <button type="button" class="btn btn-secondary btn-sm btn-pill" onclick="compartirPerfilJugadorActual()" style="margin:0 0 10px;">🔗 Compartir este perfil</button>
 
             <div class="ficha-tecnica-stats">
                 <div class="stat-box stat-goles"><span class="stat-icono">⚽</span><strong id="modal-goles">0</strong><span class="stat-label">Goles</span></div>
@@ -1002,9 +1221,10 @@
         }
 
         function aplicarLogoSitio() {
-            const logo = document.querySelector('.site-header-logo');
-            if (!logo) return;
-            logo.src = (db.config && db.config.logoSitio) ? db.config.logoSitio : LOGO_LIGA_DEFAULT;
+            const logos = document.querySelectorAll('.site-header-logo, .footer-logo');
+            if (!logos.length) return;
+            const src = (db.config && db.config.logoSitio) ? db.config.logoSitio : LOGO_LIGA_DEFAULT;
+            logos.forEach(logo => { logo.src = src; });
         }
 
         // Mismos valores por defecto del Reglamento que admin.html (ver ahí el detalle). Se
@@ -1413,7 +1633,7 @@
                         ? `<div style="display:flex; align-items:center; gap:10px; padding:15px 15px 0;">
                                <img src="${fotoJugador || 'https://placehold.co/60'}" alt="${jugadorAviso.nombre}" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid ${et.color}; flex-shrink:0;" loading="lazy">
                                <div style="display:flex; flex-direction:column; gap:2px; min-width:0;">
-                                   <span style="font-size:0.72rem; font-weight:700; color:#fff; background:${et.color}; padding:3px 10px; border-radius:999px; width:fit-content;">${et.etiqueta}</span>
+                                   <span class="badge-tag" style="--tag-color:${et.color};">${et.etiqueta}</span>
                                    <span style="font-size:0.78rem; font-weight:600; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${jugadorAviso.nombre} · ${equipoAviso}</span>
                                </div>
                            </div>`
@@ -1421,7 +1641,7 @@
                     }
                     <div style="padding:15px;">
                         <div style="display:flex; justify-content:${jugadorAviso ? 'flex-end' : 'space-between'}; align-items:center; gap:8px; margin-bottom:6px;">
-                            ${jugadorAviso ? '' : `<span style="font-size:0.72rem; font-weight:700; color:#fff; background:${et.color}; padding:3px 10px; border-radius:999px;">${et.etiqueta}</span>`}
+                            ${jugadorAviso ? '' : `<span class="badge-tag" style="--tag-color:${et.color};">${et.etiqueta}</span>`}
                             ${c.fecha ? `<span style="font-size:0.75rem; color:var(--text-muted);">${c.fecha}</span>` : ''}
                         </div>
                         <h4 style="margin:0 0 6px;">${c.titulo}</h4>
@@ -1453,6 +1673,7 @@
             renderXI();
             renderizarEquiposArbitros();
             renderizarBannerEnVivo();
+            renderizarMiniMarcadorHeader();
             renderizarEncuesta();
             intentarAbrirFichaDesdeURL();
             restaurarDesbloqueoRegistroDeSesion();
@@ -1576,7 +1797,7 @@
             } else {
                 html += `<div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
                     ${enc.opciones.map(o => `
-                        <button type="button" onclick="votarEncuesta(${o.id})" style="display:flex; align-items:center; gap:8px; background:#fff; border:2px solid #9c27b0; color:#9c27b0; padding:10px 18px; border-radius:999px; font-weight:700; font-size:0.9rem; cursor:pointer;">
+                        <button type="button" class="btn btn-outline btn-pill" onclick="votarEncuesta(${o.id})" style="--btn-color:#9c27b0; gap:8px; font-size:0.9rem; padding:10px 18px;">
                             ${o.escudo ? `<img src="${o.escudo}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;" loading="lazy">` : ''}${o.texto}
                         </button>`).join('')}
                 </div>
@@ -1638,6 +1859,112 @@
                         <span>${etiqueta}: <b>${loc ? loc.nombre : '-'}</b> ${marcadorOTexto} <b>${vis ? vis.nombre : '-'}</b></span>
                     </div>`;
             }).join('');
+        }
+
+        // --- Mini marcador del header: partido en vivo o cuenta regresiva al próximo ---
+        // Siempre visible (a diferencia del banner de "en vivo" que solo aparece si hay
+        // partido en curso): si no hay nada en vivo, muestra el conteo hacia el próximo
+        // partido programado; si no hay ningún partido programado, se oculta.
+        let mmCuentaRegresivaTarget = null; // timestamp (ms) del próximo partido a mostrar en la cuenta regresiva
+        let mmIntervaloIniciado = false;
+
+        function renderizarMiniMarcadorHeader() {
+            const cont = document.getElementById('mini-marcador-header');
+            if (!cont) return;
+
+            const partidosVivo = (db.partidos || []).filter(p => ESTADOS_PARTIDO_EN_VIVO.includes(p.estadoVivo) && !p.jugado);
+
+            if (partidosVivo.length > 0) {
+                mmCuentaRegresivaTarget = null;
+                const p = partidosVivo[0];
+                const loc = db.equipos.find(e => e.id === p.localId);
+                const vis = db.equipos.find(e => e.id === p.visitaId);
+                const etiqueta = ETIQUETAS_ESTADO_PARTIDO[p.estadoVivo] || 'EN VIVO';
+                const extra = partidosVivo.length > 1 ? `<span class="mm-extra">+${partidosVivo.length - 1} en vivo</span>` : '';
+                cont.classList.remove('hidden');
+                cont.innerHTML = `
+                    <div class="mini-marcador-inner" onclick="document.getElementById('jornadas-sec').scrollIntoView({behavior:'smooth'}); document.getElementById('select-jornada-filtro').value='${p.jornada}'; document.getElementById('select-jornada-filtro').dispatchEvent(new Event('change'));">
+                        <span class="mm-etiqueta mm-vivo"><span class="mm-dot-vivo"></span>${etiqueta}</span>
+                        <div class="mm-equipos">
+                            <div class="mm-equipo"><img class="mm-escudo" src="${loc?.escudo || 'https://placehold.co/26'}" alt="" loading="lazy"><span class="mm-nombre">${loc ? loc.nombre : '-'}</span></div>
+                            <span class="mm-marcador">${p.golesLocal || 0} - ${p.golesVisita || 0}</span>
+                            <div class="mm-equipo"><span class="mm-nombre">${vis ? vis.nombre : '-'}</span><img class="mm-escudo" src="${vis?.escudo || 'https://placehold.co/26'}" alt="" loading="lazy"></div>
+                        </div>
+                        ${extra}
+                    </div>`;
+                return;
+            }
+
+            // Sin partidos en vivo: buscar el próximo partido programado (fecha/hora más próxima).
+            const ahora = Date.now();
+            const proximos = (db.partidos || [])
+                .filter(p => !p.jugado && p.fecha)
+                .map(p => ({ p, ts: new Date(p.fecha + 'T' + (p.hora || '00:00')).getTime() }))
+                .filter(x => !isNaN(x.ts))
+                .sort((a, b) => a.ts - b.ts);
+
+            const siguiente = proximos.find(x => x.ts >= ahora) || proximos[0];
+
+            if (!siguiente) {
+                cont.classList.add('hidden');
+                cont.innerHTML = '';
+                mmCuentaRegresivaTarget = null;
+                return;
+            }
+
+            const p = siguiente.p;
+            const loc = db.equipos.find(e => e.id === p.localId);
+            const vis = db.equipos.find(e => e.id === p.visitaId);
+            mmCuentaRegresivaTarget = siguiente.ts;
+
+            cont.classList.remove('hidden');
+            cont.innerHTML = `
+                <div class="mini-marcador-inner" onclick="document.getElementById('jornadas-sec').scrollIntoView({behavior:'smooth'}); document.getElementById('select-jornada-filtro').value='${p.jornada}'; document.getElementById('select-jornada-filtro').dispatchEvent(new Event('change'));">
+                    <span class="mm-etiqueta">📅 Próximo · ${etiquetaJornadaCorta(p.jornada)}</span>
+                    <div class="mm-equipos">
+                        <div class="mm-equipo"><img class="mm-escudo" src="${loc?.escudo || 'https://placehold.co/26'}" alt="" loading="lazy"><span class="mm-nombre">${loc ? loc.nombre : '-'}</span></div>
+                        <span class="mm-marcador">VS</span>
+                        <div class="mm-equipo"><span class="mm-nombre">${vis ? vis.nombre : '-'}</span><img class="mm-escudo" src="${vis?.escudo || 'https://placehold.co/26'}" alt="" loading="lazy"></div>
+                    </div>
+                    <div class="mm-cuenta" id="mm-cuenta-regresiva">
+                        <div class="mm-cuenta-item"><span class="mm-cuenta-num" id="mm-dias">--</span><span class="mm-cuenta-lbl">Días</span></div>
+                        <div class="mm-cuenta-item"><span class="mm-cuenta-num" id="mm-horas">--</span><span class="mm-cuenta-lbl">Hrs</span></div>
+                        <div class="mm-cuenta-item"><span class="mm-cuenta-num" id="mm-mins">--</span><span class="mm-cuenta-lbl">Min</span></div>
+                        <div class="mm-cuenta-item"><span class="mm-cuenta-num" id="mm-secs">--</span><span class="mm-cuenta-lbl">Seg</span></div>
+                    </div>
+                </div>`;
+            actualizarCuentaRegresivaMiniMarcador();
+            iniciarIntervaloMiniMarcador();
+        }
+
+        // Actualiza solo los números de la cuenta regresiva cada segundo, sin volver a
+        // dibujar todo el widget (más ligero que re-renderizar en cada tick).
+        function actualizarCuentaRegresivaMiniMarcador() {
+            if (mmCuentaRegresivaTarget === null) return;
+            const elDias = document.getElementById('mm-dias');
+            if (!elDias) return; // el widget ya no muestra una cuenta regresiva (p.ej. cambió a "en vivo")
+
+            let restante = mmCuentaRegresivaTarget - Date.now();
+            if (restante <= 0) {
+                // Se llegó a la hora del partido: refrescamos el widget completo
+                // (probablemente el árbitro ya lo puso "en vivo", o hay que buscar el siguiente).
+                renderizarMiniMarcadorHeader();
+                return;
+            }
+            const dias = Math.floor(restante / 86400000); restante -= dias * 86400000;
+            const horas = Math.floor(restante / 3600000); restante -= horas * 3600000;
+            const mins = Math.floor(restante / 60000); restante -= mins * 60000;
+            const segs = Math.floor(restante / 1000);
+            document.getElementById('mm-dias').textContent = String(dias);
+            document.getElementById('mm-horas').textContent = String(horas).padStart(2, '0');
+            document.getElementById('mm-mins').textContent = String(mins).padStart(2, '0');
+            document.getElementById('mm-secs').textContent = String(segs).padStart(2, '0');
+        }
+
+        function iniciarIntervaloMiniMarcador() {
+            if (mmIntervaloIniciado) return;
+            mmIntervaloIniciado = true;
+            setInterval(actualizarCuentaRegresivaMiniMarcador, 1000);
         }
 
         // Banner de bienvenida: muestra el aviso más reciente del Tablón al entrar al sitio.
@@ -1752,6 +2079,11 @@
                     <td><b>${pt.prom}</b> goles/partido</td>
                 </tr>
             `).join('') || '<tr><td colspan="4" style="color:var(--text-muted);">No hay porteros especificados en las plantillas.</td></tr>';
+
+            renderPodio('podio-porteros', data.filter(pt => pt.pj > 0).map(pt => ({
+                foto: pt.foto, nombre: pt.nombre, sub: pt.equipo,
+                valor: pt.prom, unidad: 'Goles/Partido'
+            })));
         }
 
         // Convierte el número interno de jornada en la etiqueta que se muestra al público.
@@ -2008,7 +2340,7 @@
                 const escudoV = equipoV?.escudo || 'https://placehold.co/54';
                 const pen = p.penaltis ? `<br><small>(Penaltis: ${p.penaltis.local} - ${p.penaltis.visita})</small>` : '';
 
-                const compartirBtn = p.jugado ? `<div style="text-align:center; margin-top:8px;"><button onclick="compartirResultadoPartido(${p.id})" style="background:var(--secondary, #1f8fd6); color:white; border:none; padding:6px 14px; border-radius:20px; font-size:0.75rem; cursor:pointer;">📤 Compartir Resultado</button></div>` : '';
+                const compartirBtn = p.jugado ? `<div style="text-align:center; margin-top:8px;"><button class="btn btn-secondary btn-sm btn-pill" onclick="compartirResultadoPartido(${p.id})">📤 Compartir Resultado</button></div>` : '';
 
                 let mvpHtml = '';
                 if (p.mvpJugadorId) {
@@ -2133,9 +2465,36 @@
             }
         }
 
+        // Dibuja las tarjetas de "podio" (top 3) arriba de una tabla de ranking.
+        // items: array ya ordenado de mejor a peor, cada uno { foto, nombre, sub, valor, unidad }.
+        // Si hay menos de 2 elementos con datos reales, no vale la pena mostrar podio.
+        const MEDALLAS_PODIO = ['🥇', '🥈', '🥉'];
+        const CLASES_PODIO = ['oro', 'plata', 'bronce'];
+        function renderPodio(contenedorId, items) {
+            const cont = document.getElementById(contenedorId);
+            if (!cont) return;
+            const top3 = items.slice(0, 3);
+            if (top3.length < 2) { cont.innerHTML = ''; cont.style.display = 'none'; return; }
+            cont.style.display = '';
+            cont.innerHTML = top3.map((it, idx) => `
+                <div class="podio-puesto ${CLASES_PODIO[idx]}">
+                    <span class="podio-medalla">${MEDALLAS_PODIO[idx]}</span>
+                    <img class="podio-foto" src="${it.foto || 'https://placehold.co/76'}" alt="${it.nombre}" loading="lazy">
+                    <span class="podio-nombre">${it.nombre}</span>
+                    <span class="podio-equipo">${it.sub || ''}</span>
+                    <span class="podio-valor">${it.valor}<small>${it.unidad || ''}</small></span>
+                </div>
+            `).join('');
+        }
+
         function actualizarVistaGoleo() {
             let goleadores = [...db.jugadores].filter(j => j.goles > 0).sort((a,b) => b.goles - a.goles);
             document.getElementById('tabla-goleo-body').innerHTML = goleadores.map((jug, idx) => `<tr><td><b>${idx + 1}</b></td><td><img class="foto-tabla" src="${jug.foto || 'https://placehold.co/34'}" alt="" loading="lazy">${jug.nombre}</td><td>${db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre'}</td><td><b>${jug.goles} ⚽</b> ${idx === 0 ? '🏆' : ''}</td></tr>`).join('');
+            renderPodio('podio-goleo', goleadores.map(jug => ({
+                foto: jug.foto, nombre: jug.nombre,
+                sub: db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre',
+                valor: jug.goles, unidad: 'Goles'
+            })));
         }
 
         function actualizarVistaDisciplina() {
@@ -2143,6 +2502,12 @@
             document.getElementById('tabla-disciplina-body').innerHTML = jugadoresOrdenados.map((j, idx) => {
                 return `<tr><td>${idx + 1}</td><td><img class="foto-tabla" src="${j.foto || 'https://placehold.co/34'}" alt="" loading="lazy">${j.nombre}</td><td>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</td><td>${j.amarillas || 0}</td><td>${j.rojas || 0}</td><td>${textoEstadoSuspensionJugador(j)}</td></tr>`;
             }).join('');
+            const conSanciones = jugadoresOrdenados.filter(j => (j.amarillas || 0) > 0 || (j.rojas || 0) > 0);
+            renderPodio('podio-disciplina', conSanciones.map(j => ({
+                foto: j.foto, nombre: j.nombre,
+                sub: db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre',
+                valor: `${j.amarillas || 0}🟨 ${j.rojas || 0}🟥`, unidad: 'Sanciones'
+            })));
             renderizarFairPlayEquipos();
         }
 
