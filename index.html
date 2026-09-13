@@ -651,6 +651,88 @@
             .footer-top { grid-template-columns: 1fr; padding: 32px 18px 18px; gap: 22px; }
             .footer-bottom { flex-direction: column; text-align: center; padding: 16px 18px 20px; }
         }
+        /* --- Toasts (reemplazan los alert() nativos del navegador) --- */
+        .toast-container {
+            position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 999;
+            display: flex; flex-direction: column-reverse; gap: 10px; width: min(420px, calc(100vw - 32px));
+            pointer-events: none;
+        }
+        .toast {
+            pointer-events: auto; display: flex; align-items: flex-start; gap: 10px; background: var(--card-bg);
+            color: var(--text); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); padding: 13px 14px;
+            border-left: 5px solid var(--secondary); animation: toast-entra 0.28s var(--ease);
+            font-size: 0.86rem; line-height: 1.35;
+        }
+        .toast.toast-saliendo { animation: toast-sale 0.22s var(--ease) forwards; }
+        .toast-exito { border-left-color: var(--success); }
+        .toast-error { border-left-color: var(--danger); }
+        .toast-info { border-left-color: var(--secondary); }
+        .toast-icono { font-size: 1.15rem; flex-shrink: 0; line-height: 1.2; }
+        .toast-texto { flex: 1; min-width: 0; word-break: break-word; }
+        .toast-cerrar {
+            background: none; border: none; color: var(--text-muted); font-size: 1rem; line-height: 1; cursor: pointer;
+            padding: 0 0 0 4px; flex-shrink: 0;
+        }
+        .toast-cerrar:hover { color: var(--text); }
+        @keyframes toast-entra { from { opacity: 0; transform: translateY(14px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes toast-sale { to { opacity: 0; transform: translateY(8px) scale(0.97); } }
+        @media (max-width: 480px) {
+            .toast-container { bottom: 14px; width: calc(100vw - 24px); }
+        }
+
+        /* --- Estados vacíos ilustrados (en vez de solo texto plano) --- */
+        .estado-vacio {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+            padding: 34px 16px; color: var(--text-muted); text-align: center;
+        }
+        .estado-vacio-icono { font-size: 2.3rem; opacity: 0.55; line-height: 1; }
+        .estado-vacio p { margin: 0; font-size: 0.86rem; max-width: 320px; }
+        td.estado-vacio-celda { padding: 0 !important; }
+
+        /* --- Flechas de movimiento en la Tabla de Posiciones --- */
+        .pos-cambio { display: inline-block; font-size: 0.68rem; font-weight: 700; margin-left: 5px; white-space: nowrap; }
+        .pos-cambio.pos-sube { color: var(--success); }
+        .pos-cambio.pos-baja { color: var(--danger); }
+        .pos-cambio.pos-igual { color: var(--text-muted); }
+
+        /* --- Zona de clasificación a Liguilla, sombreada en la Tabla de Posiciones --- */
+        .tabla-equipos tbody tr.fila-clasifica { background: rgba(46, 196, 182, 0.08); border-left: 3px solid var(--success); }
+        .tabla-equipos tbody tr.fila-clasifica td:first-child { border-left: none; }
+        .leyenda-clasificacion {
+            display: flex; align-items: center; gap: 7px; font-size: 0.78rem; color: var(--text-muted);
+            margin: 10px 2px 0;
+        }
+        .leyenda-punto { width: 12px; height: 12px; border-radius: 3px; background: rgba(46, 196, 182, 0.35); border-left: 3px solid var(--success); flex-shrink: 0; }
+
+        /* --- Barra "Mi Equipo": elegir equipo favorito y resaltarlo en todo el sitio --- */
+        .mi-equipo-bar { background: var(--light); border-bottom: 1px solid var(--border); position: relative; z-index: 2; }
+        .mi-equipo-inner { max-width: 900px; margin: 0 auto; padding: 8px 16px; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .mi-equipo-cta { font-size: 0.8rem; font-weight: 700; color: var(--secondary); cursor: pointer; }
+        .mi-equipo-cta:hover { text-decoration: underline; }
+        .mi-equipo-elegido { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text); }
+        .mi-equipo-escudo-chip { width: 22px; height: 22px; border-radius: 5px; object-fit: cover; background: white; flex-shrink: 0; }
+        .mi-equipo-elegido b { color: var(--primary); }
+        .mi-equipo-cambiar, .mi-equipo-quitar {
+            background: none; border: 1px solid var(--border); color: var(--text-muted); font-size: 0.68rem;
+            font-weight: 700; padding: 3px 10px; border-radius: var(--radius-full); cursor: pointer; transition: var(--transition-fast);
+        }
+        .mi-equipo-cambiar:hover, .mi-equipo-quitar:hover { background: var(--primary); color: white; border-color: var(--primary); }
+        .mi-equipo-quitar { padding: 3px 8px; }
+
+        .grid-elegir-equipo { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 14px; max-height: 55vh; overflow-y: auto; padding: 2px; }
+        .equipo-elegir-btn {
+            display: flex; flex-direction: column; align-items: center; gap: 6px; background: var(--light);
+            border: 2px solid transparent; border-radius: var(--radius-md); padding: 10px 6px; cursor: pointer;
+            transition: var(--transition-fast); color: var(--text); font-family: var(--font-body);
+        }
+        .equipo-elegir-btn:hover { border-color: var(--warning); transform: translateY(-2px); }
+        .equipo-elegir-btn img { width: 42px; height: 42px; object-fit: cover; border-radius: 8px; background: white; }
+        .equipo-elegir-btn span { font-size: 0.7rem; font-weight: 600; text-align: center; line-height: 1.2; }
+
+        /* Resaltado del equipo favorito donde aparezca en el sitio */
+        .tabla-equipos tbody tr.fila-favorito td { background: rgba(240, 180, 41, 0.12); }
+        .estrella-favorito { margin-left: 4px; }
+        .partido-item.partido-favorito { border: 2px solid var(--warning); box-shadow: 0 0 0 3px rgba(240, 180, 41, 0.15); }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
@@ -673,6 +755,8 @@
 </head>
 <body>
 
+    <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
     <header>
         <button class="theme-switch" onclick="toggleTheme()">🌓 Modo</button>
         <button class="install-btn" id="btn-instalar-app" onclick="instalarAppPWA()">📲 Instalar App</button>
@@ -685,6 +769,18 @@
             </div>
         </div>
     </header>
+
+    <div class="mi-equipo-bar">
+        <div class="mi-equipo-inner">
+            <span id="mi-equipo-sin-elegir" class="mi-equipo-cta" onclick="abrirModalMiEquipo()">⭐ Elige tu equipo favorito para seguirlo más de cerca</span>
+            <div id="mi-equipo-elegido" class="mi-equipo-elegido hidden">
+                <img id="mi-equipo-escudo-chip" class="mi-equipo-escudo-chip" src="" alt="">
+                <span id="mi-equipo-nombre-chip"></span>
+                <button type="button" class="mi-equipo-cambiar" onclick="abrirModalMiEquipo()">Cambiar</button>
+                <button type="button" class="mi-equipo-quitar" onclick="quitarEquipoFavorito()" title="Quitar equipo favorito">✕</button>
+            </div>
+        </div>
+    </div>
 
     <div id="mini-marcador-header" class="mini-marcador-bar hidden"></div>
 
@@ -779,6 +875,7 @@
                     <tbody id="tabla-posiciones-body"></tbody>
                 </table>
             </div>
+            <p id="leyenda-clasificacion" class="leyenda-clasificacion hidden"><span class="leyenda-punto"></span> Zona de clasificación a Liguilla</p>
         </section>
 
         <!-- MEJOR OFENSIVA Y DEFENSIVA -->
@@ -924,6 +1021,9 @@
             </div>
 
             <form id="form-solicitud-web" class="form-solicitud-grid hidden">
+                <div class="campo-solicitud-full" style="display:flex; justify-content:flex-end; margin-bottom:-6px;">
+                    <button type="button" onclick="salirDelRegistro()" style="background:none; border:1px solid var(--border); color:var(--text-muted); font-size:0.78rem; font-weight:600; padding:6px 12px; border-radius:6px; cursor:pointer;">🚪 Salir del registro</button>
+                </div>
                 <div class="campo-solicitud">
                     <label>Club</label>
                     <select id="sol-equipo" required disabled><option value="">-- Selecciona Club --</option></select>
@@ -1082,6 +1182,16 @@
                     <p id="modal-historial-vacio" class="ficha-historial-vacio hidden">Este jugador aún no registra partidos jugados.</p>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- MODAL ELEGIR EQUIPO FAVORITO ("Mi Equipo") -->
+    <div id="modal-mi-equipo" class="modal hidden" onclick="if(event.target === this) cerrarModal('modal-mi-equipo')">
+        <div class="modal-content" style="max-width:440px;">
+            <button class="close-modal" onclick="cerrarModal('modal-mi-equipo')">×</button>
+            <h3 style="margin-top:0;">⭐ Elige tu equipo favorito</h3>
+            <p style="color:var(--text-muted); font-size:0.85rem; margin-top:-6px;">Lo vamos a resaltar en la Tabla de Posiciones, el Calendario y el marcador de arriba.</p>
+            <div id="grid-elegir-equipo" class="grid-elegir-equipo"></div>
         </div>
     </div>
 
@@ -1472,20 +1582,24 @@
 
             document.getElementById('form-solicitud-web').addEventListener('submit', async function(e) {
                 e.preventDefault();
-                if(db.registrosCerrados) return alert("Los registros se encuentran cerrados temporalmente.");
+                if(db.registrosCerrados) return mostrarToast("Los registros se encuentran cerrados temporalmente.", "error");
                 if(!document.getElementById('sol-acepta-aviso').checked) {
-                    return alert("Debes aceptar el Aviso de Privacidad para poder enviar la solicitud.");
+                    return mostrarToast("Debes aceptar el Aviso de Privacidad para poder enviar la solicitud.", "error");
                 }
                 const equipoIdSel = parseInt(document.getElementById('sol-equipo').value);
+                if (!equipoIdSel || isNaN(equipoIdSel)) {
+                    restaurarDesbloqueoRegistroDeSesion();
+                    return mostrarToast("No se detectó tu club seleccionado. Vuelve a escribir el número de playera y presiona Enviar de nuevo; si el problema sigue, recarga la página.", "error", 6000);
+                }
                 const numeroSel = document.getElementById('sol-numero').value.trim();
-                if (!numeroSel) return alert("El número de playera es obligatorio.");
+                if (!numeroSel) return mostrarToast("El número de playera es obligatorio.", "error");
                 if (numeroYaUsadoEnEquipo(equipoIdSel, numeroSel)) {
-                    return alert("Ese número de playera ya está ocupado en este equipo. Elige otro.");
+                    return mostrarToast("Ese número de playera ya está ocupado en este equipo. Elige otro.", "error");
                 }
                 const registradosYPendientes = (db.jugadores || []).filter(j => j.equipoId === equipoIdSel).length
                     + (db.solicitudes || []).filter(s => s.equipoId === equipoIdSel).length;
                 if (registradosYPendientes >= 15) {
-                    return alert("Este equipo ya alcanzó el máximo de 15 jugadores (contando solicitudes pendientes de aprobar). Elige otro equipo o contacta al administrador.");
+                    return mostrarToast("Este equipo ya alcanzó el máximo de 15 jugadores (contando solicitudes pendientes de aprobar). Elige otro equipo o contacta al administrador.", "error");
                 }
                 const fotoB64 = await convertirImagenABase64(document.getElementById('sol-foto'));
                 if(!db.solicitudes) db.solicitudes = [];
@@ -1509,12 +1623,12 @@
                     await enviarSolicitudAFirebase(nuevaSolicitud);
                 } catch (err) {
                     if (btnEnviar) { btnEnviar.disabled = false; btnEnviar.textContent = 'Enviar Solicitud'; }
-                    alert("⚠️ Tu solicitud NO llegó a la nube (por eso el administrador no la ve). Puede ser tu conexión a internet; revisa e inténtalo de nuevo.\n\nDetalle técnico para reportar: " + (err && err.message ? err.message : err));
+                    mostrarToast("⚠️ Tu solicitud NO llegó a la nube (por eso el administrador no la ve). Puede ser tu conexión a internet; revisa e inténtalo de nuevo.<br><small>Detalle técnico: " + (err && err.message ? err.message : err) + "</small>", "error", 8000);
                     return;
                 }
                 if (btnEnviar) { btnEnviar.disabled = false; btnEnviar.textContent = 'Enviar Solicitud'; }
                 document.getElementById('sol-foto-preview').style.display = 'none';
-                this.reset(); alert("¡Solicitud enviada! El administrador revisará tu registro.");
+                this.reset(); mostrarToast("¡Solicitud enviada! El administrador revisará tu registro.", "exito");
             });
 
             actualizarVistaTodo();
@@ -1604,6 +1718,7 @@
 
         function actualizarVistaTodo() {
             aplicarLogoSitio();
+            actualizarBarraMiEquipo();
             renderizarPatrocinadores();
             renderizarReglamentoPublico();
             const contNoticias = document.getElementById('noticias-contenedor');
@@ -1649,7 +1764,7 @@
                         ${jugadorAviso ? `<p style="font-size:0.78rem; font-weight:600; color:${et.color}; margin:10px 0 0;">👁️ Ver ficha completa del jugador →</p>` : ''}
                     </div>
                 </div>`;
-            }).join('') || '<p style="color:var(--text-muted);">No hay avisos recientes.</p>';
+            }).join('') || estadoVacio('📭', 'No hay avisos recientes.');
 
             renderizarBannerAvisoEntrada(comunicadosVigentes);
 
@@ -1716,6 +1831,22 @@
             return true;
         }
 
+        // Vuelve a bloquear el formulario público de registro (borra el desbloqueo
+        // guardado en esta sesión del navegador) para que el usuario pueda salir y,
+        // si quiere, volver a entrar con el PIN de su equipo u otro equipo distinto.
+        function salirDelRegistro() {
+            try { sessionStorage.removeItem('registro_equipo_desbloqueado'); } catch (err) { /* almacenamiento no disponible, no es crítico */ }
+            const form = document.getElementById('form-solicitud-web');
+            form.reset();
+            form.classList.add('hidden');
+            document.getElementById('sol-foto-preview').style.display = 'none';
+            document.getElementById('gate-equipo').value = '';
+            document.getElementById('gate-pin').value = '';
+            const errorEl = document.getElementById('gate-error');
+            if (errorEl) errorEl.style.display = 'none';
+            document.getElementById('registro-gate').classList.remove('hidden');
+        }
+
         function desbloquearRegistroEquipo() {
             const equipoIdSel = parseInt(document.getElementById('gate-equipo').value);
             const pinSel = document.getElementById('gate-pin').value.trim();
@@ -1732,11 +1863,12 @@
         }
 
         // Si ya se había desbloqueado antes en esta misma sesión del navegador, no se
-        // vuelve a pedir el PIN (evita molestar si recarga la página varias veces).
-        let registroSesionYaIntentado = false;
+        // vuelve a pedir el PIN. IMPORTANTE: esto se reaplica en CADA actualización de
+        // datos (no solo la primera vez), porque actualizarVistaTodo() redibuja el
+        // desplegable "CLUB" cada vez que llega un cambio de Firebase (aunque sea un
+        // cambio que no tenga nada que ver con este registro), y eso lo dejaría vacío
+        // justo antes de que el usuario intente enviar su solicitud.
         function restaurarDesbloqueoRegistroDeSesion() {
-            if (registroSesionYaIntentado) return;
-            registroSesionYaIntentado = true;
             let guardado = null;
             try { guardado = JSON.parse(sessionStorage.getItem('registro_equipo_desbloqueado') || 'null'); } catch (err) { return; }
             if (!guardado || !guardado.equipoId) return;
@@ -1828,7 +1960,7 @@
                 })
                 .catch(err => {
                     console.warn('No se pudo registrar el voto', err);
-                    alert('No se pudo registrar tu voto. Intenta de nuevo.');
+                    mostrarToast('No se pudo registrar tu voto. Intenta de nuevo.', 'error');
                 })
                 .finally(() => { recibiendoDeFirebase = false; });
         }
@@ -1871,12 +2003,14 @@
         function renderizarMiniMarcadorHeader() {
             const cont = document.getElementById('mini-marcador-header');
             if (!cont) return;
+            const favoritoId = obtenerEquipoFavoritoId();
 
             const partidosVivo = (db.partidos || []).filter(p => ESTADOS_PARTIDO_EN_VIVO.includes(p.estadoVivo) && !p.jugado);
 
             if (partidosVivo.length > 0) {
                 mmCuentaRegresivaTarget = null;
-                const p = partidosVivo[0];
+                // Si el equipo favorito tiene un partido en vivo, se muestra ese primero.
+                const p = (favoritoId !== null && partidosVivo.find(x => x.localId === favoritoId || x.visitaId === favoritoId)) || partidosVivo[0];
                 const loc = db.equipos.find(e => e.id === p.localId);
                 const vis = db.equipos.find(e => e.id === p.visitaId);
                 const etiqueta = ETIQUETAS_ESTADO_PARTIDO[p.estadoVivo] || 'EN VIVO';
@@ -1903,7 +2037,8 @@
                 .filter(x => !isNaN(x.ts))
                 .sort((a, b) => a.ts - b.ts);
 
-            const siguiente = proximos.find(x => x.ts >= ahora) || proximos[0];
+            const siguiente = (favoritoId !== null && proximos.find(x => (x.p.localId === favoritoId || x.p.visitaId === favoritoId) && x.ts >= ahora))
+                || proximos.find(x => x.ts >= ahora) || proximos[0];
 
             if (!siguiente) {
                 cont.classList.add('hidden');
@@ -1967,6 +2102,91 @@
             setInterval(actualizarCuentaRegresivaMiniMarcador, 1000);
         }
 
+        // ===== Sistema de toasts: reemplaza los alert() nativos del navegador por avisos
+        // con el estilo propio de la liga. Se apilan, se autodestruyen y se pueden cerrar
+        // a mano con la (x). =====
+        const TOAST_ICONOS = { exito: '✅', error: '⚠️', info: 'ℹ️' };
+        function mostrarToast(mensaje, tipo = 'info', duracionMs = 5000) {
+            const cont = document.getElementById('toast-container');
+            if (!cont) { console.log(mensaje); return; }
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${tipo}`;
+            toast.innerHTML = `
+                <span class="toast-icono">${TOAST_ICONOS[tipo] || TOAST_ICONOS.info}</span>
+                <span class="toast-texto">${mensaje}</span>
+                <button type="button" class="toast-cerrar" aria-label="Cerrar aviso">✕</button>
+            `;
+            const cerrar = () => {
+                if (!toast.isConnected) return;
+                toast.classList.add('toast-saliendo');
+                setTimeout(() => toast.remove(), 220);
+            };
+            toast.querySelector('.toast-cerrar').onclick = cerrar;
+            cont.appendChild(toast);
+            setTimeout(cerrar, duracionMs);
+        }
+
+        // Ayudantes para "estados vacíos" ilustrados (icono + texto), en vez de solo
+        // texto plano cuando una lista, grid o tabla todavía no tiene datos que mostrar.
+        function estadoVacio(icono, texto) {
+            return `<div class="estado-vacio"><span class="estado-vacio-icono">${icono}</span><p>${texto}</p></div>`;
+        }
+        function estadoVacioFila(colspan, icono, texto) {
+            return `<tr><td colspan="${colspan}" class="estado-vacio-celda">${estadoVacio(icono, texto)}</td></tr>`;
+        }
+
+        // ===== "Mi Equipo": el aficionado elige su equipo favorito (guardado en este
+        // celular/navegador con localStorage, sin necesidad de cuenta) y lo resaltamos
+        // en la Tabla de Posiciones, el Calendario y el mini marcador del header. =====
+        const CLAVE_EQUIPO_FAVORITO = 'ligaEquipoFavoritoId';
+
+        function obtenerEquipoFavoritoId() {
+            const v = localStorage.getItem(CLAVE_EQUIPO_FAVORITO);
+            const id = v ? parseInt(v) : null;
+            return (id && db.equipos.some(e => e.id === id)) ? id : null;
+        }
+
+        function abrirModalMiEquipo() {
+            const grid = document.getElementById('grid-elegir-equipo');
+            grid.innerHTML = db.equipos.map(eq => `
+                <button type="button" class="equipo-elegir-btn" onclick="elegirEquipoFavorito(${eq.id})">
+                    <img src="${eq.escudo || 'https://placehold.co/42'}" alt="${eq.nombre}" loading="lazy">
+                    <span>${eq.nombre}</span>
+                </button>
+            `).join('');
+            document.getElementById('modal-mi-equipo').classList.remove('hidden');
+        }
+
+        function elegirEquipoFavorito(id) {
+            localStorage.setItem(CLAVE_EQUIPO_FAVORITO, String(id));
+            cerrarModal('modal-mi-equipo');
+            const eq = db.equipos.find(e => e.id === id);
+            mostrarToast(`⭐ ${eq ? eq.nombre : 'Tu equipo'} guardado como tu equipo favorito.`, 'exito');
+            actualizarVistaTodo();
+        }
+
+        function quitarEquipoFavorito() {
+            localStorage.removeItem(CLAVE_EQUIPO_FAVORITO);
+            mostrarToast('Quitamos tu equipo favorito.', 'info');
+            actualizarVistaTodo();
+        }
+
+        function actualizarBarraMiEquipo() {
+            const sinElegir = document.getElementById('mi-equipo-sin-elegir');
+            const elegido = document.getElementById('mi-equipo-elegido');
+            if (!sinElegir || !elegido) return;
+            const eq = db.equipos.find(e => e.id === obtenerEquipoFavoritoId());
+            if (eq) {
+                sinElegir.classList.add('hidden');
+                elegido.classList.remove('hidden');
+                document.getElementById('mi-equipo-escudo-chip').src = eq.escudo || 'https://placehold.co/22';
+                document.getElementById('mi-equipo-nombre-chip').innerHTML = `Tu equipo: <b>${eq.nombre}</b>`;
+            } else {
+                sinElegir.classList.remove('hidden');
+                elegido.classList.add('hidden');
+            }
+        }
+
         // Banner de bienvenida: muestra el aviso más reciente del Tablón al entrar al sitio.
         // Se guarda en este navegador cuál fue el último aviso visto, así que solo aparece
         // de nuevo cuando hay un aviso NUEVO (no en cada visita ni cada refresco).
@@ -1999,10 +2219,12 @@
             if (cont) { cont.classList.add('hidden'); cont.innerHTML = ''; }
         }
 
-        function calcularTablaPosiciones() {
+        function calcularTablaPosiciones(jornadaMax) {
             let estadisticas = db.equipos.map(eq => ({ id: eq.id, nombre: eq.nombre, escudo: eq.escudo || 'https://placehold.co/30', pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dg: 0, pts: 0, racha: [] }));
 
-            const partidosJugados = db.partidos.filter(p => p.jugado).sort((a, b) => (a.jornada || 0) - (b.jornada || 0));
+            const partidosJugados = db.partidos
+                .filter(p => p.jugado && (jornadaMax === undefined || (p.jornada || 0) <= jornadaMax))
+                .sort((a, b) => (a.jornada || 0) - (b.jornada || 0));
 
             partidosJugados.forEach(p => {
                 let loc = estadisticas.find(e => e.id === p.localId);
@@ -2020,17 +2242,62 @@
             return estadisticas;
         }
 
+        // Compara el lugar de cada equipo en la tabla actual contra cómo estaba antes de la
+        // última jornada jugada, para pintar las flechitas ▲▼ de movimiento. Devuelve un mapa
+        // {equipoId: posiciónAnterior}, o null si todavía no hay una jornada previa con la
+        // cual comparar (torneo recién empezado).
+        function calcularMapaPosicionAnterior() {
+            const jornadasJugadas = [...new Set(db.partidos.filter(p => p.jugado).map(p => p.jornada || 0))];
+            if (jornadasJugadas.length === 0) return null;
+            const jornadaUltima = Math.max(...jornadasJugadas);
+            if (jornadaUltima <= 1) return null; // no hay jornada anterior que comparar
+
+            const anteriores = calcularTablaPosiciones(jornadaUltima - 1);
+            const mapa = {};
+            anteriores.forEach((eq, idx) => { mapa[eq.id] = idx + 1; });
+            return mapa;
+        }
+
+        // Cuántos equipos clasifican a la Liguilla, para sombrear esa "zona" en la tabla.
+        // Si ya se generaron los Cuartos de Final (jornada 98) se cuenta cuántas llaves hay
+        // (2 equipos por llave); si aún no se ha generado, se usa el formato estándar del
+        // sitio (Cuartos → Semis → Final = 8 equipos).
+        function calcularNumeroClasifican() {
+            const llavesCF = new Set(db.partidos.filter(p => p.jornada === 98).map(p => p.llaveId));
+            return llavesCF.size > 0 ? llavesCF.size * 2 : 8;
+        }
+
         function actualizarTablaPosiciones() {
             const estadisticas = calcularTablaPosiciones();
+            const posAnterior = calcularMapaPosicionAnterior();
+            const numClasifican = calcularNumeroClasifican();
+            const mostrarZona = db.equipos.length > numClasifican;
+            const favoritoId = obtenerEquipoFavoritoId();
             const iconoForma = { G: '🟢', E: '🟡', P: '🔴' };
-            document.getElementById('tabla-posiciones-body').innerHTML = estadisticas.map((eq, idx) => `
-                <tr>
-                    <td><b>${idx + 1}</b></td>
-                    <td><div class="equipo-celda"><img class="escudo-tab" src="${eq.escudo}" alt="${eq.nombre}" loading="lazy"><span>${eq.nombre}</span></div></td>
+            document.getElementById('tabla-posiciones-body').innerHTML = estadisticas.map((eq, idx) => {
+                const ahora = idx + 1;
+                let indicador = '';
+                if (posAnterior && posAnterior[eq.id] !== undefined) {
+                    const antes = posAnterior[eq.id];
+                    if (ahora < antes) indicador = `<span class="pos-cambio pos-sube">▲${antes - ahora}</span>`;
+                    else if (ahora > antes) indicador = `<span class="pos-cambio pos-baja">▼${ahora - antes}</span>`;
+                    else indicador = `<span class="pos-cambio pos-igual">–</span>`;
+                }
+                const esFavorito = eq.id === favoritoId;
+                const claseZona = (mostrarZona && ahora <= numClasifican) ? 'fila-clasifica' : '';
+                const claseFavorito = esFavorito ? 'fila-favorito' : '';
+                const claseFila = (claseZona || claseFavorito) ? ` class="${[claseZona, claseFavorito].filter(Boolean).join(' ')}"` : '';
+                return `
+                <tr${claseFila}>
+                    <td><b>${ahora}</b>${indicador}</td>
+                    <td><div class="equipo-celda"><img class="escudo-tab" src="${eq.escudo}" alt="${eq.nombre}" loading="lazy"><span>${eq.nombre}</span>${esFavorito ? '<span class="estrella-favorito">⭐</span>' : ''}</div></td>
                     <td>${eq.pj}</td><td>${eq.pg}</td><td>${eq.pe}</td><td>${eq.pp}</td><td>${eq.gf}</td><td>${eq.gc}</td><td>${eq.dg}</td><td><b>${eq.pts}</b></td>
                     <td style="letter-spacing:2px; white-space:nowrap;">${eq.racha.slice(-5).map(r => iconoForma[r]).join('') || '—'}</td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
+            const leyenda = document.getElementById('leyenda-clasificacion');
+            if (leyenda) leyenda.classList.toggle('hidden', !mostrarZona);
         }
 
         function renderizarOfensivaDefensiva() {
@@ -2045,7 +2312,7 @@
                     <td><div class="equipo-celda"><img class="escudo-tab" src="${eq.escudo}" alt="${eq.nombre}" loading="lazy"><span>${eq.nombre}</span></div></td>
                     <td><b>${eq.gf}</b> ⚽ ${idx === 0 ? '🏆' : ''}</td>
                 </tr>
-            `).join('') : '<tr><td colspan="3" style="color:var(--text-muted);">Aún no hay partidos jugados.</td></tr>';
+            `).join('') : estadoVacioFila(3, '⚽', 'Aún no hay partidos jugados.');
 
             document.getElementById('tabla-defensiva-body').innerHTML = defensiva.length ? defensiva.map((eq, idx) => `
                 <tr>
@@ -2053,7 +2320,7 @@
                     <td><div class="equipo-celda"><img class="escudo-tab" src="${eq.escudo}" alt="${eq.nombre}" loading="lazy"><span>${eq.nombre}</span></div></td>
                     <td><b>${eq.gc}</b> 🛡️ ${idx === 0 ? '🏆' : ''}</td>
                 </tr>
-            `).join('') : '<tr><td colspan="3" style="color:var(--text-muted);">Aún no hay partidos jugados.</td></tr>';
+            `).join('') : estadoVacioFila(3, '🛡️', 'Aún no hay partidos jugados.');
         }
 
         function renderizarPorteros() {
@@ -2078,7 +2345,7 @@
                     <td>${pt.goles} 🛡️</td>
                     <td><b>${pt.prom}</b> goles/partido</td>
                 </tr>
-            `).join('') || '<tr><td colspan="4" style="color:var(--text-muted);">No hay porteros especificados en las plantillas.</td></tr>';
+            `).join('') || estadoVacioFila(4, '🧤', 'No hay porteros especificados en las plantillas.');
 
             renderPodio('podio-porteros', data.filter(pt => pt.pj > 0).map(pt => ({
                 foto: pt.foto, nombre: pt.nombre, sub: pt.equipo,
@@ -2300,7 +2567,7 @@
         function compararHeadToHead() {
             const id1 = parseInt(document.getElementById('h2h-equipo1').value);
             const id2 = parseInt(document.getElementById('h2h-equipo2').value);
-            if(!id1 || !id2 || id1 === id2) return alert("Selecciona dos equipos diferentes.");
+            if(!id1 || !id2 || id1 === id2) return mostrarToast("Selecciona dos equipos diferentes.", "error");
 
             const e1 = db.equipos.find(e => e.id === id1);
             const e2 = db.equipos.find(e => e.id === id2);
@@ -2330,8 +2597,10 @@
             const jFiltro = parseInt(document.getElementById('select-jornada-filtro').value);
             const contenedor = document.getElementById('lista-partidos-jornada');
             const partidos = db.partidos.filter(p => p.jornada === jFiltro && !p.oculto);
+            const favoritoId = obtenerEquipoFavoritoId();
 
             contenedor.innerHTML = partidos.map(p => {
+                const esFavorito = favoritoId !== null && (p.localId === favoritoId || p.visitaId === favoritoId);
                 const equipoL = db.equipos.find(e => e.id === p.localId);
                 const equipoV = db.equipos.find(e => e.id === p.visitaId);
                 const nameL = equipoL?.nombre || 'Local';
@@ -2426,7 +2695,7 @@
 
 
                 return `
-                    <div class="partido-item">
+                    <div class="partido-item${esFavorito ? ' partido-favorito' : ''}">
                         ${estadoBadge}
                         <div class="partido-principal">
                             <div class="partido-equipo-visual local" onclick="verEquipo(${p.localId})">
@@ -2452,7 +2721,7 @@
                         ${compartirBtn}
                     </div>
                 `;
-            }).join('') || '<p style="color:var(--text-muted);">No hay partidos.</p>';
+            }).join('') || estadoVacio('📅', 'No hay partidos programados por el momento.');
         }
 
         const coordsXI = [{ t: 88, l: 50 }, { t: 68, l: 20 }, { t: 72, l: 40 }, { t: 72, l: 60 }, { t: 68, l: 80 }, { t: 45, l: 25 }, { t: 50, l: 50 }, { t: 45, l: 75 }, { t: 20, l: 20 }, { t: 15, l: 50 }, { t: 20, l: 80 }];
@@ -2489,7 +2758,9 @@
 
         function actualizarVistaGoleo() {
             let goleadores = [...db.jugadores].filter(j => j.goles > 0).sort((a,b) => b.goles - a.goles);
-            document.getElementById('tabla-goleo-body').innerHTML = goleadores.map((jug, idx) => `<tr><td><b>${idx + 1}</b></td><td><img class="foto-tabla" src="${jug.foto || 'https://placehold.co/34'}" alt="" loading="lazy">${jug.nombre}</td><td>${db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre'}</td><td><b>${jug.goles} ⚽</b> ${idx === 0 ? '🏆' : ''}</td></tr>`).join('');
+            document.getElementById('tabla-goleo-body').innerHTML = goleadores.length
+                ? goleadores.map((jug, idx) => `<tr><td><b>${idx + 1}</b></td><td><img class="foto-tabla" src="${jug.foto || 'https://placehold.co/34'}" alt="" loading="lazy">${jug.nombre}</td><td>${db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre'}</td><td><b>${jug.goles} ⚽</b> ${idx === 0 ? '🏆' : ''}</td></tr>`).join('')
+                : estadoVacioFila(4, '⚽', 'Aún no hay goleadores; se llenará conforme se jueguen partidos.');
             renderPodio('podio-goleo', goleadores.map(jug => ({
                 foto: jug.foto, nombre: jug.nombre,
                 sub: db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre',
@@ -2531,14 +2802,16 @@
                     <td>${eq.rojas} 🟥</td>
                     <td><b>${eq.puntos}</b> ${idx === 0 ? '🏅' : ''}</td>
                 </tr>
-            `).join('') : '<tr><td colspan="5" style="color:var(--text-muted);">Aún no hay partidos jugados.</td></tr>';
+            `).join('') : estadoVacioFila(5, '⚔️', 'Aún no hay partidos jugados.');
         }
 
         function filtrarJugadores() {
             const txt = document.getElementById('input-buscar-jugador').value.toLowerCase();
             const eqFiltro = document.getElementById('select-filtrar-equipo').value;
             let filtrados = db.jugadores.filter(j => j.nombre.toLowerCase().includes(txt) && (eqFiltro === 'todos' || j.equipoId === parseInt(eqFiltro)));
-            document.getElementById('grid-jugadores').innerHTML = filtrados.map(j => `<div class="jugador-card" onclick="verFicha(${j.id})"><img src="${j.foto || 'https://placehold.co/100'}" alt="${j.nombre}" loading="lazy"><h3>${j.nombre}</h3><p>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</p></div>`).join('');
+            document.getElementById('grid-jugadores').innerHTML = filtrados.length
+                ? filtrados.map(j => `<div class="jugador-card" onclick="verFicha(${j.id})"><img src="${j.foto || 'https://placehold.co/100'}" alt="${j.nombre}" loading="lazy"><h3>${j.nombre}</h3><p>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</p></div>`).join('')
+                : estadoVacio('🔍', 'No se encontraron jugadores con ese filtro.');
         }
 
         // ===== DISCIPLINA (solo lectura): mismas reglas que admin.html/arbitro.html — 3 amarillas
@@ -2687,7 +2960,7 @@
                 </div>`;
             });
 
-            contenedor.innerHTML = html || '<div class="buscador-resultado-vacio">Sin resultados para "' + texto + '"</div>';
+            contenedor.innerHTML = html || `<div class="buscador-resultado-vacio">🔍 Sin resultados para "${texto}"</div>`;
             contenedor.classList.remove('hidden');
         }
 
@@ -2938,7 +3211,7 @@
                         <img src="${eq.escudo || 'https://placehold.co/70'}" alt="${eq.nombre}" loading="lazy">
                         <h3>${eq.nombre}</h3>
                         <p>${db.jugadores.filter(j => j.equipoId === eq.id).length} jugadores</p>
-                    </div>`).join('') || '<p style="color:var(--text-muted);">Aún no hay equipos registrados.</p>';
+                    </div>`).join('') || estadoVacio('🛡️', 'Aún no hay equipos registrados.');
             }
             if (contArbitros) {
                 contArbitros.innerHTML = db.arbitros.map(a => {
@@ -2948,7 +3221,7 @@
                         <h3>${a.nombre}</h3>
                         <p>${a.colegio || 'Independiente'}</p>
                     </div>`;
-                }).join('') || '<p style="color:var(--text-muted);">Aún no hay árbitros registrados.</p>';
+                }).join('') || estadoVacio('🧑‍⚖️', 'Aún no hay árbitros registrados.');
             }
         }
 
@@ -3225,7 +3498,7 @@
         async function compartirCarteleraJornada() {
             const jornada = parseInt(document.getElementById('select-jornada-filtro').value);
             const resultado = await generarBlobCartelera(jornada);
-            if (!resultado) return alert('No hay partidos programados para esta jornada.');
+            if (!resultado) return mostrarToast('No hay partidos programados para esta jornada.', 'info');
             const { blob, nombreArchivo } = resultado;
             const archivo = new File([blob], nombreArchivo, { type: 'image/png' });
 
@@ -3393,7 +3666,7 @@
         // Descarga directa de la imagen de la Tabla de Posiciones.
         async function descargarTablaPosicionesImagen() {
             const resultado = await generarBlobTablaPosiciones();
-            if (!resultado) return alert('Aún no hay equipos registrados.');
+            if (!resultado) return mostrarToast('Aún no hay equipos registrados.', 'info');
             descargarBlobComoArchivo(resultado.blob, resultado.nombreArchivo);
         }
 

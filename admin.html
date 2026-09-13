@@ -394,6 +394,27 @@
             padding: 4px !important;
         }
 
+        /* --- Modal de confirmación (reemplaza los confirm() nativos) --- */
+        .confirm-overlay { z-index: 900; animation: confirm-fade-in 0.15s var(--ease); }
+        @keyframes confirm-fade-in { from { opacity: 0; } to { opacity: 1; } }
+        .confirm-box {
+            max-width: 380px; text-align: center; padding: 28px 24px 22px;
+            animation: confirm-pop-in 0.2s var(--ease);
+        }
+        @keyframes confirm-pop-in { from { opacity: 0; transform: translateY(10px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .confirm-icono { font-size: 2.1rem; display: block; margin-bottom: 8px; }
+        .confirm-mensaje { font-size: 0.92rem; line-height: 1.5; color: var(--dark); margin: 0 0 20px; white-space: pre-line; }
+        .confirm-botones { display: flex; gap: 10px; justify-content: center; }
+        .btn-confirm-cancelar, .btn-confirm-ok {
+            border: none; padding: 10px 20px; border-radius: 999px; font-weight: 700; font-size: 0.85rem;
+            cursor: pointer; transition: var(--transition-fast); flex: 1;
+        }
+        .btn-confirm-cancelar { background: #eef1f5; color: var(--dark); }
+        .btn-confirm-cancelar:hover { background: #e0e4ea; }
+        .btn-confirm-ok { background: var(--danger, #ff3b3b); color: white; }
+        .btn-confirm-ok:hover { filter: brightness(1.08); transform: translateY(-1px); }
+        .btn-confirm-ok.btn-confirm-ok-neutral { background: var(--gradient-primary); }
+
         /* --- Ficha completa del jugador (admin) --- */
         .ficha-admin-banner { display:flex; align-items:center; gap:14px; background: linear-gradient(135deg, var(--dark), var(--primary)); margin: -26px -26px 16px; padding: 20px 26px; border-radius: 14px 14px 0 0; }
         .ficha-admin-banner img { width:70px; height:70px; border-radius:50%; object-fit:cover; border:3px solid var(--success); }
@@ -1142,7 +1163,6 @@
             <div>
                 <h4 style="margin:0 0 8px; color:var(--dark);">📢 Avisos y Crónicas</h4>
                 <p style="font-size:0.75rem; color:#888; margin:-4px 0 8px;">Elimina lo publicado en el Tablón del sitio público.</p>
-                <button type="button" onclick="repararFichasEnAvisosAntiguos()" style="margin-bottom:10px; background:#555; padding:8px 12px; font-size:0.78rem;">🔄 Vincular ficha de jugador en avisos anteriores</button>
                 <div id="gestion-lista-comunicados" class="gestion-lista"></div>
             </div>
             <div>
@@ -1177,6 +1197,29 @@
             </table>
         </div>
         <p id="stats-correccion-vacio" class="hidden" style="color:gray; font-size:0.85rem; text-align:center; padding:10px;">No se encontró ningún jugador con ese nombre.</p>
+    </div>
+
+    <!-- MODAL: CONFIRMACIÓN (reemplaza los confirm() nativos del navegador) -->
+    <div id="confirm-overlay" class="modal-overlay confirm-overlay" style="display:none;">
+        <div class="modal-box confirm-box">
+            <span id="confirm-icono" class="confirm-icono">⚠️</span>
+            <p id="confirm-mensaje" class="confirm-mensaje"></p>
+            <div class="confirm-botones">
+                <button type="button" id="confirm-btn-cancelar" class="btn-confirm-cancelar">Cancelar</button>
+                <button type="button" id="confirm-btn-ok" class="btn-confirm-ok">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ALERTA (reemplaza los alert() nativos del navegador, mismo estilo que el de confirmación) -->
+    <div id="alerta-overlay" class="modal-overlay confirm-overlay" style="display:none;">
+        <div class="modal-box confirm-box">
+            <span id="alerta-icono" class="confirm-icono">ℹ️</span>
+            <p id="alerta-mensaje" class="confirm-mensaje"></p>
+            <div class="confirm-botones">
+                <button type="button" id="alerta-btn-ok" class="btn-confirm-ok btn-confirm-ok-neutral" style="flex:none; padding-left:34px; padding-right:34px;">Aceptar</button>
+            </div>
+        </div>
     </div>
 
     <!-- MODAL: PLANTEL DEL EQUIPO -->
@@ -1708,8 +1751,8 @@
             lector.readAsDataURL(input.files[0]);
         }
 
-        function quitarLogoSitio() {
-            if (!confirm('¿Quitar el logo personalizado y volver al escudo original?')) return;
+        async function quitarLogoSitio() {
+            if (!(await confirmarAccion('¿Quitar el logo personalizado y volver al escudo original?', { neutral: true, icono: '🖼️' }))) return;
             if (!db.config) db.config = crearConfigCredencialDefault();
             db.config.logoSitio = '';
             guardarDB();
@@ -1896,13 +1939,13 @@
             if (!eq) return;
             if (!eq.pin) { eq.pin = generarPin6Digitos(); guardarDB(); }
             const encabezado = esNuevo ? `Equipo registrado con éxito.\n\n` : '';
-            alert(`${encabezado}PIN de registro de "${eq.nombre}": ${eq.pin}\n\nDaselo únicamente al dueño/representante del equipo. Lo debe escribir en la sección "Solicitud de Registro de Jugador" del sitio público para poder registrar a sus jugadores.`);
+            mostrarAlerta(`${encabezado}PIN de registro de "${eq.nombre}": ${eq.pin}\n\nDaselo únicamente al dueño/representante del equipo. Lo debe escribir en la sección "Solicitud de Registro de Jugador" del sitio público para poder registrar a sus jugadores.`, { icono: '🔑' });
         }
 
-        function regenerarPinEquipo(id) {
+        async function regenerarPinEquipo(id) {
             const eq = db.equipos.find(e => e.id === id);
             if (!eq) return;
-            if (!confirm(`¿Generar un nuevo PIN para "${eq.nombre}"? El PIN anterior dejará de funcionar.`)) return;
+            if (!(await confirmarAccion(`¿Generar un nuevo PIN para "${eq.nombre}"? El PIN anterior dejará de funcionar.`, { neutral: true, icono: '🔑' }))) return;
             eq.pin = generarPin6Digitos();
             guardarDB();
             mostrarPinRegistroEquipo(id, false);
@@ -1918,13 +1961,13 @@
             if (!arb) return;
             if (!arb.pin) { arb.pin = generarPin6Digitos(); guardarDB(); }
             const encabezado = esNuevo ? `Árbitro registrado con éxito.\n\n` : '';
-            alert(`${encabezado}PIN de acceso de "${arb.nombre}": ${arb.pin}\n\nDaselo únicamente a él. Lo debe escribir en la pantalla de acceso de arbitro.html para entrar a su panel.`);
+            mostrarAlerta(`${encabezado}PIN de acceso de "${arb.nombre}": ${arb.pin}\n\nDaselo únicamente a él. Lo debe escribir en la pantalla de acceso de arbitro.html para entrar a su panel.`, { icono: '🔑' });
         }
 
-        function regenerarPinArbitro(id) {
+        async function regenerarPinArbitro(id) {
             const arb = db.arbitros.find(a => a.id === id);
             if (!arb) return;
-            if (!confirm(`¿Generar un nuevo PIN para "${arb.nombre}"? El PIN anterior dejará de funcionar.`)) return;
+            if (!(await confirmarAccion(`¿Generar un nuevo PIN para "${arb.nombre}"? El PIN anterior dejará de funcionar.`, { neutral: true, icono: '🔑' }))) return;
             arb.pin = generarPin6Digitos();
             guardarDB();
             mostrarPinArbitro(id, false);
@@ -2100,6 +2143,66 @@
             }
         });
 
+        // --- Modal de confirmación (reemplaza los confirm() nativos del navegador) ---
+        // Uso: if (!(await confirmarAccion("¿Seguro?"))) return;
+        // opciones: { icono, textoConfirmar, textoCancelar, neutral: true } (neutral = botón azul en vez de rojo, para acciones no destructivas)
+        let confirmResolverPendiente = null;
+        function confirmarAccion(mensaje, opciones = {}) {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('confirm-overlay');
+                const btnOk = document.getElementById('confirm-btn-ok');
+                const btnCancelar = document.getElementById('confirm-btn-cancelar');
+
+                document.getElementById('confirm-icono').textContent = opciones.icono || (opciones.neutral ? 'ℹ️' : '⚠️');
+                document.getElementById('confirm-mensaje').textContent = mensaje;
+                btnOk.textContent = opciones.textoConfirmar || 'Confirmar';
+                btnCancelar.textContent = opciones.textoCancelar || 'Cancelar';
+                btnOk.classList.toggle('btn-confirm-ok-neutral', !!opciones.neutral);
+
+                const finalizar = (resultado) => {
+                    overlay.style.display = 'none';
+                    btnOk.onclick = null; btnCancelar.onclick = null; overlay.onclick = null;
+                    document.removeEventListener('keydown', alCancelarConEsc);
+                    confirmResolverPendiente = null;
+                    resolve(resultado);
+                };
+                const alCancelarConEsc = (e) => { if (e.key === 'Escape') finalizar(false); };
+
+                confirmResolverPendiente = finalizar;
+                btnOk.onclick = () => finalizar(true);
+                btnCancelar.onclick = () => finalizar(false);
+                overlay.onclick = (e) => { if (e.target === overlay) finalizar(false); };
+                document.addEventListener('keydown', alCancelarConEsc);
+                overlay.style.display = 'flex';
+            });
+        }
+
+        // --- Modal de alerta (reemplaza los alert() nativos del navegador) ---
+        // Uso: mostrarAlerta("Mensaje", { icono: '🔑' });  -- no necesita await, solo se cierra con "Aceptar"
+        function mostrarAlerta(mensaje, opciones = {}) {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('alerta-overlay');
+                const btnOk = document.getElementById('alerta-btn-ok');
+
+                document.getElementById('alerta-icono').textContent = opciones.icono || 'ℹ️';
+                document.getElementById('alerta-mensaje').textContent = mensaje;
+                btnOk.textContent = opciones.textoBoton || 'Aceptar';
+
+                const finalizar = () => {
+                    overlay.style.display = 'none';
+                    btnOk.onclick = null; overlay.onclick = null;
+                    document.removeEventListener('keydown', alCerrarConEnter);
+                    resolve();
+                };
+                const alCerrarConEnter = (e) => { if (e.key === 'Escape' || e.key === 'Enter') finalizar(); };
+
+                btnOk.onclick = finalizar;
+                overlay.onclick = (e) => { if (e.target === overlay) finalizar(); };
+                document.addEventListener('keydown', alCerrarConEnter);
+                overlay.style.display = 'flex';
+            });
+        }
+
         // --- Publicación manual con Firebase ---
         // Mientras editas, los cambios solo viven en este navegador (localStorage).
         // Solo cuando presionas "Publicar" se suben a Firebase, y en ese momento
@@ -2129,8 +2232,8 @@
             });
         }
 
-        function traerDeFirebase() {
-            if (hayCambiosSinPublicar && !confirm('Tienes cambios sin publicar en esta pantalla; al traer la última versión publicada los perderás. ¿Continuar?')) return;
+        async function traerDeFirebase() {
+            if (hayCambiosSinPublicar && !(await confirmarAccion('Tienes cambios sin publicar en esta pantalla; al traer la última versión publicada los perderás. ¿Continuar?'))) return;
             mostrarFirebaseStatus('⏳ Descargando última versión publicada...', false);
             firebaseDbRef.once('value').then(snapshot => {
                 const datosNube = snapshot.val();
@@ -2187,7 +2290,7 @@
             if (!archivo) return;
 
             const lector = new FileReader();
-            lector.onload = function (e) {
+            lector.onload = async function (e) {
                 let datos;
                 try {
                     datos = JSON.parse(e.target.result);
@@ -2205,10 +2308,11 @@
                     return;
                 }
 
-                const confirmar = confirm(
+                const confirmar = await confirmarAccion(
                     '¿Restaurar esta copia de seguridad?\n\n' +
                     'Esto reemplazará TODOS los datos actuales (equipos, jugadores, partidos, finanzas, etc.) ' +
-                    'con el contenido del archivo. Esta acción no se puede deshacer.'
+                    'con el contenido del archivo. Esta acción no se puede deshacer.',
+                    { textoConfirmar: 'Restaurar' }
                 );
                 if (!confirmar) {
                     event.target.value = '';
@@ -2726,8 +2830,8 @@
             if (btnQuitar) btnQuitar.disabled = !tieneEscudo;
         }
 
-        function quitarEscudoCredencial() {
-            if (!confirm('¿Quitar el escudo de la credencial y dejarlo en blanco?')) return;
+        async function quitarEscudoCredencial() {
+            if (!(await confirmarAccion('¿Quitar el escudo de la credencial y dejarlo en blanco?', { neutral: true, icono: '🛡️' }))) return;
             if (!db.config) db.config = crearConfigCredencialDefault();
             db.config.escudoLiga = '';
             guardarDB();
@@ -2855,7 +2959,7 @@
                 const duplicado = nombreYaRegistrado(nombreSel);
                 if (duplicado) {
                     const equipoDup = db.equipos.find(e => e.id === duplicado.equipoId)?.nombre || 'Agente Libre';
-                    if (!confirm(`⚠️ Ya existe un jugador registrado con el nombre "${nombreSel}" (equipo: ${equipoDup}). Revísalo antes de continuar.\n\n¿Deseas registrarlo de todas formas?`)) {
+                    if (!(await confirmarAccion(`⚠️ Ya existe un jugador registrado con el nombre "${nombreSel}" (equipo: ${equipoDup}). Revísalo antes de continuar.\n\n¿Deseas registrarlo de todas formas?`, { textoConfirmar: 'Registrar de todas formas' }))) {
                         return;
                     }
                 }
@@ -2898,7 +3002,7 @@
                 alert("Configuración de credenciales guardada.");
             });
 
-            document.getElementById('form-add-partido').addEventListener('submit', function (e) {
+            document.getElementById('form-add-partido').addEventListener('submit', async function (e) {
                 e.preventDefault();
                 const locId = parseInt(document.getElementById('admin-part-local').value);
                 const visId = parseInt(document.getElementById('admin-part-visita').value);
@@ -2906,18 +3010,18 @@
                 const finLoc = db.finanzas[locId];
                 const finVis = db.finanzas[visId];
                 if (finLoc && (finLoc.adeudoArbitrajes || 0) > 0) {
-                    if (!confirm(`⚠️ ATENCIÓN: El equipo Local presenta ${finLoc.adeudoArbitrajes || 0} arbitraje(s) pendiente(s) de pago. ¿Deseas programarlo de todas formas?`)) return;
+                    if (!(await confirmarAccion(`⚠️ ATENCIÓN: El equipo Local presenta ${finLoc.adeudoArbitrajes || 0} arbitraje(s) pendiente(s) de pago. ¿Deseas programarlo de todas formas?`, { textoConfirmar: 'Programar de todas formas' }))) return;
                 }
                 if (finVis && (finVis.adeudoArbitrajes || 0) > 0) {
-                    if (!confirm(`⚠️ ATENCIÓN: El equipo Visitante presenta ${finVis.adeudoArbitrajes || 0} arbitraje(s) pendiente(s) de pago. ¿Deseas programarlo de todas formas?`)) return;
+                    if (!(await confirmarAccion(`⚠️ ATENCIÓN: El equipo Visitante presenta ${finVis.adeudoArbitrajes || 0} arbitraje(s) pendiente(s) de pago. ¿Deseas programarlo de todas formas?`, { textoConfirmar: 'Programar de todas formas' }))) return;
                 }
                 const multaLoc = multaPendienteEquipo(locId, db);
                 const multaVis = multaPendienteEquipo(visId, db);
                 if (multaLoc > 0) {
-                    if (!confirm(`⚠️ ATENCIÓN: El equipo Local tiene $${multaLoc} de multas por tarjetas sin pagar. ¿Deseas programarlo de todas formas?`)) return;
+                    if (!(await confirmarAccion(`⚠️ ATENCIÓN: El equipo Local tiene $${multaLoc} de multas por tarjetas sin pagar. ¿Deseas programarlo de todas formas?`, { textoConfirmar: 'Programar de todas formas' }))) return;
                 }
                 if (multaVis > 0) {
-                    if (!confirm(`⚠️ ATENCIÓN: El equipo Visitante tiene $${multaVis} de multas por tarjetas sin pagar. ¿Deseas programarlo de todas formas?`)) return;
+                    if (!(await confirmarAccion(`⚠️ ATENCIÓN: El equipo Visitante tiene $${multaVis} de multas por tarjetas sin pagar. ¿Deseas programarlo de todas formas?`, { textoConfirmar: 'Programar de todas formas' }))) return;
                 }
 
                 const campoSeleccionado = db.campos.find(c => c.id === parseInt(document.getElementById('admin-part-estadio').value));
@@ -3194,7 +3298,7 @@
             const btnAprobar = document.getElementById('sol-adm-btn-aprobar');
             const btnRechazar = document.getElementById('sol-adm-btn-rechazar');
             if (btnAprobar) btnAprobar.onclick = () => aprobarSolicitud(s.id);
-            if (btnRechazar) btnRechazar.onclick = () => { if (confirm('¿Rechazar esta solicitud de registro?')) rechazarSolicitud(s.id); };
+            if (btnRechazar) btnRechazar.onclick = async () => { if (await confirmarAccion('¿Rechazar esta solicitud de registro?', { textoConfirmar: 'Rechazar' })) rechazarSolicitud(s.id); };
 
             document.getElementById('modal-detalle-solicitud').style.display = 'flex';
         }
@@ -3204,7 +3308,7 @@
             if (modal) modal.style.display = 'none';
         }
 
-        function aprobarSolicitud(id) {
+        async function aprobarSolicitud(id) {
             const sol = db.solicitudes.find(s => s.id === id);
             if (!sol) return;
             if ((db.jugadores || []).filter(j => j.equipoId === sol.equipoId).length >= 15) {
@@ -3214,7 +3318,7 @@
             const duplicado = nombreYaRegistrado(nombreSol);
             if (duplicado) {
                 const equipoDup = db.equipos.find(e => e.id === duplicado.equipoId)?.nombre || 'Agente Libre';
-                if (!confirm(`⚠️ Ya existe un jugador registrado con el nombre "${nombreSol}" (equipo: ${equipoDup}). Revísalo antes de continuar.\n\n¿Deseas aprobar esta solicitud de todas formas?`)) {
+                if (!(await confirmarAccion(`⚠️ Ya existe un jugador registrado con el nombre "${nombreSol}" (equipo: ${equipoDup}). Revísalo antes de continuar.\n\n¿Deseas aprobar esta solicitud de todas formas?`, { textoConfirmar: 'Aprobar de todas formas' }))) {
                     return;
                 }
             }
@@ -3815,12 +3919,12 @@
         // en 0 (los votos anteriores quedan guardados en el historial local del navegador,
         // pero la encuesta pública arranca de cero). Requiere "Publicar cambios" después
         // para que se vea en el sitio público.
-        function publicarEncuesta() {
+        async function publicarEncuesta() {
             const pregunta = document.getElementById('encuesta-pregunta').value.trim();
             if (!pregunta) return alert('Escribe la pregunta de la encuesta.');
             if (encuestaOpcionesDraft.length < 2) return alert('Agrega al menos 2 opciones.');
             if (encuestaOpcionesDraft.some(o => !o.texto || !o.texto.trim())) return alert('Ninguna opción puede quedar con el texto vacío.');
-            if (!confirm('¿Publicar esta encuesta? Esto reemplazará la encuesta anterior (si había una) y reiniciará los votos en el sitio público.')) return;
+            if (!(await confirmarAccion('¿Publicar esta encuesta? Esto reemplazará la encuesta anterior (si había una) y reiniciará los votos en el sitio público.', { neutral: true, icono: '🗳️', textoConfirmar: 'Publicar' }))) return;
 
             db.encuesta = {
                 id: Date.now(),
@@ -3848,9 +3952,9 @@
         }
 
         // Quita por completo la encuesta del sitio público y limpia el formulario.
-        function eliminarEncuesta() {
+        async function eliminarEncuesta() {
             if (!db.encuesta || !db.encuesta.activa) return alert('No hay ninguna encuesta para eliminar.');
-            if (!confirm('¿Eliminar la encuesta del sitio público? Se perderán sus resultados.')) return;
+            if (!(await confirmarAccion('¿Eliminar la encuesta del sitio público? Se perderán sus resultados.', { textoConfirmar: 'Eliminar' }))) return;
             db.encuesta = { activa: false };
             db.encuestaVotos = {};
             encuestaOpcionesDraft = [];
@@ -4845,7 +4949,7 @@ ${cuerpo}`;
 
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { cerrarEdicion(); cerrarFichaEquipoAdmin(); cerrarFichaJugadorAdmin(); cerrarFichaArbitroAdmin(); } });
 
-        function eliminarEquipo(id) {
+        async function eliminarEquipo(id) {
             const eq = db.equipos.find(e => e.id === id);
             if (!eq) return;
             const tienePartidos = db.partidos.some(p => p.localId === id || p.visitaId === id);
@@ -4855,7 +4959,7 @@ ${cuerpo}`;
             const jugadoresDelEquipo = db.jugadores.filter(j => j.equipoId === id);
             let msg = `¿Eliminar el equipo "${eq.nombre}"?`;
             if (jugadoresDelEquipo.length) msg += `\n\n${jugadoresDelEquipo.length} jugador(es) quedarán como Agente Libre.`;
-            if (!confirm(msg)) return;
+            if (!(await confirmarAccion(msg, { textoConfirmar: 'Eliminar' }))) return;
 
             jugadoresDelEquipo.forEach(j => j.equipoId = null);
             db.equipos = db.equipos.filter(e => e.id !== id);
@@ -4864,37 +4968,37 @@ ${cuerpo}`;
             alert("Equipo eliminado.");
         }
 
-        function eliminarJugador(id) {
+        async function eliminarJugador(id) {
             const j = db.jugadores.find(x => x.id === id);
             if (!j) return;
-            if (!confirm(`¿Eliminar al jugador "${j.nombre}"? Sus goles, tarjetas y MVPs históricos en partidos ya jugados se conservarán en el registro del partido, pero desaparecerá del plantel.`)) return;
+            if (!(await confirmarAccion(`¿Eliminar al jugador "${j.nombre}"? Sus goles, tarjetas y MVPs históricos en partidos ya jugados se conservarán en el registro del partido, pero desaparecerá del plantel.`, { textoConfirmar: 'Eliminar' }))) return;
             db.jugadores = db.jugadores.filter(x => x.id !== id);
             guardarDB();
             alert("Jugador eliminado.");
         }
 
-        function eliminarArbitro(id) {
+        async function eliminarArbitro(id) {
             const a = db.arbitros.find(x => x.id === id);
             if (!a) return;
-            if (!confirm(`¿Eliminar al árbitro "${a.nombre}"?`)) return;
+            if (!(await confirmarAccion(`¿Eliminar al árbitro "${a.nombre}"?`, { textoConfirmar: 'Eliminar' }))) return;
             db.arbitros = db.arbitros.filter(x => x.id !== id);
             guardarDB();
             alert("Árbitro eliminado.");
         }
 
-        function eliminarCancha(id) {
+        async function eliminarCancha(id) {
             const c = db.campos.find(x => x.id === id);
             if (!c) return;
-            if (!confirm(`¿Eliminar la cancha "${c.nombre}"?`)) return;
+            if (!(await confirmarAccion(`¿Eliminar la cancha "${c.nombre}"?`, { textoConfirmar: 'Eliminar' }))) return;
             db.campos = db.campos.filter(x => x.id !== id);
             guardarDB();
             alert("Cancha eliminada.");
         }
 
-        function eliminarComunicado(id) {
+        async function eliminarComunicado(id) {
             const c = db.comunicados.find(x => x.id === id);
             if (!c) return;
-            if (!confirm(`¿Eliminar "${c.titulo}" del Tablón?`)) return;
+            if (!(await confirmarAccion(`¿Eliminar "${c.titulo}" del Tablón?`, { textoConfirmar: 'Eliminar' }))) return;
             db.comunicados = db.comunicados.filter(x => x.id !== id);
             guardarDB();
             alert("Publicación eliminada del Tablón.");
@@ -4942,66 +5046,19 @@ ${cuerpo}`;
             document.getElementById('modal-editar-fichaje').style.display = 'none';
         }
 
-        function eliminarFichaje(id) {
+        async function eliminarFichaje(id) {
             const f = (db.historialFichajes || []).find(x => x.id === id);
             if (!f) return;
-            if (!confirm(`¿Eliminar el registro de fichaje de "${f.jugador}"?`)) return;
+            if (!(await confirmarAccion(`¿Eliminar el registro de fichaje de "${f.jugador}"?`, { textoConfirmar: 'Eliminar' }))) return;
             db.historialFichajes = (db.historialFichajes || []).filter(x => x.id !== id);
             guardarDB();
             alert("Registro de fichaje eliminado.");
         }
 
-        // Repara avisos de Registro/Traspaso/Disciplina publicados ANTES de que el sistema
-        // guardara el jugadorId y la foto: reconoce al jugador por su nombre dentro del
-        // texto del aviso y, si lo encuentra sin ambigüedad, le vincula su ficha y foto.
-        // Segura de ejecutar varias veces: solo toca avisos que aún no tengan jugadorId.
-        function repararFichasEnAvisosAntiguos() {
-            const extraerNombre = (c) => {
-                if (c.tipo === 'registro') {
-                    const m = /^(.*?) se une al equipo /.exec(c.contenido || '');
-                    return m ? m[1].trim() : null;
-                }
-                if (c.tipo === 'traspaso') {
-                    const m = /^(.*?) pasa de /.exec(c.contenido || '');
-                    return m ? m[1].trim() : null;
-                }
-                if (c.tipo === 'sancion') {
-                    const m = /^🚫 (.*?) suspendido$/.exec(c.titulo || '');
-                    return m ? m[1].trim() : null;
-                }
-                if (c.tipo === 'habilitado') {
-                    const m = /^✅ (.*?) ya puede jugar$/.exec(c.titulo || '');
-                    return m ? m[1].trim() : null;
-                }
-                return null;
-            };
-
-            let reparados = 0;
-            (db.comunicados || []).forEach(c => {
-                if (c.jugadorId) return; // ya tiene ficha vinculada
-                const nombre = extraerNombre(c);
-                if (!nombre) return;
-                const nombreNorm = nombre.toUpperCase();
-                const coincidencias = (db.jugadores || []).filter(j => (j.nombre || '').trim().toUpperCase() === nombreNorm);
-                if (coincidencias.length === 1) {
-                    c.jugadorId = coincidencias[0].id;
-                    if (!c.imagen) c.imagen = coincidencias[0].foto || '';
-                    reparados++;
-                }
-            });
-
-            if (reparados > 0) {
-                guardarDB();
-                alert(`Listo: se vinculó la ficha del jugador en ${reparados} aviso(s) anterior(es). Recuerda presionar "📤 Publicar cambios" para que se vea en el sitio público.`);
-            } else {
-                alert('No se encontraron avisos antiguos pendientes de reparar (o ya estaban vinculados a una ficha).');
-            }
-        }
-
-        function eliminarPatrocinador(id) {
+        async function eliminarPatrocinador(id) {
             const p = db.patrocinadores.find(x => x.id === id);
             if (!p) return;
-            if (!confirm(`¿Eliminar al patrocinador "${p.nombre}"?`)) return;
+            if (!(await confirmarAccion(`¿Eliminar al patrocinador "${p.nombre}"?`, { textoConfirmar: 'Eliminar' }))) return;
             db.patrocinadores = db.patrocinadores.filter(x => x.id !== id);
             guardarDB();
             alert("Patrocinador eliminado.");
@@ -5018,7 +5075,7 @@ ${cuerpo}`;
 
         // Quita partidos duplicados de la Liguilla (mismo cruce/llave repetido en la misma ronda),
         // conservando el más completo (con cédula cerrada > jugado > el más reciente).
-        function limpiarDuplicadosLiguilla() {
+        async function limpiarDuplicadosLiguilla() {
             const rondas = [98, 99, 100, 101, 102];
             const idsAEliminar = [];
             rondas.forEach(j => {
@@ -5035,21 +5092,21 @@ ${cuerpo}`;
                 });
             });
             if (idsAEliminar.length === 0) { alert('No se encontraron partidos duplicados en la Liguilla. Todo está en orden.'); return; }
-            if (!confirm(`Se encontraron ${idsAEliminar.length} partido(s) duplicado(s) en la Liguilla (mismo cruce repetido dentro de la misma ronda). Se dejará solo el más completo de cada uno y se borrarán los demás. ¿Continuar?`)) return;
+            if (!(await confirmarAccion(`Se encontraron ${idsAEliminar.length} partido(s) duplicado(s) en la Liguilla (mismo cruce repetido dentro de la misma ronda). Se dejará solo el más completo de cada uno y se borrarán los demás. ¿Continuar?`, { textoConfirmar: 'Continuar' }))) return;
             db.partidos = db.partidos.filter(p => !idsAEliminar.includes(p.id));
             guardarDB();
             renderizarGestion();
             alert(`Listo, se eliminaron ${idsAEliminar.length} partido(s) duplicado(s) de la Liguilla.`);
         }
 
-        function eliminarPartido(id) {
+        async function eliminarPartido(id) {
             const p = db.partidos.find(x => x.id === id);
             if (!p) return;
             const loc = db.equipos.find(e => e.id === p.localId)?.nombre || 'Local';
             const vis = db.equipos.find(e => e.id === p.visitaId)?.nombre || 'Visita';
             let msg = `¿Eliminar el partido "${loc} vs ${vis}" (${etiquetaJornada(p.jornada)})?`;
             if (p.jugado || p.cedula) msg += `\n\n⚠️ Este partido ya tiene resultado y/o cédula oficial cerrada. Si lo eliminas, esos datos se perderán permanentemente.`;
-            if (!confirm(msg)) return;
+            if (!(await confirmarAccion(msg, { textoConfirmar: 'Eliminar' }))) return;
             db.partidos = db.partidos.filter(x => x.id !== id);
             guardarDB();
             alert("Partido eliminado.");
