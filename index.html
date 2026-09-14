@@ -351,7 +351,8 @@
             box-shadow: var(--shadow-sm); padding: 10px 12px; align-self: center; width: 100%; max-width: 236px;
             justify-self: center; transition: var(--transition-fast); position: relative;
         }
-        .pob-match:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--secondary); }
+        .pob-match { transform-style: preserve-3d; }
+        .pob-match:hover { box-shadow: var(--shadow-md); transform: perspective(700px) translateY(-3px) rotateX(4deg); border-color: var(--secondary); }
         .pob-match.pob-final { border-color: var(--accent); border-width: 3px; background: linear-gradient(160deg, var(--card-bg) 60%, rgba(240,180,41,0.12)); box-shadow: var(--shadow-glow); }
         .pob-match.pob-vacio { opacity: 0.6; border-style: dashed; }
         .pob-match-title { font-weight: 700; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.4px; color: var(--primary); text-align: center; margin-bottom: 8px; }
@@ -374,11 +375,14 @@
         .pob-connector-simple { grid-row: 2; align-self: center; position: relative; height: 2px; }
         .pob-connector-simple::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--border); }
 
-        .cancha { background: linear-gradient(160deg, #2a9d8f 0%, #21847a 100%); border: 4px solid white; border-radius: var(--radius-lg); height: 500px; position: relative; margin-top: 20px; overflow: hidden; box-shadow: var(--shadow-md); }
+        .cancha { background: linear-gradient(160deg, #2a9d8f 0%, #21847a 100%); border: 4px solid white; border-radius: var(--radius-lg); height: 500px; position: relative; margin-top: 20px; overflow: hidden; box-shadow: var(--shadow-md); transform: perspective(1300px) rotateX(10deg); transform-style: preserve-3d; transition: transform 0.3s ease; }
+        .cancha:hover { transform: perspective(1300px) rotateX(6deg); }
         .linea-medio { position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: rgba(255,255,255,0.5); }
         .circulo-medio { position: absolute; top: 50%; left: 50%; width: 100px; height: 100px; border: 2px solid rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); }
-        .xi-jugador { position: absolute; transform: translate(-50%, -50%); text-align: center; color: white; width: 80px; }
+        .xi-jugador { position: absolute; transform: translate(-50%, -50%); text-align: center; color: white; width: 80px; transition: transform 0.2s ease; transform-style: preserve-3d; }
+        .xi-jugador:hover { transform: translate(-50%, -50%) translateZ(34px) scale(1.1); }
         .xi-jugador img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; background: white; box-shadow: var(--shadow-xs); }
+        @media (prefers-reduced-motion: reduce) { .cancha, .cancha:hover, .xi-jugador:hover { transform: none; } }
 
         .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(11,47,92,0.72);
@@ -442,6 +446,14 @@
         .mm-cuenta-num { font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; line-height: 1; color: var(--accent); }
         .mm-cuenta-lbl { font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.3px; color: rgba(255,255,255,0.65); }
         .mm-extra { font-size: 0.7rem; color: rgba(255,255,255,0.6); white-space: nowrap; }
+        /* --- Flip 3D del marcador y entrada 3D del widget --- */
+        .mini-marcador-inner { perspective: 500px; }
+        .mm-marcador { transform-style: preserve-3d; }
+        .mm-marcador.mm-marcador-flip { animation: mmFlipMarcador 0.55s ease; }
+        @keyframes mmFlipMarcador { 0% { transform: rotateX(0deg); } 45% { transform: rotateX(100deg); } 55% { transform: rotateX(100deg); } 100% { transform: rotateX(0deg); } }
+        .mini-marcador-inner.mm-entrada-3d { animation: mmEntrada3D 0.55s cubic-bezier(.2,.7,.3,1.1) both; }
+        @keyframes mmEntrada3D { from { opacity: 0; transform: perspective(500px) rotateX(-45deg); } to { opacity: 1; transform: perspective(500px) rotateX(0deg); } }
+        @media (prefers-reduced-motion: reduce) { .mm-marcador.mm-marcador-flip, .mini-marcador-inner.mm-entrada-3d { animation: none; } }
         @media (max-width: 480px) {
             .mini-marcador-inner { gap: 8px; padding: 8px 10px; }
             .mm-nombre { max-width: 72px; font-size: 0.74rem; }
@@ -450,12 +462,40 @@
         }
 
         /* --- Podio (top 3) para rankings destacados --- */
-        .podio-wrap { display: flex; align-items: flex-end; justify-content: center; gap: 12px; margin: 4px 0 24px; flex-wrap: nowrap; }
-        .podio-puesto { display: flex; flex-direction: column; align-items: center; text-align: center; background: var(--light); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 10px 12px; flex: 1 1 0; min-width: 0; position: relative; transition: transform var(--transition-fast); }
-        .podio-puesto:hover { transform: translateY(-3px); }
-        .podio-puesto.oro { order: 2; border-top: 3px solid #f0b429; padding-top: 20px; }
-        .podio-puesto.plata { order: 1; border-top: 3px solid #b9c2cf; }
-        .podio-puesto.bronce { order: 3; border-top: 3px solid #c17a3d; }
+        .podio-wrap { display: flex; align-items: flex-end; justify-content: center; gap: 12px; margin: 4px 0 24px; flex-wrap: nowrap; perspective: 900px; }
+        .podio-puesto { display: flex; flex-direction: column; align-items: center; text-align: center; background: var(--light); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 10px 12px; flex: 1 1 0; min-width: 0; position: relative; transition: transform var(--transition-fast), box-shadow var(--transition-fast); transform-style: preserve-3d; }
+        .podio-puesto.oro { order: 2; border-top: 3px solid #f0b429; padding-top: 20px; animation: podioEntradaOro 0.6s 0.15s cubic-bezier(.2,.7,.3,1.1) both; }
+        .podio-puesto.plata { order: 1; border-top: 3px solid #b9c2cf; animation: podioEntradaPlata 0.6s 0s cubic-bezier(.2,.7,.3,1.1) both; }
+        .podio-puesto.bronce { order: 3; border-top: 3px solid #c17a3d; animation: podioEntradaBronce 0.6s 0.3s cubic-bezier(.2,.7,.3,1.1) both; }
+        .podio-puesto.oro:hover { transform: translateY(-6px) translateZ(24px) scale(1.06); box-shadow: 0 16px 26px -8px rgba(240,180,41,0.4); }
+        .podio-puesto.plata:hover { transform: translateY(-6px) rotateY(4deg) scale(1.03); box-shadow: var(--shadow-md); }
+        .podio-puesto.bronce:hover { transform: translateY(-6px) rotateY(-4deg) scale(1.03); box-shadow: var(--shadow-md); }
+        @keyframes podioEntradaOro { from { opacity: 0; transform: perspective(900px) translateY(24px) rotateX(-25deg); } to { opacity: 1; transform: perspective(900px) translateY(0) translateZ(14px); } }
+        @keyframes podioEntradaPlata { from { opacity: 0; transform: perspective(900px) translateY(24px) rotateX(-25deg); } to { opacity: 1; transform: perspective(900px) translateY(0) rotateY(6deg); } }
+        @keyframes podioEntradaBronce { from { opacity: 0; transform: perspective(900px) translateY(24px) rotateX(-25deg); } to { opacity: 1; transform: perspective(900px) translateY(0) rotateY(-6deg); } }
+        @media (prefers-reduced-motion: reduce) { .podio-puesto.oro, .podio-puesto.plata, .podio-puesto.bronce { animation: none; } }
+
+        /* --- Comparador Cara a Cara: barras con relieve 3D que crecen al revelarse --- */
+        .h2h-barra-fila { display: grid; grid-template-columns: 100px 1fr 34px; align-items: center; gap: 10px; margin: 12px 0; }
+        .h2h-barra-label { font-size: 0.78rem; font-weight: 700; color: var(--text); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .h2h-barra-track { position: relative; height: 22px; background: rgba(0,0,0,0.07); border-radius: 6px; }
+        .h2h-barra-3d { position: relative; height: 100%; border-radius: 6px 3px 3px 6px; width: 0; background: linear-gradient(180deg, var(--h2h-color-claro), var(--h2h-color)); box-shadow: inset 0 -3px 0 rgba(0,0,0,0.18); animation: h2hCrecer 0.8s cubic-bezier(.2,.7,.3,1.1) forwards; }
+        .h2h-barra-3d::after { content: ''; position: absolute; top: 0; right: -7px; width: 7px; height: 100%; background: var(--h2h-color-osc); transform-origin: top left; transform: skewY(45deg); border-radius: 0 3px 3px 0; }
+        @keyframes h2hCrecer { from { width: 0; } to { width: var(--pct); } }
+        .h2h-barra-valor { font-size: 0.85rem; font-weight: 700; text-align: left; color: var(--text); }
+        @media (prefers-reduced-motion: reduce) { .h2h-barra-3d { animation: none; width: var(--pct); } }
+
+        /* --- Tablón de Avisos: entrada 3D tipo "hojear" tarjetas apiladas --- */
+        .tablon-card-3d { animation: tablonEntrada3D 0.55s cubic-bezier(.2,.7,.3,1.05) both; }
+        .tablon-card-3d:hover { transform: perspective(700px) rotateX(3deg) translateY(-4px) !important; box-shadow: 0 14px 22px -8px rgba(0,0,0,0.25) !important; }
+        @keyframes tablonEntrada3D { from { opacity: 0; transform: perspective(700px) rotateY(-16deg) translateX(-14px) translateZ(-20px); } to { opacity: 1; transform: perspective(700px) rotateY(0) translateX(0) translateZ(0); } }
+        #noticias-contenedor .tablon-card-3d:nth-child(1) { animation-delay: 0s; }
+        #noticias-contenedor .tablon-card-3d:nth-child(2) { animation-delay: 0.06s; }
+        #noticias-contenedor .tablon-card-3d:nth-child(3) { animation-delay: 0.12s; }
+        #noticias-contenedor .tablon-card-3d:nth-child(4) { animation-delay: 0.18s; }
+        #noticias-contenedor .tablon-card-3d:nth-child(5) { animation-delay: 0.24s; }
+        #noticias-contenedor .tablon-card-3d:nth-child(n+6) { animation-delay: 0.3s; }
+        @media (prefers-reduced-motion: reduce) { .tablon-card-3d { animation: none; } }
         .podio-medalla { font-size: 1.3rem; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); }
         .podio-foto { width: 62px; height: 62px; border-radius: 50%; object-fit: cover; border: 3px solid var(--card-bg); box-shadow: var(--shadow-sm); margin-bottom: 8px; background: white; }
         .podio-puesto.oro .podio-foto { width: 76px; height: 76px; border-color: #f0b429; }
@@ -531,6 +571,35 @@
         .ficha-historial-vacio { font-size: 0.8rem; color: var(--text); opacity: 0.6; padding: 10px 0; text-align: center; }
         @media (max-width: 420px) { .ficha-tecnica-datos { grid-template-columns: 1fr 1fr; } .ficha-historial-tabla { font-size: 0.7rem; } }
 
+        /* ===== FICHA DE JUGADOR: FLIP 3D ===== */
+        .ficha-3d-wrap { perspective: 1800px; }
+        .ficha-3d-inner { position: relative; width: 100%; transition: transform 0.75s cubic-bezier(.4,.15,.2,1), height 0.4s ease; transform-style: preserve-3d; will-change: transform; }
+        .ficha-3d-inner.volteada { transform: rotateY(180deg); }
+        .ficha-3d-cara { width: 100%; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+        .ficha-3d-frente { position: relative; padding-bottom: 22px; }
+        .ficha-3d-reverso { position: absolute; top: 0; left: 0; transform: rotateY(180deg); padding: 18px 0 22px; }
+        .ficha-3d-botones { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin: 18px 20px 0; }
+        .ficha-3d-reverso-header { display: flex; align-items: center; gap: 12px; margin: 0 20px 14px; }
+        .ficha-3d-mini-foto { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); flex-shrink: 0; }
+        .ficha-3d-mini-nombre { margin: 0; font-size: 1rem; color: var(--text); }
+        .ficha-3d-mini-equipo { margin: 1px 0 0; font-size: 0.78rem; font-weight: 700; color: var(--primary); }
+
+        /* ===== ESCUDOS CON EFECTO 3D (tilt al pasar el cursor / tocar) ===== */
+        .escudo-3d { transition: transform 0.15s ease-out, box-shadow 0.15s ease-out; transform-style: preserve-3d; will-change: transform; cursor: pointer; }
+        .escudo-3d:hover, .escudo-3d.escudo-3d-activo { box-shadow: 0 10px 18px rgba(0,0,0,0.28); }
+
+        /* ===== BRACKET / TROFEO 3D ===== */
+        .bracket-tarjeta-3d { animation: bracketEntrada3D 0.6s cubic-bezier(.2,.7,.3,1.1) both; }
+        @keyframes bracketEntrada3D { from { opacity: 0; transform: perspective(900px) rotateY(-35deg) translateX(-14px); } to { opacity: 1; transform: perspective(900px) rotateY(0deg) translateX(0); } }
+        .trofeo-3d-contenedor { display: flex; justify-content: center; align-items: center; padding: 6px 0 2px; perspective: 700px; }
+        .trofeo-3d { font-size: 3.2rem; display: inline-block; animation: trofeoGiro3D 5s ease-in-out infinite; transform-style: preserve-3d; filter: drop-shadow(0 10px 10px rgba(224,147,46,0.45)); }
+        @keyframes trofeoGiro3D { 0%, 100% { transform: perspective(700px) rotateY(0deg) translateY(0); } 25% { transform: perspective(700px) rotateY(90deg) translateY(-6px); } 50% { transform: perspective(700px) rotateY(180deg) translateY(0); } 75% { transform: perspective(700px) rotateY(270deg) translateY(-6px); } }
+        @media (prefers-reduced-motion: reduce) {
+            .ficha-3d-inner { transition: none; }
+            .bracket-tarjeta-3d { animation: none; }
+            .trofeo-3d { animation: none; }
+        }
+
         @media (prefers-reduced-motion: reduce) {
             html { scroll-behavior: auto; }
             *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
@@ -577,7 +646,7 @@
             .jugador-card, .equipo-card, .arbitro-card { padding: 10px; }
             .partido-escudo { width: 44px; height: 44px; }
             .partido-nombre-equipo { font-size: 0.75rem; }
-            .cancha { height: 340px; }
+            .cancha { height: 340px; transform: perspective(900px) rotateX(6deg); }
             .bracket-match { width: 100%; max-width: 320px; }
             .pob-grid { min-width: 880px; grid-template-rows: repeat(3, minmax(110px, auto)); }
             .pob-match { max-width: 200px; padding: 8px 10px; }
@@ -591,7 +660,7 @@
             header p { font-size: 0.8rem; }
             .partido-principal { flex-wrap: wrap; justify-content: center; }
             .marcador { font-size: 0.95rem; padding: 5px 12px; }
-            .cancha { height: 280px; }
+            .cancha { height: 280px; transform: perspective(700px) rotateX(4deg); }
             .ficha-tecnica-foto { width: 84px; height: 84px; }
             .buscador-global-bar { padding: 10px 14px; }
             .badge-en-vivo { font-size: 0.62rem; padding: 5px 12px; letter-spacing: 0.2px; }
@@ -1143,43 +1212,67 @@
     </footer>
     <script>document.getElementById('footer-anio').textContent = new Date().getFullYear();</script>
 
-    <!-- MODAL FICHA TÉCNICA -->
+    <!-- MODAL FICHA TÉCNICA (tarjeta con flip 3D) -->
     <div id="ficha-modal" class="modal hidden" onclick="if(event.target === this) cerrarModal('ficha-modal')">
-        <div class="modal-content ficha-tecnica-content" style="max-width:560px;">
+        <div class="modal-content ficha-tecnica-content ficha-3d-wrap" style="max-width:560px;">
             <button class="close-modal" onclick="cerrarModal('ficha-modal')">×</button>
-            <div class="ficha-tecnica-banner">
-                <img id="modal-foto" class="ficha-tecnica-foto" src="" alt="Foto del jugador">
-                <span id="modal-estado" class="ficha-tecnica-estado"></span>
-            </div>
-            <h3 id="modal-nombre" class="ficha-tecnica-nombre"></h3>
-            <p id="ficha-modal-equipo" class="ficha-tecnica-equipo"></p>
-            <p id="modal-posicion" class="ficha-tecnica-posicion"></p>
-            <button type="button" class="btn btn-secondary btn-sm btn-pill" onclick="compartirPerfilJugadorActual()" style="margin:0 0 10px;">🔗 Compartir este perfil</button>
+            <div class="ficha-3d-inner" id="ficha-3d-inner">
+                <!-- CARA FRONTAL: identidad + stats clave -->
+                <div class="ficha-3d-cara ficha-3d-frente">
+                    <div class="ficha-tecnica-banner">
+                        <img id="modal-foto" class="ficha-tecnica-foto" src="" alt="Foto del jugador">
+                        <span id="modal-estado" class="ficha-tecnica-estado"></span>
+                    </div>
+                    <h3 id="modal-nombre" class="ficha-tecnica-nombre"></h3>
+                    <p id="ficha-modal-equipo" class="ficha-tecnica-equipo"></p>
+                    <p id="modal-posicion" class="ficha-tecnica-posicion"></p>
 
-            <div class="ficha-tecnica-stats">
-                <div class="stat-box stat-goles"><span class="stat-icono">⚽</span><strong id="modal-goles">0</strong><span class="stat-label">Goles</span></div>
-                <div class="stat-box stat-amarillas"><span class="stat-icono">🟨</span><strong id="modal-amarillas">0</strong><span class="stat-label">Amarillas</span></div>
-                <div class="stat-box stat-rojas"><span class="stat-icono">🟥</span><strong id="modal-rojas">0</strong><span class="stat-label">Rojas</span></div>
-                <div class="stat-box stat-mvps"><span class="stat-icono">⭐</span><strong id="modal-mvps">0</strong><span class="stat-label">MVPs</span></div>
-            </div>
+                    <div class="ficha-tecnica-stats">
+                        <div class="stat-box stat-goles"><span class="stat-icono">⚽</span><strong id="modal-goles">0</strong><span class="stat-label">Goles</span></div>
+                        <div class="stat-box stat-amarillas"><span class="stat-icono">🟨</span><strong id="modal-amarillas">0</strong><span class="stat-label">Amarillas</span></div>
+                        <div class="stat-box stat-rojas"><span class="stat-icono">🟥</span><strong id="modal-rojas">0</strong><span class="stat-label">Rojas</span></div>
+                        <div class="stat-box stat-mvps"><span class="stat-icono">⭐</span><strong id="modal-mvps">0</strong><span class="stat-label">MVPs</span></div>
+                    </div>
 
-            <div class="ficha-tecnica-datos">
-                <div class="ficha-dato-item"><span class="ficha-dato-label">Número de playera</span><span class="ficha-dato-valor" id="modal-numero">—</span></div>
-                <div class="ficha-dato-item"><span class="ficha-dato-label">Categoría</span><span class="ficha-dato-valor" id="modal-categoria">—</span></div>
-                <div class="ficha-dato-item"><span class="ficha-dato-label">Edad</span><span class="ficha-dato-valor" id="modal-edad">—</span></div>
-                <div class="ficha-dato-item"><span class="ficha-dato-label">Nacionalidad</span><span class="ficha-dato-valor" id="modal-nacionalidad">—</span></div>
-                <div class="ficha-dato-item"><span class="ficha-dato-label">Lugar de nacimiento</span><span class="ficha-dato-valor" id="modal-lugar-nac">—</span></div>
-                <div class="ficha-dato-item"><span class="ficha-dato-label">Partidos jugados</span><span class="ficha-dato-valor" id="modal-partidos-jugados">0</span></div>
-            </div>
+                    <div class="ficha-3d-botones">
+                        <button type="button" class="btn btn-secondary btn-sm btn-pill" onclick="compartirPerfilJugadorActual()">🔗 Compartir</button>
+                        <button type="button" class="btn btn-primary btn-sm btn-pill" onclick="voltearFichaJugador()">🔄 Ver datos y partidos</button>
+                    </div>
+                </div>
 
-            <div class="ficha-tecnica-historial">
-                <h4>📋 Historial de Partidos</h4>
-                <div style="max-height:220px; overflow-y:auto;">
-                    <table class="ficha-historial-tabla">
-                        <thead><tr><th>Jor.</th><th>Rival</th><th>Marcador</th><th>⚽</th><th>🟨</th><th>🟥</th><th>⭐</th></tr></thead>
-                        <tbody id="modal-historial-body"></tbody>
-                    </table>
-                    <p id="modal-historial-vacio" class="ficha-historial-vacio hidden">Este jugador aún no registra partidos jugados.</p>
+                <!-- CARA TRASERA: datos personales + historial -->
+                <div class="ficha-3d-cara ficha-3d-reverso">
+                    <div class="ficha-3d-reverso-header">
+                        <img id="modal-foto-reverso" class="ficha-3d-mini-foto" src="" alt="">
+                        <div>
+                            <h3 id="modal-nombre-reverso" class="ficha-3d-mini-nombre"></h3>
+                            <p id="ficha-modal-equipo-reverso" class="ficha-3d-mini-equipo"></p>
+                        </div>
+                    </div>
+
+                    <div class="ficha-tecnica-datos">
+                        <div class="ficha-dato-item"><span class="ficha-dato-label">Número de playera</span><span class="ficha-dato-valor" id="modal-numero">—</span></div>
+                        <div class="ficha-dato-item"><span class="ficha-dato-label">Categoría</span><span class="ficha-dato-valor" id="modal-categoria">—</span></div>
+                        <div class="ficha-dato-item"><span class="ficha-dato-label">Edad</span><span class="ficha-dato-valor" id="modal-edad">—</span></div>
+                        <div class="ficha-dato-item"><span class="ficha-dato-label">Nacionalidad</span><span class="ficha-dato-valor" id="modal-nacionalidad">—</span></div>
+                        <div class="ficha-dato-item"><span class="ficha-dato-label">Lugar de nacimiento</span><span class="ficha-dato-valor" id="modal-lugar-nac">—</span></div>
+                        <div class="ficha-dato-item"><span class="ficha-dato-label">Partidos jugados</span><span class="ficha-dato-valor" id="modal-partidos-jugados">0</span></div>
+                    </div>
+
+                    <div class="ficha-tecnica-historial">
+                        <h4>📋 Historial de Partidos</h4>
+                        <div style="max-height:220px; overflow-y:auto;">
+                            <table class="ficha-historial-tabla">
+                                <thead><tr><th>Jor.</th><th>Rival</th><th>Marcador</th><th>⚽</th><th>🟨</th><th>🟥</th><th>⭐</th></tr></thead>
+                                <tbody id="modal-historial-body"></tbody>
+                            </table>
+                            <p id="modal-historial-vacio" class="ficha-historial-vacio hidden">Este jugador aún no registra partidos jugados.</p>
+                        </div>
+                    </div>
+
+                    <div class="ficha-3d-botones">
+                        <button type="button" class="btn btn-secondary btn-sm btn-pill" onclick="voltearFichaJugador()">🔄 Regresar</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1200,7 +1293,7 @@
         <div class="modal-content" style="max-width:760px; text-align:left;">
             <button class="close-modal" onclick="cerrarModal('modal-equipo')">×</button>
             <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px;">
-                <img id="equipo-modal-escudo" src="" style="width:70px; height:70px; border-radius:10px; object-fit:cover; border:3px solid var(--accent); background:white;" alt="Escudo del equipo">
+                <img id="equipo-modal-escudo" class="escudo-3d" src="" style="width:70px; height:70px; border-radius:10px; object-fit:cover; border:3px solid var(--accent); background:white;" alt="Escudo del equipo">
                 <div>
                     <h3 id="equipo-modal-nombre" style="margin:0; color:var(--primary);"></h3>
                     <p id="equipo-modal-contador" style="margin:4px 0 0; opacity:0.7; font-size:0.85rem;"></p>
@@ -1232,41 +1325,65 @@
         </div>
     </div>
 
-    <!-- MODAL INFORMACIÓN DE ÁRBITRO -->
+    <!-- MODAL INFORMACIÓN DE ÁRBITRO (tarjeta con flip 3D) -->
     <div id="modal-arbitro" class="modal hidden" onclick="if(event.target === this) cerrarModal('modal-arbitro')">
-        <div class="modal-content ficha-tecnica-content" style="max-width:560px;">
+        <div class="modal-content ficha-tecnica-content ficha-3d-wrap" style="max-width:560px;">
             <button class="close-modal" onclick="cerrarModal('modal-arbitro')">×</button>
-            <div class="ficha-tecnica-banner">
-                <img id="arbitro-modal-foto" class="ficha-tecnica-foto" src="" alt="Foto del árbitro">
-                <span class="ficha-tecnica-estado estado-ok">✅ Activo</span>
-            </div>
-            <h3 id="arbitro-modal-nombre" class="ficha-tecnica-nombre"></h3>
-            <p id="arbitro-modal-colegio" class="ficha-tecnica-equipo"></p>
-            <p class="ficha-tecnica-posicion">Árbitro Central</p>
+            <div class="ficha-3d-inner" id="arbitro-3d-inner">
+                <!-- CARA FRONTAL: identidad + stats clave -->
+                <div class="ficha-3d-cara ficha-3d-frente">
+                    <div class="ficha-tecnica-banner">
+                        <img id="arbitro-modal-foto" class="ficha-tecnica-foto" src="" alt="Foto del árbitro">
+                        <span class="ficha-tecnica-estado estado-ok">✅ Activo</span>
+                    </div>
+                    <h3 id="arbitro-modal-nombre" class="ficha-tecnica-nombre"></h3>
+                    <p id="arbitro-modal-colegio" class="ficha-tecnica-equipo"></p>
+                    <p class="ficha-tecnica-posicion">Árbitro Central</p>
 
-            <div class="ficha-tecnica-stats">
-                <div class="stat-box"><span class="stat-icono">📋</span><strong id="arbitro-modal-partidos">0</strong><span class="stat-label">Partidos</span></div>
-                <div class="stat-box"><span class="stat-icono">✅</span><strong id="arbitro-modal-cerradas">0</strong><span class="stat-label">Cédulas Cerradas</span></div>
-                <div class="stat-box stat-amarillas"><span class="stat-icono">🟨</span><strong id="arbitro-modal-amarillas">0</strong><span class="stat-label">Amarillas</span></div>
-                <div class="stat-box stat-rojas"><span class="stat-icono">🟥</span><strong id="arbitro-modal-rojas">0</strong><span class="stat-label">Rojas</span></div>
-            </div>
+                    <div class="ficha-tecnica-stats">
+                        <div class="stat-box"><span class="stat-icono">📋</span><strong id="arbitro-modal-partidos">0</strong><span class="stat-label">Partidos</span></div>
+                        <div class="stat-box"><span class="stat-icono">✅</span><strong id="arbitro-modal-cerradas">0</strong><span class="stat-label">Cédulas Cerradas</span></div>
+                        <div class="stat-box stat-amarillas"><span class="stat-icono">🟨</span><strong id="arbitro-modal-amarillas">0</strong><span class="stat-label">Amarillas</span></div>
+                        <div class="stat-box stat-rojas"><span class="stat-icono">🟥</span><strong id="arbitro-modal-rojas">0</strong><span class="stat-label">Rojas</span></div>
+                    </div>
 
-            <div class="ficha-tecnica-datos">
-                <div class="ficha-dato-item"><span class="ficha-dato-label">Colegio / Asociación</span><span class="ficha-dato-valor" id="arbitro-modal-colegio2">—</span></div>
-                <div class="ficha-dato-item"><span class="ficha-dato-label">Cédulas pendientes</span><span class="ficha-dato-valor" id="arbitro-modal-pendientes">0</span></div>
-                <div class="ficha-dato-item"><span class="ficha-dato-label">Edad</span><span class="ficha-dato-valor" id="arbitro-modal-edad">—</span></div>
-                <div class="ficha-dato-item"><span class="ficha-dato-label">Nacionalidad</span><span class="ficha-dato-valor" id="arbitro-modal-nacionalidad">—</span></div>
-                <div class="ficha-dato-item"><span class="ficha-dato-label">Lugar de nacimiento</span><span class="ficha-dato-valor" id="arbitro-modal-lugar-nac">—</span></div>
-            </div>
+                    <div class="ficha-3d-botones">
+                        <button type="button" class="btn btn-primary btn-sm btn-pill" onclick="voltearFichaArbitro()">🔄 Ver datos y partidos</button>
+                    </div>
+                </div>
 
-            <div class="ficha-tecnica-historial">
-                <h4>📋 Historial de Partidos Dirigidos</h4>
-                <div style="max-height:220px; overflow-y:auto;">
-                    <table class="ficha-historial-tabla">
-                        <thead><tr><th>Jor.</th><th>Partido</th><th>Marcador</th><th>🟨</th><th>🟥</th></tr></thead>
-                        <tbody id="arbitro-modal-historial-body"></tbody>
-                    </table>
-                    <p id="arbitro-modal-historial-vacio" class="ficha-historial-vacio hidden">Este árbitro aún no dirige partidos.</p>
+                <!-- CARA TRASERA: datos personales + historial -->
+                <div class="ficha-3d-cara ficha-3d-reverso">
+                    <div class="ficha-3d-reverso-header">
+                        <img id="arbitro-modal-foto-reverso" class="ficha-3d-mini-foto" src="" alt="">
+                        <div>
+                            <h3 id="arbitro-modal-nombre-reverso" class="ficha-3d-mini-nombre"></h3>
+                            <p id="arbitro-modal-colegio-reverso" class="ficha-3d-mini-equipo"></p>
+                        </div>
+                    </div>
+
+                    <div class="ficha-tecnica-datos">
+                        <div class="ficha-dato-item"><span class="ficha-dato-label">Colegio / Asociación</span><span class="ficha-dato-valor" id="arbitro-modal-colegio2">—</span></div>
+                        <div class="ficha-dato-item"><span class="ficha-dato-label">Cédulas pendientes</span><span class="ficha-dato-valor" id="arbitro-modal-pendientes">0</span></div>
+                        <div class="ficha-dato-item"><span class="ficha-dato-label">Edad</span><span class="ficha-dato-valor" id="arbitro-modal-edad">—</span></div>
+                        <div class="ficha-dato-item"><span class="ficha-dato-label">Nacionalidad</span><span class="ficha-dato-valor" id="arbitro-modal-nacionalidad">—</span></div>
+                        <div class="ficha-dato-item"><span class="ficha-dato-label">Lugar de nacimiento</span><span class="ficha-dato-valor" id="arbitro-modal-lugar-nac">—</span></div>
+                    </div>
+
+                    <div class="ficha-tecnica-historial">
+                        <h4>📋 Historial de Partidos Dirigidos</h4>
+                        <div style="max-height:220px; overflow-y:auto;">
+                            <table class="ficha-historial-tabla">
+                                <thead><tr><th>Jor.</th><th>Partido</th><th>Marcador</th><th>🟨</th><th>🟥</th></tr></thead>
+                                <tbody id="arbitro-modal-historial-body"></tbody>
+                            </table>
+                            <p id="arbitro-modal-historial-vacio" class="ficha-historial-vacio hidden">Este árbitro aún no dirige partidos.</p>
+                        </div>
+                    </div>
+
+                    <div class="ficha-3d-botones">
+                        <button type="button" class="btn btn-secondary btn-sm btn-pill" onclick="voltearFichaArbitro()">🔄 Regresar</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1754,7 +1871,7 @@
                 const equipoAviso = jugadorAviso ? (db.equipos.find(e => e.id === jugadorAviso.equipoId)?.nombre || 'Agente Libre') : '';
                 const abrirFicha = jugadorAviso ? `onclick="verFicha(${jugadorAviso.id})"` : '';
                 return `
-                <div ${abrirFicha} style="background:var(--card-bg, var(--light)); border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06)); display:flex; flex-direction:column; ${jugadorAviso ? 'cursor:pointer; transition:transform .15s, box-shadow .15s;' : ''}" ${jugadorAviso ? `onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 18px -4px rgba(0,0,0,0.15)';" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06))';"` : ''}>
+                <div ${abrirFicha} class="tablon-card-3d" style="background:var(--card-bg, var(--light)); border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06)); display:flex; flex-direction:column; ${jugadorAviso ? 'cursor:pointer; transition:transform .15s, box-shadow .15s;' : ''}" ${jugadorAviso ? `onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 18px -4px rgba(0,0,0,0.15)';" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06))';"` : ''}>
                     ${jugadorAviso
                         ? `<div style="display:flex; align-items:center; gap:10px; padding:15px 15px 0;">
                                <img src="${fotoJugador || 'https://placehold.co/60'}" alt="${jugadorAviso.nombre}" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid ${et.color}; flex-shrink:0;" loading="lazy">
@@ -2018,6 +2135,8 @@
         // partido programado; si no hay ningún partido programado, se oculta.
         let mmCuentaRegresivaTarget = null; // timestamp (ms) del próximo partido a mostrar en la cuenta regresiva
         let mmIntervaloIniciado = false;
+        let mmUltimoMarcadorKey = null; // detecta cambios de gol para animar el flip 3D
+        let mmUltimoModo = null; // 'vivo' | 'cuenta', detecta el cambio de modo para animar la entrada 3D
 
         function renderizarMiniMarcadorHeader() {
             const cont = document.getElementById('mini-marcador-header');
@@ -2034,14 +2153,19 @@
                 const vis = db.equipos.find(e => e.id === p.visitaId);
                 const etiqueta = ETIQUETAS_ESTADO_PARTIDO[p.estadoVivo] || 'EN VIVO';
                 const extra = partidosVivo.length > 1 ? `<span class="mm-extra">+${partidosVivo.length - 1} en vivo</span>` : '';
+                const marcadorKey = `${p.id}:${p.golesLocal || 0}-${p.golesVisita || 0}`;
+                const marcadorCambio = mmUltimoModo === 'vivo' && mmUltimoMarcadorKey !== null && mmUltimoMarcadorKey !== marcadorKey;
+                const entradaNueva = mmUltimoModo !== 'vivo';
+                mmUltimoMarcadorKey = marcadorKey;
+                mmUltimoModo = 'vivo';
                 cont.classList.remove('hidden');
                 cont.innerHTML = `
-                    <div class="mini-marcador-inner" onclick="document.getElementById('jornadas-sec').scrollIntoView({behavior:'smooth'}); document.getElementById('select-jornada-filtro').value='${p.jornada}'; document.getElementById('select-jornada-filtro').dispatchEvent(new Event('change'));">
+                    <div class="mini-marcador-inner${entradaNueva ? ' mm-entrada-3d' : ''}" onclick="document.getElementById('jornadas-sec').scrollIntoView({behavior:'smooth'}); document.getElementById('select-jornada-filtro').value='${p.jornada}'; document.getElementById('select-jornada-filtro').dispatchEvent(new Event('change'));">
                         <span class="mm-etiqueta mm-vivo"><span class="mm-dot-vivo"></span>${etiqueta}</span>
                         <div class="mm-equipos">
-                            <div class="mm-equipo"><img class="mm-escudo" src="${loc?.escudo || 'https://placehold.co/26'}" alt="" loading="lazy"><span class="mm-nombre">${loc ? loc.nombre : '-'}</span></div>
-                            <span class="mm-marcador">${p.golesLocal || 0} - ${p.golesVisita || 0}</span>
-                            <div class="mm-equipo"><span class="mm-nombre">${vis ? vis.nombre : '-'}</span><img class="mm-escudo" src="${vis?.escudo || 'https://placehold.co/26'}" alt="" loading="lazy"></div>
+                            <div class="mm-equipo"><img class="mm-escudo escudo-3d" src="${loc?.escudo || 'https://placehold.co/26'}" alt="" loading="lazy"><span class="mm-nombre">${loc ? loc.nombre : '-'}</span></div>
+                            <span class="mm-marcador${marcadorCambio ? ' mm-marcador-flip' : ''}">${p.golesLocal || 0} - ${p.golesVisita || 0}</span>
+                            <div class="mm-equipo"><span class="mm-nombre">${vis ? vis.nombre : '-'}</span><img class="mm-escudo escudo-3d" src="${vis?.escudo || 'https://placehold.co/26'}" alt="" loading="lazy"></div>
                         </div>
                         ${extra}
                     </div>`;
@@ -2063,6 +2187,7 @@
                 cont.classList.add('hidden');
                 cont.innerHTML = '';
                 mmCuentaRegresivaTarget = null;
+                mmUltimoModo = null;
                 return;
             }
 
@@ -2070,15 +2195,17 @@
             const loc = db.equipos.find(e => e.id === p.localId);
             const vis = db.equipos.find(e => e.id === p.visitaId);
             mmCuentaRegresivaTarget = siguiente.ts;
+            const entradaNueva = mmUltimoModo !== 'cuenta';
+            mmUltimoModo = 'cuenta';
 
             cont.classList.remove('hidden');
             cont.innerHTML = `
-                <div class="mini-marcador-inner" onclick="document.getElementById('jornadas-sec').scrollIntoView({behavior:'smooth'}); document.getElementById('select-jornada-filtro').value='${p.jornada}'; document.getElementById('select-jornada-filtro').dispatchEvent(new Event('change'));">
+                <div class="mini-marcador-inner${entradaNueva ? ' mm-entrada-3d' : ''}" onclick="document.getElementById('jornadas-sec').scrollIntoView({behavior:'smooth'}); document.getElementById('select-jornada-filtro').value='${p.jornada}'; document.getElementById('select-jornada-filtro').dispatchEvent(new Event('change'));">
                     <span class="mm-etiqueta">📅 Próximo · ${etiquetaJornadaCorta(p.jornada)}</span>
                     <div class="mm-equipos">
-                        <div class="mm-equipo"><img class="mm-escudo" src="${loc?.escudo || 'https://placehold.co/26'}" alt="" loading="lazy"><span class="mm-nombre">${loc ? loc.nombre : '-'}</span></div>
+                        <div class="mm-equipo"><img class="mm-escudo escudo-3d" src="${loc?.escudo || 'https://placehold.co/26'}" alt="" loading="lazy"><span class="mm-nombre">${loc ? loc.nombre : '-'}</span></div>
                         <span class="mm-marcador">VS</span>
-                        <div class="mm-equipo"><span class="mm-nombre">${vis ? vis.nombre : '-'}</span><img class="mm-escudo" src="${vis?.escudo || 'https://placehold.co/26'}" alt="" loading="lazy"></div>
+                        <div class="mm-equipo"><span class="mm-nombre">${vis ? vis.nombre : '-'}</span><img class="mm-escudo escudo-3d" src="${vis?.escudo || 'https://placehold.co/26'}" alt="" loading="lazy"></div>
                     </div>
                     <div class="mm-cuenta" id="mm-cuenta-regresiva">
                         <div class="mm-cuenta-item"><span class="mm-cuenta-num" id="mm-dias">--</span><span class="mm-cuenta-lbl">Días</span></div>
@@ -2169,7 +2296,7 @@
             const grid = document.getElementById('grid-elegir-equipo');
             grid.innerHTML = db.equipos.map(eq => `
                 <button type="button" class="equipo-elegir-btn" onclick="elegirEquipoFavorito(${eq.id})">
-                    <img src="${eq.escudo || 'https://placehold.co/42'}" alt="${eq.nombre}" loading="lazy">
+                    <img class="escudo-3d" src="${eq.escudo || 'https://placehold.co/42'}" alt="${eq.nombre}" loading="lazy">
                     <span>${eq.nombre}</span>
                 </button>
             `).join('');
@@ -2309,7 +2436,7 @@
                 return `
                 <tr${claseFila}>
                     <td><b>${ahora}</b>${indicador}</td>
-                    <td><div class="equipo-celda"><img class="escudo-tab" src="${eq.escudo}" alt="${eq.nombre}" loading="lazy"><span>${eq.nombre}</span>${esFavorito ? '<span class="estrella-favorito">⭐</span>' : ''}</div></td>
+                    <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${eq.nombre}" loading="lazy"><span>${eq.nombre}</span>${esFavorito ? '<span class="estrella-favorito">⭐</span>' : ''}</div></td>
                     <td>${eq.pj}</td><td>${eq.pg}</td><td>${eq.pe}</td><td>${eq.pp}</td><td>${eq.gf}</td><td>${eq.gc}</td><td>${eq.dg}</td><td><b>${eq.pts}</b></td>
                     <td style="letter-spacing:2px; white-space:nowrap;">${eq.racha.slice(-5).map(r => iconoForma[r]).join('') || '—'}</td>
                 </tr>
@@ -2328,7 +2455,7 @@
             document.getElementById('tabla-ofensiva-body').innerHTML = ofensiva.length ? ofensiva.map((eq, idx) => `
                 <tr>
                     <td><b>${idx + 1}</b></td>
-                    <td><div class="equipo-celda"><img class="escudo-tab" src="${eq.escudo}" alt="${eq.nombre}" loading="lazy"><span>${eq.nombre}</span></div></td>
+                    <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${eq.nombre}" loading="lazy"><span>${eq.nombre}</span></div></td>
                     <td><b>${eq.gf}</b> ⚽ ${idx === 0 ? '🏆' : ''}</td>
                 </tr>
             `).join('') : estadoVacioFila(3, '⚽', 'Aún no hay partidos jugados.');
@@ -2336,7 +2463,7 @@
             document.getElementById('tabla-defensiva-body').innerHTML = defensiva.length ? defensiva.map((eq, idx) => `
                 <tr>
                     <td><b>${idx + 1}</b></td>
-                    <td><div class="equipo-celda"><img class="escudo-tab" src="${eq.escudo}" alt="${eq.nombre}" loading="lazy"><span>${eq.nombre}</span></div></td>
+                    <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${eq.nombre}" loading="lazy"><span>${eq.nombre}</span></div></td>
                     <td><b>${eq.gc}</b> 🛡️ ${idx === 0 ? '🏆' : ''}</td>
                 </tr>
             `).join('') : estadoVacioFila(3, '🛡️', 'Aún no hay partidos jugados.');
@@ -2422,13 +2549,13 @@
         // los equipos que ya se conocen (placeholders) para que el cuadro completo sea visible
         // desde el arranque de la liguilla.
         function pobTarjetaLlave({ ida, vuelta, titulo, nombreA, nombreB, escudoA, escudoB, esFinal }) {
-            const clases = 'pob-match' + (esFinal ? ' pob-final' : '') + (!ida ? ' pob-vacio' : '');
+            const clases = 'pob-match bracket-tarjeta-3d' + (esFinal ? ' pob-final' : '') + (!ida ? ' pob-vacio' : '');
             const idaJugado = ida && ida.jugado;
             const vueltaJugado = vuelta && vuelta.jugado;
 
             const filaEquipo = (id, nombre, escudo, goles) => `
                 <div class="pob-team" ${id ? `onclick="verEquipo(${id})"` : ''}>
-                    <img src="${escudo || 'https://placehold.co/28'}" alt="${nombre}" loading="lazy">
+                    <img class="escudo-3d" src="${escudo || 'https://placehold.co/28'}" alt="${nombre}" loading="lazy">
                     <span class="pob-team-name">${nombre}</span>
                     <span class="pob-team-score">${goles === null || goles === undefined ? '' : goles}</span>
                 </div>`;
@@ -2445,7 +2572,7 @@
                 piePartido = `<div class="pob-status">Clasificación pendiente</div>`;
             } else if (esFinal) {
                 piePartido = ida.jugado
-                    ? `<div class="pob-status">¡Finalizado!${ida.penaltis ? ` (Pen: ${ida.penaltis.local}-${ida.penaltis.visita})` : ''}</div>`
+                    ? `<div class="trofeo-3d-contenedor"><span class="trofeo-3d">🏆</span></div><div class="pob-status">¡Finalizado!${ida.penaltis ? ` (Pen: ${ida.penaltis.local}-${ida.penaltis.visita})` : ''}</div>`
                     : `<div class="pob-meta">📅 ${ida.fecha || 'Fecha por definir'} · 🕐 ${ida.hora || 'Hora por definir'}</div>`;
             } else {
                 const idaTxt = idaJugado ? `${ida.golesLocal}-${ida.golesVisita}` : (ida.fecha ? `${ida.fecha}${ida.hora ? ' ' + ida.hora : ''}` : 'Por jugar');
@@ -2591,23 +2718,45 @@
             const e1 = db.equipos.find(e => e.id === id1);
             const e2 = db.equipos.find(e => e.id === id2);
 
-            let g1 = 0, g2 = 0, emp = 0;
+            let g1 = 0, g2 = 0, emp = 0, gf1 = 0, gf2 = 0;
             let jugados = db.partidos.filter(p => p.jugado && ((p.localId === id1 && p.visitaId === id2) || (p.localId === id2 && p.visitaId === id1)));
 
             jugados.forEach(p => {
                 let gl = p.localId === id1 ? p.golesLocal : p.golesVisita;
                 let gv = p.localId === id1 ? p.golesVisita : p.golesLocal;
+                gf1 += gl || 0; gf2 += gv || 0;
                 if(gl > gv) g1++; else if(gv > gl) g2++; else emp++;
             });
+
+            const barraFila = (label, valorA, valorB, colorA, colorB) => {
+                const maxVal = Math.max(valorA, valorB, 1);
+                const pctA = Math.round((valorA / maxVal) * 100);
+                const pctB = Math.round((valorB / maxVal) * 100);
+                return `
+                    <div class="h2h-barra-fila">
+                        <span class="h2h-barra-label">${label} · ${e1.nombre}</span>
+                        <div class="h2h-barra-track"><div class="h2h-barra-3d" style="--pct:${pctA}%; --h2h-color:${colorA}; --h2h-color-claro:${colorA}cc; --h2h-color-osc:${colorA}88;"></div></div>
+                        <span class="h2h-barra-valor">${valorA}</span>
+                    </div>
+                    <div class="h2h-barra-fila">
+                        <span class="h2h-barra-label">${label} · ${e2.nombre}</span>
+                        <div class="h2h-barra-track"><div class="h2h-barra-3d" style="--pct:${pctB}%; --h2h-color:${colorB}; --h2h-color-claro:${colorB}cc; --h2h-color-osc:${colorB}88;"></div></div>
+                        <span class="h2h-barra-valor">${valorB}</span>
+                    </div>`;
+            };
 
             const box = document.getElementById('h2h-resultado-box');
             box.style.display = 'block';
             box.innerHTML = `
                 <h3 style="text-align:center; margin-top:0;">📊 Resultados: ${e1.nombre} vs ${e2.nombre}</h3>
-                <div style="display:flex; justify-content:space-around; text-align:center;">
+                <div style="display:flex; justify-content:space-around; text-align:center; margin-bottom:6px;">
                     <div><h4>${e1.nombre}</h4><p style="font-size:1.5rem; font-weight:bold; color:var(--primary);">${g1} victorias</p></div>
                     <div><h4>Empates</h4><p style="font-size:1.5rem; font-weight:bold; color:var(--text-muted);">${emp}</p></div>
                     <div><h4>${e2.nombre}</h4><p style="font-size:1.5rem; font-weight:bold; color:var(--primary);">${g2} victorias</p></div>
+                </div>
+                <div style="margin-top:10px;">
+                    ${barraFila('Victorias', g1, g2, '#1f5fd6', '#d1140f')}
+                    ${barraFila('Goles anotados', gf1, gf2, '#1f5fd6', '#d1140f')}
                 </div>
             `;
         }
@@ -2816,7 +2965,7 @@
             cont.innerHTML = fairPlay.length ? fairPlay.map((eq, idx) => `
                 <tr>
                     <td><b>${idx + 1}</b></td>
-                    <td><div class="equipo-celda"><img class="escudo-tab" src="${eq.escudo}" alt="${eq.nombre}" loading="lazy"><span>${eq.nombre}</span></div></td>
+                    <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${eq.nombre}" loading="lazy"><span>${eq.nombre}</span></div></td>
                     <td>${eq.amarillas} 🟨</td>
                     <td>${eq.rojas} 🟥</td>
                     <td><b>${eq.puntos}</b> ${idx === 0 ? '🏅' : ''}</td>
@@ -2967,7 +3116,7 @@
             let html = '';
             equiposMatch.forEach(eq => {
                 html += `<div class="buscador-resultado-item buscador-item-equipo" onclick="seleccionarResultadoBusqueda('equipo', ${eq.id})">
-                    <img src="${eq.escudo || 'https://placehold.co/34'}" alt="${eq.nombre}" loading="lazy">
+                    <img class="escudo-3d" src="${eq.escudo || 'https://placehold.co/34'}" alt="${eq.nombre}" loading="lazy">
                     <div class="buscador-resultado-info"><strong>${eq.nombre}</strong><span>⚽ Equipo</span></div>
                 </div>`;
             });
@@ -3005,7 +3154,14 @@
             fichaActualJugadorId = id;
             document.getElementById('modal-foto').src = j.foto || 'https://placehold.co/100';
             document.getElementById('modal-nombre').innerText = j.nombre;
-            document.getElementById('ficha-modal-equipo').innerText = db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Agente Libre';
+            const nombreEquipoJug = db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Agente Libre';
+            document.getElementById('ficha-modal-equipo').innerText = nombreEquipoJug;
+            document.getElementById('modal-foto-reverso').src = j.foto || 'https://placehold.co/100';
+            document.getElementById('modal-nombre-reverso').innerText = j.nombre;
+            document.getElementById('ficha-modal-equipo-reverso').innerText = nombreEquipoJug;
+            const fichaInnerEl = document.getElementById('ficha-3d-inner');
+            fichaInnerEl.classList.remove('volteada');
+            fichaInnerEl.style.height = '';
             document.getElementById('modal-posicion').innerText = j.posicion;
             document.getElementById('modal-goles').innerText = j.goles || 0;
             document.getElementById('modal-amarillas').innerText = j.amarillas || 0;
@@ -3050,7 +3206,48 @@
             }
 
             document.getElementById('ficha-modal').classList.remove('hidden');
+            // Asegura que ambas caras midan lo que deben para que el flip 3D no recorte contenido
+            requestAnimationFrame(() => {
+                const inner = document.getElementById('ficha-3d-inner');
+                const frente = inner.querySelector('.ficha-3d-frente');
+                inner.style.height = frente.scrollHeight + 'px';
+            });
         }
+
+        function voltearFichaJugador() {
+            const inner = document.getElementById('ficha-3d-inner');
+            const estaVolteada = inner.classList.contains('volteada');
+            const caraDestino = inner.querySelector(estaVolteada ? '.ficha-3d-frente' : '.ficha-3d-reverso');
+            inner.style.height = caraDestino.scrollHeight + 'px';
+            inner.classList.toggle('volteada');
+        }
+
+        /* ===== Efecto 3D (tilt) para escudos de equipo al pasar el cursor / tocar ===== */
+        function inclinarEscudo3D(el, clientX, clientY) {
+            const r = el.getBoundingClientRect();
+            const px = (clientX - r.left) / r.width;
+            const py = (clientY - r.top) / r.height;
+            const rotY = (px - 0.5) * 28;
+            const rotX = (0.5 - py) * 28;
+            el.style.transform = `perspective(500px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.12)`;
+        }
+        function restaurarEscudo3D(el) { el.style.transform = ''; el.classList.remove('escudo-3d-activo'); }
+        document.addEventListener('mousemove', (e) => {
+            const el = e.target.closest && e.target.closest('.escudo-3d');
+            if (el) { el.classList.add('escudo-3d-activo'); inclinarEscudo3D(el, e.clientX, e.clientY); }
+        });
+        document.addEventListener('mouseout', (e) => {
+            const el = e.target.closest && e.target.closest('.escudo-3d');
+            if (el && !el.contains(e.relatedTarget)) restaurarEscudo3D(el);
+        });
+        document.addEventListener('touchstart', (e) => {
+            const el = e.target.closest && e.target.closest('.escudo-3d');
+            if (el) { const t = e.touches[0]; el.classList.add('escudo-3d-activo'); inclinarEscudo3D(el, t.clientX, t.clientY); }
+        }, { passive: true });
+        document.addEventListener('touchend', (e) => {
+            const el = e.target.closest && e.target.closest('.escudo-3d');
+            if (el) setTimeout(() => restaurarEscudo3D(el), 400);
+        }, { passive: true });
 
         // Construye el enlace público a la ficha del jugador actualmente abierto y lo
         // comparte con el sistema operativo (WhatsApp, etc.) o lo copia al portapapeles.
@@ -3161,6 +3358,12 @@
             document.getElementById('arbitro-modal-nombre').innerText = a.nombre;
             document.getElementById('arbitro-modal-colegio').innerText = a.colegio || 'Independiente';
             document.getElementById('arbitro-modal-colegio2').innerText = a.colegio || 'Independiente';
+            document.getElementById('arbitro-modal-foto-reverso').src = a.foto || 'https://placehold.co/110';
+            document.getElementById('arbitro-modal-nombre-reverso').innerText = a.nombre;
+            document.getElementById('arbitro-modal-colegio-reverso').innerText = a.colegio || 'Independiente';
+            const arbitroInnerEl = document.getElementById('arbitro-3d-inner');
+            arbitroInnerEl.classList.remove('volteada');
+            arbitroInnerEl.style.height = '';
             const edadArb = calcularEdad(a.fechaNacimiento);
             document.getElementById('arbitro-modal-edad').innerText = edadArb !== null ? `${edadArb} años` : '—';
             document.getElementById('arbitro-modal-nacionalidad').innerText = a.nacionalidad || '—';
@@ -3210,6 +3413,19 @@
             }
 
             document.getElementById('modal-arbitro').classList.remove('hidden');
+            requestAnimationFrame(() => {
+                const inner = document.getElementById('arbitro-3d-inner');
+                const frente = inner.querySelector('.ficha-3d-frente');
+                inner.style.height = frente.scrollHeight + 'px';
+            });
+        }
+
+        function voltearFichaArbitro() {
+            const inner = document.getElementById('arbitro-3d-inner');
+            const estaVolteada = inner.classList.contains('volteada');
+            const caraDestino = inner.querySelector(estaVolteada ? '.ficha-3d-frente' : '.ficha-3d-reverso');
+            inner.style.height = caraDestino.scrollHeight + 'px';
+            inner.classList.toggle('volteada');
         }
 
         function verCancha(id) {
@@ -3227,7 +3443,7 @@
             if (contEquipos) {
                 contEquipos.innerHTML = db.equipos.map(eq => `
                     <div class="equipo-card" onclick="verEquipo(${eq.id})">
-                        <img src="${eq.escudo || 'https://placehold.co/70'}" alt="${eq.nombre}" loading="lazy">
+                        <img class="escudo-3d" src="${eq.escudo || 'https://placehold.co/70'}" alt="${eq.nombre}" loading="lazy">
                         <h3>${eq.nombre}</h3>
                         <p>${db.jugadores.filter(j => j.equipoId === eq.id).length} jugadores</p>
                     </div>`).join('') || estadoVacio('🛡️', 'Aún no hay equipos registrados.');

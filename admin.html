@@ -649,6 +649,11 @@
             .solicitud-ficha-card { padding: 14px; }
             .solicitud-ficha-card .ficha-admin-banner { margin: -14px -14px 14px; }
         }
+
+        /* ===== ESCUDOS CON EFECTO 3D (tilt al pasar el cursor / tocar) ===== */
+        .escudo-3d { transition: transform 0.15s ease-out, box-shadow 0.15s ease-out; transform-style: preserve-3d; will-change: transform; cursor: pointer; }
+        .escudo-3d:hover, .escudo-3d.escudo-3d-activo { box-shadow: 0 10px 18px rgba(0,0,0,0.28); }
+        @media (prefers-reduced-motion: reduce) { .escudo-3d { transition: none; } }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
@@ -1229,7 +1234,7 @@
         <div class="modal-box" style="max-width:760px;">
             <button type="button" class="close-modal-gestion" onclick="cerrarFichaEquipoAdmin()">×</button>
             <div class="plantel-header">
-                <img id="ficha-adm-eq-escudo" src="" alt="Escudo">
+                <img id="ficha-adm-eq-escudo" class="escudo-3d" src="" alt="Escudo">
                 <div>
                     <h3 id="ficha-adm-eq-nombre">Equipo</h3>
                     <span id="ficha-adm-eq-posicion"></span>
@@ -4660,7 +4665,7 @@ ${cuerpo}`;
 
             listaEquipos.innerHTML = db.equipos.length ? db.equipos.map(eq => `
                 <div class="gestion-fila gestion-fila-clickable gestion-fila-equipo" onclick="verFichaEquipoAdmin(${eq.id})" title="Toca para ver la ficha completa">
-                    <img src="${eq.escudo || 'https://placehold.co/40'}" alt="${eq.nombre}" loading="lazy">
+                    <img class="escudo-3d" src="${eq.escudo || 'https://placehold.co/40'}" alt="${eq.nombre}" loading="lazy">
                     <div class="gestion-info">
                         <strong>${eq.nombre}</strong>
                         <span>${db.jugadores.filter(j => j.equipoId === eq.id).length} jugadores</span>
@@ -5188,8 +5193,36 @@ ${cuerpo}`;
             alert("Partido eliminado.");
         }
 
+        /* ===== Efecto 3D (tilt) para escudos de equipo al pasar el cursor / tocar ===== */
+        function inclinarEscudo3D(el, clientX, clientY) {
+            const r = el.getBoundingClientRect();
+            const px = (clientX - r.left) / r.width;
+            const py = (clientY - r.top) / r.height;
+            const rotY = (px - 0.5) * 28;
+            const rotX = (0.5 - py) * 28;
+            el.style.transform = `perspective(500px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.12)`;
+        }
+        function restaurarEscudo3D(el) { el.style.transform = ''; el.classList.remove('escudo-3d-activo'); }
+        document.addEventListener('mousemove', (e) => {
+            const el = e.target.closest && e.target.closest('.escudo-3d');
+            if (el) { el.classList.add('escudo-3d-activo'); inclinarEscudo3D(el, e.clientX, e.clientY); }
+        });
+        document.addEventListener('mouseout', (e) => {
+            const el = e.target.closest && e.target.closest('.escudo-3d');
+            if (el && !el.contains(e.relatedTarget)) restaurarEscudo3D(el);
+        });
+        document.addEventListener('touchstart', (e) => {
+            const el = e.target.closest && e.target.closest('.escudo-3d');
+            if (el) { const t = e.touches[0]; el.classList.add('escudo-3d-activo'); inclinarEscudo3D(el, t.clientX, t.clientY); }
+        }, { passive: true });
+        document.addEventListener('touchend', (e) => {
+            const el = e.target.closest && e.target.closest('.escudo-3d');
+            if (el) setTimeout(() => restaurarEscudo3D(el), 400);
+        }, { passive: true });
 
-
+    </script>
+</body>
+</html>
     </script>
 </body>
 </html>
