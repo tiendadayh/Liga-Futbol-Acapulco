@@ -836,9 +836,9 @@
             <div id="noticias-contenedor" class="grid"></div>
         </section>
 
-        <!-- ENCUESTA RÁPIDA PÚBLICA -->
+        <!-- ENCUESTAS RÁPIDAS PÚBLICAS -->
         <section id="encuesta-sec" class="card-section hidden" style="border-top-color:#9c27b0;">
-            <h2>🗳️ Encuesta Rápida</h2>
+            <h2>🗳️ Encuestas Rápidas</h2>
             <div id="encuesta-contenedor"></div>
         </section>
 
@@ -1358,7 +1358,7 @@
         let db = JSON.parse(localStorage.getItem('liga_premier_db')) || { 
             equipos: [], jugadores: [], partidos: [], comunicados: [], 
             arbitros: [], campos: [], xiIdealAdmin: {}, registrosCerrados: false, liguillaActiva: false,
-            historialFichajes: [], solicitudes: [], votosMvp: {}, reglamento: {}, encuesta: { activa: false }, encuestaVotos: {}
+            historialFichajes: [], solicitudes: [], votosMvp: {}, reglamento: {}, encuestas: [], encuestaVotos: {}
         };
 
         function normalizarDB(obj) {
@@ -1377,8 +1377,19 @@
             if (obj.liguillaActiva === undefined) obj.liguillaActiva = false;
             if (!obj.disciplinaOverrides) obj.disciplinaOverrides = {};
             if (!obj.reglamento) obj.reglamento = {};
-            if (!obj.encuesta) obj.encuesta = { activa: false };
-            if (!obj.encuestaVotos) obj.encuestaVotos = {};
+            // Migración desde el formato viejo (una sola encuesta en obj.encuesta) al nuevo
+            // (lista obj.encuestas, para poder tener varias encuestas activas a la vez).
+            if (!Array.isArray(obj.encuestas)) {
+                obj.encuestas = [];
+                if (obj.encuesta && obj.encuesta.activa && obj.encuesta.id) {
+                    obj.encuestas.push(obj.encuesta);
+                    const votosPlanos = obj.encuestaVotos || {};
+                    const yaEstabaAnidado = Object.values(votosPlanos).some(v => v && typeof v === 'object');
+                    if (!yaEstabaAnidado) obj.encuestaVotos = { [obj.encuesta.id]: votosPlanos };
+                }
+                delete obj.encuesta;
+            }
+            if (!obj.encuestaVotos || typeof obj.encuestaVotos !== 'object') obj.encuestaVotos = {};
             return obj;
         }
         normalizarDB(db);
@@ -1887,73 +1898,81 @@
             en_curso: 'EN VIVO'
         };
 
-        // --- Encuesta Rápida Pública ---
-        // Muestra la encuesta publicada por el admin (db.encuesta) si está activa.
-        // Mientras no se haya votado ni esté cerrada, muestra los botones para votar;
-        // después muestra las barras de resultado en vivo (sincronizadas por Firebase).
+        // --- Encuestas Rápidas Públicas ---
+        // Muestra TODAS las encuestas activas publicadas por el admin (db.encuestas).
+        // Por cada una, mientras no se haya votado ni esté cerrada, muestra los botones
+        // para votar; después muestra las barras de resultado en vivo (vía Firebase).
         function renderizarEncuesta() {
             const sec = document.getElementById('encuesta-sec');
             const cont = document.getElementById('encuesta-contenedor');
             if (!sec || !cont) return;
-            const enc = db.encuesta;
-            if (!enc || !enc.activa || !enc.opciones || enc.opciones.length < 2) {
+            const encuestas = [...(db.encuestas || [])]
+                .filter(e => e.activa && Array.isArray(e.opciones) && e.opciones.length >= 2)
+                .sort((a, b) => b.id - a.id);
+            if (encuestas.length === 0) {
                 sec.classList.add('hidden');
                 return;
             }
             sec.classList.remove('hidden');
 
-            const votos = db.encuestaVotos || {};
-            const total = enc.opciones.reduce((s, o) => s + (votos[o.id] || 0), 0);
-            const claveVoto = 'voto_encuesta_' + enc.id;
-            const yaVoto = !!localStorage.getItem(claveVoto);
-            const mostrarResultados = enc.cerrada || yaVoto;
+            const votosTodas = db.encuestaVotos || {};
+            cont.innerHTML = encuestas.map((enc, idx) => {
+                const votos = votosTodas[enc.id] || {};
+                const total = enc.opciones.reduce((s, o) => s + (votos[o.id] || 0), 0);
+                const claveVoto = 'voto_encuesta_' + enc.id;
+                const yaVoto = !!localStorage.getItem(claveVoto);
+                const mostrarResultados = enc.cerrada || yaVoto;
 
-            let html = `<p style="font-size:1.05rem; font-weight:700; color:var(--dark, #0b2f5c); text-align:center; margin-bottom:16px;">${enc.pregunta}</p>`;
+                let interior = `<p style="font-size:1.05rem; font-weight:700; color:var(--dark, #0b2f5c); text-align:center; margin-bottom:16px;">${enc.pregunta}</p>`;
 
-            if (mostrarResultados) {
-                html += enc.opciones.map(o => {
-                    const v = votos[o.id] || 0;
-                    const pct = total ? Math.round(v / total * 100) : 0;
-                    return `
-                    <div style="margin-bottom:12px;">
-                        <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.88rem; margin-bottom:4px; gap:8px;">
-                            <span style="display:flex; align-items:center; gap:6px; font-weight:600;">${o.escudo ? `<img src="${o.escudo}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;" loading="lazy">` : ''}${o.texto}</span>
-                            <span style="color:var(--text-muted); white-space:nowrap;">${pct}% · ${v} voto${v === 1 ? '' : 's'}</span>
-                        </div>
-                        <div style="background:var(--border); border-radius:8px; height:16px; overflow:hidden;">
-                            <div style="width:${pct}%; background:linear-gradient(90deg, #9c27b0, #d1140f); height:100%; transition:width .4s;"></div>
-                        </div>
-                    </div>`;
-                }).join('');
-                html += `<p style="text-align:center; font-size:0.78rem; color:var(--text-muted); margin-top:10px;">${enc.cerrada ? '🔒 Votación cerrada.' : '✅ Ya votaste. Resultados en vivo.'} Total: ${total} voto${total === 1 ? '' : 's'}.</p>`;
-            } else {
-                html += `<div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
-                    ${enc.opciones.map(o => `
-                        <button type="button" class="btn btn-outline btn-pill" onclick="votarEncuesta(${o.id})" style="--btn-color:#9c27b0; gap:8px; font-size:0.9rem; padding:10px 18px;">
-                            ${o.escudo ? `<img src="${o.escudo}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;" loading="lazy">` : ''}${o.texto}
-                        </button>`).join('')}
-                </div>
-                <p style="text-align:center; font-size:0.75rem; color:var(--text-muted); margin-top:10px;">Vota una vez · Los resultados se actualizan en vivo.</p>`;
-            }
+                if (mostrarResultados) {
+                    interior += enc.opciones.map(o => {
+                        const v = votos[o.id] || 0;
+                        const pct = total ? Math.round(v / total * 100) : 0;
+                        return `
+                        <div style="margin-bottom:12px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.88rem; margin-bottom:4px; gap:8px;">
+                                <span style="display:flex; align-items:center; gap:6px; font-weight:600;">${o.escudo ? `<img src="${o.escudo}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;" loading="lazy">` : ''}${o.texto}</span>
+                                <span style="color:var(--text-muted); white-space:nowrap;">${pct}% · ${v} voto${v === 1 ? '' : 's'}</span>
+                            </div>
+                            <div style="background:var(--border); border-radius:8px; height:16px; overflow:hidden;">
+                                <div style="width:${pct}%; background:linear-gradient(90deg, #9c27b0, #d1140f); height:100%; transition:width .4s;"></div>
+                            </div>
+                        </div>`;
+                    }).join('');
+                    interior += `<p style="text-align:center; font-size:0.78rem; color:var(--text-muted); margin-top:10px;">${enc.cerrada ? '🔒 Votación cerrada.' : '✅ Ya votaste. Resultados en vivo.'} Total: ${total} voto${total === 1 ? '' : 's'}.</p>`;
+                } else {
+                    interior += `<div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
+                        ${enc.opciones.map(o => `
+                            <button type="button" class="btn btn-outline btn-pill" onclick="votarEncuesta(${enc.id}, ${o.id})" style="--btn-color:#9c27b0; gap:8px; font-size:0.9rem; padding:10px 18px;">
+                                ${o.escudo ? `<img src="${o.escudo}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;" loading="lazy">` : ''}${o.texto}
+                            </button>`).join('')}
+                    </div>
+                    <p style="text-align:center; font-size:0.75rem; color:var(--text-muted); margin-top:10px;">Vota una vez · Los resultados se actualizan en vivo.</p>`;
+                }
 
-            cont.innerHTML = html;
+                const separador = idx < encuestas.length - 1 ? 'border-bottom:1px solid var(--border); padding-bottom:24px; margin-bottom:24px;' : '';
+                return `<div style="${separador}">${interior}</div>`;
+            }).join('');
         }
 
         // Registra un voto SOLO en el nodo 'encuestaVotos' de Firebase (igual que las
         // solicitudes públicas), para no requerir permiso de escritura sobre toda la base
         // de datos. Usa una transacción para que los votos simultáneos de varias personas
-        // se sumen correctamente sin pisarse entre sí.
-        function votarEncuesta(opcionId) {
-            const enc = db.encuesta;
+        // se sumen correctamente sin pisarse entre sí. Cada encuesta guarda sus votos por
+        // separado: encuestaVotos/<idEncuesta>/<idOpcion>.
+        function votarEncuesta(encuestaId, opcionId) {
+            const enc = (db.encuestas || []).find(e => e.id === encuestaId);
             if (!enc || !enc.activa || enc.cerrada) return;
             const claveVoto = 'voto_encuesta_' + enc.id;
             if (localStorage.getItem(claveVoto)) return renderizarEncuesta();
 
             recibiendoDeFirebase = true;
-            firebaseDbRef.child('encuestaVotos').child(String(opcionId)).transaction(actual => (actual || 0) + 1)
+            firebaseDbRef.child('encuestaVotos').child(String(encuestaId)).child(String(opcionId)).transaction(actual => (actual || 0) + 1)
                 .then(() => {
                     if (!db.encuestaVotos) db.encuestaVotos = {};
-                    db.encuestaVotos[opcionId] = (db.encuestaVotos[opcionId] || 0) + 1;
+                    if (!db.encuestaVotos[encuestaId]) db.encuestaVotos[encuestaId] = {};
+                    db.encuestaVotos[encuestaId][opcionId] = (db.encuestaVotos[encuestaId][opcionId] || 0) + 1;
                     localStorage.setItem(claveVoto, '1');
                     localStorage.setItem('liga_premier_db', JSON.stringify(db));
                     renderizarEncuesta();

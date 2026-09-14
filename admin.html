@@ -700,6 +700,7 @@
             <button type="button" onclick="exportarBackupDB()" style="background:#455a64;">⬇️ Descargar copia de seguridad (.json)</button>
             <button type="button" onclick="document.getElementById('input-restaurar-backup').click()" style="background:var(--secondary);">⬆️ Restaurar desde copia de seguridad</button>
             <input type="file" id="input-restaurar-backup" accept="application/json" style="display:none;" onchange="importarBackupDB(event)">
+            <button type="button" onclick="liberarEspacioFotos()" style="background:#8d6e63;">🗜️ Liberar espacio (achicar fotos guardadas)</button>
         </div>
         <p id="backup-status-msg" style="font-size:0.8rem; margin:8px 0 0; min-height:1.1em;"></p>
     </div>
@@ -1537,13 +1538,12 @@
         <p id="fb-live-estado" style="font-size:0.78rem; color:#6b7280; margin-top:8px;"></p>
     </div>
 
-    <!-- MÓDULO: ENCUESTA RÁPIDA PÚBLICA -->
+    <!-- MÓDULO: ENCUESTAS RÁPIDAS PÚBLICAS -->
     <div class="admin-box" style="margin-top: 25px; border-top-color: #9c27b0;">
-        <h3>🗳️ Encuesta Rápida Pública</h3>
-        <p style="font-size:0.8rem; color:#6b7280; margin-top:-6px;">Crea una encuesta para generar interacción antes de una fecha importante (ej. "¿Quién gana el clásico de esta jornada?"). Se muestra en el sitio público y cualquier visitante puede votar una vez por dispositivo. Los votos se ven aquí en vivo, pero la pregunta y las opciones solo se hacen públicas hasta que presiones "📤 Publicar cambios".</p>
+        <h3>🗳️ Encuestas Rápidas Públicas</h3>
+        <p style="font-size:0.8rem; color:#6b7280; margin-top:-6px;">Crea encuestas para generar interacción antes de una fecha importante (ej. "¿Quién gana el clásico de esta jornada?"). Puedes tener varias encuestas activas al mismo tiempo en el sitio público; cualquier visitante puede votar una vez por dispositivo en cada una. Los votos se ven aquí en vivo, pero cada encuesta se hace pública hasta que presiones "📤 Publicar cambios".</p>
 
-        <div id="encuesta-estado-actual" style="font-size:0.82rem; background:#f8f9fa; padding:8px 12px; border-radius:8px; margin-bottom:14px;"></div>
-
+        <h4 style="margin-bottom:6px;">Crear nueva encuesta</h4>
         <label>Pregunta de la encuesta:</label>
         <input type="text" id="encuesta-pregunta" placeholder='Ej. ¿Quién gana el clásico de esta jornada?'>
 
@@ -1559,13 +1559,11 @@
         </div>
 
         <div style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
-            <button type="button" onclick="publicarEncuesta()" style="background:#9c27b0;">🗳️ Publicar Nueva Encuesta</button>
-            <button type="button" onclick="cerrarVotacionEncuesta()" style="background:#e0932e;">🔒 Cerrar Votación</button>
-            <button type="button" onclick="eliminarEncuesta()" style="background:#c62828;">🗑️ Eliminar Encuesta</button>
+            <button type="button" onclick="crearEncuesta()" style="background:#9c27b0;">🗳️ Crear Encuesta</button>
         </div>
 
-        <h4 style="margin-bottom:6px;">Resultados en vivo:</h4>
-        <div id="encuesta-resultados-admin" style="font-size:0.85rem; color:#888;">Sin datos todavía.</div>
+        <h4 style="margin:22px 0 10px; border-top:1px solid #eee; padding-top:16px;">Encuestas existentes</h4>
+        <div id="encuestas-lista-admin" style="display:flex; flex-direction:column; gap:14px; font-size:0.85rem; color:#888;">Sin encuestas todavía.</div>
     </div>
 
 
@@ -1690,7 +1688,7 @@
         firebaseDbRef.child('encuestaVotos').on('value', function (snapshot) {
             db.encuestaVotos = snapshot.val() || {};
             localStorage.setItem('liga_premier_db', JSON.stringify(db));
-            renderizarEncuestaAdmin();
+            renderizarEncuestasAdmin();
         });
 
         // --- Logo del sitio (encabezado) personalizable ---
@@ -1850,7 +1848,7 @@
             equipos: [], jugadores: [], partidos: [], comunicados: [],
             arbitros: [], campos: [], xiIdealAdmin: {}, registrosCerrados: false, liguillaActiva: false,
             historialFichajes: [], solicitudes: [], finanzas: {}, votosMvp: {}, config: crearConfigCredencialDefault(),
-            encuesta: { activa: false }, encuestaVotos: {}
+            encuestas: [], encuestaVotos: {}
         };
 
         // Se asegura de que TODOS los campos que la app espera existan siempre en db,
@@ -1874,8 +1872,20 @@
             if (!obj.disciplinaOverrides) obj.disciplinaOverrides = {};
             if (!obj.avisosDisciplinaEstado) obj.avisosDisciplinaEstado = {};
             if (!obj.reglamento) obj.reglamento = {};
-            if (!obj.encuesta) obj.encuesta = { activa: false };
-            if (!obj.encuestaVotos) obj.encuestaVotos = {};
+            // Migración desde el formato viejo (una sola encuesta en obj.encuesta) al nuevo
+            // (lista obj.encuestas, para poder tener varias encuestas activas a la vez).
+            // Se hace una sola vez: si ya existe obj.encuestas como arreglo, no se toca nada.
+            if (!Array.isArray(obj.encuestas)) {
+                obj.encuestas = [];
+                if (obj.encuesta && obj.encuesta.activa && obj.encuesta.id) {
+                    obj.encuestas.push(obj.encuesta);
+                    const votosPlanos = obj.encuestaVotos || {};
+                    const yaEstabaAnidado = Object.values(votosPlanos).some(v => v && typeof v === 'object');
+                    if (!yaEstabaAnidado) obj.encuestaVotos = { [obj.encuesta.id]: votosPlanos };
+                }
+                delete obj.encuesta;
+            }
+            if (!obj.encuestaVotos || typeof obj.encuestaVotos !== 'object') obj.encuestaVotos = {};
             if (obj.registrosCerrados === undefined) obj.registrosCerrados = false;
             if (obj.liguillaActiva === undefined) obj.liguillaActiva = false;
             if (!obj.config) obj.config = crearConfigCredencialDefault();
@@ -1979,7 +1989,7 @@
             try {
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
             } catch (err) {
-                alert('❌ No se pudo guardar: el almacenamiento del navegador está lleno (normalmente por muchas fotos/escudos guardados). Borra fotos que ya no necesites o usa imágenes más ligeras. Detalle técnico: ' + err.message);
+                mostrarAlerta('No se pudo guardar: el almacenamiento del navegador está lleno (normalmente por muchas fotos/escudos guardados). Usa el botón "🗜️ Liberar espacio" en Respaldo de Datos, o borra fotos que ya no necesites. Detalle técnico: ' + err.message, { icono: '❌' });
                 return false;
             }
             aplicarLogoSitio();
@@ -2258,7 +2268,7 @@
                 renderizarGestion();
             renderizarResumenDia();
             renderizarCorreccionEstadisticas();
-                cargarEncuestaFormulario();
+                renderizarEncuestasAdmin();
                 mostrarFirebaseStatus('✅ Datos actualizados desde la nube.', false);
             }).catch(err => {
                 mostrarFirebaseStatus('❌ No se pudo traer la información. (' + err.message + ')', true);
@@ -2281,7 +2291,7 @@
                 renderizarGestion();
             renderizarResumenDia();
             renderizarCorreccionEstadisticas();
-                cargarEncuestaFormulario();
+                renderizarEncuestasAdmin();
             }
         }).catch(() => { /* si falla, seguimos con lo que había en localStorage */ });
 
@@ -2332,6 +2342,65 @@
                 event.target.value = '';
             };
             lector.readAsText(archivo);
+        }
+
+        // Vuelve a comprimir una imagen YA GUARDADA (data URL) a un tamaño más chico.
+        // Si forzarJpeg=true siempre convierte a JPEG (fotos de personas/lugares, sin
+        // transparencia). Si es false, conserva PNG cuando la original ya era PNG, para
+        // no perder la transparencia de escudos/logos. Nunca deja el resultado más
+        // pesado que el original.
+        function recomprimirDataUrl(dataUrl, maxDim, calidad, forzarJpeg) {
+            return new Promise(resolve => {
+                if (!dataUrl || typeof dataUrl !== 'string' || !dataUrl.startsWith('data:image')) { resolve(dataUrl); return; }
+                const img = new Image();
+                img.onload = () => {
+                    const w0 = img.naturalWidth || img.width;
+                    const h0 = img.naturalHeight || img.height;
+                    if (!w0 || !h0) { resolve(dataUrl); return; }
+                    const escala = Math.min(1, maxDim / Math.max(w0, h0));
+                    const w = Math.max(1, Math.round(w0 * escala));
+                    const h = Math.max(1, Math.round(h0 * escala));
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        const esPng = dataUrl.startsWith('data:image/png') && !forzarJpeg;
+                        const nuevo = esPng ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', calidad);
+                        resolve(nuevo.length < dataUrl.length ? nuevo : dataUrl);
+                    } catch (e) { resolve(dataUrl); }
+                };
+                img.onerror = () => resolve(dataUrl);
+                img.src = dataUrl;
+            });
+        }
+
+        // Achica TODAS las fotos/escudos/logos ya guardados en la base de datos, sin
+        // borrar ninguno, para liberar espacio en el almacenamiento del navegador (que
+        // tiene un límite fijo de unos 5-10 MB). Es seguro correrlo varias veces.
+        async function liberarEspacioFotos() {
+            if (!(await confirmarAccion('Esto va a achicar todas las fotos, escudos y logos que ya tienes guardados (sin borrar ninguno) para liberar espacio. Puede tardar unos segundos si tienes muchas fotos. ¿Continuar?', { neutral: true, icono: '🗜️', textoConfirmar: 'Achicar fotos' }))) return;
+
+            mostrarBackupStatus('⏳ Achicando fotos, espera un momento...', false);
+            const tamanoAntes = JSON.stringify(db).length;
+
+            for (const j of (db.jugadores || [])) { if (j.foto) j.foto = await recomprimirDataUrl(j.foto, 700, 0.75, true); }
+            for (const eq of (db.equipos || [])) {
+                if (eq.escudo) eq.escudo = await recomprimirDataUrl(eq.escudo, 500, 0.85, false);
+                if (eq.fotoGrupal) eq.fotoGrupal = await recomprimirDataUrl(eq.fotoGrupal, 900, 0.75, true);
+            }
+            for (const a of (db.arbitros || [])) { if (a.foto) a.foto = await recomprimirDataUrl(a.foto, 700, 0.75, true); }
+            for (const c of (db.campos || [])) { if (c.foto) c.foto = await recomprimirDataUrl(c.foto, 900, 0.75, true); }
+            for (const p of (db.patrocinadores || [])) { if (p.logo) p.logo = await recomprimirDataUrl(p.logo, 500, 0.85, false); }
+            for (const c of (db.comunicados || [])) { if (c.imagen) c.imagen = await recomprimirDataUrl(c.imagen, 700, 0.75, true); }
+            if (db.config && db.config.escudoLiga) { db.config.escudoLiga = await recomprimirDataUrl(db.config.escudoLiga, 500, 0.85, false); }
+
+            const tamanoDespues = JSON.stringify(db).length;
+            const ahorradoKB = Math.max(0, Math.round((tamanoAntes - tamanoDespues) / 1024));
+            const guardadoOk = guardarDB();
+            if (guardadoOk !== false) {
+                mostrarBackupStatus(`✅ Fotos achicadas. Se liberaron aprox. ${ahorradoKB} KB. Recuerda presionar "📤 Publicar cambios" para que se vea en el sitio público.`, false);
+            }
         }
 
         function convertirImagenABase64(inputElement, maxDim = 1000) {
@@ -2738,7 +2807,7 @@
             actualizarVisibilidadLiguillaAdmin();
             cargarConfigFormulario();
             cargarReglamentoFormulario();
-            cargarEncuestaFormulario();
+            renderizarEncuestasAdmin();
             activarBarrasScrollGestion();
         });
 
@@ -3859,22 +3928,10 @@
             document.getElementById('fb-live-estado').innerText = 'Se quitó la transmisión de este partido.';
         }
 
-        // ===================== ENCUESTA RÁPIDA PÚBLICA =====================
-        // encuestaOpcionesDraft es el borrador que se edita en pantalla ANTES de publicar
-        // (no toca db.encuesta hasta que el admin presiona "Publicar Nueva Encuesta").
+        // ===================== ENCUESTAS RÁPIDAS PÚBLICAS =====================
+        // encuestaOpcionesDraft es el borrador de la encuesta que se está armando en el
+        // formulario de "Crear nueva encuesta" (no toca db.encuestas hasta presionar "Crear").
         let encuestaOpcionesDraft = [];
-
-        // Carga en el formulario la encuesta actualmente guardada (si existe), para que
-        // el admin pueda ver/editar la que ya está corriendo antes de crear una nueva.
-        function cargarEncuestaFormulario() {
-            const campoPregunta = document.getElementById('encuesta-pregunta');
-            if (!campoPregunta) return; // el formulario todavía no existe en el DOM
-            const enc = db.encuesta;
-            campoPregunta.value = (enc && enc.activa) ? (enc.pregunta || '') : '';
-            encuestaOpcionesDraft = (enc && enc.activa && Array.isArray(enc.opciones)) ? JSON.parse(JSON.stringify(enc.opciones)) : [];
-            renderizarOpcionesEncuestaDraft();
-            renderizarEncuestaAdmin();
-        }
 
         function renderizarOpcionesEncuestaDraft() {
             const cont = document.getElementById('encuesta-opciones-lista');
@@ -3900,7 +3957,7 @@
         function agregarOpcionEncuestaDesdeEquipo() {
             const sel = document.getElementById('encuesta-nueva-opcion-equipo');
             const eqId = parseInt(sel.value);
-            if (!eqId) return alert('Selecciona primero un equipo.');
+            if (!eqId) return mostrarAlerta('Selecciona primero un equipo.');
             const eq = db.equipos.find(e => e.id === eqId);
             if (!eq) return;
             encuestaOpcionesDraft.push({ id: Date.now() + encuestaOpcionesDraft.length, texto: eq.nombre, escudo: eq.escudo || null, equipoId: eq.id });
@@ -3915,82 +3972,101 @@
             renderizarOpcionesEncuestaDraft();
         }
 
-        // Publica una encuesta NUEVA: reemplaza la pregunta/opciones y reinicia los votos
-        // en 0 (los votos anteriores quedan guardados en el historial local del navegador,
-        // pero la encuesta pública arranca de cero). Requiere "Publicar cambios" después
-        // para que se vea en el sitio público.
-        async function publicarEncuesta() {
-            const pregunta = document.getElementById('encuesta-pregunta').value.trim();
-            if (!pregunta) return alert('Escribe la pregunta de la encuesta.');
-            if (encuestaOpcionesDraft.length < 2) return alert('Agrega al menos 2 opciones.');
-            if (encuestaOpcionesDraft.some(o => !o.texto || !o.texto.trim())) return alert('Ninguna opción puede quedar con el texto vacío.');
-            if (!(await confirmarAccion('¿Publicar esta encuesta? Esto reemplazará la encuesta anterior (si había una) y reiniciará los votos en el sitio público.', { neutral: true, icono: '🗳️', textoConfirmar: 'Publicar' }))) return;
+        // Crea una encuesta NUEVA y la agrega a la lista de encuestas activas, SIN tocar
+        // las que ya existían: pueden correr varias encuestas al mismo tiempo en el sitio
+        // público. Requiere "Publicar cambios" después para que se vea en el sitio público.
+        async function crearEncuesta() {
+            const campoPregunta = document.getElementById('encuesta-pregunta');
+            const pregunta = campoPregunta.value.trim();
+            if (!pregunta) return mostrarAlerta('Escribe la pregunta de la encuesta.');
+            if (encuestaOpcionesDraft.length < 2) return mostrarAlerta('Agrega al menos 2 opciones.');
+            if (encuestaOpcionesDraft.some(o => !o.texto || !o.texto.trim())) return mostrarAlerta('Ninguna opción puede quedar con el texto vacío.');
+            if (!(await confirmarAccion('¿Crear esta encuesta? Se agregará a las que ya estén activas en el sitio público (no las reemplaza).', { neutral: true, icono: '🗳️', textoConfirmar: 'Crear' }))) return;
 
-            db.encuesta = {
-                id: Date.now(),
+            const id = Date.now();
+            db.encuestas.push({
+                id,
                 pregunta,
                 opciones: encuestaOpcionesDraft.map(o => ({ id: o.id, texto: o.texto.trim(), escudo: o.escudo || null, equipoId: o.equipoId || null })),
                 activa: true,
                 cerrada: false,
                 creada: new Date().toISOString()
-            };
-            db.encuestaVotos = {};
-            guardarDB();
-            cargarEncuestaFormulario();
-            alert('✅ Encuesta guardada. No olvides presionar "📤 Publicar cambios" para que se vea en el sitio público.');
-        }
+            });
+            if (!db.encuestaVotos) db.encuestaVotos = {};
+            db.encuestaVotos[id] = {};
 
-        // Cierra la votación (deja de aceptar votos) pero mantiene los resultados visibles
-        // en el sitio público hasta que se elimine la encuesta.
-        function cerrarVotacionEncuesta() {
-            if (!db.encuesta || !db.encuesta.activa) return alert('No hay ninguna encuesta activa.');
-            if (db.encuesta.cerrada) return alert('Esa encuesta ya está cerrada.');
-            db.encuesta.cerrada = true;
-            guardarDB();
-            renderizarEncuestaAdmin();
-            alert('🔒 Votación cerrada. Los resultados seguirán visibles hasta que elimines la encuesta. No olvides "Publicar cambios".');
-        }
-
-        // Quita por completo la encuesta del sitio público y limpia el formulario.
-        async function eliminarEncuesta() {
-            if (!db.encuesta || !db.encuesta.activa) return alert('No hay ninguna encuesta para eliminar.');
-            if (!(await confirmarAccion('¿Eliminar la encuesta del sitio público? Se perderán sus resultados.', { textoConfirmar: 'Eliminar' }))) return;
-            db.encuesta = { activa: false };
-            db.encuestaVotos = {};
+            campoPregunta.value = '';
             encuestaOpcionesDraft = [];
-            document.getElementById('encuesta-pregunta').value = '';
-            guardarDB();
             renderizarOpcionesEncuestaDraft();
-            renderizarEncuestaAdmin();
-            alert('🗑️ Encuesta eliminada. No olvides "Publicar cambios".');
+            guardarDB();
+            renderizarEncuestasAdmin();
+            mostrarAlerta('Encuesta creada. No olvides presionar "📤 Publicar cambios" para que se vea en el sitio público.', { icono: '✅' });
         }
 
-        // Muestra el estado actual y las barras de resultado en vivo (se refresca solo
-        // cuando llegan votos nuevos desde Firebase, sin esperar a "Publicar cambios").
-        function renderizarEncuestaAdmin() {
-            const estadoEl = document.getElementById('encuesta-estado-actual');
-            const cont = document.getElementById('encuesta-resultados-admin');
-            if (!estadoEl || !cont) return;
-            const enc = db.encuesta;
-            if (!enc || !enc.activa) {
-                estadoEl.innerHTML = '<span style="color:#888;">No hay ninguna encuesta publicada actualmente.</span>';
-                cont.innerHTML = 'Sin datos todavía.';
+        // Cierra la votación de UNA encuesta (deja de aceptar votos) pero mantiene sus
+        // resultados visibles en el sitio público hasta que se elimine.
+        async function cerrarVotacionEncuesta(id) {
+            const enc = (db.encuestas || []).find(e => e.id === id);
+            if (!enc) return;
+            if (enc.cerrada) return mostrarAlerta('Esa encuesta ya está cerrada.');
+            if (!(await confirmarAccion(`¿Cerrar la votación de "${enc.pregunta}"? Ya no se podrán registrar más votos, pero los resultados se seguirán viendo.`, { neutral: true, icono: '🔒', textoConfirmar: 'Cerrar votación' }))) return;
+            enc.cerrada = true;
+            guardarDB();
+            renderizarEncuestasAdmin();
+        }
+
+        // Quita por completo UNA encuesta del sitio público (las demás siguen igual).
+        async function eliminarEncuesta(id) {
+            const enc = (db.encuestas || []).find(e => e.id === id);
+            if (!enc) return;
+            if (!(await confirmarAccion(`¿Eliminar la encuesta "${enc.pregunta}"? Se perderán sus resultados.`, { textoConfirmar: 'Eliminar' }))) return;
+            db.encuestas = (db.encuestas || []).filter(e => e.id !== id);
+            if (db.encuestaVotos) delete db.encuestaVotos[id];
+            guardarDB();
+            renderizarEncuestasAdmin();
+        }
+
+        // Muestra la lista de TODAS las encuestas (activas y cerradas) con sus resultados
+        // en vivo (se refresca solo cuando llegan votos nuevos desde Firebase, sin esperar
+        // a "Publicar cambios"). Las más recientes se muestran primero.
+        function renderizarEncuestasAdmin() {
+            const cont = document.getElementById('encuestas-lista-admin');
+            if (!cont) return;
+            const encuestas = [...(db.encuestas || [])].sort((a, b) => b.id - a.id);
+            if (encuestas.length === 0) {
+                cont.innerHTML = '<p style="font-size:0.82rem; color:#888; margin:0;">Sin encuestas todavía.</p>';
                 return;
             }
-            const votos = db.encuestaVotos || {};
-            const total = (enc.opciones || []).reduce((s, o) => s + (votos[o.id] || 0), 0);
-            estadoEl.innerHTML = `<b>Pregunta actual:</b> ${enc.pregunta} — <span style="color:${enc.cerrada ? '#c62828' : '#2e7d32'}; font-weight:600;">${enc.cerrada ? '🔒 Votación cerrada' : '🟢 Votando'}</span> · ${total} voto${total === 1 ? '' : 's'} en total`;
-            cont.innerHTML = (enc.opciones || []).map(o => {
-                const v = votos[o.id] || 0;
-                const pct = total ? Math.round(v / total * 100) : 0;
-                return `<div style="margin-bottom:8px;">
-                    <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:3px;">
-                        <span>${o.escudo ? `<img src="${o.escudo}" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px;object-fit:cover;">` : ''}${o.texto}</span>
-                        <span>${v} voto${v === 1 ? '' : 's'} · ${pct}%</span>
+            const votosTodas = db.encuestaVotos || {};
+            cont.innerHTML = encuestas.map(enc => {
+                const votos = votosTodas[enc.id] || {};
+                const total = (enc.opciones || []).reduce((s, o) => s + (votos[o.id] || 0), 0);
+                const barras = (enc.opciones || []).map(o => {
+                    const v = votos[o.id] || 0;
+                    const pct = total ? Math.round(v / total * 100) : 0;
+                    return `<div style="margin-bottom:8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:3px;">
+                            <span>${o.escudo ? `<img src="${o.escudo}" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px;object-fit:cover;">` : ''}${o.texto}</span>
+                            <span>${v} voto${v === 1 ? '' : 's'} · ${pct}%</span>
+                        </div>
+                        <div style="background:#e2e8f0; border-radius:6px; height:14px; overflow:hidden;">
+                            <div style="width:${pct}%; background:#9c27b0; height:100%;"></div>
+                        </div>
+                    </div>`;
+                }).join('');
+                return `<div style="background:#f8f9fa; border-radius:10px; padding:12px 14px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                        <div>
+                            <b>${enc.pregunta}</b><br>
+                            <span style="font-size:0.78rem; color:${enc.cerrada ? '#c62828' : '#2e7d32'}; font-weight:600;">${enc.cerrada ? '🔒 Votación cerrada' : '🟢 Votando'}</span>
+                            <span style="font-size:0.78rem; color:#6b7280;"> · ${total} voto${total === 1 ? '' : 's'} en total</span>
+                        </div>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            ${!enc.cerrada ? `<button type="button" onclick="cerrarVotacionEncuesta(${enc.id})" style="background:#e0932e; padding:6px 10px; font-size:0.78rem;">🔒 Cerrar Votación</button>` : ''}
+                            <button type="button" onclick="eliminarEncuesta(${enc.id})" style="background:#c62828; padding:6px 10px; font-size:0.78rem;">🗑️ Eliminar</button>
+                        </div>
                     </div>
-                    <div style="background:#e2e8f0; border-radius:6px; height:14px; overflow:hidden;">
-                        <div style="width:${pct}%; background:#9c27b0; height:100%;"></div>
-                    </div>
+                    ${barras}
                 </div>`;
             }).join('');
         }
