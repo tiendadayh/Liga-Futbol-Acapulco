@@ -898,6 +898,40 @@
         .tabla-equipos tbody tr.fila-favorito td:first-child { border-radius: 6px 0 0 6px; }
         .tabla-equipos tbody tr.fila-favorito td:last-child { border-radius: 0 6px 6px 0; }
         @media (prefers-reduced-motion: reduce) { .tabla-equipos tbody tr { animation: none; } }
+
+        /* ===== AJUSTE FINAL MÓVIL: todo centrado, ordenado y con letra legible ===== */
+        @media (max-width: 600px) {
+            body { overflow-x: hidden; }
+            .container { padding: 0 10px; margin: 20px auto; }
+            header h1 { font-size: clamp(1rem, 5.5vw, 1.25rem) !important; line-height: 1.25; }
+            header p { font-size: 0.76rem !important; }
+            .site-header-content { gap: 8px !important; }
+            .card-section { padding: 14px !important; }
+            .card-section > h2 { text-align: center; }
+            .header-section-flex { justify-content: center; text-align: center; }
+            nav { flex-wrap: wrap; }
+            nav a { padding: 9px 8px !important; font-size: 0.66rem !important; }
+            .grid { grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)) !important; gap: 10px !important; }
+            .mm-nombre { max-width: 58px !important; font-size: 0.66rem !important; }
+            .mm-equipos { gap: 4px !important; }
+            .mm-cuenta-item { min-width: 24px !important; padding: 2px 4px !important; }
+            .podio-wrap { flex-wrap: wrap !important; gap: 8px !important; }
+            .h2h-barra-fila { grid-template-columns: 66px 1fr 24px !important; gap: 6px !important; }
+            .h2h-barra-label { font-size: 0.66rem !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            #form-solicitud-web { grid-template-columns: 1fr !important; }
+            .modal-content { width: 94vw !important; max-width: 94vw !important; padding: 16px !important; }
+            .buscador-global { max-width: 100% !important; }
+            .footer-brand p { max-width: 100%; }
+            table:not(.tabla-equipos) { font-size: 0.74rem !important; }
+            .bracket-match { width: 100% !important; }
+            .theme-switch { padding: 6px 10px !important; font-size: 0.66rem !important; }
+        }
+        @media (max-width: 360px) {
+            header h1 { font-size: 0.95rem !important; }
+            .grid { grid-template-columns: repeat(auto-fill, minmax(95px, 1fr)) !important; }
+            .mm-nombre { max-width: 44px !important; }
+            nav a { font-size: 0.6rem !important; padding: 7px 5px !important; }
+        }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
