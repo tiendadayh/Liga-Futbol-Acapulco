@@ -438,16 +438,6 @@
         }
         .close-modal:hover { background: var(--primary); color: white; transform: rotate(90deg); }
         .foto-tabla { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 8px; border: 1px solid var(--border); }
-        /* Celda de jugador en tablas (Goleo, Disciplina, Porteros): foto arriba, nombre abajo, centrado y ordenado */
-        .cel-jugador { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 3px; padding: 2px 0; }
-        .cel-jugador .foto-tabla { margin: 0; }
-        .cel-jugador .nombre-cel { font-size: 0.82rem; font-weight: 700; line-height: 1.2; word-break: break-word; max-width: 120px; }
-        .cel-jugador .equipo-cel { font-size: 0.68rem; color: var(--text-muted); line-height: 1.15; }
-        @media (max-width: 600px) {
-            .cel-jugador .nombre-cel { font-size: 0.72rem; max-width: 100px; }
-            .cel-jugador .equipo-cel { font-size: 0.62rem; }
-            .cel-jugador .foto-tabla { width: 28px; height: 28px; }
-        }
         .hidden { display: none !important; }
 
         /* --- Formulario de Solicitud de Registro --- */
@@ -2682,7 +2672,7 @@
             document.getElementById('tabla-porteros-body').innerHTML = data.map((pt, idx) => `
                 <tr>
                     <td><b>${idx+1}</b></td>
-                    <td><div class="cel-jugador"><img class="foto-tabla" src="${pt.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${pt.nombre}</span><span class="equipo-cel">${pt.equipo}</span></div></td>
+                    <td><img class="foto-tabla" src="${pt.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><b>${pt.nombre}</b> (${pt.equipo})</td>
                     <td>${pt.goles} 🛡️</td>
                     <td><b>${pt.prom}</b> goles/partido</td>
                 </tr>
@@ -3125,7 +3115,7 @@
         function actualizarVistaGoleo() {
             let goleadores = [...db.jugadores].filter(j => j.goles > 0).sort((a,b) => b.goles - a.goles);
             document.getElementById('tabla-goleo-body').innerHTML = goleadores.length
-                ? goleadores.map((jug, idx) => `<tr><td><b>${idx + 1}</b></td><td><div class="cel-jugador"><img class="foto-tabla" src="${jug.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${jug.nombre}</span></div></td><td>${db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre'}</td><td><b>${jug.goles} ⚽</b> ${idx === 0 ? '🏆' : ''}</td></tr>`).join('')
+                ? goleadores.map((jug, idx) => `<tr><td><b>${idx + 1}</b></td><td><img class="foto-tabla" src="${jug.foto || 'https://placehold.co/34'}" alt="" loading="lazy">${jug.nombre}</td><td>${db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre'}</td><td><b>${jug.goles} ⚽</b> ${idx === 0 ? '🏆' : ''}</td></tr>`).join('')
                 : estadoVacioFila(4, '⚽', 'Aún no hay goleadores; se llenará conforme se jueguen partidos.');
             renderPodio('podio-goleo', goleadores.map(jug => ({
                 foto: jug.foto, nombre: jug.nombre,
@@ -3137,7 +3127,7 @@
         function actualizarVistaDisciplina() {
             const jugadoresOrdenados = [...db.jugadores].sort((a, b) => ((b.rojas || 0) * 3 + (b.amarillas || 0)) - ((a.rojas || 0) * 3 + (a.amarillas || 0)));
             document.getElementById('tabla-disciplina-body').innerHTML = jugadoresOrdenados.map((j, idx) => {
-                return `<tr><td>${idx + 1}</td><td><div class="cel-jugador"><img class="foto-tabla" src="${j.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${j.nombre}</span></div></td><td>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</td><td>${j.amarillas || 0}</td><td>${j.rojas || 0}</td><td>${textoEstadoSuspensionJugador(j)}</td></tr>`;
+                return `<tr><td>${idx + 1}</td><td><img class="foto-tabla" src="${j.foto || 'https://placehold.co/34'}" alt="" loading="lazy">${j.nombre}</td><td>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</td><td>${j.amarillas || 0}</td><td>${j.rojas || 0}</td><td>${textoEstadoSuspensionJugador(j)}</td></tr>`;
             }).join('');
             const conSanciones = jugadoresOrdenados.filter(j => (j.amarillas || 0) > 0 || (j.rojas || 0) > 0);
             renderPodio('podio-disciplina', conSanciones.map(j => ({
