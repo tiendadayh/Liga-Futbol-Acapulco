@@ -845,6 +845,38 @@
     </div>
 
     <script>
+        // ===== Bloqueo del scroll de fondo mientras hay un modal abierto =====
+        (function () {
+            let scrollYGuardado = 0;
+            let fondoBloqueado = false;
+            function hayModalAbierto() {
+                return document.querySelector('.modal-firma-overlay:not(.hidden)') !== null;
+            }
+            function actualizarBloqueoFondo() {
+                const abierto = hayModalAbierto();
+                if (abierto && !fondoBloqueado) {
+                    scrollYGuardado = window.scrollY;
+                    document.body.style.position = 'fixed';
+                    document.body.style.top = `-${scrollYGuardado}px`;
+                    document.body.style.left = '0';
+                    document.body.style.right = '0';
+                    document.body.style.width = '100%';
+                    fondoBloqueado = true;
+                } else if (!abierto && fondoBloqueado) {
+                    document.body.style.position = '';
+                    document.body.style.top = '';
+                    document.body.style.left = '';
+                    document.body.style.right = '';
+                    document.body.style.width = '';
+                    window.scrollTo(0, scrollYGuardado);
+                    fondoBloqueado = false;
+                }
+            }
+            document.querySelectorAll('.modal-firma-overlay').forEach(modal => {
+                new MutationObserver(actualizarBloqueoFondo).observe(modal, { attributes: true, attributeFilter: ['class'] });
+            });
+        })();
+
         const firebaseConfig = {
             apiKey: "AIzaSyDG07c_D4qtCJXap9J1ppU8xLk3IdWYOXo",
             authDomain: "liga-premier-acapulco.firebaseapp.com",

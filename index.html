@@ -85,16 +85,29 @@
             background: linear-gradient(90deg, var(--primary) 0%, var(--warning) 50%, var(--secondary) 100%);
         }
         .site-header-content { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 18px; flex-wrap: wrap; }
-        .site-header-logo { width: 78px; height: 78px; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 14px rgba(240, 180, 41, 0.45)); transition: transform var(--transition); }
-        .site-header-logo:hover { transform: scale(1.05) rotate(-2deg); }
+        .site-header-logo { width: 78px; height: 78px; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 14px rgba(240, 180, 41, 0.45)); transition: transform 0.25s ease; transform-style: preserve-3d; animation: logoBalanceo3D 6s ease-in-out infinite; }
+        .site-header-logo:hover { animation-play-state: paused; transform: perspective(600px) rotateY(18deg) scale(1.08); }
+        @keyframes logoBalanceo3D { 0%, 100% { transform: perspective(600px) rotateY(-14deg); } 50% { transform: perspective(600px) rotateY(14deg); } }
+        .header-shine { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at var(--mx, 50%) var(--my, 30%), rgba(255,255,255,0.22), transparent 45%); transition: background 0.15s ease; }
+        @media (prefers-reduced-motion: reduce) { .site-header-logo { animation: none; } }
         header h1 { margin: 0; font-size: 2.2rem; text-transform: uppercase; letter-spacing: 0.5px; }
         header p { margin: 6px 0 0 0; color: var(--warning); font-weight: 700; position: relative; z-index: 1; }
         .theme-switch {
             position: absolute; top: 20px; right: 20px; z-index: 2; background: rgba(255,255,255,0.14);
             backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 14px;
             border-radius: var(--radius-full); cursor: pointer; font-weight: 700; transition: var(--transition-fast);
+            transform-style: preserve-3d;
         }
         .theme-switch:hover { background: rgba(255,255,255,0.24); transform: translateY(-1px); }
+        .theme-switch.theme-switch-flip { animation: themeSwitchFlip3D 0.5s ease; }
+        @keyframes themeSwitchFlip3D { 0% { transform: rotateY(0deg); } 50% { transform: rotateY(180deg); } 100% { transform: rotateY(360deg); } }
+        .theme-wave-3d {
+            position: fixed; width: 0; height: 0; border-radius: 50%; pointer-events: none; z-index: 9999;
+            transform: translate(-50%, -50%) perspective(800px) rotateX(8deg);
+            animation: themeWaveExpand3D 0.6s cubic-bezier(.2,.7,.3,1) forwards;
+        }
+        @keyframes themeWaveExpand3D { from { width: 0; height: 0; opacity: 0.85; } to { width: var(--onda-tam); height: var(--onda-tam); opacity: 0; } }
+        @media (prefers-reduced-motion: reduce) { .theme-switch.theme-switch-flip, .theme-wave-3d { animation: none; } }
         .install-btn {
             position: absolute; top: 20px; left: 20px; z-index: 2; background: var(--accent);
             color: var(--dark); border: none; padding: 8px 14px; border-radius: var(--radius-full);
@@ -142,16 +155,27 @@
         .buscador-global input:focus { background: rgba(255,255,255,0.18); outline: none; }
         .buscador-global::before {
             content: "🔍"; position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 0.9rem; opacity: 0.8;
+            transition: transform 0.35s cubic-bezier(.34,1.4,.4,1); transform-style: preserve-3d;
         }
+        .buscador-global:focus-within::before { transform: translateY(-50%) perspective(300px) rotateY(360deg) scale(1.15); }
         .buscador-resultados {
             position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: var(--card-bg);
             border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
-            max-height: 340px; overflow-y: auto; z-index: 200;
+            max-height: 340px; overflow-y: auto; z-index: 200; perspective: 400px;
         }
         .buscador-resultado-item {
             display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer;
             border-bottom: 1px solid var(--border); transition: background var(--transition-fast);
+            animation: buscadorAbanico3D 0.32s cubic-bezier(.2,.7,.3,1.05) both; transform-origin: top center;
         }
+        .buscador-resultado-item:nth-child(1) { animation-delay: 0s; }
+        .buscador-resultado-item:nth-child(2) { animation-delay: 0.03s; }
+        .buscador-resultado-item:nth-child(3) { animation-delay: 0.06s; }
+        .buscador-resultado-item:nth-child(4) { animation-delay: 0.09s; }
+        .buscador-resultado-item:nth-child(5) { animation-delay: 0.12s; }
+        .buscador-resultado-item:nth-child(n+6) { animation-delay: 0.15s; }
+        @keyframes buscadorAbanico3D { from { opacity: 0; transform: perspective(400px) rotateX(-50deg) translateY(-6px); } to { opacity: 1; transform: perspective(400px) rotateX(0) translateY(0); } }
+        @media (prefers-reduced-motion: reduce) { .buscador-global::before, .buscador-resultado-item { animation: none; transition: none; } }
         .buscador-resultado-item:last-child { border-bottom: none; }
         .buscador-resultado-item:hover { background: var(--light); }
         .buscador-resultado-item img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: white; border: 1px solid var(--border); flex-shrink: 0; }
@@ -290,6 +314,17 @@
             margin-bottom: 16px; box-shadow: var(--shadow-xs); position: relative; transition: box-shadow var(--transition), transform var(--transition);
         }
         .partido-item:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+        #lista-partidos-jornada .partido-item { animation: partidoAbrir3D 0.5s cubic-bezier(.2,.7,.3,1.05) both; transform-origin: top center; }
+        @keyframes partidoAbrir3D { from { opacity: 0; transform: perspective(700px) rotateX(-25deg) translateY(-6px); } to { opacity: 1; transform: perspective(700px) rotateX(0) translateY(0); } }
+        #lista-partidos-jornada .partido-item:nth-child(1) { animation-delay: 0s; }
+        #lista-partidos-jornada .partido-item:nth-child(2) { animation-delay: 0.06s; }
+        #lista-partidos-jornada .partido-item:nth-child(3) { animation-delay: 0.12s; }
+        #lista-partidos-jornada .partido-item:nth-child(4) { animation-delay: 0.18s; }
+        #lista-partidos-jornada .partido-item:nth-child(n+5) { animation-delay: 0.24s; }
+        .marcador { transform-style: preserve-3d; }
+        .marcador.marcador-flip-final { animation: marcadorFlipFinal 0.6s ease; }
+        @keyframes marcadorFlipFinal { 0% { transform: rotateX(0deg); } 45% { transform: rotateX(100deg); } 55% { transform: rotateX(100deg); } 100% { transform: rotateX(0deg); } }
+        @media (prefers-reduced-motion: reduce) { #lista-partidos-jornada .partido-item, .marcador.marcador-flip-final { animation: none; } }
         .partido-principal { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
         .partido-equipo-visual { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; padding: 6px; border-radius: var(--radius-sm); transition: var(--transition-fast); }
         .partido-equipo-visual:hover { background: rgba(209, 20, 15, 0.07); transform: translateY(-2px); }
@@ -407,6 +442,39 @@
 
         /* --- Formulario de Solicitud de Registro --- */
         .form-solicitud-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px 20px; margin-top: 20px; }
+        #form-solicitud-web .campo-solicitud, #form-solicitud-web .campo-solicitud-full { animation: campoSolicitud3D 0.45s cubic-bezier(.2,.7,.3,1.05) both; }
+        @keyframes campoSolicitud3D { from { opacity: 0; transform: perspective(600px) rotateX(-18deg) translateY(6px); } to { opacity: 1; transform: perspective(600px) rotateX(0) translateY(0); } }
+        #form-solicitud-web .campo-solicitud:nth-child(1) { animation-delay: 0s; }
+        #form-solicitud-web .campo-solicitud:nth-child(2) { animation-delay: 0.04s; }
+        #form-solicitud-web .campo-solicitud:nth-child(3) { animation-delay: 0.08s; }
+        #form-solicitud-web .campo-solicitud:nth-child(4) { animation-delay: 0.12s; }
+        #form-solicitud-web .campo-solicitud:nth-child(5) { animation-delay: 0.16s; }
+        #form-solicitud-web .campo-solicitud:nth-child(n+6) { animation-delay: 0.2s; }
+        .btn-enviar-solicitud { transform-style: preserve-3d; transition: transform 0.15s ease; }
+        .btn-enviar-solicitud.btn-solicitud-check { animation: btnCheckFlip3D 0.6s ease; background: var(--success, #2ec4b6) !important; }
+        @keyframes btnCheckFlip3D { 0% { transform: rotateX(0deg); } 45% { transform: rotateX(100deg); } 55% { transform: rotateX(100deg); } 100% { transform: rotateX(0deg); } }
+        @media (prefers-reduced-motion: reduce) { #form-solicitud-web .campo-solicitud, #form-solicitud-web .campo-solicitud-full, .btn-enviar-solicitud.btn-solicitud-check { animation: none; } }
+
+        /* --- Reglamento Oficial: acordeón con apertura 3D --- */
+        .reglamento-acordeon-3d { border: 1px solid var(--border); border-radius: 10px; margin: 12px 0; overflow: hidden; background: var(--card-bg); }
+        .reglamento-acordeon-3d summary { cursor: pointer; list-style: none; padding: 12px 16px; font-weight: 700; color: #0d2a4d; display: flex; align-items: center; gap: 8px; user-select: none; }
+        .reglamento-acordeon-3d summary::-webkit-details-marker { display: none; }
+        .reglamento-acordeon-3d summary::marker { content: ''; }
+        .reglamento-acordeon-3d summary::after { content: '▾'; margin-left: auto; font-size: 0.8rem; color: var(--text-muted); transition: transform 0.3s ease; }
+        .reglamento-acordeon-3d[open] summary::after { transform: rotate(180deg); }
+        .reglamento-acordeon-icono { display: inline-block; transition: transform 0.45s cubic-bezier(.2,.7,.3,1.1); transform-style: preserve-3d; }
+        .reglamento-acordeon-3d[open] .reglamento-acordeon-icono { transform: perspective(300px) rotateY(360deg); }
+        .reglamento-acordeon-contenido { padding: 0 16px 16px; animation: reglamentoAbrir3D 0.4s cubic-bezier(.2,.7,.3,1.05) both; transform-origin: top center; }
+        @keyframes reglamentoAbrir3D { from { opacity: 0; transform: perspective(700px) rotateX(-20deg); } to { opacity: 1; transform: perspective(700px) rotateX(0); } }
+        @media (prefers-reduced-motion: reduce) { .reglamento-acordeon-icono, .reglamento-acordeon-contenido { animation: none; transition: none; } }
+
+        /* --- Modal de Cancha/Sede: pin 3D que rebota + nombre tipo "placa" grabada --- */
+        .cancha-modal-placa { margin: 14px 0 4px; color: var(--primary); text-align: center; font-family: var(--font-display); letter-spacing: 0.5px; text-shadow: 0 1px 0 rgba(255,255,255,0.55), 0 2px 4px rgba(0,0,0,0.25); animation: placaEntrada3D 0.5s cubic-bezier(.2,.7,.3,1.05) both; }
+        @keyframes placaEntrada3D { from { opacity: 0; transform: perspective(500px) rotateX(-30deg); } to { opacity: 1; transform: perspective(500px) rotateX(0deg); } }
+        .cancha-modal-direccion { opacity: 0.75; font-size: 0.85rem; position: relative; padding-left: 22px; min-height: 18px; }
+        .cancha-modal-direccion::before { content: '📍'; position: absolute; left: 0; top: 0; display: inline-block; animation: pinRebote3D 1.6s cubic-bezier(.28,.84,.42,1) infinite; transform-origin: bottom center; }
+        @keyframes pinRebote3D { 0%, 100% { transform: perspective(300px) translateY(0) rotateX(0deg); } 30% { transform: perspective(300px) translateY(-7px) rotateX(15deg); } 50% { transform: perspective(300px) translateY(0) rotateX(0deg); } 68% { transform: perspective(300px) translateY(-3px) rotateX(8deg); } 84% { transform: perspective(300px) translateY(0); } }
+        @media (prefers-reduced-motion: reduce) { .cancha-modal-placa, .cancha-modal-direccion::before { animation: none; } }
         .campo-solicitud { display: flex; flex-direction: column; gap: 6px; }
         .campo-solicitud label { font-size: 0.75rem; font-weight: 700; color: var(--text); text-transform: uppercase; letter-spacing: 0.4px; opacity: 0.85; }
         .campo-solicitud label .opcional { text-transform: none; font-weight: normal; opacity: 0.7; }
@@ -484,6 +552,12 @@
         @keyframes h2hCrecer { from { width: 0; } to { width: var(--pct); } }
         .h2h-barra-valor { font-size: 0.85rem; font-weight: 700; text-align: left; color: var(--text); }
         @media (prefers-reduced-motion: reduce) { .h2h-barra-3d { animation: none; width: var(--pct); } }
+
+        /* --- Encuestas: botón de voto tipo "ficha" que se voltea al elegir --- */
+        .encuesta-boton-voto { transform-style: preserve-3d; }
+        .encuesta-boton-voto-flip { animation: encuestaVotoFlip 0.5s ease; }
+        @keyframes encuestaVotoFlip { 0% { transform: rotateY(0deg); } 50% { transform: rotateY(180deg); } 100% { transform: rotateY(360deg); } }
+        @media (prefers-reduced-motion: reduce) { .encuesta-boton-voto-flip { animation: none; } }
 
         /* --- Tablón de Avisos: entrada 3D tipo "hojear" tarjetas apiladas --- */
         .tablon-card-3d { animation: tablonEntrada3D 0.55s cubic-bezier(.2,.7,.3,1.05) both; }
@@ -798,10 +872,32 @@
         .equipo-elegir-btn img { width: 42px; height: 42px; object-fit: cover; border-radius: 8px; background: white; }
         .equipo-elegir-btn span { font-size: 0.7rem; font-weight: 600; text-align: center; line-height: 1.2; }
 
-        /* Resaltado del equipo favorito donde aparezca en el sitio */
+        /* --- Resaltado del equipo favorito donde aparezca en el sitio --- */
         .tabla-equipos tbody tr.fila-favorito td { background: rgba(240, 180, 41, 0.12); }
         .estrella-favorito { margin-left: 4px; }
         .partido-item.partido-favorito { border: 2px solid var(--warning); box-shadow: 0 0 0 3px rgba(240, 180, 41, 0.15); }
+
+        /* --- Entrada 3D de filas en la Tabla de Posiciones + fila del equipo favorito "elevada" --- */
+        .tabla-equipos tbody tr { animation: filaEntradaTabla 0.4s cubic-bezier(.2,.6,.3,1) both; }
+        @keyframes filaEntradaTabla { from { opacity: 0; transform: perspective(500px) rotateX(-10deg) translateY(6px); } to { opacity: 1; transform: perspective(500px) rotateX(0) translateY(0); } }
+        .tabla-equipos tbody tr:nth-child(1) { animation-delay: 0.0s; }
+        .tabla-equipos tbody tr:nth-child(2) { animation-delay: 0.02s; }
+        .tabla-equipos tbody tr:nth-child(3) { animation-delay: 0.04s; }
+        .tabla-equipos tbody tr:nth-child(4) { animation-delay: 0.06s; }
+        .tabla-equipos tbody tr:nth-child(5) { animation-delay: 0.08s; }
+        .tabla-equipos tbody tr:nth-child(6) { animation-delay: 0.1s; }
+        .tabla-equipos tbody tr:nth-child(7) { animation-delay: 0.12s; }
+        .tabla-equipos tbody tr:nth-child(8) { animation-delay: 0.14s; }
+        .tabla-equipos tbody tr:nth-child(9) { animation-delay: 0.16s; }
+        .tabla-equipos tbody tr:nth-child(10) { animation-delay: 0.18s; }
+        .tabla-equipos tbody tr:nth-child(11) { animation-delay: 0.2s; }
+        .tabla-equipos tbody tr:nth-child(12) { animation-delay: 0.22s; }
+        .tabla-equipos tbody tr:nth-child(13) { animation-delay: 0.24s; }
+        .tabla-equipos tbody tr:nth-child(n+14) { animation-delay: 0.26s; }
+        .tabla-equipos tbody tr.fila-favorito td { position: relative; transform: translateY(-2px); box-shadow: 0 6px 12px -7px rgba(240,180,41,0.55); }
+        .tabla-equipos tbody tr.fila-favorito td:first-child { border-radius: 6px 0 0 6px; }
+        .tabla-equipos tbody tr.fila-favorito td:last-child { border-radius: 0 6px 6px 0; }
+        @media (prefers-reduced-motion: reduce) { .tabla-equipos tbody tr { animation: none; } }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
@@ -826,9 +922,10 @@
 
     <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 
-    <header>
-        <button class="theme-switch" onclick="toggleTheme()">🌓 Modo</button>
+    <header id="site-header">
+        <button class="theme-switch" onclick="toggleTheme(event)">🌓 Modo</button>
         <button class="install-btn" id="btn-instalar-app" onclick="instalarAppPWA()">📲 Instalar App</button>
+        <div class="header-shine" id="header-shine"></div>
         <div class="site-header-content">
             <img src="icon-512.png"
                 alt="Escudo Liga de Futbol CoSmar Sport Club" class="site-header-logo">
@@ -1394,12 +1491,50 @@
         <div class="modal-content" style="max-width:460px;">
             <button class="close-modal" onclick="cerrarModal('modal-cancha')">×</button>
             <img id="cancha-modal-foto" src="" style="width:100%; max-height:280px; object-fit:cover; border-radius:10px; background:#eee;" alt="Foto de la cancha">
-            <h3 style="margin:14px 0 4px; color:var(--primary);" id="cancha-modal-nombre"></h3>
-            <p style="opacity:0.75; font-size:0.85rem;" id="cancha-modal-direccion"></p>
+            <h3 class="cancha-modal-placa" id="cancha-modal-nombre"></h3>
+            <p class="cancha-modal-direccion" id="cancha-modal-direccion"></p>
         </div>
     </div>
 
     <script>
+        // ===== Bloqueo del scroll de fondo mientras hay un modal abierto =====
+        // Antes, al abrir una ficha/modal y mover la rueda del mouse (o hacer scroll
+        // táctil), la página de atrás se movía junto con el modal, lo cual se veía
+        // confuso (como si dos capas se desincronizaran). Este observador detecta
+        // cuando cualquier .modal pasa a estar visible (pierde la clase "hidden") y
+        // "congela" la página de fondo en su lugar hasta que todos los modales se
+        // cierran de nuevo.
+        (function () {
+            let scrollYGuardado = 0;
+            let fondoBloqueado = false;
+            function hayModalAbierto() {
+                return document.querySelector('.modal:not(.hidden)') !== null;
+            }
+            function actualizarBloqueoFondo() {
+                const abierto = hayModalAbierto();
+                if (abierto && !fondoBloqueado) {
+                    scrollYGuardado = window.scrollY;
+                    document.body.style.position = 'fixed';
+                    document.body.style.top = `-${scrollYGuardado}px`;
+                    document.body.style.left = '0';
+                    document.body.style.right = '0';
+                    document.body.style.width = '100%';
+                    fondoBloqueado = true;
+                } else if (!abierto && fondoBloqueado) {
+                    document.body.style.position = '';
+                    document.body.style.top = '';
+                    document.body.style.left = '';
+                    document.body.style.right = '';
+                    document.body.style.width = '';
+                    window.scrollTo(0, scrollYGuardado);
+                    fondoBloqueado = false;
+                }
+            }
+            document.querySelectorAll('.modal').forEach(modal => {
+                new MutationObserver(actualizarBloqueoFondo).observe(modal, { attributes: true, attributeFilter: ['class'] });
+            });
+        })();
+
         const firebaseConfig = {
             apiKey: "AIzaSyDG07c_D4qtCJXap9J1ppU8xLk3IdWYOXo",
             authDomain: "liga-premier-acapulco.firebaseapp.com",
@@ -1754,15 +1889,33 @@
                     mostrarToast("⚠️ Tu solicitud NO llegó a la nube (por eso el administrador no la ve). Puede ser tu conexión a internet; revisa e inténtalo de nuevo.<br><small>Detalle técnico: " + (err && err.message ? err.message : err) + "</small>", "error", 8000);
                     return;
                 }
-                if (btnEnviar) { btnEnviar.disabled = false; btnEnviar.textContent = 'Enviar Solicitud'; }
+                if (btnEnviar) { btnEnviar.disabled = false; btnEnviar.textContent = '✅ ¡Enviado!'; btnEnviar.classList.add('btn-solicitud-check'); }
                 document.getElementById('sol-foto-preview').style.display = 'none';
                 this.reset(); mostrarToast("¡Solicitud enviada! El administrador revisará tu registro.", "exito");
+                setTimeout(() => { if (btnEnviar) { btnEnviar.textContent = 'Enviar Solicitud'; btnEnviar.classList.remove('btn-solicitud-check'); } }, 1800);
             });
 
             actualizarVistaTodo();
         });
 
-        function toggleTheme() {
+        function toggleTheme(evt) {
+            const btn = document.querySelector('.theme-switch');
+            if (btn) { btn.classList.remove('theme-switch-flip'); void btn.offsetWidth; btn.classList.add('theme-switch-flip'); }
+            const irANegro = document.documentElement.getAttribute('data-theme') !== 'dark';
+            try {
+                const x = evt ? evt.clientX : window.innerWidth - 40;
+                const y = evt ? evt.clientY : 40;
+                const onda = document.createElement('div');
+                onda.className = 'theme-wave-3d';
+                const maxDim = Math.max(window.innerWidth, window.innerHeight) * 1.6;
+                onda.style.left = x + 'px';
+                onda.style.top = y + 'px';
+                onda.style.background = irANegro ? '#0b1522' : '#f5f7fa';
+                onda.style.setProperty('--onda-tam', maxDim + 'px');
+                document.body.appendChild(onda);
+                setTimeout(() => onda.remove(), 650);
+            } catch (err) { /* si falla la onda decorativa, no es crítico */ }
+
             if(document.documentElement.getAttribute('data-theme') === 'dark') {
                 document.documentElement.removeAttribute('data-theme');
             } else {
@@ -1810,32 +1963,34 @@
             const filaCuota = (etiqueta, valor) => dato(etiqueta, valor > 0 ? '$' + valor : 'Sin costo');
             const rejilla = contenido => `<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:8px 16px; margin-bottom:10px;">${contenido}</div>`;
             const notas = reg(db, 'notasAdicionales');
-            return `
-                <h4 style="color:#0d2a4d; margin:16px 0 8px;">⚽ Formato del partido</h4>
-                ${rejilla(
+            const seccion = (icono, titulo, contenidoHtml) => `
+                <details class="reglamento-acordeon-3d" open>
+                    <summary><span class="reglamento-acordeon-icono">${icono}</span> ${titulo}</summary>
+                    <div class="reglamento-acordeon-contenido">${contenidoHtml}</div>
+                </details>`;
+            return (
+                seccion('⚽', 'Formato del partido', rejilla(
                     dato('Duración', `${reg(db, 'numTiempos')} tiempos de ${reg(db, 'duracionMinutos')} min`) +
                     dato('Tolerancia de llegada', `${reg(db, 'toleranciaMinutos')} min`) +
                     dato('Jugadores', `${reg(db, 'jugadoresTitulares')} titulares + ${reg(db, 'jugadoresSuplentes')} suplentes`) +
                     dato('Categoría', reg(db, 'categoriaTexto') || '—') +
                     (reg(db, 'balonOficial') ? dato('Balón oficial', reg(db, 'balonOficial')) : '')
-                )}
-
-                <h4 style="color:#0d2a4d; margin:16px 0 8px;">💵 Cuotas</h4>
-                ${rejilla(
+                )) +
+                seccion('💵', 'Cuotas', rejilla(
                     filaCuota('Arbitraje por partido', reg(db, 'cuotaArbitraje')) +
                     filaCuota('Inscripción por equipo', reg(db, 'cuotaInscripcionEquipo')) +
                     filaCuota('Inscripción por jugador', reg(db, 'cuotaInscripcionJugador'))
-                )}
-
-                <h4 style="color:#0d2a4d; margin:16px 0 8px;">🟨🟥 Sanciones y multas</h4>
-                ${rejilla(
-                    dato(`${reg(db, 'amarillasParaAcumulada')} amarillas acumuladas`, `${reg(db, 'partidosAmarillasAcumuladas')} partido(s) + $${reg(db, 'multaAmarillasAcumuladas')}`) +
-                    dato('Doble amarilla', `${reg(db, 'partidosDobleAmarilla')} partido(s) + $${reg(db, 'multaDobleAmarilla')}`) +
-                    dato('Roja directa', `${reg(db, 'partidosRojaDirecta')} partido(s) por defecto + $${reg(db, 'multaRojaDirecta')}`)
-                )}
-                <p style="font-size:0.78rem; color:var(--text-muted);">Una roja directa puede subir de partidos (hasta expulsión definitiva del torneo) si fue por insultar al árbitro, escupir o iniciar una riña; lo decide la administración de la liga caso por caso.</p>
-                ${notas ? `<h4 style="color:#0d2a4d; margin:16px 0 8px;">📝 Notas adicionales</h4><p style="white-space:pre-line;">${notas}</p>` : ''}
-            `;
+                )) +
+                seccion('🟨🟥', 'Sanciones y multas',
+                    rejilla(
+                        dato(`${reg(db, 'amarillasParaAcumulada')} amarillas acumuladas`, `${reg(db, 'partidosAmarillasAcumuladas')} partido(s) + $${reg(db, 'multaAmarillasAcumuladas')}`) +
+                        dato('Doble amarilla', `${reg(db, 'partidosDobleAmarilla')} partido(s) + $${reg(db, 'multaDobleAmarilla')}`) +
+                        dato('Roja directa', `${reg(db, 'partidosRojaDirecta')} partido(s) por defecto + $${reg(db, 'multaRojaDirecta')}`)
+                    ) +
+                    `<p style="font-size:0.78rem; color:var(--text-muted);">Una roja directa puede subir de partidos (hasta expulsión definitiva del torneo) si fue por insultar al árbitro, escupir o iniciar una riña; lo decide la administración de la liga caso por caso.</p>`
+                ) +
+                (notas ? seccion('📝', 'Notas adicionales', `<p style="white-space:pre-line;">${notas}</p>`) : '')
+            );
         }
 
         function renderizarReglamentoPublico() {
@@ -2047,21 +2202,17 @@
                         const v = votos[o.id] || 0;
                         const pct = total ? Math.round(v / total * 100) : 0;
                         return `
-                        <div style="margin-bottom:12px;">
-                            <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.88rem; margin-bottom:4px; gap:8px;">
-                                <span style="display:flex; align-items:center; gap:6px; font-weight:600;">${o.escudo ? `<img src="${o.escudo}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;" loading="lazy">` : ''}${o.texto}</span>
-                                <span style="color:var(--text-muted); white-space:nowrap;">${pct}% · ${v} voto${v === 1 ? '' : 's'}</span>
-                            </div>
-                            <div style="background:var(--border); border-radius:8px; height:16px; overflow:hidden;">
-                                <div style="width:${pct}%; background:linear-gradient(90deg, #9c27b0, #d1140f); height:100%; transition:width .4s;"></div>
-                            </div>
+                        <div class="h2h-barra-fila" style="grid-template-columns: 140px 1fr 60px;">
+                            <span class="h2h-barra-label" style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">${o.escudo ? `<img src="${o.escudo}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;" loading="lazy">` : ''}${o.texto}</span>
+                            <div class="h2h-barra-track"><div class="h2h-barra-3d" style="--pct:${pct}%; --h2h-color:#9c27b0; --h2h-color-claro:#9c27b0cc; --h2h-color-osc:#9c27b088;"></div></div>
+                            <span class="h2h-barra-valor" style="white-space:nowrap;">${pct}% · ${v}</span>
                         </div>`;
                     }).join('');
                     interior += `<p style="text-align:center; font-size:0.78rem; color:var(--text-muted); margin-top:10px;">${enc.cerrada ? '🔒 Votación cerrada.' : '✅ Ya votaste. Resultados en vivo.'} Total: ${total} voto${total === 1 ? '' : 's'}.</p>`;
                 } else {
                     interior += `<div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
                         ${enc.opciones.map(o => `
-                            <button type="button" class="btn btn-outline btn-pill" onclick="votarEncuesta(${enc.id}, ${o.id})" style="--btn-color:#9c27b0; gap:8px; font-size:0.9rem; padding:10px 18px;">
+                            <button type="button" class="btn btn-outline btn-pill encuesta-boton-voto" onclick="this.classList.add('encuesta-boton-voto-flip'); votarEncuesta(${enc.id}, ${o.id})" style="--btn-color:#9c27b0; gap:8px; font-size:0.9rem; padding:10px 18px;">
                                 ${o.escudo ? `<img src="${o.escudo}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;" loading="lazy">` : ''}${o.texto}
                             </button>`).join('')}
                     </div>
@@ -2761,6 +2912,8 @@
             `;
         }
 
+        const partidosMarcadorFinalAnimado = new Set(); // ids de partidos cuyo flip 3D del marcador final ya se reprodujo en esta sesión
+
         function actualizarVistaJornadas() {
             const jFiltro = parseInt(document.getElementById('select-jornada-filtro').value);
             const contenedor = document.getElementById('lista-partidos-jornada');
@@ -2870,7 +3023,7 @@
                                 <img class="partido-escudo" src="${escudoL}" alt="${nameL}" loading="lazy">
                                 <span class="partido-nombre-equipo">${nameL}</span>
                             </div>
-                            <div class="marcador">${(p.jugado || enVivo) ? `${p.golesLocal || 0} - ${p.golesVisita || 0}` : 'VS'}${pen}</div>
+                            <div class="marcador${partidosMarcadorFinalAnimado.has(p.id) ? '' : (p.jugado ? ' marcador-flip-final' : '')}">${(p.jugado || enVivo) ? `${p.golesLocal || 0} - ${p.golesVisita || 0}` : 'VS'}${pen}</div>
                             <div class="partido-equipo-visual visita" onclick="verEquipo(${p.visitaId})">
                                 <img class="partido-escudo" src="${escudoV}" alt="${nameV}" loading="lazy">
                                 <span class="partido-nombre-equipo">${nameV}</span>
@@ -2890,6 +3043,7 @@
                     </div>
                 `;
             }).join('') || estadoVacio('📅', 'No hay partidos programados por el momento.');
+            partidos.forEach(p => { if (p.jugado) partidosMarcadorFinalAnimado.add(p.id); });
         }
 
         const coordsXI = [{ t: 88, l: 50 }, { t: 68, l: 20 }, { t: 72, l: 40 }, { t: 72, l: 60 }, { t: 68, l: 80 }, { t: 45, l: 25 }, { t: 50, l: 50 }, { t: 45, l: 75 }, { t: 20, l: 20 }, { t: 15, l: 50 }, { t: 20, l: 80 }];
@@ -3220,6 +3374,22 @@
             const caraDestino = inner.querySelector(estaVolteada ? '.ficha-3d-frente' : '.ficha-3d-reverso');
             inner.style.height = caraDestino.scrollHeight + 'px';
             inner.classList.toggle('volteada');
+        }
+
+        /* ===== Header: destello 3D que sigue al cursor ===== */
+        const headerEl = document.getElementById('site-header');
+        if (headerEl) {
+            headerEl.addEventListener('mousemove', (e) => {
+                const r = headerEl.getBoundingClientRect();
+                const mx = ((e.clientX - r.left) / r.width * 100).toFixed(1);
+                const my = ((e.clientY - r.top) / r.height * 100).toFixed(1);
+                headerEl.style.setProperty('--mx', mx + '%');
+                headerEl.style.setProperty('--my', my + '%');
+            });
+            headerEl.addEventListener('mouseleave', () => {
+                headerEl.style.setProperty('--mx', '50%');
+                headerEl.style.setProperty('--my', '30%');
+            });
         }
 
         /* ===== Efecto 3D (tilt) para escudos de equipo al pasar el cursor / tocar ===== */

@@ -1600,6 +1600,46 @@
     </div>
 
     <script>
+        // ===== Bloqueo del scroll de fondo mientras hay un modal abierto =====
+        // Antes, al abrir una ficha/modal y mover la rueda del mouse (o hacer scroll
+        // táctil), la página de atrás se movía junto con el modal, lo cual se veía
+        // confuso (como si dos capas se desincronizaran). Este observador detecta
+        // cuando cualquier .modal-overlay pasa a estar visible y "congela" la página
+        // de fondo en su lugar hasta que todos los modales se cierran de nuevo.
+        (function () {
+            let scrollYGuardado = 0;
+            let fondoBloqueado = false;
+            function hayModalAbierto() {
+                return Array.from(document.querySelectorAll('.modal-overlay')).some(m => getComputedStyle(m).display !== 'none');
+            }
+            function actualizarBloqueoFondo() {
+                const abierto = hayModalAbierto();
+                if (abierto && !fondoBloqueado) {
+                    scrollYGuardado = window.scrollY;
+                    document.body.style.position = 'fixed';
+                    document.body.style.top = `-${scrollYGuardado}px`;
+                    document.body.style.left = '0';
+                    document.body.style.right = '0';
+                    document.body.style.width = '100%';
+                    fondoBloqueado = true;
+                } else if (!abierto && fondoBloqueado) {
+                    document.body.style.position = '';
+                    document.body.style.top = '';
+                    document.body.style.left = '';
+                    document.body.style.right = '';
+                    document.body.style.width = '';
+                    window.scrollTo(0, scrollYGuardado);
+                    fondoBloqueado = false;
+                }
+                // Refresca de inmediato las barras de scroll personalizadas (en vez de
+                // esperar hasta 400ms) para que la que quedó tapada desaparezca al instante.
+                if (window.__registroBarrasScroll) window.__registroBarrasScroll.forEach(fn => fn());
+            }
+            document.querySelectorAll('.modal-overlay').forEach(modal => {
+                new MutationObserver(actualizarBloqueoFondo).observe(modal, { attributes: true, attributeFilter: ['style'] });
+            });
+        })();
+
         const firebaseConfig = {
             apiKey: "AIzaSyDG07c_D4qtCJXap9J1ppU8xLk3IdWYOXo",
             authDomain: "liga-premier-acapulco.firebaseapp.com",
@@ -4584,6 +4624,15 @@ ${cuerpo}`;
                     if (i !== -1) window.__registroBarrasScroll.splice(i, 1);
                     return;
                 }
+                // Si hay algún modal abierto que NO contiene a esta lista, la lista quedó
+                // tapada debajo de ese modal y su barra de scroll no debe seguir
+                // dibujándose por encima (se veía como una línea cruzando la ficha).
+                // Si la lista SÍ está dentro del modal que está abierto (p. ej. la lista
+                // de un modal de designación), su barra se sigue mostrando normalmente.
+                const modalQueLaTapa = Array.from(document.querySelectorAll('.modal-overlay')).find(m =>
+                    getComputedStyle(m).display !== 'none' && !m.contains(el)
+                );
+                if (modalQueLaTapa) { track.style.display = 'none'; return; }
                 const rect = el.getBoundingClientRect();
                 const visible = el.clientHeight;
                 const total = el.scrollHeight;
