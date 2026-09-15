@@ -871,6 +871,21 @@
     </div>
 
     <script>
+        // ===== Seguridad: escapar texto antes de insertarlo como HTML =====
+        // Evita que nombres u otros textos que vengan de formularios públicos
+        // (o de la base de datos) puedan inyectar código/HTML en la página
+        // (ataque XSS). Usar SIEMPRE que un dato variable se inserte con
+        // innerHTML / template literals en el sitio.
+        function escapeHtml(texto) {
+            if (texto === null || texto === undefined) return '';
+            return String(texto)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         // ===== Bloqueo del scroll de fondo mientras hay un modal abierto =====
         (function () {
             let scrollYGuardado = 0;
@@ -1319,7 +1334,7 @@
                 document.getElementById('sin-arbitros-aviso').classList.add('hidden');
                 const valorPrevio = selectorArb.value;
                 selectorArb.innerHTML = '<option value="">-- Selecciona tu nombre --</option>' +
-                    db.arbitros.map(a => `<option value="${a.nombre}">${a.nombre} (${a.colegio})</option>`).join('');
+                    db.arbitros.map(a => `<option value="${escapeHtml(a.nombre)}">${escapeHtml(a.nombre)} (${escapeHtml(a.colegio)})</option>`).join('');
                 if (valorPrevio) selectorArb.value = valorPrevio;
             }
 
@@ -1369,7 +1384,7 @@
             }
 
             const a = db.arbitros.find(x => x.nombre === nombreArbitro);
-            nombreEl.textContent = a ? `${a.nombre} — ${a.colegio || 'Árbitro'}` : nombreArbitro;
+            nombreEl.textContent = a ? `${escapeHtml(a.nombre)} — ${a.colegio || 'Árbitro'}` : nombreArbitro;
 
             if (a && a.foto) {
                 imgEl.src = a.foto;
@@ -1811,7 +1826,7 @@
                     return `
                     <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:400; cursor:${castigado ? 'not-allowed' : 'pointer'}; ${castigado ? 'color:#b91c1c;' : ''}">
                         <input type="checkbox" style="width:auto;" ${titulares.includes(j.id) ? 'checked' : ''} ${castigado ? 'disabled' : ''} onchange="alternarTitular(${partido.id}, ${j.id}, this.checked)">
-                        ${j.nombre}${j.numero ? ` (#${j.numero})` : ''}${castigado ? ` ❌ ${motivo}` : ''}
+                        ${escapeHtml(j.nombre)}${j.numero ? ` (#${j.numero})` : ''}${castigado ? ` ❌ ${motivo}` : ''}
                     </label>`;
                 }).join('') : '<p style="font-size:0.78rem; color:#94a3b8; margin:0;">Sin jugadores en el plantel.</p>';
             };
@@ -2037,20 +2052,20 @@
             const jugadoresLocal = jugadoresHabilitados.filter(j => j.equipoId === p.localId);
             const jugadoresVisita = jugadoresHabilitados.filter(j => j.equipoId === p.visitaId);
             const optGrupos = (placeholder) => `<option value="">${placeholder}</option>` +
-                `<optgroup label="${nombreLocal}">${jugadoresLocal.map(j => `<option value="${j.nombre}">${j.nombre}</option>`).join('')}</optgroup>` +
-                `<optgroup label="${nombreVisita}">${jugadoresVisita.map(j => `<option value="${j.nombre}">${j.nombre}</option>`).join('')}</optgroup>`;
+                `<optgroup label="${nombreLocal}">${jugadoresLocal.map(j => `<option value="${escapeHtml(j.nombre)}">${escapeHtml(j.nombre)}</option>`).join('')}</optgroup>` +
+                `<optgroup label="${nombreVisita}">${jugadoresVisita.map(j => `<option value="${escapeHtml(j.nombre)}">${escapeHtml(j.nombre)}</option>`).join('')}</optgroup>`;
 
             document.getElementById('seccion-timeline-dinamica').style.display = 'block';
 
-            document.getElementById('time-jugador').innerHTML = '<option value="">-- Selecciona Jugador --</option>' + jugadoresHabilitados.map(j => `<option value="${j.nombre}">${j.nombre}</option>`).join('');
+            document.getElementById('time-jugador').innerHTML = '<option value="">-- Selecciona Jugador --</option>' + jugadoresHabilitados.map(j => `<option value="${escapeHtml(j.nombre)}">${escapeHtml(j.nombre)}</option>`).join('');
             document.getElementById('time-jugador-sale').innerHTML = optGrupos('-- Sale --');
             document.getElementById('time-jugador-entra').innerHTML = optGrupos('-- Entra --');
-            document.getElementById('ced-cambio-sale-local').innerHTML = '<option value="">-- Sale --</option>' + jugadoresLocal.map(j => `<option value="${j.nombre}">${j.nombre}</option>`).join('');
-            document.getElementById('ced-cambio-entra-local').innerHTML = '<option value="">-- Entra --</option>' + jugadoresLocal.map(j => `<option value="${j.nombre}">${j.nombre}</option>`).join('');
-            document.getElementById('ced-cambio-sale-visita').innerHTML = '<option value="">-- Sale --</option>' + jugadoresVisita.map(j => `<option value="${j.nombre}">${j.nombre}</option>`).join('');
-            document.getElementById('ced-cambio-entra-visita').innerHTML = '<option value="">-- Entra --</option>' + jugadoresVisita.map(j => `<option value="${j.nombre}">${j.nombre}</option>`).join('');
+            document.getElementById('ced-cambio-sale-local').innerHTML = '<option value="">-- Sale --</option>' + jugadoresLocal.map(j => `<option value="${escapeHtml(j.nombre)}">${escapeHtml(j.nombre)}</option>`).join('');
+            document.getElementById('ced-cambio-entra-local').innerHTML = '<option value="">-- Entra --</option>' + jugadoresLocal.map(j => `<option value="${escapeHtml(j.nombre)}">${escapeHtml(j.nombre)}</option>`).join('');
+            document.getElementById('ced-cambio-sale-visita').innerHTML = '<option value="">-- Sale --</option>' + jugadoresVisita.map(j => `<option value="${escapeHtml(j.nombre)}">${escapeHtml(j.nombre)}</option>`).join('');
+            document.getElementById('ced-cambio-entra-visita').innerHTML = '<option value="">-- Entra --</option>' + jugadoresVisita.map(j => `<option value="${escapeHtml(j.nombre)}">${escapeHtml(j.nombre)}</option>`).join('');
             alternarCamposIncidencia();
-            selectMvp.innerHTML = '<option value="">-- Seleccionar MVP --</option>' + jugadoresHabilitados.map(j => `<option value="${j.id}">${j.nombre}</option>`).join('');
+            selectMvp.innerHTML = '<option value="">-- Seleccionar MVP --</option>' + jugadoresHabilitados.map(j => `<option value="${j.id}">${escapeHtml(j.nombre)}</option>`).join('');
             if (p.mvpJugadorId) selectMvp.value = p.mvpJugadorId;
 
             jugadoresPartido.forEach(j => {
@@ -2064,7 +2079,7 @@
                 const rojasEvento = (p.eventos || []).filter(ev => ev.tipo === 'roja' && ev.desc === j.nombre).length;
                 lista.innerHTML += `
                 <div class="goleador-row fila-datos-jugador ${castigado ? 'suspendido-row' : ''}" data-jugadorid="${j.id}">
-                    <span>${j.nombre} ${etiquetaSusp}</span>
+                    <span>${escapeHtml(j.nombre)} ${etiquetaSusp}</span>
                     <input type="number" class="in-gol" placeholder="0" min="0" value="${golesEvento || ''}" ${castigado ? 'disabled' : ''}>
                     <input type="number" class="in-amr" placeholder="0" min="0" max="2" value="${amarillasEvento || ''}" ${castigado ? 'disabled' : ''}>
                     <input type="number" class="in-rjs" placeholder="0" min="0" max="1" value="${rojasEvento || ''}" ${castigado ? 'disabled' : ''}>

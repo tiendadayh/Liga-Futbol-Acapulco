@@ -438,6 +438,16 @@
         }
         .close-modal:hover { background: var(--primary); color: white; transform: rotate(90deg); }
         .foto-tabla { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 8px; border: 1px solid var(--border); }
+        /* Celda de jugador en tablas (Goleo, Disciplina, Porteros): foto arriba, nombre abajo, centrado y ordenado */
+        .cel-jugador { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 3px; padding: 2px 0; }
+        .cel-jugador .foto-tabla { margin: 0; }
+        .cel-jugador .nombre-cel { font-size: 0.82rem; font-weight: 700; line-height: 1.2; word-break: break-word; max-width: 120px; }
+        .cel-jugador .equipo-cel { font-size: 0.68rem; color: var(--text-muted); line-height: 1.15; }
+        @media (max-width: 600px) {
+            .cel-jugador .nombre-cel { font-size: 0.72rem; max-width: 100px; }
+            .cel-jugador .equipo-cel { font-size: 0.62rem; }
+            .cel-jugador .foto-tabla { width: 28px; height: 28px; }
+        }
         .hidden { display: none !important; }
 
         /* --- Formulario de Solicitud de Registro --- */
@@ -771,6 +781,9 @@
         .footer-col a { color: rgba(255,255,255,0.72); text-decoration: none; font-size: 0.84rem; transition: color var(--transition-fast), padding-left var(--transition-fast); width: fit-content; }
         .footer-col a:hover { color: var(--accent); padding-left: 4px; }
         .footer-contacto-item { display: flex; align-items: flex-start; gap: 8px; font-size: 0.82rem; color: rgba(255,255,255,0.72); }
+        .footer-contacto-link { width: auto; }
+        .footer-contacto-link:hover { color: #25D366; padding-left: 0; }
+        .footer-contacto-link:hover svg { color: #25D366; }
         .footer-divider { border: none; border-top: 1px solid rgba(255,255,255,0.12); margin: 0; }
         .footer-bottom {
             max-width: 1200px; margin: 0 auto; padding: 18px 20px 24px; display: flex; align-items: center;
@@ -1308,6 +1321,9 @@
                     <a href="#tablon-sec" title="Tablón de Avisos" aria-label="Tablón de Avisos">📢</a>
                     <a href="#jornadas-sec" title="Calendario en Vivo" aria-label="Calendario en Vivo">📅</a>
                     <a href="#registro-sec" title="Inscribirse" aria-label="Inscribirse">📝</a>
+                    <a href="https://www.facebook.com/share/1BucKwSPMD/" target="_blank" rel="noopener" title="Facebook de la Liga" aria-label="Facebook de la Liga">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.51 1.49-3.9 3.77-3.9 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.87h2.78l-.44 2.91h-2.34V22c4.78-.76 8.44-4.92 8.44-9.94Z"/></svg>
+                    </a>
                 </div>
             </div>
             <div class="footer-col">
@@ -1331,7 +1347,10 @@
                 <a href="#jugadores-sec">Fichas de Jugadores</a>
                 <a href="#equipos-arbitros-sec">Equipos y Árbitros</a>
                 <a href="#registro-sec">Inscribirse a la Liga</a>
-                <span class="footer-contacto-item">✉️ Consulta directamente con la directiva de la liga para dudas de inscripción.</span>
+                <a href="https://wa.me/527442411773" target="_blank" rel="noopener" class="footer-contacto-item footer-contacto-link">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true" style="flex-shrink:0; margin-top:2px;"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.33 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2Zm5.8 14.07c-.24.68-1.39 1.3-1.92 1.35-.49.05-1.11.07-1.79-.11-.41-.11-.94-.29-1.62-.57-2.85-1.23-4.71-4.1-4.85-4.29-.14-.19-1.16-1.54-1.16-2.94 0-1.4.73-2.08.99-2.36.26-.29.57-.36.76-.36.19 0 .38 0 .55.01.18.01.41-.07.64.49.24.58.81 2 .88 2.14.07.14.12.31.02.5-.09.19-.14.31-.28.48-.14.16-.29.36-.42.49-.14.14-.28.29-.12.57.16.28.71 1.17 1.52 1.9 1.05.94 1.93 1.23 2.21 1.37.28.14.44.12.6-.07.16-.19.68-.79.87-1.07.19-.28.37-.23.62-.14.26.09 1.63.77 1.91.91.28.14.47.21.54.33.07.12.07.68-.17 1.36Z"/></svg>
+                    <span>Escríbenos por WhatsApp: 744 241 1773</span>
+                </a>
             </div>
         </div>
         <hr class="footer-divider">
@@ -1531,6 +1550,21 @@
     </div>
 
     <script>
+        // ===== Seguridad: escapar texto antes de insertarlo como HTML =====
+        // Evita que nombres u otros textos que vengan de formularios públicos
+        // (o de la base de datos) puedan inyectar código/HTML en la página
+        // (ataque XSS). Usar SIEMPRE que un dato variable se inserte con
+        // innerHTML / template literals en el sitio.
+        function escapeHtml(texto) {
+            if (texto === null || texto === undefined) return '';
+            return String(texto)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         // ===== Bloqueo del scroll de fondo mientras hay un modal abierto =====
         // Antes, al abrir una ficha/modal y mover la rueda del mouse (o hacer scroll
         // táctil), la página de atrás se movía junto con el modal, lo cual se veía
@@ -1981,7 +2015,7 @@
             if (!lista.length) { wrap.classList.add('hidden'); track.innerHTML = ''; return; }
 
             const itemsHtml = lista.map(p => {
-                const img = `<img src="${p.logo}" alt="${p.nombre}" title="${p.nombre}" loading="lazy">`;
+                const img = `<img src="${p.logo}" alt="${escapeHtml(p.nombre)}" title="${escapeHtml(p.nombre)}" loading="lazy">`;
                 return `<div class="patrocinadores-item">${p.link ? `<a href="${p.link}" target="_blank" rel="noopener">${img}</a>` : img}</div>`;
             }).join('');
             // Se duplica la lista para lograr un desplazamiento continuo sin cortes
@@ -2063,10 +2097,10 @@
                 <div ${abrirFicha} class="tablon-card-3d" style="background:var(--card-bg, var(--light)); border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06)); display:flex; flex-direction:column; ${jugadorAviso ? 'cursor:pointer; transition:transform .15s, box-shadow .15s;' : ''}" ${jugadorAviso ? `onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 18px -4px rgba(0,0,0,0.15)';" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06))';"` : ''}>
                     ${jugadorAviso
                         ? `<div style="display:flex; align-items:center; gap:10px; padding:15px 15px 0;">
-                               <img src="${fotoJugador || 'https://placehold.co/60'}" alt="${jugadorAviso.nombre}" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid ${et.color}; flex-shrink:0;" loading="lazy">
+                               <img src="${fotoJugador || 'https://placehold.co/60'}" alt="${escapeHtml(jugadorAviso.nombre)}" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid ${et.color}; flex-shrink:0;" loading="lazy">
                                <div style="display:flex; flex-direction:column; gap:2px; min-width:0;">
                                    <span class="badge-tag" style="--tag-color:${et.color};">${et.etiqueta}</span>
-                                   <span style="font-size:0.78rem; font-weight:600; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${jugadorAviso.nombre} · ${equipoAviso}</span>
+                                   <span style="font-size:0.78rem; font-weight:600; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(jugadorAviso.nombre)} · ${equipoAviso}</span>
                                </div>
                            </div>`
                         : (c.imagen ? `<img src="${c.imagen}" alt="${c.titulo}" style="width:100%; height:150px; object-fit:cover;" loading="lazy">` : '')
@@ -2085,7 +2119,7 @@
 
             renderizarBannerAvisoEntrada(comunicadosVigentes);
 
-            const optsEq = db.equipos.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+            const optsEq = db.equipos.map(e => `<option value="${e.id}">${escapeHtml(e.nombre)}</option>`).join('');
             document.getElementById('h2h-equipo1').innerHTML = '<option value="">-- Club A --</option>' + optsEq;
             document.getElementById('h2h-equipo2').innerHTML = '<option value="">-- Club B --</option>' + optsEq;
             document.getElementById('sol-equipo').innerHTML = '<option value="">-- Selecciona Club --</option>' + optsEq;
@@ -2142,7 +2176,7 @@
             document.getElementById('registro-gate').classList.add('hidden');
             const form = document.getElementById('form-solicitud-web');
             form.classList.remove('hidden');
-            document.getElementById('sol-equipo').innerHTML = `<option value="${eq.id}" selected>${eq.nombre}</option>`;
+            document.getElementById('sol-equipo').innerHTML = `<option value="${eq.id}" selected>${escapeHtml(eq.nombre)}</option>`;
             if (errorEl) errorEl.style.display = 'none';
             try { sessionStorage.setItem('registro_equipo_desbloqueado', JSON.stringify({ equipoId: eq.id, pin: eq.pin })); } catch (err) { /* almacenamiento no disponible, no es crítico */ }
             return true;
@@ -2229,7 +2263,7 @@
                 const yaVoto = !!localStorage.getItem(claveVoto);
                 const mostrarResultados = enc.cerrada || yaVoto;
 
-                let interior = `<p style="font-size:1.05rem; font-weight:700; color:var(--dark, #0b2f5c); text-align:center; margin-bottom:16px;">${enc.pregunta}</p>`;
+                let interior = `<p style="font-size:1.05rem; font-weight:700; color:var(--dark, #0b2f5c); text-align:center; margin-bottom:16px;">${escapeHtml(enc.pregunta)}</p>`;
 
                 if (mostrarResultados) {
                     interior += enc.opciones.map(o => {
@@ -2237,7 +2271,7 @@
                         const pct = total ? Math.round(v / total * 100) : 0;
                         return `
                         <div class="h2h-barra-fila" style="grid-template-columns: 140px 1fr 60px;">
-                            <span class="h2h-barra-label" style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">${o.escudo ? `<img src="${o.escudo}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;" loading="lazy">` : ''}${o.texto}</span>
+                            <span class="h2h-barra-label" style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">${o.escudo ? `<img src="${o.escudo}" style="width:22px;height:22px;border-radius:50%;object-fit:cover;" loading="lazy">` : ''}${escapeHtml(o.texto)}</span>
                             <div class="h2h-barra-track"><div class="h2h-barra-3d" style="--pct:${pct}%; --h2h-color:#9c27b0; --h2h-color-claro:#9c27b0cc; --h2h-color-osc:#9c27b088;"></div></div>
                             <span class="h2h-barra-valor" style="white-space:nowrap;">${pct}% · ${v}</span>
                         </div>`;
@@ -2247,7 +2281,7 @@
                     interior += `<div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center;">
                         ${enc.opciones.map(o => `
                             <button type="button" class="btn btn-outline btn-pill encuesta-boton-voto" onclick="this.classList.add('encuesta-boton-voto-flip'); votarEncuesta(${enc.id}, ${o.id})" style="--btn-color:#9c27b0; gap:8px; font-size:0.9rem; padding:10px 18px;">
-                                ${o.escudo ? `<img src="${o.escudo}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;" loading="lazy">` : ''}${o.texto}
+                                ${o.escudo ? `<img src="${o.escudo}" style="width:26px;height:26px;border-radius:50%;object-fit:cover;" loading="lazy">` : ''}${escapeHtml(o.texto)}
                             </button>`).join('')}
                     </div>
                     <p style="text-align:center; font-size:0.75rem; color:var(--text-muted); margin-top:10px;">Vota una vez · Los resultados se actualizan en vivo.</p>`;
@@ -2481,8 +2515,8 @@
             const grid = document.getElementById('grid-elegir-equipo');
             grid.innerHTML = db.equipos.map(eq => `
                 <button type="button" class="equipo-elegir-btn" onclick="elegirEquipoFavorito(${eq.id})">
-                    <img class="escudo-3d" src="${eq.escudo || 'https://placehold.co/42'}" alt="${eq.nombre}" loading="lazy">
-                    <span>${eq.nombre}</span>
+                    <img class="escudo-3d" src="${eq.escudo || 'https://placehold.co/42'}" alt="${escapeHtml(eq.nombre)}" loading="lazy">
+                    <span>${escapeHtml(eq.nombre)}</span>
                 </button>
             `).join('');
             document.getElementById('modal-mi-equipo').classList.remove('hidden');
@@ -2511,7 +2545,7 @@
                 sinElegir.classList.add('hidden');
                 elegido.classList.remove('hidden');
                 document.getElementById('mi-equipo-escudo-chip').src = eq.escudo || 'https://placehold.co/22';
-                document.getElementById('mi-equipo-nombre-chip').innerHTML = `Tu equipo: <b>${eq.nombre}</b>`;
+                document.getElementById('mi-equipo-nombre-chip').innerHTML = `Tu equipo: <b>${escapeHtml(eq.nombre)}</b>`;
             } else {
                 sinElegir.classList.remove('hidden');
                 elegido.classList.add('hidden');
@@ -2621,7 +2655,7 @@
                 return `
                 <tr${claseFila}>
                     <td><b>${ahora}</b>${indicador}</td>
-                    <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${eq.nombre}" loading="lazy"><span>${eq.nombre}</span>${esFavorito ? '<span class="estrella-favorito">⭐</span>' : ''}</div></td>
+                    <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${escapeHtml(eq.nombre)}" loading="lazy"><span>${escapeHtml(eq.nombre)}</span>${esFavorito ? '<span class="estrella-favorito">⭐</span>' : ''}</div></td>
                     <td>${eq.pj}</td><td>${eq.pg}</td><td>${eq.pe}</td><td>${eq.pp}</td><td>${eq.gf}</td><td>${eq.gc}</td><td>${eq.dg}</td><td><b>${eq.pts}</b></td>
                     <td style="letter-spacing:2px; white-space:nowrap;">${eq.racha.slice(-5).map(r => iconoForma[r]).join('') || '—'}</td>
                 </tr>
@@ -2640,7 +2674,7 @@
             document.getElementById('tabla-ofensiva-body').innerHTML = ofensiva.length ? ofensiva.map((eq, idx) => `
                 <tr>
                     <td><b>${idx + 1}</b></td>
-                    <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${eq.nombre}" loading="lazy"><span>${eq.nombre}</span></div></td>
+                    <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${escapeHtml(eq.nombre)}" loading="lazy"><span>${escapeHtml(eq.nombre)}</span></div></td>
                     <td><b>${eq.gf}</b> ⚽ ${idx === 0 ? '🏆' : ''}</td>
                 </tr>
             `).join('') : estadoVacioFila(3, '⚽', 'Aún no hay partidos jugados.');
@@ -2648,7 +2682,7 @@
             document.getElementById('tabla-defensiva-body').innerHTML = defensiva.length ? defensiva.map((eq, idx) => `
                 <tr>
                     <td><b>${idx + 1}</b></td>
-                    <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${eq.nombre}" loading="lazy"><span>${eq.nombre}</span></div></td>
+                    <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${escapeHtml(eq.nombre)}" loading="lazy"><span>${escapeHtml(eq.nombre)}</span></div></td>
                     <td><b>${eq.gc}</b> 🛡️ ${idx === 0 ? '🏆' : ''}</td>
                 </tr>
             `).join('') : estadoVacioFila(3, '🛡️', 'Aún no hay partidos jugados.');
@@ -2672,7 +2706,7 @@
             document.getElementById('tabla-porteros-body').innerHTML = data.map((pt, idx) => `
                 <tr>
                     <td><b>${idx+1}</b></td>
-                    <td><img class="foto-tabla" src="${pt.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><b>${pt.nombre}</b> (${pt.equipo})</td>
+                    <td><div class="cel-jugador"><img class="foto-tabla" src="${pt.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(pt.nombre)}</span><span class="equipo-cel">${escapeHtml(pt.equipo)}</span></div></td>
                     <td>${pt.goles} 🛡️</td>
                     <td><b>${pt.prom}</b> goles/partido</td>
                 </tr>
@@ -2740,8 +2774,8 @@
 
             const filaEquipo = (id, nombre, escudo, goles) => `
                 <div class="pob-team" ${id ? `onclick="verEquipo(${id})"` : ''}>
-                    <img class="escudo-3d" src="${escudo || 'https://placehold.co/28'}" alt="${nombre}" loading="lazy">
-                    <span class="pob-team-name">${nombre}</span>
+                    <img class="escudo-3d" src="${escudo || 'https://placehold.co/28'}" alt="${escapeHtml(nombre)}" loading="lazy">
+                    <span class="pob-team-name">${escapeHtml(nombre)}</span>
                     <span class="pob-team-score">${goles === null || goles === undefined ? '' : goles}</span>
                 </div>`;
 
@@ -2919,12 +2953,12 @@
                 const pctB = Math.round((valorB / maxVal) * 100);
                 return `
                     <div class="h2h-barra-fila">
-                        <span class="h2h-barra-label">${label} · ${e1.nombre}</span>
+                        <span class="h2h-barra-label">${label} · ${escapeHtml(e1.nombre)}</span>
                         <div class="h2h-barra-track"><div class="h2h-barra-3d" style="--pct:${pctA}%; --h2h-color:${colorA}; --h2h-color-claro:${colorA}cc; --h2h-color-osc:${colorA}88;"></div></div>
                         <span class="h2h-barra-valor">${valorA}</span>
                     </div>
                     <div class="h2h-barra-fila">
-                        <span class="h2h-barra-label">${label} · ${e2.nombre}</span>
+                        <span class="h2h-barra-label">${label} · ${escapeHtml(e2.nombre)}</span>
                         <div class="h2h-barra-track"><div class="h2h-barra-3d" style="--pct:${pctB}%; --h2h-color:${colorB}; --h2h-color-claro:${colorB}cc; --h2h-color-osc:${colorB}88;"></div></div>
                         <span class="h2h-barra-valor">${valorB}</span>
                     </div>`;
@@ -2933,11 +2967,11 @@
             const box = document.getElementById('h2h-resultado-box');
             box.style.display = 'block';
             box.innerHTML = `
-                <h3 style="text-align:center; margin-top:0;">📊 Resultados: ${e1.nombre} vs ${e2.nombre}</h3>
+                <h3 style="text-align:center; margin-top:0;">📊 Resultados: ${escapeHtml(e1.nombre)} vs ${escapeHtml(e2.nombre)}</h3>
                 <div style="display:flex; justify-content:space-around; text-align:center; margin-bottom:6px;">
-                    <div><h4>${e1.nombre}</h4><p style="font-size:1.5rem; font-weight:bold; color:var(--primary);">${g1} victorias</p></div>
+                    <div><h4>${escapeHtml(e1.nombre)}</h4><p style="font-size:1.5rem; font-weight:bold; color:var(--primary);">${g1} victorias</p></div>
                     <div><h4>Empates</h4><p style="font-size:1.5rem; font-weight:bold; color:var(--text-muted);">${emp}</p></div>
-                    <div><h4>${e2.nombre}</h4><p style="font-size:1.5rem; font-weight:bold; color:var(--primary);">${g2} victorias</p></div>
+                    <div><h4>${escapeHtml(e2.nombre)}</h4><p style="font-size:1.5rem; font-weight:bold; color:var(--primary);">${g2} victorias</p></div>
                 </div>
                 <div style="margin-top:10px;">
                     ${barraFila('Victorias', g1, g2, '#1f5fd6', '#d1140f')}
@@ -2971,7 +3005,7 @@
                     const mvpJug = db.jugadores.find(j => j.id === p.mvpJugadorId);
                     if (mvpJug) {
                         mvpHtml = `<div style="margin-top:10px; font-size:0.8rem; background:#fffdf0; border:1px solid #ffe082; padding:8px; border-radius:6px; text-align:center;">
-                            <strong>⭐ MVP Oficial del Partido:</strong> ${mvpJug.nombre}
+                            <strong>⭐ MVP Oficial del Partido:</strong> ${escapeHtml(mvpJug.nombre)}
                         </div>`;
                     }
                 }
@@ -2998,7 +3032,7 @@
                         const plantel = db.jugadores.filter(j => j.equipoId === equipoId);
                         const titulares = plantel.filter(j => (titularesIds || []).includes(j.id));
                         const suplentes = plantel.filter(j => !(titularesIds || []).includes(j.id));
-                        const listaHtml = (arr) => arr.length ? arr.map(j => `<span onclick="verFicha(${j.id})" style="cursor:pointer; text-decoration:underline dotted;">${j.numero ? '#' + j.numero + ' ' : ''}${j.nombre}</span>`).join('<br>') : '<span style="color:#94a3b8;">—</span>';
+                        const listaHtml = (arr) => arr.length ? arr.map(j => `<span onclick="verFicha(${j.id})" style="cursor:pointer; text-decoration:underline dotted;">${j.numero ? '#' + j.numero + ' ' : ''}${escapeHtml(j.nombre)}</span>`).join('<br>') : '<span style="color:#94a3b8;">—</span>';
                         return `<div style="flex:1; min-width:130px;">
                             <strong style="font-size:0.75rem;">🟢 Titulares</strong><br>
                             <span style="font-size:0.76rem; line-height:1.6;">${listaHtml(titulares)}</span>
@@ -3017,7 +3051,7 @@
 
                 const campoObj = p.campoId ? db.campos.find(c => c.id === p.campoId) : null;
                 const metaCancha = (campoObj && campoObj.foto)
-                    ? `<span class="meta-item-clicable" onclick="verCancha(${campoObj.id})"><img src="${campoObj.foto}" class="mini-cancha-thumb" alt="${campoObj.nombre}" loading="lazy">🏟️ ${p.estadio || campoObj.nombre}</span>`
+                    ? `<span class="meta-item-clicable" onclick="verCancha(${campoObj.id})"><img src="${campoObj.foto}" class="mini-cancha-thumb" alt="${escapeHtml(campoObj.nombre)}" loading="lazy">🏟️ ${p.estadio || campoObj.nombre}</span>`
                     : `<span>🏟️ ${p.estadio || 'Campo por definir'}</span>`;
 
                 const arbitroRegistrado = p.arbitro ? db.arbitros.find(a => a.nombre === p.arbitro) : null;
@@ -3086,7 +3120,7 @@
             let elegidos = db.jugadores.filter(j => j.xiIdeal && j.xiIdeal.length > 0);
             for (let i = 0; i < 11; i++) {
                 const pos = coordsXI[i]; const jug = elegidos[i];
-                cancha.innerHTML += jug ? `<div class="xi-jugador" style="top:${pos.t}%; left:${pos.l}%;"><img src="${jug.foto || 'https://placehold.co/50'}" alt="${jug.nombre}" loading="lazy"><p>${jug.nombre.split(' ')[0]}</p></div>` : '';
+                cancha.innerHTML += jug ? `<div class="xi-jugador" style="top:${pos.t}%; left:${pos.l}%;"><img src="${jug.foto || 'https://placehold.co/50'}" alt="${escapeHtml(jug.nombre)}" loading="lazy"><p>${jug.nombre.split(' ')[0]}</p></div>` : '';
             }
         }
 
@@ -3104,8 +3138,8 @@
             cont.innerHTML = top3.map((it, idx) => `
                 <div class="podio-puesto ${CLASES_PODIO[idx]}">
                     <span class="podio-medalla">${MEDALLAS_PODIO[idx]}</span>
-                    <img class="podio-foto" src="${it.foto || 'https://placehold.co/76'}" alt="${it.nombre}" loading="lazy">
-                    <span class="podio-nombre">${it.nombre}</span>
+                    <img class="podio-foto" src="${it.foto || 'https://placehold.co/76'}" alt="${escapeHtml(it.nombre)}" loading="lazy">
+                    <span class="podio-nombre">${escapeHtml(it.nombre)}</span>
                     <span class="podio-equipo">${it.sub || ''}</span>
                     <span class="podio-valor">${it.valor}<small>${it.unidad || ''}</small></span>
                 </div>
@@ -3115,7 +3149,7 @@
         function actualizarVistaGoleo() {
             let goleadores = [...db.jugadores].filter(j => j.goles > 0).sort((a,b) => b.goles - a.goles);
             document.getElementById('tabla-goleo-body').innerHTML = goleadores.length
-                ? goleadores.map((jug, idx) => `<tr><td><b>${idx + 1}</b></td><td><img class="foto-tabla" src="${jug.foto || 'https://placehold.co/34'}" alt="" loading="lazy">${jug.nombre}</td><td>${db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre'}</td><td><b>${jug.goles} ⚽</b> ${idx === 0 ? '🏆' : ''}</td></tr>`).join('')
+                ? goleadores.map((jug, idx) => `<tr><td><b>${idx + 1}</b></td><td><div class="cel-jugador"><img class="foto-tabla" src="${jug.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(jug.nombre)}</span></div></td><td>${db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre'}</td><td><b>${jug.goles} ⚽</b> ${idx === 0 ? '🏆' : ''}</td></tr>`).join('')
                 : estadoVacioFila(4, '⚽', 'Aún no hay goleadores; se llenará conforme se jueguen partidos.');
             renderPodio('podio-goleo', goleadores.map(jug => ({
                 foto: jug.foto, nombre: jug.nombre,
@@ -3127,7 +3161,7 @@
         function actualizarVistaDisciplina() {
             const jugadoresOrdenados = [...db.jugadores].sort((a, b) => ((b.rojas || 0) * 3 + (b.amarillas || 0)) - ((a.rojas || 0) * 3 + (a.amarillas || 0)));
             document.getElementById('tabla-disciplina-body').innerHTML = jugadoresOrdenados.map((j, idx) => {
-                return `<tr><td>${idx + 1}</td><td><img class="foto-tabla" src="${j.foto || 'https://placehold.co/34'}" alt="" loading="lazy">${j.nombre}</td><td>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</td><td>${j.amarillas || 0}</td><td>${j.rojas || 0}</td><td>${textoEstadoSuspensionJugador(j)}</td></tr>`;
+                return `<tr><td>${idx + 1}</td><td><div class="cel-jugador"><img class="foto-tabla" src="${j.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(j.nombre)}</span></div></td><td>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</td><td>${j.amarillas || 0}</td><td>${j.rojas || 0}</td><td>${textoEstadoSuspensionJugador(j)}</td></tr>`;
             }).join('');
             const conSanciones = jugadoresOrdenados.filter(j => (j.amarillas || 0) > 0 || (j.rojas || 0) > 0);
             renderPodio('podio-disciplina', conSanciones.map(j => ({
@@ -3153,7 +3187,7 @@
             cont.innerHTML = fairPlay.length ? fairPlay.map((eq, idx) => `
                 <tr>
                     <td><b>${idx + 1}</b></td>
-                    <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${eq.nombre}" loading="lazy"><span>${eq.nombre}</span></div></td>
+                    <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${escapeHtml(eq.nombre)}" loading="lazy"><span>${escapeHtml(eq.nombre)}</span></div></td>
                     <td>${eq.amarillas} 🟨</td>
                     <td>${eq.rojas} 🟥</td>
                     <td><b>${eq.puntos}</b> ${idx === 0 ? '🏅' : ''}</td>
@@ -3166,7 +3200,7 @@
             const eqFiltro = document.getElementById('select-filtrar-equipo').value;
             let filtrados = db.jugadores.filter(j => j.nombre.toLowerCase().includes(txt) && (eqFiltro === 'todos' || j.equipoId === parseInt(eqFiltro)));
             document.getElementById('grid-jugadores').innerHTML = filtrados.length
-                ? filtrados.map(j => `<div class="jugador-card" onclick="verFicha(${j.id})"><img src="${j.foto || 'https://placehold.co/100'}" alt="${j.nombre}" loading="lazy"><h3>${j.nombre}</h3><p>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</p></div>`).join('')
+                ? filtrados.map(j => `<div class="jugador-card" onclick="verFicha(${j.id})"><img src="${j.foto || 'https://placehold.co/100'}" alt="${escapeHtml(j.nombre)}" loading="lazy"><h3>${escapeHtml(j.nombre)}</h3><p>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</p></div>`).join('')
                 : estadoVacio('🔍', 'No se encontraron jugadores con ese filtro.');
         }
 
@@ -3304,15 +3338,15 @@
             let html = '';
             equiposMatch.forEach(eq => {
                 html += `<div class="buscador-resultado-item buscador-item-equipo" onclick="seleccionarResultadoBusqueda('equipo', ${eq.id})">
-                    <img class="escudo-3d" src="${eq.escudo || 'https://placehold.co/34'}" alt="${eq.nombre}" loading="lazy">
-                    <div class="buscador-resultado-info"><strong>${eq.nombre}</strong><span>⚽ Equipo</span></div>
+                    <img class="escudo-3d" src="${eq.escudo || 'https://placehold.co/34'}" alt="${escapeHtml(eq.nombre)}" loading="lazy">
+                    <div class="buscador-resultado-info"><strong>${escapeHtml(eq.nombre)}</strong><span>⚽ Equipo</span></div>
                 </div>`;
             });
             jugadoresMatch.forEach(j => {
                 const nombreEquipo = db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Agente Libre';
                 html += `<div class="buscador-resultado-item" onclick="seleccionarResultadoBusqueda('jugador', ${j.id})">
-                    <img src="${j.foto || 'https://placehold.co/34'}" alt="${j.nombre}" loading="lazy">
-                    <div class="buscador-resultado-info"><strong>${j.numero ? '#' + j.numero + ' ' : ''}${j.nombre}</strong><span>🧍 ${nombreEquipo}</span></div>
+                    <img src="${j.foto || 'https://placehold.co/34'}" alt="${escapeHtml(j.nombre)}" loading="lazy">
+                    <div class="buscador-resultado-info"><strong>${j.numero ? '#' + j.numero + ' ' : ''}${escapeHtml(j.nombre)}</strong><span>🧍 ${nombreEquipo}</span></div>
                 </div>`;
             });
 
@@ -3465,7 +3499,7 @@
 
             if (navigator.share) {
                 try {
-                    await navigator.share({ title: j ? `Perfil de ${j.nombre}` : 'Perfil de jugador', text: 'Mira este perfil en la Liga de Futbol CoSmar SPORT CLUB', url: enlace });
+                    await navigator.share({ title: j ? `Perfil de ${escapeHtml(j.nombre)}` : 'Perfil de jugador', text: 'Mira este perfil en la Liga de Futbol CoSmar SPORT CLUB', url: enlace });
                     return;
                 } catch (err) { /* si el usuario cancela el share, caemos a copiar el enlace */ }
             }
@@ -3506,7 +3540,7 @@
 
             const goleadorEquipo = [...jugadoresEquipo].filter(j => j.goles > 0).sort((a, b) => (b.goles || 0) - (a.goles || 0))[0];
             document.getElementById('equipo-modal-goleador').innerHTML = goleadorEquipo
-                ? `<strong>⚽ Goleador del equipo:</strong><br>${goleadorEquipo.nombre} — ${goleadorEquipo.goles} gol(es)`
+                ? `<strong>⚽ Goleador del equipo:</strong><br>${escapeHtml(goleadorEquipo.nombre)} — ${goleadorEquipo.goles} gol(es)`
                 : `<strong>⚽ Goleador del equipo:</strong><br><span style="color:var(--text-muted);">Aún sin goles registrados.</span>`;
 
             const amarillasEquipo = jugadoresEquipo.reduce((s, j) => s + (j.amarillas || 0), 0);
@@ -3548,8 +3582,8 @@
 
             document.getElementById('equipo-modal-jugadores').innerHTML = jugadoresEquipo.map(j => `
                 <div class="jugador-card" onclick="cerrarModal('modal-equipo'); verFicha(${j.id})">
-                    <img src="${j.foto || 'https://placehold.co/100'}" alt="${j.nombre}" loading="lazy">
-                    <h3>${j.nombre}</h3>
+                    <img src="${j.foto || 'https://placehold.co/100'}" alt="${escapeHtml(j.nombre)}" loading="lazy">
+                    <h3>${escapeHtml(j.nombre)}</h3>
                     <p>${j.posicion || ''}</p>
                 </div>`).join('') || '<p style="color:var(--text-muted);">Este equipo aún no tiene jugadores registrados.</p>';
             document.getElementById('modal-equipo').classList.remove('hidden');
@@ -3647,8 +3681,8 @@
             if (contEquipos) {
                 contEquipos.innerHTML = db.equipos.map(eq => `
                     <div class="equipo-card" onclick="verEquipo(${eq.id})">
-                        <img class="escudo-3d" src="${eq.escudo || 'https://placehold.co/70'}" alt="${eq.nombre}" loading="lazy">
-                        <h3>${eq.nombre}</h3>
+                        <img class="escudo-3d" src="${eq.escudo || 'https://placehold.co/70'}" alt="${escapeHtml(eq.nombre)}" loading="lazy">
+                        <h3>${escapeHtml(eq.nombre)}</h3>
                         <p>${db.jugadores.filter(j => j.equipoId === eq.id).length} jugadores</p>
                     </div>`).join('') || estadoVacio('🛡️', 'Aún no hay equipos registrados.');
             }
@@ -3656,8 +3690,8 @@
                 contArbitros.innerHTML = db.arbitros.map(a => {
                     return `
                     <div class="arbitro-card" onclick="verArbitro('${a.nombre.replace(/'/g, "\\'")}')">
-                        <img src="${a.foto || 'https://placehold.co/70'}" alt="${a.nombre}" loading="lazy">
-                        <h3>${a.nombre}</h3>
+                        <img src="${a.foto || 'https://placehold.co/70'}" alt="${escapeHtml(a.nombre)}" loading="lazy">
+                        <h3>${escapeHtml(a.nombre)}</h3>
                         <p>${a.colegio || 'Independiente'}</p>
                     </div>`;
                 }).join('') || estadoVacio('🧑‍⚖️', 'Aún no hay árbitros registrados.');

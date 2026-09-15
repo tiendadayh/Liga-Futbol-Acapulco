@@ -1630,6 +1630,21 @@
     </div>
 
     <script>
+        // ===== Seguridad: escapar texto antes de insertarlo como HTML =====
+        // Evita que nombres u otros textos que vengan de formularios públicos
+        // (o de la base de datos) puedan inyectar código/HTML en la página
+        // (ataque XSS). Usar SIEMPRE que un dato variable se inserte con
+        // innerHTML / template literals en el sitio.
+        function escapeHtml(texto) {
+            if (texto === null || texto === undefined) return '';
+            return String(texto)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         // ===== Bloqueo del scroll de fondo mientras hay un modal abierto =====
         // Antes, al abrir una ficha/modal y mover la rueda del mouse (o hacer scroll
         // táctil), la página de atrás se movía junto con el modal, lo cual se veía
@@ -2024,13 +2039,13 @@
             if (!eq) return;
             if (!eq.pin) { eq.pin = generarPin6Digitos(); guardarDB(); }
             const encabezado = esNuevo ? `Equipo registrado con éxito.\n\n` : '';
-            mostrarAlerta(`${encabezado}PIN de registro de "${eq.nombre}": ${eq.pin}\n\nDaselo únicamente al dueño/representante del equipo. Lo debe escribir en la sección "Solicitud de Registro de Jugador" del sitio público para poder registrar a sus jugadores.`, { icono: '🔑' });
+            mostrarAlerta(`${encabezado}PIN de registro de "${escapeHtml(eq.nombre)}": ${eq.pin}\n\nDaselo únicamente al dueño/representante del equipo. Lo debe escribir en la sección "Solicitud de Registro de Jugador" del sitio público para poder registrar a sus jugadores.`, { icono: '🔑' });
         }
 
         async function regenerarPinEquipo(id) {
             const eq = db.equipos.find(e => e.id === id);
             if (!eq) return;
-            if (!(await confirmarAccion(`¿Generar un nuevo PIN para "${eq.nombre}"? El PIN anterior dejará de funcionar.`, { neutral: true, icono: '🔑' }))) return;
+            if (!(await confirmarAccion(`¿Generar un nuevo PIN para "${escapeHtml(eq.nombre)}"? El PIN anterior dejará de funcionar.`, { neutral: true, icono: '🔑' }))) return;
             eq.pin = generarPin6Digitos();
             guardarDB();
             mostrarPinRegistroEquipo(id, false);
@@ -2046,13 +2061,13 @@
             if (!arb) return;
             if (!arb.pin) { arb.pin = generarPin6Digitos(); guardarDB(); }
             const encabezado = esNuevo ? `Árbitro registrado con éxito.\n\n` : '';
-            mostrarAlerta(`${encabezado}PIN de acceso de "${arb.nombre}": ${arb.pin}\n\nDaselo únicamente a él. Lo debe escribir en la pantalla de acceso de arbitro.html para entrar a su panel.`, { icono: '🔑' });
+            mostrarAlerta(`${encabezado}PIN de acceso de "${escapeHtml(arb.nombre)}": ${arb.pin}\n\nDaselo únicamente a él. Lo debe escribir en la pantalla de acceso de arbitro.html para entrar a su panel.`, { icono: '🔑' });
         }
 
         async function regenerarPinArbitro(id) {
             const arb = db.arbitros.find(a => a.id === id);
             if (!arb) return;
-            if (!(await confirmarAccion(`¿Generar un nuevo PIN para "${arb.nombre}"? El PIN anterior dejará de funcionar.`, { neutral: true, icono: '🔑' }))) return;
+            if (!(await confirmarAccion(`¿Generar un nuevo PIN para "${escapeHtml(arb.nombre)}"? El PIN anterior dejará de funcionar.`, { neutral: true, icono: '🔑' }))) return;
             arb.pin = generarPin6Digitos();
             guardarDB();
             mostrarPinArbitro(id, false);
@@ -2689,15 +2704,15 @@
                     if (multaPendiente) motivos.push('tiene pendiente el pago de la multa');
                     const comunicadoId = Date.now() + Math.floor(Math.random() * 1000);
                     db.comunicados.unshift({
-                        id: comunicadoId, titulo: `🚫 ${j.nombre} suspendido`, tipo: 'sancion',
-                        contenido: `${j.nombre} (${equipo}) está suspendido: ${motivos.join(' y ')}. No podrá jugar hasta completar sus partidos de sanción y pagar la multa correspondiente.`,
+                        id: comunicadoId, titulo: `🚫 ${escapeHtml(j.nombre)} suspendido`, tipo: 'sancion',
+                        contenido: `${escapeHtml(j.nombre)} (${equipo}) está suspendido: ${motivos.join(' y ')}. No podrá jugar hasta completar sus partidos de sanción y pagar la multa correspondiente.`,
                         imagen: j.foto || '', fecha: new Date().toLocaleDateString('es-MX'), jugadorId: j.id
                     });
                     nuevoEstado[j.id] = { estado: 'bloqueado', comunicadoId };
                 } else if (!bloqueado && previo.estado === 'bloqueado') {
                     if (previo.comunicadoId) db.comunicados = db.comunicados.filter(c => c.id !== previo.comunicadoId);
-                    agregarAvisoRegistro('habilitado', `✅ ${j.nombre} ya puede jugar`,
-                        `${j.nombre} (${equipo}) cumplió su sanción y ya pagó la multa. Queda habilitado para jugar en la siguiente jornada.`, { jugadorId: j.id, imagen: j.foto || '' });
+                    agregarAvisoRegistro('habilitado', `✅ ${escapeHtml(j.nombre)} ya puede jugar`,
+                        `${escapeHtml(j.nombre)} (${equipo}) cumplió su sanción y ya pagó la multa. Queda habilitado para jugar en la siguiente jornada.`, { jugadorId: j.id, imagen: j.foto || '' });
                     nuevoEstado[j.id] = { estado: 'libre' };
                 } else {
                     nuevoEstado[j.id] = bloqueado ? previo : { estado: 'libre' };
@@ -3219,7 +3234,7 @@
                 const preview = document.getElementById('cancha-preview-partido');
                 if (campo) {
                     document.getElementById('cancha-preview-partido-img').src = campo.foto || 'https://placehold.co/56x40';
-                    document.getElementById('cancha-preview-partido-nombre').textContent = campo.direccion ? `${campo.nombre} — ${campo.direccion}` : campo.nombre;
+                    document.getElementById('cancha-preview-partido-nombre').textContent = campo.direccion ? `${escapeHtml(campo.nombre)} — ${campo.direccion}` : campo.nombre;
                     preview.classList.remove('hidden');
                 } else {
                     preview.classList.add('hidden');
@@ -3324,8 +3339,8 @@
 
                 db.historialFichajes.unshift({ id: Date.now(), jugador: jugador.nombre, origen: nombreOrigen, destino: nombreDestino, fecha: new Date().toLocaleDateString('es-MX') });
                 const tituloTraspaso = destino === 'libre' ? '🕊️ Jugador dejado en libertad' : '🔄 Traspaso de jugador';
-                agregarAvisoRegistro('traspaso', tituloTraspaso, `${jugador.nombre} pasa de ${nombreOrigen} a ${nombreDestino}.`, { jugadorId: jugador.id, imagen: jugador.foto || '' });
-                this.reset(); guardarDB(); alert(`Transferencia ejecutada: ${jugador.nombre} -> ${nombreDestino}`);
+                agregarAvisoRegistro('traspaso', tituloTraspaso, `${escapeHtml(jugador.nombre)} pasa de ${nombreOrigen} a ${nombreDestino}.`, { jugadorId: jugador.id, imagen: jugador.foto || '' });
+                this.reset(); guardarDB(); alert(`Transferencia ejecutada: ${escapeHtml(jugador.nombre)} -> ${nombreDestino}`);
             });
 
             document.getElementById('form-editar-fichaje').addEventListener('submit', function (e) {
@@ -3500,7 +3515,7 @@
 
                 return `
                     <tr style="border-bottom:1px solid #eee;">
-                        <td style="padding:10px; font-weight:bold;">${eq.nombre}</td>
+                        <td style="padding:10px; font-weight:bold;">${escapeHtml(eq.nombre)}</td>
                         <td>
                             ${adeudo === 0
                         ? `<span class="badge-status badge-ok">✅ Al Día</span>`
@@ -3609,7 +3624,7 @@
 
                 return `
                     <tr style="border-bottom:1px solid #eee;">
-                        <td style="padding:6px;">${j.nombre}</td>
+                        <td style="padding:6px;">${escapeHtml(j.nombre)}</td>
                         <td style="padding:6px; color:#666;">${equipo}</td>
                         <td style="padding:6px; text-align:center;">${etiquetaJornadaCorta(s.jornada)}</td>
                         <td style="padding:6px;">${ETIQUETA_TIPO_SANCION[s.tipo] || s.tipo}</td>
@@ -3743,10 +3758,10 @@
                         <div class="carnet-numero">${j.numero || '-'}</div>
                     </div>
                     <div class="carnet-cuerpo">
-                        <img class="carnet-foto" src="${j.foto || 'https://placehold.co/100x128?text=Foto'}" alt="${j.nombre}">
+                        <img class="carnet-foto" src="${j.foto || 'https://placehold.co/100x128?text=Foto'}" alt="${escapeHtml(j.nombre)}">
                         <div class="carnet-datos">
                             <p><strong>EL EQUIPO:</strong> ${eq ? eq.nombre : 'Agente Libre'}</p>
-                            <p><strong>REGISTRA A:</strong> ${j.nombre}</p>
+                            <p><strong>REGISTRA A:</strong> ${escapeHtml(j.nombre)}</p>
                             <p><strong>COMO:</strong> JUGADOR</p>
                             <p><strong>CATEGORÍA:</strong> ${j.categoria || ''}</p>
                             <p><strong>LUGAR DE NACIMIENTO:</strong> ${j.lugarNacimiento || ''}</p>
@@ -3779,7 +3794,7 @@
             const qrs = await Promise.all(jugantes.map(j => generarQRDataURL(construirEnlacePerfilJugador(j.id))));
 
             const win = window.open('', '', 'width=800,height=600');
-            win.document.title = `Credenciales Oficiales - ${eq.nombre}`;
+            win.document.title = `Credenciales Oficiales - ${escapeHtml(eq.nombre)}`;
 
             const style = win.document.createElement('style');
             style.textContent = estiloCarnetCSS();
@@ -3802,7 +3817,7 @@
             const qr = await generarQRDataURL(construirEnlacePerfilJugador(j.id));
 
             const win = window.open('', '', 'width=650,height=500');
-            win.document.title = `Credencial Oficial - ${j.nombre}`;
+            win.document.title = `Credencial Oficial - ${escapeHtml(j.nombre)}`;
 
             const style = win.document.createElement('style');
             style.textContent = estiloCarnetCSS();
@@ -3829,12 +3844,12 @@
             }
             const qr = await generarQRDataURL(enlace, 220);
             const win = window.open('', '', 'width=380,height=480');
-            win.document.title = `Perfil público - ${j.nombre}`;
+            win.document.title = `Perfil público - ${escapeHtml(j.nombre)}`;
             win.document.body.innerHTML = `
                 <div style="font-family:Arial, sans-serif; text-align:center; padding:24px;">
-                    <h3 style="color:#0b2f5c; margin-bottom:4px;">${j.nombre}</h3>
+                    <h3 style="color:#0b2f5c; margin-bottom:4px;">${escapeHtml(j.nombre)}</h3>
                     <p style="font-size:0.8rem; color:#555; margin-top:0;">Escanea para ver el perfil público</p>
-                    ${qr ? `<img src="${qr}" style="width:220px; height:220px;" alt="Código QR del perfil de ${j.nombre}">` : '<p style="color:#c62828;">No se pudo generar el QR.</p>'}
+                    ${qr ? `<img src="${qr}" style="width:220px; height:220px;" alt="Código QR del perfil de ${escapeHtml(j.nombre)}">` : '<p style="color:#c62828;">No se pudo generar el QR.</p>'}
                     <p style="word-break:break-all; font-size:0.75rem; color:#333; margin-top:16px;">${enlace}</p>
                 </div>
             `;
@@ -3900,7 +3915,7 @@
             const filasJugadores = jugadoresPartido.map(j => {
                 const am = tarjetas.filter(t => t.jugadorId === j.id && t.tipo === 'amarilla').length;
                 const rj = tarjetas.filter(t => t.jugadorId === j.id && t.tipo === 'roja').length;
-                return `<tr><td>${j.nombre}</td><td style="text-align:center;">${db.equipos.find(e=>e.id===j.equipoId)?.nombre === loc ? 'Local' : 'Visita'}</td><td style="text-align:center;">${am ? '🟨'.repeat(am) : '-'}</td><td style="text-align:center;">${rj ? '🟥' : '-'}</td></tr>`;
+                return `<tr><td>${escapeHtml(j.nombre)}</td><td style="text-align:center;">${db.equipos.find(e=>e.id===j.equipoId)?.nombre === loc ? 'Local' : 'Visita'}</td><td style="text-align:center;">${am ? '🟨'.repeat(am) : '-'}</td><td style="text-align:center;">${rj ? '🟥' : '-'}</td></tr>`;
             }).join('');
 
             const mvp = p.mvpJugadorId ? db.jugadores.find(j => j.id === p.mvpJugadorId)?.nombre : null;
@@ -4084,7 +4099,7 @@
             const enc = (db.encuestas || []).find(e => e.id === id);
             if (!enc) return;
             if (enc.cerrada) return mostrarAlerta('Esa encuesta ya está cerrada.');
-            if (!(await confirmarAccion(`¿Cerrar la votación de "${enc.pregunta}"? Ya no se podrán registrar más votos, pero los resultados se seguirán viendo.`, { neutral: true, icono: '🔒', textoConfirmar: 'Cerrar votación' }))) return;
+            if (!(await confirmarAccion(`¿Cerrar la votación de "${escapeHtml(enc.pregunta)}"? Ya no se podrán registrar más votos, pero los resultados se seguirán viendo.`, { neutral: true, icono: '🔒', textoConfirmar: 'Cerrar votación' }))) return;
             enc.cerrada = true;
             guardarDB();
             renderizarEncuestasAdmin();
@@ -4094,7 +4109,7 @@
         async function eliminarEncuesta(id) {
             const enc = (db.encuestas || []).find(e => e.id === id);
             if (!enc) return;
-            if (!(await confirmarAccion(`¿Eliminar la encuesta "${enc.pregunta}"? Se perderán sus resultados.`, { textoConfirmar: 'Eliminar' }))) return;
+            if (!(await confirmarAccion(`¿Eliminar la encuesta "${escapeHtml(enc.pregunta)}"? Se perderán sus resultados.`, { textoConfirmar: 'Eliminar' }))) return;
             db.encuestas = (db.encuestas || []).filter(e => e.id !== id);
             if (db.encuestaVotos) delete db.encuestaVotos[id];
             guardarDB();
@@ -4121,7 +4136,7 @@
                     const pct = total ? Math.round(v / total * 100) : 0;
                     return `<div style="margin-bottom:8px;">
                         <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:3px;">
-                            <span>${o.escudo ? `<img src="${o.escudo}" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px;object-fit:cover;">` : ''}${o.texto}</span>
+                            <span>${o.escudo ? `<img src="${o.escudo}" style="width:18px;height:18px;border-radius:50%;vertical-align:middle;margin-right:4px;object-fit:cover;">` : ''}${escapeHtml(o.texto)}</span>
                             <span>${v} voto${v === 1 ? '' : 's'} · ${pct}%</span>
                         </div>
                         <div style="background:#e2e8f0; border-radius:6px; height:14px; overflow:hidden;">
@@ -4132,7 +4147,7 @@
                 return `<div style="background:#f8f9fa; border-radius:10px; padding:12px 14px;">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
                         <div>
-                            <b>${enc.pregunta}</b><br>
+                            <b>${escapeHtml(enc.pregunta)}</b><br>
                             <span style="font-size:0.78rem; color:${enc.cerrada ? '#c62828' : '#2e7d32'}; font-weight:600;">${enc.cerrada ? '🔒 Votación cerrada' : '🟢 Votando'}</span>
                             <span style="font-size:0.78rem; color:#6b7280;"> · ${total} voto${total === 1 ? '' : 's'} en total</span>
                         </div>
@@ -4362,7 +4377,7 @@ ${cuerpo}`;
             if (!db.arbitros || db.arbitros.length === 0) return alert("Error: Registra árbitros antes de la liguilla.");
 
             const top8 = estadisticas.slice(0, 8);
-            const opcionesArbitros = db.arbitros.map(a => `<option value="${a.nombre}">${a.nombre} (${a.colegio})</option>`).join('');
+            const opcionesArbitros = db.arbitros.map(a => `<option value="${escapeHtml(a.nombre)}">${escapeHtml(a.nombre)} (${escapeHtml(a.colegio)})</option>`).join('');
             const llaves = [
                 { a: top8[0], b: top8[7], seed: '1° vs 8°' },
                 { a: top8[1], b: top8[6], seed: '2° vs 7°' },
@@ -4370,7 +4385,7 @@ ${cuerpo}`;
                 { a: top8[3], b: top8[4], seed: '4° vs 5°' }
             ];
 
-            const opcionesCanchas = '<option value="">-- Selecciona Cancha --</option>' + (db.campos || []).map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+            const opcionesCanchas = '<option value="">-- Selecciona Cancha --</option>' + (db.campos || []).map(c => `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`).join('');
 
             const divModal = document.createElement('div');
             divModal.id = "modal-designacion-liguilla";
@@ -4381,7 +4396,7 @@ ${cuerpo}`;
                     <p style="font-size:0.78rem; color:#666; margin-top:-6px;">Se jugará a Ida y Vuelta. El árbitro elegido aquí queda asignado a ambos partidos de la llave. El horario es opcional: puedes dejarlo en blanco y programarlo después desde "Programar Encuentro".</p>
                     ${llaves.map((ll, idx) => `
                     <div style="margin-bottom:16px; border:1px solid #eee; border-radius:8px; padding:10px;">
-                        <label style="font-weight:bold; display:block; margin-bottom:6px;">Llave ${idx + 1} (${ll.seed}): ${ll.a.nombre} vs ${ll.b.nombre}</label>
+                        <label style="font-weight:bold; display:block; margin-bottom:6px;">Llave ${idx + 1} (${ll.seed}): ${escapeHtml(ll.a.nombre)} vs ${escapeHtml(ll.b.nombre)}</label>
                         <select id="sel-arb-cuartos${idx}" style="width:100%; padding:10px; margin-bottom:8px;">${opcionesArbitros}</select>
                         <select id="sel-cancha-cuartos${idx}" style="width:100%; padding:10px; margin-bottom:8px;">${opcionesCanchas}</select>
                         <div style="display:flex; gap:8px; margin-bottom:6px;">
@@ -4459,8 +4474,8 @@ ${cuerpo}`;
                 { aId: ganadores[0], bId: ganadores[3] },
                 { aId: ganadores[1], bId: ganadores[2] }
             ];
-            const opcionesArbitros = db.arbitros.map(a => `<option value="${a.nombre}">${a.nombre} (${a.colegio})</option>`).join('');
-            const opcionesCanchasSF = '<option value="">-- Selecciona Cancha --</option>' + (db.campos || []).map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+            const opcionesArbitros = db.arbitros.map(a => `<option value="${escapeHtml(a.nombre)}">${escapeHtml(a.nombre)} (${escapeHtml(a.colegio)})</option>`).join('');
+            const opcionesCanchasSF = '<option value="">-- Selecciona Cancha --</option>' + (db.campos || []).map(c => `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`).join('');
 
             const divModal = document.createElement('div');
             divModal.id = "modal-designacion-semifinal";
@@ -4550,13 +4565,13 @@ ${cuerpo}`;
             const selects = ['admin-jug-equipo', 'admin-part-local', 'admin-part-visita', 'credencial-equipo'];
             selects.forEach(id => {
                 const el = document.getElementById(id);
-                if (el) el.innerHTML = db.equipos.map(eq => `<option value="${eq.id}">${eq.nombre}</option>`).join('');
+                if (el) el.innerHTML = db.equipos.map(eq => `<option value="${eq.id}">${escapeHtml(eq.nombre)}</option>`).join('');
             });
 
-            document.getElementById('admin-part-arbitro').innerHTML = '<option value="">-- Selecciona Árbitro Central --</option>' + db.arbitros.map(a => `<option value="${a.nombre}">${a.nombre} (${a.colegio})</option>`).join('');
-            document.getElementById('admin-part-estadio').innerHTML = '<option value="">-- Selecciona Cancha --</option>' + db.campos.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
-            document.getElementById('fichaje-jugador').innerHTML = '<option value="">-- Selecciona Jugador --</option>' + db.jugadores.map(j => `<option value="${j.id}">${j.nombre} (${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'})</option>`).join('');
-            document.getElementById('fichaje-destino').innerHTML = '<option value="libre">🕊️ Dejar Agente Libre</option>' + db.equipos.map(e => `<option value="${e.id}">⚽ Trasladar a: ${e.nombre}</option>`).join('');
+            document.getElementById('admin-part-arbitro').innerHTML = '<option value="">-- Selecciona Árbitro Central --</option>' + db.arbitros.map(a => `<option value="${escapeHtml(a.nombre)}">${escapeHtml(a.nombre)} (${escapeHtml(a.colegio)})</option>`).join('');
+            document.getElementById('admin-part-estadio').innerHTML = '<option value="">-- Selecciona Cancha --</option>' + db.campos.map(c => `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`).join('');
+            document.getElementById('fichaje-jugador').innerHTML = '<option value="">-- Selecciona Jugador --</option>' + db.jugadores.map(j => `<option value="${j.id}">${escapeHtml(j.nombre)} (${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'})</option>`).join('');
+            document.getElementById('fichaje-destino').innerHTML = '<option value="libre">🕊️ Dejar Agente Libre</option>' + db.equipos.map(e => `<option value="${e.id}">⚽ Trasladar a: ${escapeHtml(e.nombre)}</option>`).join('');
             document.getElementById('admin-res-partido').innerHTML = '<option value="">-- Selecciona Partido --</option>' + db.partidos.map(p => `<option value="${p.id}">${etiquetaJornadaCorta(p.jornada)}: ${db.equipos.find(e => e.id === p.localId)?.nombre} vs ${db.equipos.find(e => e.id === p.visitaId)?.nombre} [${p.cedula ? '📋 Cédula cerrada' : etiquetaEstadoVivoAdmin(p.estadoVivo)}]</option>`).join('');
             document.getElementById('banner-partido-select').innerHTML = '<option value="">-- Selecciona Partido --</option>' + db.partidos.filter(p => p.jugado).map(p => `<option value="${p.id}">${etiquetaJornadaCorta(p.jornada)}: ${db.equipos.find(e => e.id === p.localId)?.nombre} vs ${db.equipos.find(e => e.id === p.visitaId)?.nombre}</option>`).join('');
             const selFbLive = document.getElementById('fb-live-partido-select');
@@ -4565,7 +4580,7 @@ ${cuerpo}`;
             }
             const selEncuestaEquipo = document.getElementById('encuesta-nueva-opcion-equipo');
             if (selEncuestaEquipo) {
-                selEncuestaEquipo.innerHTML = '<option value="">-- Agregar opción desde equipo registrado --</option>' + db.equipos.map(eq => `<option value="${eq.id}">${eq.nombre}</option>`).join('');
+                selEncuestaEquipo.innerHTML = '<option value="">-- Agregar opción desde equipo registrado --</option>' + db.equipos.map(eq => `<option value="${eq.id}">${escapeHtml(eq.nombre)}</option>`).join('');
             }
         }
 
@@ -4605,7 +4620,7 @@ ${cuerpo}`;
 
             tbody.innerHTML = jugadores.map(j => `
                 <tr style="border-bottom:1px solid #eee;">
-                    <td style="padding:6px;">${j.nombre}</td>
+                    <td style="padding:6px;">${escapeHtml(j.nombre)}</td>
                     <td style="padding:6px; color:#666;">${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</td>
                     <td style="padding:6px; text-align:center;">${control(j, 'goles', '#c62828', '#2e7d32')}</td>
                     <td style="padding:6px; text-align:center;">${control(j, 'amarillas', '#c62828', '#2e7d32')}</td>
@@ -4744,9 +4759,9 @@ ${cuerpo}`;
 
             listaEquipos.innerHTML = db.equipos.length ? db.equipos.map(eq => `
                 <div class="gestion-fila gestion-fila-clickable gestion-fila-equipo" onclick="verFichaEquipoAdmin(${eq.id})" title="Toca para ver la ficha completa">
-                    <img class="escudo-3d" src="${eq.escudo || 'https://placehold.co/40'}" alt="${eq.nombre}" loading="lazy">
+                    <img class="escudo-3d" src="${eq.escudo || 'https://placehold.co/40'}" alt="${escapeHtml(eq.nombre)}" loading="lazy">
                     <div class="gestion-info">
-                        <strong>${eq.nombre}</strong>
+                        <strong>${escapeHtml(eq.nombre)}</strong>
                         <span>${db.jugadores.filter(j => j.equipoId === eq.id).length} jugadores</span>
                     </div>
                     <div class="gestion-acciones">
@@ -4763,9 +4778,9 @@ ${cuerpo}`;
             const jugadoresFiltrados = db.jugadores.filter(j => j.nombre.toLowerCase().includes(filtroTxt));
             listaJugadores.innerHTML = jugadoresFiltrados.length ? jugadoresFiltrados.map(j => `
                 <div class="gestion-fila">
-                    <img src="${j.foto || 'https://placehold.co/40'}" alt="${j.nombre}" loading="lazy">
+                    <img src="${j.foto || 'https://placehold.co/40'}" alt="${escapeHtml(j.nombre)}" loading="lazy">
                     <div class="gestion-info">
-                        <strong>${j.numero ? '#' + j.numero + ' · ' : ''}${j.nombre}</strong>
+                        <strong>${j.numero ? '#' + j.numero + ' · ' : ''}${escapeHtml(j.nombre)}</strong>
                         <span>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Agente Libre'} · ${j.posicion || ''}</span>
                     </div>
                     <div class="gestion-acciones">
@@ -4779,9 +4794,9 @@ ${cuerpo}`;
 
             listaArbitros.innerHTML = db.arbitros.length ? db.arbitros.map(a => `
                 <div class="gestion-fila">
-                    <img src="${a.foto || 'https://placehold.co/40'}" alt="${a.nombre}" loading="lazy">
+                    <img src="${a.foto || 'https://placehold.co/40'}" alt="${escapeHtml(a.nombre)}" loading="lazy">
                     <div class="gestion-info">
-                        <strong>${a.nombre}</strong>
+                        <strong>${escapeHtml(a.nombre)}</strong>
                         <span>${a.colegio || ''}</span>
                     </div>
                     <div class="gestion-acciones">
@@ -4845,9 +4860,9 @@ ${cuerpo}`;
             if (listaCanchas) {
                 listaCanchas.innerHTML = db.campos.length ? db.campos.map(c => `
                     <div class="gestion-fila">
-                        <img src="${c.foto || 'https://placehold.co/44x34'}" class="foto-cancha" alt="Foto de la cancha ${c.nombre}" loading="lazy">
+                        <img src="${c.foto || 'https://placehold.co/44x34'}" class="foto-cancha" alt="Foto de la cancha ${escapeHtml(c.nombre)}" loading="lazy">
                         <div class="gestion-info">
-                            <strong>${c.nombre}</strong>
+                            <strong>${escapeHtml(c.nombre)}</strong>
                             <span>${c.direccion || 'Sin dirección registrada'}</span>
                         </div>
                         <div class="gestion-acciones">
@@ -4897,9 +4912,9 @@ ${cuerpo}`;
             if (listaPatrocinadores) {
                 listaPatrocinadores.innerHTML = (db.patrocinadores || []).length ? db.patrocinadores.map(p => `
                     <div class="gestion-fila">
-                        <img src="${p.logo || 'https://placehold.co/40'}" alt="Logo de ${p.nombre}" loading="lazy">
+                        <img src="${p.logo || 'https://placehold.co/40'}" alt="Logo de ${escapeHtml(p.nombre)}" loading="lazy">
                         <div class="gestion-info">
-                            <strong>${p.nombre}</strong>
+                            <strong>${escapeHtml(p.nombre)}</strong>
                             <span>${p.link ? '🔗 ' + p.link : 'Sin enlace'}</span>
                         </div>
                         <div class="gestion-acciones">
@@ -4949,7 +4964,7 @@ ${cuerpo}`;
                 document.getElementById('edit-campo-posicion').style.display = 'block';
                 document.getElementById('edit-campo-jugador-extra').style.display = 'block';
                 document.getElementById('edit-numero').required = true;
-                document.getElementById('edit-equipo').innerHTML = '<option value="">🕊️ Agente Libre</option>' + db.equipos.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+                document.getElementById('edit-equipo').innerHTML = '<option value="">🕊️ Agente Libre</option>' + db.equipos.map(e => `<option value="${e.id}">${escapeHtml(e.nombre)}</option>`).join('');
                 document.getElementById('edit-equipo').value = j.equipoId || '';
                 document.getElementById('edit-label-foto').innerText = 'Reemplazar foto (opcional, deja vacío para conservar la actual):';
             } else if (tipo === 'arbitro') {
@@ -5070,9 +5085,9 @@ ${cuerpo}`;
             const lista = document.getElementById('ficha-adm-eq-plantilla');
             lista.innerHTML = jugadores.length ? jugadores.map(j => `
                 <div class="gestion-fila">
-                    <img src="${j.foto || 'https://placehold.co/40'}" alt="${j.nombre}" loading="lazy">
+                    <img src="${j.foto || 'https://placehold.co/40'}" alt="${escapeHtml(j.nombre)}" loading="lazy">
                     <div class="gestion-info">
-                        <strong>${j.numero ? '#' + j.numero + ' · ' : ''}${j.nombre}</strong>
+                        <strong>${j.numero ? '#' + j.numero + ' · ' : ''}${escapeHtml(j.nombre)}</strong>
                         <span>${j.posicion || 'Jugador'} · ⚽ ${j.goles || 0} · 🟨 ${j.amarillas || 0} · 🟥 ${j.rojas || 0}</span>
                     </div>
                     <div class="gestion-acciones">
@@ -5114,10 +5129,10 @@ ${cuerpo}`;
             if (!eq) return;
             const tienePartidos = db.partidos.some(p => p.localId === id || p.visitaId === id);
             if (tienePartidos) {
-                return alert(`No se puede eliminar "${eq.nombre}": tiene partidos programados o jugados. Elimina primero esos partidos.`);
+                return alert(`No se puede eliminar "${escapeHtml(eq.nombre)}": tiene partidos programados o jugados. Elimina primero esos partidos.`);
             }
             const jugadoresDelEquipo = db.jugadores.filter(j => j.equipoId === id);
-            let msg = `¿Eliminar el equipo "${eq.nombre}"?`;
+            let msg = `¿Eliminar el equipo "${escapeHtml(eq.nombre)}"?`;
             if (jugadoresDelEquipo.length) msg += `\n\n${jugadoresDelEquipo.length} jugador(es) quedarán como Agente Libre.`;
             if (!(await confirmarAccion(msg, { textoConfirmar: 'Eliminar' }))) return;
 
@@ -5131,7 +5146,7 @@ ${cuerpo}`;
         async function eliminarJugador(id) {
             const j = db.jugadores.find(x => x.id === id);
             if (!j) return;
-            if (!(await confirmarAccion(`¿Eliminar al jugador "${j.nombre}"? Sus goles, tarjetas y MVPs históricos en partidos ya jugados se conservarán en el registro del partido, pero desaparecerá del plantel.`, { textoConfirmar: 'Eliminar' }))) return;
+            if (!(await confirmarAccion(`¿Eliminar al jugador "${escapeHtml(j.nombre)}"? Sus goles, tarjetas y MVPs históricos en partidos ya jugados se conservarán en el registro del partido, pero desaparecerá del plantel.`, { textoConfirmar: 'Eliminar' }))) return;
             db.jugadores = db.jugadores.filter(x => x.id !== id);
             guardarDB();
             alert("Jugador eliminado.");
@@ -5140,7 +5155,7 @@ ${cuerpo}`;
         async function eliminarArbitro(id) {
             const a = db.arbitros.find(x => x.id === id);
             if (!a) return;
-            if (!(await confirmarAccion(`¿Eliminar al árbitro "${a.nombre}"?`, { textoConfirmar: 'Eliminar' }))) return;
+            if (!(await confirmarAccion(`¿Eliminar al árbitro "${escapeHtml(a.nombre)}"?`, { textoConfirmar: 'Eliminar' }))) return;
             db.arbitros = db.arbitros.filter(x => x.id !== id);
             guardarDB();
             alert("Árbitro eliminado.");
@@ -5149,7 +5164,7 @@ ${cuerpo}`;
         async function eliminarCancha(id) {
             const c = db.campos.find(x => x.id === id);
             if (!c) return;
-            if (!(await confirmarAccion(`¿Eliminar la cancha "${c.nombre}"?`, { textoConfirmar: 'Eliminar' }))) return;
+            if (!(await confirmarAccion(`¿Eliminar la cancha "${escapeHtml(c.nombre)}"?`, { textoConfirmar: 'Eliminar' }))) return;
             db.campos = db.campos.filter(x => x.id !== id);
             guardarDB();
             alert("Cancha eliminada.");
@@ -5218,7 +5233,7 @@ ${cuerpo}`;
         async function eliminarPatrocinador(id) {
             const p = db.patrocinadores.find(x => x.id === id);
             if (!p) return;
-            if (!(await confirmarAccion(`¿Eliminar al patrocinador "${p.nombre}"?`, { textoConfirmar: 'Eliminar' }))) return;
+            if (!(await confirmarAccion(`¿Eliminar al patrocinador "${escapeHtml(p.nombre)}"?`, { textoConfirmar: 'Eliminar' }))) return;
             db.patrocinadores = db.patrocinadores.filter(x => x.id !== id);
             guardarDB();
             alert("Patrocinador eliminado.");
