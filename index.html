@@ -1618,6 +1618,200 @@
         const firebaseDbRef = firebase.database().ref('liga_premier_db');
         let recibiendoDeFirebase = false;
 
+        // ===== Presencia en vivo: quién tiene el sitio abierto ahora mismo =====
+        // Cada visitante escribe una entrada mínima y anónima (dispositivo, equipo favorito,
+        // sección que está viendo) en el nodo 'conectados'; el admin la ve en admin.html
+        // (contador, sonido y aviso cuando entra alguien). Va en un nodo APARTE de
+        // liga_premier_db a propósito: el admin publica con firebaseDbRef.set(db) y eso
+        // borraría cualquier dato extra colgado dentro de liga_premier_db.
+        // Solo cuenta a quien de verdad está usando la página: si pasan INACTIVIDAD_MS sin
+        // tocar/scrollear nada, o si se oculta la pestaña, deja de contar hasta que regrese.
+        // Además, cada vez que alguien empieza a contar se guarda una "sesión" en
+        // sesiones/AAAA-MM-DD (quién, hora de entrada y de salida) para que el admin vea las
+        // visitas del día y la hora de mayor afluencia aunque su panel no estuviera abierto.
+        (function iniciarPresenciaVisitante() {
+            try {
+                const INACTIVIDAD_MS = 2 * 60 * 1000;
+                const MIN_ENTRE_ESCRITURAS_MS = 60 * 1000;
+                const ETIQUETAS_SECCION = {
+                    'bracket-sec': 'Cuadro de Liguilla',
+                    'tablon-sec': 'Tablón de Avisos',
+                    'encuesta-sec': 'Encuestas Rápidas',
+                    'jornadas-sec': 'Calendario y Resultados',
+                    'posiciones-sec': 'Tabla de Posiciones',
+                    'ofensiva-defensiva-sec': 'Ofensiva y Defensiva',
+                    'goleo-sec': 'Goleo Individual',
+                    'disciplina-sec': 'Tabla de Disciplina',
+                    'porteros-sec': 'Portero con menos goles',
+                    'headtohead-sec': 'Comparador Cara a Cara',
+                    'xi-sec': 'XI MVP de la Semana',
+                    'jugadores-sec': 'Fichas de Jugadores',
+                    'equipos-arbitros-sec': 'Equipos y Árbitros',
+                    'reglamento-sec': 'Reglamento',
+                    'registro-sec': 'Solicitud de Registro'
+                };
+
+                // Un id por navegador (se reutiliza al recargar o entre pestañas).
+                let id = null;
+                try { id = localStorage.getItem('ligaConexionId'); } catch (e) { /* almacenamiento bloqueado */ }
+                if (!id) {
+                    id = 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+                    try { localStorage.setItem('ligaConexionId', id); } catch (e) { /* sin almacenamiento: id nuevo en cada carga */ }
+                }
+
+                const ref = firebase.database().ref('conectados/' + id);
+                const TS = firebase.database.ServerValue.TIMESTAMP;
+                const dispositivo = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'movil' : 'pc';
+
+                // Las sesiones se agrupan por día en hora de Ciudad de México (igual que el admin),
+                // usando la hora del servidor para que un celular con la hora mal no las descuadre.
+                let offsetServidor = 0;
+                firebase.database().ref('.info/serverTimeOffset').on('value', s => { offsetServidor = s.val() || 0; });
+                function fechaMexico(ms) {
+                    try {
+                        return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms));
+                    } catch (e) { return new Date(ms).toISOString().slice(0, 10); }
+                }
+
+                let firebaseConectado = false;
+                let deseado = !document.hidden;   // ¿debería estar contado ahora mismo?
+                let listo = false;                // ¿ya quedó escrita la entrada en Firebase?
+                let enCurso = false;              // ¿hay una escritura de registro en camino?
+                let ultimaEscritura = 0;
+                let ultimoMovimiento = Date.now();
+                let seccion = 'Inicio';
+                let timerSeccion = null;
+                let advertido = false;
+                let sesionRef = null;             // sesión de hoy en sesiones/AAAA-MM-DD/<id>
+
+                function alFallar(err) {
+                    if (advertido) return;
+                    advertido = true;
+                    console.warn('Presencia: no se pudo escribir en "conectados" (revisa las reglas de Firebase).', err && err.message);
+                }
+
+                function nombreEquipoFavorito() {
+                    try {
+                        const favId = obtenerEquipoFavoritoId();
+                        const eq = favId ? db.equipos.find(e => e.id === favId) : null;
+                        return eq ? String(eq.nombre).slice(0, 60) : '';
+                    } catch (e) { return ''; }   // db todavía no está listo
+                }
+
+                function abrirSesion() {
+                    try {
+                        const fecha = fechaMexico(Date.now() + offsetServidor);
+                        const r = firebase.database().ref('sesiones/' + fecha + '/' + id + '_' + Date.now().toString(36));
+                        sesionRef = r;
+                        // Si esta conexión se cae, el servidor anota solo la hora de salida.
+                        r.onDisconnect().update({ f: TS })
+                            .then(() => r.set({ v: id, i: TS }))
+                            .catch(alFallar);
+                    } catch (e) { alFallar(e); }
+                }
+
+                function cerrarSesion() {
+                    if (!sesionRef) return;
+                    const r = sesionRef;
+                    sesionRef = null;
+                    r.update({ f: TS }).catch(() => {});
+                    r.onDisconnect().cancel().catch(() => {});
+                }
+
+                function registrar() {
+                    deseado = true;
+                    if (!firebaseConectado || document.hidden || listo || enCurso) return;
+                    enCurso = true;
+                    // Primero se le pide a Firebase que borre la entrada si esta conexión se cae
+                    // (cerrar pestaña, perder internet) y después se escribe.
+                    ref.onDisconnect().remove()
+                        .then(() => ref.set({
+                            tipo: 'visitante',
+                            seccion: seccion,
+                            equipo: nombreEquipoFavorito(),
+                            dispositivo: dispositivo,
+                            inicio: TS,
+                            ultimaActividad: TS
+                        }))
+                        .then(() => {
+                            enCurso = false;
+                            if (deseado) { listo = true; ultimaEscritura = Date.now(); abrirSesion(); }
+                            else { ref.remove().catch(() => {}); }   // se ocultó justo mientras se registraba
+                        })
+                        .catch(err => { enCurso = false; alFallar(err); });
+                }
+
+                function dejarDeContar() {
+                    deseado = false;
+                    if (listo) {
+                        listo = false;
+                        ref.remove().catch(() => {});
+                        cerrarSesion();
+                    }
+                }
+
+                function actualizarPresencia(forzar) {
+                    if (!listo) return;
+                    const ahora = Date.now();
+                    if (!forzar && ahora - ultimaEscritura < MIN_ENTRE_ESCRITURAS_MS) return;
+                    ultimaEscritura = ahora;
+                    ref.update({ seccion: seccion, equipo: nombreEquipoFavorito(), ultimaActividad: TS }).catch(alFallar);
+                }
+
+                function marcarActividad() {
+                    ultimoMovimiento = Date.now();
+                    if (document.hidden) return;
+                    if (!deseado) registrar(); else actualizarPresencia(false);
+                }
+
+                function cambiarSeccion(nombre) {
+                    if (nombre === seccion) return;
+                    seccion = nombre;
+                    clearTimeout(timerSeccion);
+                    timerSeccion = setTimeout(() => actualizarPresencia(true), 3000);
+                }
+
+                // Estado de la conexión con Firebase: si se cae, el servidor ya borró la entrada
+                // (onDisconnect); al volver se registra de nuevo.
+                firebase.database().ref('.info/connected').on('value', snap => {
+                    firebaseConectado = snap.val() === true;
+                    listo = false;
+                    enCurso = false;
+                    sesionRef = null;   // si hubo corte, el servidor ya cerró la sesión anterior
+                    if (firebaseConectado && deseado) registrar();
+                });
+
+                ['pointerdown', 'keydown', 'touchstart', 'wheel'].forEach(ev => window.addEventListener(ev, marcarActividad, { passive: true }));
+                window.addEventListener('scroll', () => {
+                    if (window.scrollY < 150) cambiarSeccion('Inicio');
+                    marcarActividad();
+                }, { passive: true });
+
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) { dejarDeContar(); }
+                    else { ultimoMovimiento = Date.now(); registrar(); }
+                });
+
+                // Revisión periódica: sin actividad por INACTIVIDAD_MS deja de contar.
+                setInterval(() => {
+                    if (deseado && Date.now() - ultimoMovimiento > INACTIVIDAD_MS) dejarDeContar();
+                }, 15000);
+
+                // Qué sección está viendo (la que cruza el centro de la pantalla).
+                if ('IntersectionObserver' in window) {
+                    const observador = new IntersectionObserver(entradas => {
+                        entradas.forEach(en => {
+                            if (en.isIntersecting) cambiarSeccion(ETIQUETAS_SECCION[en.target.id] || 'Inicio');
+                        });
+                    }, { rootMargin: '-45% 0px -54% 0px', threshold: 0 });
+                    document.querySelectorAll('section.card-section').forEach(s => observador.observe(s));
+                }
+            } catch (err) {
+                console.warn('Presencia en vivo no disponible:', err);   // nunca debe romper el sitio
+            }
+        })();
+
+
         // --- Logo del sitio (encabezado) personalizable desde admin.html ---
         const LOGO_LIGA_DEFAULT = document.querySelector('.site-header-logo') ? document.querySelector('.site-header-logo').src : '';
         // ---- PWA: registro de service worker e instalación como app ----

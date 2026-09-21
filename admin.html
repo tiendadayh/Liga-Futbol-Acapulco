@@ -721,6 +721,7 @@
     <div class="admin-box" style="border-top-color:#0d2a4d; background:#f4f7ff; margin-bottom:25px;">
         <h3>📋 Resumen de hoy</h3>
         <div id="resumen-dia-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:12px; margin-top:10px;"></div>
+        <div id="resumen-visitas-grid" style="display:none; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:12px; margin-top:12px;"></div>
     </div>
 
     <!-- RESPALDO Y RESTAURACIÓN DE DATOS -->
@@ -1258,6 +1259,65 @@
         </div>
     </div>
 
+    <!-- PRESENCIA EN VIVO: PERSONAS EN EL SITIO PÚBLICO -->
+    <style>
+        #pill-conectados {
+            position: fixed; left: 14px; bottom: 14px; z-index: 450;
+            display: none; align-items: center; gap: 8px;
+            background: #fff; color: #0d2a4d; border: 1px solid #d5dbe5;
+            padding: 8px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2); cursor: pointer; user-select: none;
+        }
+        #pill-conectados:hover { background: #f4f7ff; }
+        .pc-dot { width: 10px; height: 10px; border-radius: 50%; background: #9e9e9e; flex-shrink: 0; }
+        .pc-dot.pc-verde { background: #2ecc71; animation: pc-pulso 2s infinite; }
+        .pc-dot.pc-rojo { background: #e74c3c; }
+        @keyframes pc-pulso { 0% { box-shadow: 0 0 0 0 rgba(46,204,113,0.6); } 70% { box-shadow: 0 0 0 7px rgba(46,204,113,0); } 100% { box-shadow: 0 0 0 0 rgba(46,204,113,0); } }
+        #toast-conectados {
+            position: fixed; left: 14px; bottom: 62px; z-index: 9990;
+            background: #0d2a4d; color: #fff; padding: 10px 16px; border-radius: 10px;
+            border-left: 5px solid #2ecc71; max-width: 270px; cursor: pointer;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+            opacity: 0; pointer-events: none; transform: translateY(8px);
+            transition: opacity .25s, transform .25s;
+        }
+        #toast-conectados.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        #toast-conectados .tc-titulo { font-size: 0.85rem; font-weight: bold; }
+        #toast-conectados .tc-detalle { font-size: 0.75rem; opacity: 0.85; margin-top: 2px; }
+        .conectado-fila { display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px solid #eef1f6; }
+        .conectado-fila:last-child { border-bottom: none; }
+        .conectado-icono { font-size: 1.3rem; flex-shrink: 0; }
+        .conectado-info { flex: 1; min-width: 0; }
+        .conectado-nombre { font-size: 0.88rem; font-weight: bold; color: #0d2a4d; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .conectado-seccion { font-size: 0.75rem; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .conectado-tiempo { font-size: 0.72rem; color: #888; flex-shrink: 0; }
+        .conectado-arbitro { background: #eaf4ff; border-radius: 8px; padding-left: 8px; padding-right: 8px; }
+        .conectado-registro { background: #fff8e1; border-radius: 8px; padding-left: 8px; padding-right: 8px; }
+    </style>
+    <div id="pill-conectados" role="button" tabindex="0" title="Ver quién está en el sitio" onclick="abrirModalConectados()" onkeydown="if(event.key==='Enter') abrirModalConectados()">
+        <span id="pill-conectados-dot" class="pc-dot"></span>
+        <span id="pill-conectados-txt">Conectando…</span>
+    </div>
+    <div id="toast-conectados" onclick="abrirModalConectados()">
+        <div class="tc-titulo" id="toast-conectados-titulo"></div>
+        <div class="tc-detalle" id="toast-conectados-detalle"></div>
+        <div class="tc-detalle" id="toast-conectados-extra"></div>
+    </div>
+    <div id="modal-conectados" class="modal-overlay" style="display:none;" onclick="if(event.target === this) cerrarModalConectados()">
+        <div class="modal-box" style="max-width:480px;">
+            <button type="button" class="close-modal-gestion" onclick="cerrarModalConectados()">×</button>
+            <h3 style="margin:0 0 4px; color:#0d2a4d;">🟢 En el sitio ahora</h3>
+            <p id="conectados-resumen" style="font-size:0.8rem; color:#666; margin:0 0 12px;"></p>
+            <p id="conectados-error" style="display:none; background:#fdecea; color:#c62828; font-size:0.8rem; font-weight:bold; padding:8px 10px; border-radius:6px; margin:0 0 12px;"></p>
+            <div id="lista-conectados" style="max-height:45vh; overflow-y:auto;"></div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;">
+                <button type="button" id="btn-avisos-conectados" onclick="alternarAvisosConectados()" style="flex:1;">🔔 Sonido y avisos: activados</button>
+                <button type="button" onclick="reproducirSonidoNuevoVisitante()" style="flex:1; background:#455a64;">🔊 Probar sonido</button>
+            </div>
+            <p style="font-size:0.72rem; color:#888; margin:10px 0 0;">Solo aparece quien está usando el sitio: si alguien deja la página sin tocar nada por 2 minutos o cambia de pestaña, deja de contarse hasta que regrese. Los visitantes son anónimos. Los árbitros aparecen mientras tengan su panel abierto con su PIN y no se quitan por inactividad.</p>
+        </div>
+    </div>
+
     <!-- MODAL: PLANTEL DEL EQUIPO -->
     <!-- MODAL: FICHA COMPLETA DEL EQUIPO -->
     <div id="modal-ficha-equipo" class="modal-overlay" style="display:none;" onclick="if(event.target === this) cerrarFichaEquipoAdmin()">
@@ -1781,6 +1841,437 @@
             renderizarEncuestasAdmin();
         });
 
+        // ===== Personas en el sitio ahora mismo (presencia en vivo) =====
+        // El sitio público (index.html) escribe una entrada anónima por visitante en el nodo
+        // 'conectados' (fuera de liga_premier_db) y arbitro.html escribe la del árbitro con su
+        // nombre. Aquí se lee en vivo: contador fijo abajo a la izquierda, sonido + aviso cuando
+        // entra alguien nuevo (o un árbitro, o alguien llega al formulario de registro) y, al
+        // tocar el contador, la lista de quién está. Solo se escucha con la sesión iniciada
+        // (las reglas de Firebase piden estar logueado).
+        // Además index.html guarda una sesión por visita en 'sesiones/AAAA-MM-DD' (quién, entrada
+        // y salida): de ahí salen las visitas del día y el pico de conectados de "Resumen de hoy",
+        // aunque este panel no haya estado abierto.
+        const CLAVE_AVISOS_CONECTADOS = 'ligaAvisosConectados';
+        const MAX_EDAD_CONECTADO_MS = 30 * 60 * 1000;   // entradas más viejas = fantasmas, se ignoran
+        const SECCION_REGISTRO = 'Solicitud de Registro';   // igual que la etiqueta que manda index.html
+        const ESPERA_AVISO_REGISTRO_MS = 10 * 60 * 1000;    // máx. 1 aviso de "llegó al formulario" por visitante cada 10 min
+        let refConectados = null;
+        let conectadosActuales = {};
+        let idsConectadosConocidos = null;   // null = todavía no llega la primera lectura (no avisar)
+        let seccionesConocidas = {};         // id -> sección en la lectura anterior
+        let avisadoRegistroEn = {};          // id -> cuándo se avisó por última vez
+        let errorConectados = '';
+        let offsetRelojServidor = 0;
+        let toastConectadosNuevos = 0;
+        let toastConectadosTipo = '';
+        let ultimoSonidoConectados = 0;
+        let timerListaConectados = null;
+        let iniciandoConectados = false;
+        // Visitas del día
+        let refSesionesHoy = null;
+        let fechaSesionesEscuchada = '';
+        let sesionesHoy = null;              // null = todavía no llegan
+        let errorSesiones = false;
+        let timerCambioDia = null;
+
+        // Diferencia entre el reloj de este equipo y el de Firebase (los visitantes escriben con
+        // la hora del servidor, así un celular con la hora mal puesta no descuadra los "hace X min").
+        firebase.database().ref('.info/serverTimeOffset').on('value', function (s) { offsetRelojServidor = s.val() || 0; });
+        function ahoraServidorConectados() { return Date.now() + offsetRelojServidor; }
+
+        // Día y hora en Ciudad de México, igual que las sesiones que guarda index.html.
+        function fechaMexico(ms) {
+            try {
+                return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms));
+            } catch (e) { return new Date(ms).toISOString().slice(0, 10); }
+        }
+        function horaMexico(ms) {
+            try {
+                return new Intl.DateTimeFormat('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(ms));
+            } catch (e) { return new Date(ms).toTimeString().slice(0, 5); }
+        }
+
+        function avisosConectadosActivos() { return localStorage.getItem(CLAVE_AVISOS_CONECTADOS) !== '0'; }
+
+        function conectadosVivos() {
+            const ahora = ahoraServidorConectados();
+            return Object.keys(conectadosActuales || {})
+                .map(id => [id, conectadosActuales[id]])
+                .filter(par => par[1] && typeof par[1] === 'object' && (ahora - (par[1].ultimaActividad || 0)) < MAX_EDAD_CONECTADO_MS);
+        }
+        function visitantesVivos() { return conectadosVivos().filter(par => par[1].tipo !== 'arbitro'); }
+        function arbitrosVivos() { return conectadosVivos().filter(par => par[1].tipo === 'arbitro'); }
+
+        function iniciarEscuchaConectados() {
+            if (refConectados || iniciandoConectados) return;
+            iniciandoConectados = true;
+            // Antes de escuchar se espera a conocer el desfase del reloj, para que la primera
+            // lectura no descarte por error a visitantes recién conectados.
+            firebase.database().ref('.info/serverTimeOffset').once('value')
+                .then(function (s) { offsetRelojServidor = s.val() || 0; })
+                .catch(function () { /* sigue con desfase 0 */ })
+                .then(function () {
+                    iniciandoConectados = false;
+                    if (refConectados || !firebase.auth().currentUser) return;   // ya escuchando, o cerró sesión mientras tanto
+                    errorConectados = '';
+                    refConectados = firebase.database().ref('conectados');
+                    refConectados.on('value', alCambiarConectados, function (err) {
+                        errorConectados = (err && err.code === 'PERMISSION_DENIED') ? 'permiso' : 'otro';
+                        refConectados = null;
+                        pintarPillConectados();
+                        pintarListaConectados();
+                        pintarTarjetasVisitas();
+                    });
+                    pintarPillConectados();
+                    escucharSesionesHoy();
+                    pintarTarjetasVisitas();
+                    // Cada minuto: si cambió el día, se pasa a la nueva fecha; si las reglas de
+                    // 'sesiones' se acaban de agregar, se reintenta solo.
+                    clearInterval(timerCambioDia);
+                    timerCambioDia = setInterval(function () {
+                        escucharSesionesHoy();
+                        pintarTarjetasVisitas();
+                        // Si el panel se quedó abierto y cambió el día, "Partidos hoy" se vuelve a calcular.
+                        if (window.__fechaResumenPintada && window.__fechaResumenPintada !== fechaMexico(ahoraServidorConectados()) && typeof renderizarResumenDia === 'function') renderizarResumenDia();
+                    }, 60000);
+                });
+        }
+
+        function detenerEscuchaConectados() {
+            if (refConectados) { refConectados.off('value', alCambiarConectados); refConectados = null; }
+            if (refSesionesHoy) { refSesionesHoy.off('value', alCambiarSesiones); refSesionesHoy = null; }
+            clearInterval(timerCambioDia);
+            fechaSesionesEscuchada = '';
+            sesionesHoy = null;
+            errorSesiones = false;
+            conectadosActuales = {};
+            idsConectadosConocidos = null;
+            seccionesConocidas = {};
+            errorConectados = '';
+            pintarPillConectados();
+            pintarTarjetasVisitas();
+        }
+
+        function alCambiarConectados(snap) {
+            errorConectados = '';
+            conectadosActuales = snap.val() || {};
+            const vivos = conectadosVivos();
+            const ids = vivos.map(par => par[0]);
+            const seccionesAhora = {};
+            vivos.forEach(function (par) { seccionesAhora[par[0]] = par[1].seccion || 'Inicio'; });
+            // La primera lectura solo sincroniza (no suena al abrir el panel si ya había gente).
+            if (idsConectadosConocidos !== null) {
+                const nuevos = ids.filter(id => !idsConectadosConocidos.has(id));
+                const nuevosArbitros = nuevos.filter(id => conectadosActuales[id].tipo === 'arbitro');
+                const nuevosVisitantes = nuevos.filter(id => conectadosActuales[id].tipo !== 'arbitro');
+                if (nuevosArbitros.length) avisarArbitroEnLinea(nuevosArbitros);
+                if (nuevosVisitantes.length) avisarNuevosConectados(nuevosVisitantes);
+                // Quién ya estaba en el sitio y acaba de llegar a "Solicitud de Registro".
+                ids.forEach(function (id) {
+                    const info = conectadosActuales[id];
+                    if (info.tipo === 'arbitro' || !idsConectadosConocidos.has(id)) return;
+                    if (seccionesAhora[id] === SECCION_REGISTRO && seccionesConocidas[id] !== SECCION_REGISTRO) avisarLlegoARegistro(id, info);
+                });
+            }
+            idsConectadosConocidos = new Set(ids);
+            seccionesConocidas = seccionesAhora;
+            pintarPillConectados();
+            pintarListaConectados();
+            pintarTarjetasVisitas();
+        }
+
+        function reproducirSonidoNuevoVisitante(veces) {
+            try {
+                const ctx = obtenerAudioCtxNotificaciones();
+                if (!ctx) return;
+                const repeticiones = (typeof veces === 'number' && veces > 0) ? veces : 1;
+                for (let k = 0; k < repeticiones; k++) {
+                    const t = ctx.currentTime + k * 0.24;
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(660, t);
+                    osc.frequency.exponentialRampToValueAtTime(990, t + 0.12);
+                    gain.gain.setValueAtTime(0.0001, t);
+                    gain.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+                    osc.connect(gain).connect(ctx.destination);
+                    osc.start(t); osc.stop(t + 0.32);
+                }
+            } catch (err) { /* el navegador puede bloquear audio si no ha habido clic aún */ }
+        }
+
+        function textoDondeEsta(info) {
+            if (!info) return '';
+            const partes = [];
+            if (info.equipo) partes.push('⭐ ' + info.equipo);
+            partes.push('viendo ' + (info.seccion || 'Inicio'));
+            return partes.join(' · ');
+        }
+
+        // Un solo aviso a la vez (se reemplaza el texto del anterior). tipo: 'visitante' | 'arbitro' | 'registro'
+        function mostrarToastPresencia(titulo, detalle, extra, tipo) {
+            const toast = document.getElementById('toast-conectados');
+            if (!toast) return;
+            toastConectadosTipo = tipo;
+            toast.style.borderLeftColor = tipo === 'arbitro' ? '#42a5f5' : (tipo === 'registro' ? '#ffb300' : '#2ecc71');
+            document.getElementById('toast-conectados-titulo').textContent = titulo;
+            document.getElementById('toast-conectados-detalle').textContent = detalle;
+            document.getElementById('toast-conectados-extra').textContent = extra || '';
+            toast.classList.add('visible');
+            clearTimeout(toast._t);
+            toast._t = setTimeout(function () {
+                toast.classList.remove('visible');
+                toastConectadosNuevos = 0;
+                toastConectadosTipo = '';
+            }, 5000);
+        }
+
+        function avisarNuevosConectados(idsNuevos) {
+            if (!avisosConectadosActivos()) return;
+            const ahora = Date.now();
+            // Un solo sonido cada 8 s aunque entren varios de golpe (días de partido).
+            if (ahora - ultimoSonidoConectados > 8000) {
+                ultimoSonidoConectados = ahora;
+                reproducirSonidoNuevoVisitante(1);
+            }
+            const toast = document.getElementById('toast-conectados');
+            const acumula = !!toast && toast.classList.contains('visible') && toastConectadosTipo === 'visitante';
+            toastConectadosNuevos = acumula ? toastConectadosNuevos + idsNuevos.length : idsNuevos.length;
+            const total = visitantesVivos().length;
+            mostrarToastPresencia(
+                toastConectadosNuevos === 1 ? '🆕 Nuevo visitante en el sitio' : '🆕 ' + toastConectadosNuevos + ' visitantes nuevos en el sitio',
+                'Ahora hay ' + total + (total === 1 ? ' persona' : ' personas') + ' en el sitio',
+                toastConectadosNuevos === 1 ? textoDondeEsta(conectadosActuales[idsNuevos[0]]) : '',
+                'visitante'
+            );
+        }
+
+        function avisarArbitroEnLinea(idsNuevos) {
+            if (!avisosConectadosActivos()) return;
+            reproducirSonidoNuevoVisitante(1);
+            const nombres = idsNuevos.map(id => conectadosActuales[id].nombre || 'Árbitro');
+            mostrarToastPresencia('🎙️ Árbitro en línea', nombres.join(', '), 'Entró a su panel de árbitro', 'arbitro');
+        }
+
+        function avisarLlegoARegistro(id, info) {
+            if (!avisosConectadosActivos()) return;
+            const ahora = Date.now();
+            if (avisadoRegistroEn[id] && ahora - avisadoRegistroEn[id] < ESPERA_AVISO_REGISTRO_MS) return;
+            avisadoRegistroEn[id] = ahora;
+            reproducirSonidoNuevoVisitante(2);   // doble, para distinguirlo del aviso de "nuevo visitante"
+            mostrarToastPresencia('📝 Alguien está en Solicitud de Registro', 'Un visitante llegó al formulario para registrar jugadores', info.equipo ? '⭐ ' + info.equipo : '', 'registro');
+        }
+
+        function pintarPillConectados() {
+            const pill = document.getElementById('pill-conectados');
+            const dot = document.getElementById('pill-conectados-dot');
+            const txt = document.getElementById('pill-conectados-txt');
+            if (!pill || !dot || !txt) return;
+            if (!refConectados && !errorConectados) { pill.style.display = 'none'; return; }
+            pill.style.display = 'flex';
+            if (errorConectados) {
+                dot.className = 'pc-dot pc-rojo';
+                txt.textContent = errorConectados === 'permiso' ? 'Sin permiso (ver reglas)' : 'Sin conexión';
+                return;
+            }
+            if (idsConectadosConocidos === null) { dot.className = 'pc-dot'; txt.textContent = 'Conectando…'; return; }
+            const n = visitantesVivos().length;
+            const a = arbitrosVivos().length;
+            dot.className = 'pc-dot pc-verde';
+            txt.textContent = (n === 1 ? '1 persona en el sitio' : n + ' personas en el sitio') + (a ? ' · 🎙️ ' + a : '') + (avisosConectadosActivos() ? '' : ' 🔕');
+        }
+
+        function tiempoRelativoConectado(ms) {
+            const seg = Math.max(0, (ahoraServidorConectados() - (ms || 0)) / 1000);
+            if (seg < 90) return 'justo ahora';
+            const min = Math.round(seg / 60);
+            if (min < 60) return 'hace ' + min + ' min';
+            return 'hace ' + Math.round(min / 60) + ' h';
+        }
+
+        function pintarListaConectados() {
+            const modal = document.getElementById('modal-conectados');
+            if (!modal || modal.style.display === 'none') return;
+            const cont = document.getElementById('lista-conectados');
+            const resumen = document.getElementById('conectados-resumen');
+            const err = document.getElementById('conectados-error');
+            cont.textContent = '';
+            if (errorConectados) {
+                err.style.display = 'block';
+                err.textContent = errorConectados === 'permiso'
+                    ? 'Firebase no dejó leer "conectados". Agrega las reglas de "conectados" en Firebase Console → Realtime Database → Reglas y recarga esta página.'
+                    : 'No se pudo leer la lista de conectados. Revisa tu conexión a internet.';
+                resumen.textContent = '';
+                return;
+            }
+            err.style.display = 'none';
+            const porActividad = (a, b) => (b[1].ultimaActividad || 0) - (a[1].ultimaActividad || 0);
+            const arbitros = arbitrosVivos().sort(porActividad);
+            const visitantes = visitantesVivos().sort(porActividad);
+            const moviles = visitantes.filter(par => par[1].dispositivo === 'movil').length;
+            let textoResumen = visitantes.length
+                ? visitantes.length + (visitantes.length === 1 ? ' persona' : ' personas') + ' · 📱 ' + moviles + ' en celular · 💻 ' + (visitantes.length - moviles) + ' en computadora'
+                : 'Se actualiza solo, en tiempo real.';
+            if (arbitros.length) textoResumen += ' · 🎙️ ' + arbitros.length + (arbitros.length === 1 ? ' árbitro en línea' : ' árbitros en línea');
+            resumen.textContent = textoResumen;
+            if (!arbitros.length && !visitantes.length) {
+                const vacio = document.createElement('p');
+                vacio.style.cssText = 'text-align:center; color:#888; font-size:0.85rem; padding:18px 0; margin:0;';
+                vacio.textContent = 'Nadie tiene el sitio abierto en este momento.';
+                cont.appendChild(vacio);
+                return;
+            }
+            // Todo lo que viene de Firebase se pone con textContent (nunca como HTML): lo escriben los visitantes.
+            arbitros.concat(visitantes).forEach(function (par) {
+                const info = par[1];
+                const esArbitro = info.tipo === 'arbitro';
+                const enRegistro = !esArbitro && info.seccion === SECCION_REGISTRO;
+                const fila = document.createElement('div');
+                fila.className = 'conectado-fila' + (esArbitro ? ' conectado-arbitro' : (enRegistro ? ' conectado-registro' : ''));
+                const icono = document.createElement('div');
+                icono.className = 'conectado-icono';
+                icono.textContent = esArbitro ? '🎙️' : (info.dispositivo === 'movil' ? '📱' : '💻');
+                const datos = document.createElement('div');
+                datos.className = 'conectado-info';
+                const nombre = document.createElement('div');
+                nombre.className = 'conectado-nombre';
+                const donde = document.createElement('div');
+                donde.className = 'conectado-seccion';
+                if (esArbitro) {
+                    nombre.textContent = 'Árbitro · ' + (info.nombre || 'sin nombre');
+                    donde.textContent = 'En su panel de árbitro · ' + (info.dispositivo === 'movil' ? '📱 celular' : '💻 computadora');
+                } else {
+                    nombre.textContent = info.equipo ? 'Visitante · ⭐ ' + info.equipo : 'Visitante anónimo';
+                    donde.textContent = (enRegistro ? '📝 ' : '') + 'Viendo: ' + (info.seccion || 'Inicio');
+                }
+                datos.appendChild(nombre);
+                datos.appendChild(donde);
+                const tiempo = document.createElement('div');
+                tiempo.className = 'conectado-tiempo';
+                tiempo.textContent = tiempoRelativoConectado(info.ultimaActividad);
+                fila.appendChild(icono);
+                fila.appendChild(datos);
+                fila.appendChild(tiempo);
+                cont.appendChild(fila);
+            });
+        }
+
+        // ----- Visitas del día y pico de conectados (tarjetas de "Resumen de hoy") -----
+        function escucharSesionesHoy() {
+            if (!firebase.auth().currentUser) return;
+            const fecha = fechaMexico(ahoraServidorConectados());
+            if (refSesionesHoy && fechaSesionesEscuchada === fecha) return;
+            if (refSesionesHoy) { refSesionesHoy.off('value', alCambiarSesiones); refSesionesHoy = null; sesionesHoy = null; }
+            fechaSesionesEscuchada = fecha;
+            refSesionesHoy = firebase.database().ref('sesiones/' + fecha);
+            refSesionesHoy.on('value', alCambiarSesiones, function () {
+                errorSesiones = true;
+                refSesionesHoy = null;
+                fechaSesionesEscuchada = '';   // deja que el chequeo de cada minuto lo reintente
+                pintarTarjetasVisitas();
+            });
+        }
+
+        function alCambiarSesiones(snap) {
+            errorSesiones = false;
+            sesionesHoy = snap.val() || {};
+            pintarTarjetasVisitas();
+        }
+
+        // Cuenta personas distintas y busca el momento con más gente a la vez recorriendo las
+        // entradas y salidas de todas las sesiones del día en orden.
+        function calcularEstadisticasVisitas() {
+            const sesiones = sesionesHoy || {};
+            const ahora = ahoraServidorConectados();
+            const distintos = new Set();
+            const eventos = [];
+            Object.keys(sesiones).forEach(function (sid) {
+                const s = sesiones[sid];
+                if (!s || typeof s !== 'object' || !s.v || !s.i) return;
+                distintos.add(s.v);
+                // Sin hora de salida: si esa persona sigue conectada, la sesión sigue abierta;
+                // si no (salida todavía sin anotar), se supone una visita corta.
+                let fin = s.f || ((conectadosActuales && conectadosActuales[s.v]) ? ahora : s.i + 2 * 60 * 1000);
+                if (fin < s.i) fin = s.i;
+                eventos.push([s.i, 1, s.v]);
+                eventos.push([fin, -1, s.v]);
+            });
+            eventos.sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });   // a la misma hora, primero las salidas
+            const activos = new Map();   // persona -> sesiones abiertas (dos pestañas de la misma persona cuentan como una)
+            let pico = 0;
+            let horaPico = 0;
+            eventos.forEach(function (ev) {
+                const n = (activos.get(ev[2]) || 0) + ev[1];
+                if (n <= 0) activos.delete(ev[2]); else activos.set(ev[2], n);
+                if (activos.size > pico) { pico = activos.size; horaPico = ev[0]; }
+            });
+            return { visitas: distintos.size, pico: pico, horaPico: horaPico };
+        }
+
+        function pintarTarjetasVisitas() {
+            const cont = document.getElementById('resumen-visitas-grid');
+            if (!cont) return;
+            if (!refConectados && !errorConectados && !refSesionesHoy && !errorSesiones) { cont.style.display = 'none'; return; }
+            cont.style.display = 'grid';
+            cont.textContent = '';
+            const st = sesionesHoy ? calcularEstadisticasVisitas() : null;
+            const sinPermiso = 'sin permiso (ver reglas)';
+            const arbs = arbitrosVivos();
+            const tarjetas = [
+                { valor: st ? st.visitas : '—', etiqueta: 'Visitas hoy al sitio', sub: errorSesiones ? sinPermiso : (st ? 'personas distintas' : 'cargando…'), color: '#0d2a4d' },
+                { valor: st ? st.pico : '—', etiqueta: 'Pico de conectados', sub: errorSesiones ? sinPermiso : (st && st.pico ? 'a las ' + horaMexico(st.horaPico) : '—'), color: '#6a1b9a' },
+                { valor: arbs.length, etiqueta: 'Árbitros en línea', sub: arbs.length ? arbs.map(par => par[1].nombre || 'Árbitro').join(', ') : 'ninguno ahora', color: arbs.length ? '#1565c0' : '#78909c' }
+            ];
+            tarjetas.forEach(function (t) {
+                const caja = document.createElement('div');
+                caja.style.cssText = 'background:#fff; border-radius:10px; padding:14px; text-align:center; border-left:5px solid ' + t.color + '; cursor:pointer;';
+                caja.addEventListener('click', abrirModalConectados);
+                const valor = document.createElement('div');
+                valor.style.cssText = 'font-size:1.7rem; font-weight:bold; color:' + t.color + ';';
+                valor.textContent = t.valor;
+                const etiqueta = document.createElement('div');
+                etiqueta.style.cssText = 'font-size:0.78rem; color:#555;';
+                etiqueta.textContent = t.etiqueta;
+                const sub = document.createElement('div');
+                sub.style.cssText = 'font-size:0.7rem; color:#888; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+                sub.textContent = t.sub;
+                caja.appendChild(valor);
+                caja.appendChild(etiqueta);
+                caja.appendChild(sub);
+                cont.appendChild(caja);
+            });
+        }
+
+        function actualizarBotonAvisosConectados() {
+            const btn = document.getElementById('btn-avisos-conectados');
+            if (btn) btn.textContent = avisosConectadosActivos() ? '🔔 Sonido y avisos: activados' : '🔕 Sonido y avisos: silenciados';
+        }
+
+        function alternarAvisosConectados() {
+            localStorage.setItem(CLAVE_AVISOS_CONECTADOS, avisosConectadosActivos() ? '0' : '1');
+            actualizarBotonAvisosConectados();
+            pintarPillConectados();
+        }
+
+        function abrirModalConectados() {
+            const modal = document.getElementById('modal-conectados');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            const toast = document.getElementById('toast-conectados');
+            if (toast) toast.classList.remove('visible');
+            actualizarBotonAvisosConectados();
+            pintarListaConectados();
+            clearInterval(timerListaConectados);
+            timerListaConectados = setInterval(pintarListaConectados, 20000);   // refresca los "hace X min"
+        }
+
+        function cerrarModalConectados() {
+            const modal = document.getElementById('modal-conectados');
+            if (modal) modal.style.display = 'none';
+            clearInterval(timerListaConectados);
+        }
+
         // --- Logo del sitio (encabezado) personalizable ---
         // Guarda el logo original que ya trae la página para poder volver a él
         // cuando el admin presione "Quitar".
@@ -1896,8 +2387,10 @@
             const pantalla = document.getElementById('pantalla-login');
             if (user) {
                 pantalla.style.display = 'none';
+                iniciarEscuchaConectados();
             } else {
                 pantalla.style.display = 'flex';
+                detenerEscuchaConectados();
             }
         });
 
@@ -2115,7 +2608,10 @@
             const cont = document.getElementById('resumen-dia-grid');
             if (!cont) return;
 
-            const hoy = new Date().toISOString().slice(0, 10);
+            // "Hoy" en hora de Ciudad de México (antes usaba la hora UTC y desde las 6 pm mostraba los partidos de mañana).
+            let hoy;
+            try { hoy = fechaMexico(ahoraServidorConectados()); } catch (e) { hoy = new Date().toISOString().slice(0, 10); }
+            window.__fechaResumenPintada = hoy;
             const partidosHoy = (db.partidos || []).filter(p => p.fecha === hoy && !p.jugado);
             const pendientes = (db.solicitudes || []).length;
             const equiposConAdeudo = (db.equipos || []).filter(eq => {

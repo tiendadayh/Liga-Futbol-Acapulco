@@ -933,6 +933,95 @@
         const firebaseDbRef = firebase.database().ref('liga_premier_db');
         let recibiendoDeFirebase = false; // evita que nuestro propio guardado se re-procese como si viniera de otro dispositivo
 
+        // ===== Presencia del árbitro: el admin ve "🎙️ Árbitro en línea" en admin.html =====
+        // Igual que en el sitio público, pero solo después de iniciar sesión con el PIN, con el
+        // nombre del árbitro. No usa el corte por inactividad: durante un partido el árbitro casi
+        // no toca la pantalla y no debe aparecer como desconectado. Deja de aparecer al cerrar
+        // sesión o cuando su conexión se cae (cerrar la app, apagar el celular, perder internet).
+        (function iniciarPresenciaArbitro() {
+            try {
+                let id = null;
+                try { id = localStorage.getItem('ligaConexionIdArbitro'); } catch (e) { /* almacenamiento bloqueado */ }
+                if (!id) {
+                    id = 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+                    try { localStorage.setItem('ligaConexionIdArbitro', id); } catch (e) { /* id nuevo en cada carga */ }
+                }
+                const ref = firebase.database().ref('conectados/' + id);
+                const TS = firebase.database.ServerValue.TIMESTAMP;
+                const dispositivo = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'movil' : 'pc';
+                let firebaseConectado = false;
+                let listo = false;
+                let enCurso = false;
+                let nombreRegistrado = '';
+                let advertido = false;
+
+                function alFallar(err) {
+                    if (advertido) return;
+                    advertido = true;
+                    console.warn('Presencia: no se pudo escribir en "conectados" (revisa las reglas de Firebase).', err && err.message);
+                }
+
+                function nombreSesion() {
+                    try { return String(arbitroSesion || '').slice(0, 60); } catch (e) { return ''; }
+                }
+
+                function registrar() {
+                    const nombre = nombreSesion();
+                    if (!nombre || !firebaseConectado || listo || enCurso) return;
+                    enCurso = true;
+                    nombreRegistrado = nombre;
+                    ref.onDisconnect().remove()
+                        .then(() => ref.set({
+                            tipo: 'arbitro',
+                            nombre: nombre,
+                            seccion: 'Panel del árbitro',
+                            dispositivo: dispositivo,
+                            inicio: TS,
+                            ultimaActividad: TS
+                        }))
+                        .then(() => {
+                            enCurso = false;
+                            if (nombreSesion()) listo = true;
+                            else ref.remove().catch(() => {});   // cerró sesión justo mientras se registraba
+                        })
+                        .catch(err => { enCurso = false; alFallar(err); });
+                }
+
+                function retirar() {
+                    if (!listo) return;
+                    listo = false;
+                    nombreRegistrado = '';
+                    ref.remove().catch(() => {});
+                }
+
+                // Se llama al iniciar sesión, al restaurarla y al cerrarla.
+                window.sincronizarPresenciaArbitro = function () {
+                    const nombre = nombreSesion();
+                    if (!nombre) { retirar(); return; }
+                    if (listo && nombre !== nombreRegistrado) {   // otro árbitro entró en el mismo equipo
+                        nombreRegistrado = nombre;
+                        ref.update({ nombre: nombre }).catch(alFallar);
+                        return;
+                    }
+                    registrar();
+                };
+
+                firebase.database().ref('.info/connected').on('value', snap => {
+                    firebaseConectado = snap.val() === true;
+                    listo = false;
+                    enCurso = false;
+                    if (firebaseConectado) window.sincronizarPresenciaArbitro();
+                });
+
+                // Latido: mientras el panel siga abierto se va refrescando la última actividad.
+                setInterval(() => {
+                    if (listo) ref.update({ ultimaActividad: TS }).catch(() => {});
+                }, 60000);
+            } catch (err) {
+                console.warn('Presencia del árbitro no disponible:', err);   // nunca debe romper el panel
+            }
+        })();
+
         // --- Logo del sitio (encabezado) personalizable desde admin.html ---
         const LOGO_LIGA_DEFAULT = document.querySelector('.arbitro-header-logo') ? document.querySelector('.arbitro-header-logo').src : '';
         // ---- PWA: registro de service worker e instalación como app ----
@@ -982,10 +1071,12 @@
             try { sessionStorage.setItem('arbitro_pin_sesion', pin); } catch (err) { /* almacenamiento no disponible, no es crítico */ }
             document.getElementById('pantalla-login').style.display = 'none';
             aplicarIdentidadPorPin();
+            if (window.sincronizarPresenciaArbitro) window.sincronizarPresenciaArbitro();
         }
 
         function cerrarSesionArbitro() {
             arbitroSesion = '';
+            if (window.sincronizarPresenciaArbitro) window.sincronizarPresenciaArbitro();
             try { sessionStorage.removeItem('arbitro_pin_sesion'); } catch (err) { /* almacenamiento no disponible, no es crítico */ }
             const errEl = document.getElementById('login-error-msg');
             if (errEl) errEl.textContent = '';
@@ -1007,6 +1098,7 @@
             arbitroSesion = arb.nombre;
             document.getElementById('pantalla-login').style.display = 'none';
             aplicarIdentidadPorPin();
+            if (window.sincronizarPresenciaArbitro) window.sincronizarPresenciaArbitro();
         }
 
         // Mismos valores por defecto del Reglamento que admin.html (ver ahí el detalle). Se
