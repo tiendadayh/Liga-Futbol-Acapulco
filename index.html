@@ -101,6 +101,31 @@
         .theme-switch:hover { background: rgba(255,255,255,0.24); transform: translateY(-1px); }
         .theme-switch.theme-switch-flip { animation: themeSwitchFlip3D 0.5s ease; }
         @keyframes themeSwitchFlip3D { 0% { transform: rotateY(0deg); } 50% { transform: rotateY(180deg); } 100% { transform: rotateY(360deg); } }
+        .alerta-gol-switch {
+            position: absolute; top: 20px; right: 132px; z-index: 2; background: rgba(255,255,255,0.14);
+            backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 8px 14px;
+            border-radius: var(--radius-full); cursor: pointer; font-weight: 700; transition: var(--transition-fast);
+        }
+        .alerta-gol-switch:hover { background: rgba(255,255,255,0.24); transform: translateY(-1px); }
+        /* Alerta de gol en vivo (aparece arriba, sobre todo lo demás) */
+        #alerta-gol {
+            position: fixed; top: 12px; left: 50%; z-index: 1500; width: min(460px, calc(100vw - 24px));
+            display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer;
+            background: linear-gradient(135deg, #0b2f5c, #123a66); color: #fff; border: 2px solid #f0b429;
+            border-radius: 14px; box-shadow: 0 12px 34px rgba(0,0,0,0.45);
+            transform: translate(-50%, -160%); opacity: 0; pointer-events: none;
+            transition: transform .4s cubic-bezier(.2,.9,.3,1.2), opacity .25s;
+        }
+        #alerta-gol.visible { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+        #alerta-gol.mi-equipo { background: linear-gradient(135deg, #0b3d2e, #0f5a3f); border-color: #2ec4b6; }
+        #alerta-gol .ag-escudo { width: 52px; height: 52px; border-radius: 8px; object-fit: contain; background: #fff; flex-shrink: 0; }
+        #alerta-gol .ag-cuerpo { flex: 1; min-width: 0; }
+        #alerta-gol .ag-titulo { font-weight: 800; font-size: 1.05rem; color: #f0b429; }
+        #alerta-gol .ag-detalle { font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #alerta-gol .ag-marcador { font-size: 0.95rem; font-weight: 700; margin-top: 2px; }
+        #alerta-gol .ag-marcador .anota { color: #f0b429; }
+        #alerta-gol .ag-cerrar { background: none; border: none; color: #fff; opacity: 0.7; font-size: 1.1rem; cursor: pointer; padding: 4px; align-self: flex-start; }
+        @media (prefers-reduced-motion: reduce) { #alerta-gol { transition: opacity .2s; } }
         .theme-wave-3d {
             position: fixed; width: 0; height: 0; border-radius: 50%; pointer-events: none; z-index: 9999;
             transform: translate(-50%, -50%) perspective(800px) rotateX(8deg);
@@ -715,6 +740,7 @@
             header h1 { font-size: 1.5rem; }
             .site-header-logo { width: 54px; height: 54px; }
             .theme-switch { top: 12px; right: 12px; padding: 6px 10px; font-size: 0.75rem; }
+            .alerta-gol-switch { top: 12px; right: 92px; padding: 6px 10px; font-size: 0.75rem; }
             .install-btn { top: 12px; left: 12px; padding: 6px 10px; font-size: 0.75rem; }
             nav a { padding: 12px 18px; font-size: 0.72rem; }
             .container { margin: 20px auto; padding: 0 12px; }
@@ -938,6 +964,7 @@
             table:not(.tabla-equipos) { font-size: 0.74rem !important; }
             .bracket-match { width: 100% !important; }
             .theme-switch { padding: 6px 10px !important; font-size: 0.66rem !important; }
+            .alerta-gol-switch { padding: 6px 10px !important; font-size: 0.66rem !important; right: 84px !important; }
         }
         @media (max-width: 360px) {
             header h1 { font-size: 0.95rem !important; }
@@ -971,6 +998,7 @@
 
     <header id="site-header">
         <button class="theme-switch" onclick="toggleTheme(event)">🌓 Modo</button>
+        <button class="alerta-gol-switch" id="btn-alerta-gol" onclick="cambiarModoAlertaGol()" title="Alertas de gol">🔔 Goles</button>
         <button class="install-btn" id="btn-instalar-app" onclick="instalarAppPWA()">📲 Instalar App</button>
         <div class="header-shine" id="header-shine"></div>
         <div class="site-header-content">
@@ -1945,6 +1973,196 @@
                 .finally(() => { recibiendoDeFirebase = false; });
         }
 
+        // ===== Alerta de gol en vivo =====
+        // Cuando el árbitro registra un gol en un partido EN VIVO, quien tenga el sitio abierto ve un
+        // aviso con el goleador, el minuto y el marcador. Botón "Goles" del encabezado, tres modos
+        // (se recuerda en el dispositivo): 🔔 solo aviso en pantalla (por defecto) → 🔊 con sonido y
+        // vibración → 🔕 apagado. El sonido es opcional a propósito: un sitio público no debe sonar
+        // sin que la persona lo pida.
+        const CLAVE_ALERTA_GOL = 'ligaAlertaGol';
+        const MODOS_ALERTA_GOL = ['aviso', 'sonido', 'off'];
+        let golesConocidos = null;         // goles ya vistos ("partido:evento"); null = aún no llega la primera lectura (no avisar)
+        let timerAlertaGol = null;
+        let tituloOriginalPagina = null;
+        let audioCtxGol = null;
+
+        function modoAlertaGol() {
+            let m = 'aviso';
+            try { m = localStorage.getItem(CLAVE_ALERTA_GOL) || 'aviso'; } catch (e) { /* sin almacenamiento */ }
+            return MODOS_ALERTA_GOL.indexOf(m) >= 0 ? m : 'aviso';
+        }
+
+        function pintarBotonAlertaGol() {
+            const btn = document.getElementById('btn-alerta-gol');
+            if (!btn) return;
+            const m = modoAlertaGol();
+            btn.textContent = m === 'sonido' ? '🔊 Goles' : (m === 'off' ? '🔕 Goles' : '🔔 Goles');
+            btn.title = m === 'sonido' ? 'Alertas de gol: con sonido y vibración (toca para cambiar)'
+                : (m === 'off' ? 'Alertas de gol: apagadas (toca para cambiar)' : 'Alertas de gol: solo aviso en pantalla (toca para cambiar)');
+        }
+
+        // Los navegadores no dejan sonar audio hasta que la persona toca la página; se prepara en el primer toque.
+        function prepararAudioGol() {
+            try {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (!AC) return;
+                if (!audioCtxGol) audioCtxGol = new AC();
+                if (audioCtxGol.state === 'suspended') audioCtxGol.resume();
+            } catch (e) { /* sin audio */ }
+        }
+        document.addEventListener('pointerdown', prepararAudioGol, { once: true, passive: true });
+
+        function sonidoGol() {
+            try {
+                if (!audioCtxGol) return;
+                const t0 = audioCtxGol.currentTime;
+                [[523.25, 0], [659.25, 0.13], [783.99, 0.26], [1046.5, 0.42]].forEach(function (nota) {
+                    const osc = audioCtxGol.createOscillator();
+                    const gain = audioCtxGol.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(nota[0], t0 + nota[1]);
+                    gain.gain.setValueAtTime(0.0001, t0 + nota[1]);
+                    gain.gain.exponentialRampToValueAtTime(0.28, t0 + nota[1] + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + nota[1] + (nota[1] > 0.4 ? 0.55 : 0.16));
+                    osc.connect(gain).connect(audioCtxGol.destination);
+                    osc.start(t0 + nota[1]);
+                    osc.stop(t0 + nota[1] + 0.6);
+                });
+            } catch (e) { /* si el audio falla, el aviso visual ya salió */ }
+        }
+
+        function cambiarModoAlertaGol() {
+            const sig = MODOS_ALERTA_GOL[(MODOS_ALERTA_GOL.indexOf(modoAlertaGol()) + 1) % MODOS_ALERTA_GOL.length];
+            try { localStorage.setItem(CLAVE_ALERTA_GOL, sig); } catch (e) { /* sin almacenamiento */ }
+            pintarBotonAlertaGol();
+            const textos = {
+                aviso: '🔔 Alertas de gol: aviso en pantalla.',
+                sonido: '🔊 Alertas de gol: con sonido y vibración.',
+                off: '🔕 Alertas de gol apagadas.'
+            };
+            mostrarToast(textos[sig], 'info', 2500);
+            if (sig === 'sonido') { prepararAudioGol(); sonidoGol(); }   // el toque sirve de prueba de sonido
+        }
+
+        // Busca al jugador del evento por nombre (así lo guarda el panel del árbitro), prefiriendo
+        // a quien juega en este partido por si dos equipos tienen jugadores con el mismo nombre.
+        function jugadorDeEventoGol(p, ev) {
+            const candidatos = (db.jugadores || []).filter(function (j) { return j.nombre === ev.desc; });
+            return candidatos.find(function (j) { return j.equipoId === p.localId || j.equipoId === p.visitaId; }) || candidatos[0] || null;
+        }
+
+        function detectarGolesNuevos(dbNueva) {
+            const vistos = new Set();
+            const nuevos = [];
+            (dbNueva.partidos || []).forEach(function (p) {
+                (p.eventos || []).forEach(function (ev) {
+                    if (!ev || (ev.tipo !== 'gol' && ev.tipo !== 'autogol')) return;
+                    const clave = p.id + ':' + (ev.id !== undefined ? ev.id : ev.tipo + '-' + ev.min + '-' + ev.desc);
+                    vistos.add(clave);
+                    if (golesConocidos !== null && !golesConocidos.has(clave) && ESTADOS_PARTIDO_EN_VIVO.indexOf(p.estadoVivo) >= 0 && !p.jugado) nuevos.push({ p: p, ev: ev });
+                });
+            });
+            golesConocidos = vistos;   // la primera lectura solo sincroniza: al abrir el sitio no salen goles viejos
+            if (modoAlertaGol() === 'off') return;
+            nuevos.sort(function (a, b) { return (a.ev.min || 0) - (b.ev.min || 0); });
+            nuevos.forEach(function (n) { mostrarAlertaGol(n.p, n.ev); });
+        }
+
+        function ocultarAlertaGol() {
+            const el = document.getElementById('alerta-gol');
+            if (el) el.classList.remove('visible');
+            clearTimeout(timerAlertaGol);
+        }
+
+        function mostrarAlertaGol(p, ev) {
+            const loc = (db.equipos || []).find(function (e) { return e.id === p.localId; });
+            const vis = (db.equipos || []).find(function (e) { return e.id === p.visitaId; });
+            const jugador = jugadorDeEventoGol(p, ev);
+            let anotaId = null;   // equipo al que se le acredita el gol (en un autogol es el rival del jugador)
+            if (jugador) anotaId = ev.tipo === 'autogol' ? (jugador.equipoId === p.localId ? p.visitaId : p.localId) : jugador.equipoId;
+            const anota = anotaId === p.localId ? loc : (anotaId === p.visitaId ? vis : null);
+            const favoritoId = obtenerEquipoFavoritoId();
+            const esMiEquipo = favoritoId !== null && anotaId === favoritoId;
+            const sonido = modoAlertaGol() === 'sonido';
+
+            let el = document.getElementById('alerta-gol');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'alerta-gol';
+                el.setAttribute('role', 'status');
+                document.body.appendChild(el);
+            }
+            el.textContent = '';
+            el.classList.toggle('mi-equipo', esMiEquipo);
+
+            const escudo = document.createElement('img');
+            escudo.className = 'ag-escudo';
+            escudo.alt = '';
+            escudo.src = (anota && anota.escudo) || 'https://placehold.co/52';
+            const cuerpo = document.createElement('div');
+            cuerpo.className = 'ag-cuerpo';
+            const titulo = document.createElement('div');
+            titulo.className = 'ag-titulo';
+            titulo.textContent = ev.tipo === 'autogol' ? '❌ ¡AUTOGOL!' : (esMiEquipo ? '🎉 ¡GOOOL de tu equipo!' : '⚽ ¡GOOOL!');
+            const detalle = document.createElement('div');
+            detalle.className = 'ag-detalle';
+            detalle.textContent = (ev.desc || 'Jugador') + (anota ? ' · ' + anota.nombre : '') + (ev.min !== undefined && ev.min !== '' ? " · min " + ev.min + "'" : '');
+            const marcador = document.createElement('div');
+            marcador.className = 'ag-marcador';
+            const spanL = document.createElement('span');
+            spanL.textContent = (loc ? loc.nombre : 'Local') + ' ' + (p.golesLocal || 0);
+            const spanV = document.createElement('span');
+            spanV.textContent = (p.golesVisita || 0) + ' ' + (vis ? vis.nombre : 'Visita');
+            if (anotaId === p.localId) spanL.className = 'anota';
+            if (anotaId === p.visitaId) spanV.className = 'anota';
+            marcador.appendChild(spanL);
+            marcador.appendChild(document.createTextNode(' – '));
+            marcador.appendChild(spanV);
+            cuerpo.appendChild(titulo);
+            cuerpo.appendChild(detalle);
+            cuerpo.appendChild(marcador);
+            const cerrar = document.createElement('button');
+            cerrar.type = 'button';
+            cerrar.className = 'ag-cerrar';
+            cerrar.setAttribute('aria-label', 'Cerrar alerta');
+            cerrar.textContent = '✕';
+            cerrar.addEventListener('click', function (e) { e.stopPropagation(); ocultarAlertaGol(); });
+            el.appendChild(escudo);
+            el.appendChild(cuerpo);
+            el.appendChild(cerrar);
+            // Al tocar la alerta se va al partido en el calendario (igual que el banner "EN VIVO").
+            el.onclick = function () {
+                ocultarAlertaGol();
+                const sec = document.getElementById('jornadas-sec');
+                const filtro = document.getElementById('select-jornada-filtro');
+                if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+                if (filtro) { filtro.value = String(p.jornada); filtro.dispatchEvent(new Event('change')); }
+            };
+
+            void el.offsetWidth;   // reinicia la animación si ya había una alerta a la vista
+            el.classList.add('visible');
+            clearTimeout(timerAlertaGol);
+            timerAlertaGol = setTimeout(ocultarAlertaGol, 8000);
+
+            if (sonido) {
+                sonidoGol();
+                try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) { /* no todos los navegadores vibran */ }
+            }
+            // Si la pestaña está oculta, el título avisa para que se note en la barra del navegador.
+            if (document.hidden) {
+                if (tituloOriginalPagina === null) tituloOriginalPagina = document.title;
+                document.title = '⚽ ¡GOL! ' + tituloOriginalPagina;
+            }
+        }
+
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden && tituloOriginalPagina !== null) {
+                document.title = tituloOriginalPagina;
+                tituloOriginalPagina = null;
+            }
+        });
+        pintarBotonAlertaGol();
+
         // --- Sincronización automática en tiempo real con Firebase ---
         // Cuando admin.html publica cambios, este sitio público los recibe solo,
         // sin recargar la página, sin importar el dispositivo.
@@ -1954,6 +2172,7 @@
             if (!datosNube) return;
             db = datosNube;
             normalizarDB(db);
+            try { detectarGolesNuevos(db); } catch (err) { console.warn('Alerta de gol no disponible:', err); }   // nunca debe romper la actualización
             localStorage.setItem('liga_premier_db', JSON.stringify(db));
             actualizarVistaTodo();
             mostrarAvisoAutoguardado('🔄 Datos actualizados.');
@@ -3900,11 +4119,12 @@
             ctx.fillText(t, x, y);
         }
 
-        // Genera una imagen tipo "tarjeta de resultado" del partido (escudos, marcador, jornada, árbitro)
-        // y la comparte con el sistema operativo (WhatsApp/Instagram) o la descarga si el navegador no lo soporta.
-        async function compartirResultadoPartido(partidoId) {
+        // Genera la imagen PNG "tarjeta de resultado" del partido (escudos, marcador, jornada, goleadores,
+        // MVP, fecha, cancha y árbitro) y devuelve { blob, nombreArchivo, titulo, texto } listo para
+        // compartir o descargar. Devuelve null si el partido no existe o todavía no termina.
+        async function generarBlobResultadoPartido(partidoId) {
             const p = db.partidos.find(part => part.id === partidoId);
-            if (!p || !p.jugado) return;
+            if (!p || !p.jugado) return null;
 
             const equipoL = db.equipos.find(e => e.id === p.localId);
             const equipoV = db.equipos.find(e => e.id === p.visitaId);
@@ -3977,9 +4197,70 @@
             ajustarTextoAncho(ctx, nameL, 260, cy + 160, 320);
             ajustarTextoAncho(ctx, nameV, W - 260, cy + 160, 320);
 
-            ctx.font = 'bold 130px Arial';
+            const textoMarcador = `${p.golesLocal ?? 0}  -  ${p.golesVisita ?? 0}`;
+            ctx.font = textoMarcador.length > 7 ? 'bold 84px Arial' : 'bold 130px Arial';   // marcadores de 2 dígitos no deben tapar los escudos
             ctx.fillStyle = '#f0b429';
-            ctx.fillText(`${p.golesLocal ?? 0}  -  ${p.golesVisita ?? 0}`, W / 2, cy + 45);
+            ctx.fillText(textoMarcador, W / 2, cy + 45);
+
+            // --- Goleadores debajo de cada equipo (un gol en contra cuenta para el rival) ---
+            const golesPorLado = { local: [], visita: [] };
+            (p.eventos || []).filter(ev => ev && (ev.tipo === 'gol' || ev.tipo === 'autogol')).forEach(ev => {
+                const candidatos = (db.jugadores || []).filter(j => j.nombre === ev.desc);
+                const j = candidatos.find(x => x.equipoId === p.localId || x.equipoId === p.visitaId) || candidatos[0];
+                if (!j) return;
+                const delLocal = j.equipoId === p.localId, delVisita = j.equipoId === p.visitaId;
+                let lado = null;
+                if (ev.tipo === 'gol') lado = delLocal ? 'local' : (delVisita ? 'visita' : null);
+                else lado = delLocal ? 'visita' : (delVisita ? 'local' : null);
+                if (!lado) return;
+                golesPorLado[lado].push({ nombre: j.nombre + (ev.tipo === 'autogol' ? ' (a.g.)' : ''), min: parseInt(ev.min) || 0 });
+            });
+            // Un mismo goleador se junta en una sola línea: "Juan Pérez 12' 45'"
+            const lineasDeGoles = (lista) => {
+                const porNombre = new Map();
+                lista.sort((a, b) => a.min - b.min).forEach(g => {
+                    if (!porNombre.has(g.nombre)) porNombre.set(g.nombre, []);
+                    porNombre.get(g.nombre).push(g.min);
+                });
+                return Array.from(porNombre, ([nombre, mins]) => ({ nombre, minutos: mins.map(m => m + "'").join(' ') }));
+            };
+            // Si el nombre no cabe, se acorta el nombre (con …) para que los minutos siempre se vean.
+            const dibujarLineaGol = (linea, x, y, maxAncho) => {
+                if (typeof linea === 'string') { ctx.fillText(linea, x, y); return; }
+                let nombre = linea.nombre;
+                const armar = (n) => `⚽ ${n}  ${linea.minutos}`;
+                while (ctx.measureText(armar(nombre)).width > maxAncho && nombre.length > 3) nombre = nombre.slice(0, -1);
+                if (nombre !== linea.nombre) nombre = nombre.trimEnd() + '…';
+                ctx.fillText(armar(nombre), x, y);
+            };
+            const MAX_LINEAS_GOLES = 5, ALTO_LINEA = 38, Y_GOLES = cy + 215;
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '26px Arial';
+            [['local', 260], ['visita', W - 260]].forEach(([lado, x]) => {
+                let lineas = lineasDeGoles(golesPorLado[lado]);
+                if (lineas.length > MAX_LINEAS_GOLES) {
+                    const resto = lineas.length - (MAX_LINEAS_GOLES - 1);
+                    lineas = lineas.slice(0, MAX_LINEAS_GOLES - 1).concat([`+${resto} más`]);
+                }
+                lineas.forEach((linea, i) => dibujarLineaGol(linea, x, Y_GOLES + i * ALTO_LINEA, 440));
+            });
+            if (((p.golesLocal ?? 0) + (p.golesVisita ?? 0)) === 0) {
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = 'italic 26px Arial';
+                ctx.fillText('Sin goles', W / 2, Y_GOLES);
+            }
+
+            // --- MVP del partido ---
+            const mvp = p.mvpJugadorId ? (db.jugadores || []).find(j => j.id === p.mvpJugadorId) : null;
+            if (mvp) {
+                const equipoMvp = db.equipos.find(e => e.id === mvp.equipoId);
+                ctx.fillStyle = '#f0b429';
+                if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(90, 830, W - 180, 64, 32); ctx.fill(); }
+                else { ctx.fillRect(90, 830, W - 180, 64); }
+                ctx.fillStyle = '#0b2f5c';
+                ctx.font = 'bold 28px Arial';
+                ajustarTextoAncho(ctx, `⭐ MVP del partido: ${mvp.nombre}${equipoMvp ? ' (' + equipoMvp.nombre + ')' : ''}`, W / 2, 872, W - 260);
+            }
 
             ctx.fillStyle = '#ffffff';
             ctx.font = '22px Arial';
@@ -3991,27 +4272,38 @@
             ctx.fillStyle = '#94a3b8';
             ctx.fillText('Sitio Oficial · Liga de Futbol CoSmar SPORT CLUB', W / 2, H - 40);
 
-            canvas.toBlob(async (blob) => {
-                if (!blob) return;
-                const nombreArchivo = `resultado-${nameL}-vs-${nameV}.png`.replace(/\s+/g, '-');
-                const archivo = new File([blob], nombreArchivo, { type: 'image/png' });
+            const nombreArchivo = `resultado-${nameL}-vs-${nameV}.png`.replace(/\s+/g, '-');
+            return new Promise(resolve => canvas.toBlob(blob => resolve(blob ? {
+                blob,
+                nombreArchivo,
+                titulo: `${nameL} ${p.golesLocal ?? 0}-${p.golesVisita ?? 0} ${nameV}`,
+                texto: `Resultado Liga de Futbol CoSmar SPORT CLUB · ${etiquetaJornada(p.jornada)}`
+            } : null), 'image/png'));
+        }
 
-                if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
-                    try {
-                        await navigator.share({ files: [archivo], title: `${nameL} ${p.golesLocal}-${p.golesVisita} ${nameV}`, text: `Resultado Liga de Futbol CoSmar SPORT CLUB · ${etiquetaJornada(p.jornada)}` });
-                        return;
-                    } catch (err) { /* si el usuario cancela el share, caemos a la descarga */ }
-                }
+        // Comparte la imagen del resultado con el sistema (WhatsApp/Instagram) o la descarga
+        // si el navegador no soporta compartir archivos.
+        async function compartirResultadoPartido(partidoId) {
+            const resultado = await generarBlobResultadoPartido(partidoId);
+            if (!resultado) return;
+            const { blob, nombreArchivo, titulo, texto } = resultado;
+            const archivo = new File([blob], nombreArchivo, { type: 'image/png' });
 
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = nombreArchivo;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 'image/png');
+            if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+                try {
+                    await navigator.share({ files: [archivo], title: titulo, text: texto });
+                    return;
+                } catch (err) { /* si el usuario cancela el share, caemos a la descarga */ }
+            }
+
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = nombreArchivo;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
 
         // Genera una imagen tipo "cartelera" con TODOS los partidos de la jornada
