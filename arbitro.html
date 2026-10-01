@@ -4,12 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liga de Futbol CoSmar SPORT CLUB - Panel del Árbitros</title>
-    <meta name="description" content="Panel de árbitros de la Liga de Futbol CoSmar SPORT CLUB: consulta y gestión de los partidos asignados a dirigir.">
+    <title>Liga de Futbol Acapulco - Panel del Árbitros</title>
+    <meta name="description" content="Panel de árbitros de la Liga de Futbol Acapulco: consulta y gestión de los partidos asignados a dirigir.">
     <meta name="robots" content="noindex, nofollow">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Liga de Futbol CoSmar SPORT CLUB - Panel del Árbitros">
-    <meta property="og:description" content="Panel de árbitros de la Liga de Futbol CoSmar SPORT CLUB.">
+    <meta property="og:title" content="Liga de Futbol Acapulco - Panel del Árbitros">
+    <meta property="og:description" content="Panel de árbitros de la Liga de Futbol Acapulco.">
     <meta property="og:image" content="https://tiendadayh.github.io/Liga-Futbol-Acapulco/icon-512.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -547,7 +547,7 @@
     <div id="pantalla-login" style="position:fixed; inset:0; background:linear-gradient(135deg,#0d2a4d,#1a3a6b); z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px;">
         <div style="background:#fff; border-radius:14px; padding:35px 30px; width:100%; max-width:340px; box-shadow:0 10px 40px rgba(0,0,0,0.3); text-align:center;">
             <h2 style="margin:0 0 6px; color:#0d2a4d;">🔒 Acceso Árbitro</h2>
-            <p style="font-size:0.85rem; color:#666; margin:0 0 18px;">Liga de Futbol CoSmar SPORT CLUB</p>
+            <p id="nombre-liga-login" style="font-size:0.85rem; color:#666; margin:0 0 18px;">Liga de Futbol Acapulco</p>
             <input type="text" id="login-pin" inputmode="numeric" maxlength="6" placeholder="PIN de acceso (6 dígitos)" style="width:100%; padding:10px; margin-bottom:14px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; text-align:center; font-size:1.1rem; letter-spacing:2px;">
             <button type="button" onclick="iniciarSesionArbitro()" style="width:100%; padding:11px; background:#ff9100; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Entrar</button>
             <p id="login-error-msg" style="color:#c62828; font-size:0.8rem; min-height:1.1em; margin:10px 0 0;"></p>
@@ -558,10 +558,10 @@
     <div class="wrap">
         <header>
             <div class="arbitro-header-content">
-                <img src="icon-512.png" alt="Logo Liga de Futbol CoSmar SPORT CLUB" class="arbitro-header-logo">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='white' stroke='%230b2f5c' stroke-width='4'/><polygon points='50,30 69,44 62,66 38,66 31,44' fill='%230b2f5c'/><path d='M50 30V6M69 44L92 36M62 66L77 86M38 66L23 86M31 44L8 36' stroke='%230b2f5c' stroke-width='4' fill='none'/></svg>" alt="Logo Liga de Futbol Acapulco" class="arbitro-header-logo">
                 <div>
                     <h1>🎙️ Panel del Árbitros</h1>
-                    <p>Liga de Futbol CoSmar SPORT CLUB - Cédula Oficial del Partido</p>
+                    <p id="nombre-liga-header">Liga de Futbol Acapulco - Cédula Oficial del Partido</p>
                 </div>
             </div>
         </header>
@@ -954,6 +954,43 @@
                 let enCurso = false;
                 let nombreRegistrado = '';
                 let advertido = false;
+                // Registro de ingresos del día (para que el admin vea a qué hora entró y salió cada árbitro).
+                let logRef = null;
+                let logNombre = '';
+
+                function fechaMexicoArb(ms) {
+                    try {
+                        return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms));
+                    } catch (e) { return new Date(ms).toISOString().slice(0, 10); }
+                }
+
+                function abrirLog(nombre) {
+                    try {
+                        if (logRef && logNombre === nombre) {   // volvió la conexión: la misma sesión sigue abierta
+                            logRef.child('f').remove().catch(() => {});
+                            logRef.onDisconnect().update({ f: TS }).catch(() => {});
+                            return;
+                        }
+                        cerrarLog();
+                        const r = firebase.database().ref('sesionesArbitros/' + fechaMexicoArb(Date.now()) + '/' + id + '_' + Date.now().toString(36));
+                        logRef = r;
+                        logNombre = nombre;
+                        r.set({ n: nombre, i: TS, d: dispositivo })
+                            .then(() => r.onDisconnect().update({ f: TS }))
+                            .catch(err => console.warn('Registro de ingresos del árbitro no disponible (revisa las reglas de Firebase).', err && err.message));
+                    } catch (e) { console.warn('Registro de ingresos del árbitro no disponible:', e); }
+                }
+
+                function cerrarLog() {
+                    if (!logRef) return;
+                    const r = logRef;
+                    logRef = null;
+                    logNombre = '';
+                    try {
+                        r.onDisconnect().cancel().catch(() => {});
+                        r.update({ f: TS }).catch(() => {});
+                    } catch (e) { /* nunca debe romper el panel */ }
+                }
 
                 function alFallar(err) {
                     if (advertido) return;
@@ -981,7 +1018,7 @@
                         }))
                         .then(() => {
                             enCurso = false;
-                            if (nombreSesion()) listo = true;
+                            if (nombreSesion()) { listo = true; abrirLog(nombre); }
                             else ref.remove().catch(() => {});   // cerró sesión justo mientras se registraba
                         })
                         .catch(err => { enCurso = false; alFallar(err); });
@@ -991,6 +1028,7 @@
                     if (!listo) return;
                     listo = false;
                     nombreRegistrado = '';
+                    cerrarLog();
                     ref.remove().catch(() => {});
                 }
 
@@ -1001,6 +1039,7 @@
                     if (listo && nombre !== nombreRegistrado) {   // otro árbitro entró en el mismo equipo
                         nombreRegistrado = nombre;
                         ref.update({ nombre: nombre }).catch(alFallar);
+                        abrirLog(nombre);
                         return;
                     }
                     registrar();
@@ -1054,7 +1093,21 @@
             });
         }
 
+        const NOMBRE_LIGA_DEFAULT = 'Liga de Futbol Acapulco';
+        function nombreLigaActual() {
+            const n = (typeof db !== 'undefined' && db && db.config && db.config.nombreLiga) ? String(db.config.nombreLiga).trim() : '';
+            return (!n || /cosmar/i.test(n)) ? NOMBRE_LIGA_DEFAULT : n;
+        }
+
+        function aplicarNombreLiga() {
+            const n = nombreLigaActual();
+            const a = document.getElementById('nombre-liga-login'); if (a) a.textContent = n;
+            const b = document.getElementById('nombre-liga-header'); if (b) b.textContent = n + ' - Cédula Oficial del Partido';
+            document.title = n + ' - Panel del Árbitros';
+        }
+
         function aplicarLogoSitio() {
+            aplicarNombreLiga();
             const logo = document.querySelector('.arbitro-header-logo');
             if (!logo) return;
             logo.src = (db.config && db.config.logoSitio) ? db.config.logoSitio : LOGO_LIGA_DEFAULT;
@@ -1665,7 +1718,7 @@
             doc.setTextColor(255, 255, 255);
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(14);
-            doc.text('LIGA DE FUTBOL COSMAR SPORT CLUB', pageWidth / 2, 11, { align: 'center' });
+            doc.text(nombreLigaActual().toUpperCase(), pageWidth / 2, 11, { align: 'center' });
             doc.setFontSize(11);
             doc.text('CÉDULA OFICIAL DE ARBITRAJE', pageWidth / 2, 18, { align: 'center' });
             y = 32;

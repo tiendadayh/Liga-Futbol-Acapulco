@@ -4,12 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liga de Futbol CoSmar SPORT CLUB - Panel Avanzado Pro</title>
-    <meta name="description" content="Panel administrativo de la Liga de Futbol CoSmar SPORT CLUB: gestión de equipos, jugadores, partidos, credenciales y patrocinadores.">
+    <title>Liga de Futbol Acapulco - Panel Avanzado Pro</title>
+    <meta name="description" content="Panel administrativo de la Liga de Futbol Acapulco: gestión de equipos, jugadores, partidos, credenciales y patrocinadores.">
     <meta name="robots" content="noindex, nofollow">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Liga de Futbol CoSmar SPORT CLUB - Panel Avanzado Pro">
-    <meta property="og:description" content="Panel administrativo de la Liga de Futbol CoSmar SPORT CLUB.">
+    <meta property="og:title" content="Liga de Futbol Acapulco - Panel Avanzado Pro">
+    <meta property="og:description" content="Panel administrativo de la Liga de Futbol Acapulco.">
     <meta property="og:image" content="https://tiendadayh.github.io/Liga-Futbol-Acapulco/icon-512.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -697,7 +697,7 @@
     <div id="pantalla-login" style="position:fixed; inset:0; background:linear-gradient(135deg,#0d2a4d,#1a3a6b); z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px;">
         <div style="background:#fff; border-radius:14px; padding:35px 30px; width:100%; max-width:340px; box-shadow:0 10px 40px rgba(0,0,0,0.3); text-align:center;">
             <h2 style="margin:0 0 6px; color:#0d2a4d;">🔒 Acceso Administrador</h2>
-            <p style="font-size:0.85rem; color:#666; margin:0 0 18px;">Liga de Futbol CoSmar SPORT CLUB</p>
+            <p id="nombre-liga-login" style="font-size:0.85rem; color:#666; margin:0 0 18px;">Liga de Futbol Acapulco</p>
             <input type="email" id="login-email" placeholder="Correo electrónico" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box;">
             <input type="password" id="login-password" placeholder="Contraseña" style="width:100%; padding:10px; margin-bottom:14px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box;">
             <button type="button" onclick="iniciarSesionAdmin()" style="width:100%; padding:11px; background:#ff9100; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Entrar</button>
@@ -707,7 +707,7 @@
 
     <header>
         <div class="admin-header-content">
-            <img src="icon-512.png" alt="Logo Liga de Futbol CoSmar SPORT CLUB" class="admin-header-logo">
+            <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='white' stroke='%230b2f5c' stroke-width='4'/><polygon points='50,30 69,44 62,66 38,66 31,44' fill='%230b2f5c'/><path d='M50 30V6M69 44L92 36M62 66L77 86M38 66L23 86M31 44L8 36' stroke='%230b2f5c' stroke-width='4' fill='none'/></svg>" alt="Logo Liga de Futbol Acapulco" class="admin-header-logo">
             <div>
                 <h1>🛠️ PANEL DE ADMINISTRACIÓN DE LA LIGA</h1>
                 <p>Respaldo, Publicacion, Liguilla, Solicitudes, Control Financiero, Correciones , Credenciales y Cedula</p>
@@ -953,7 +953,11 @@
 
         <!-- LOGO DEL SITIO (ENCABEZADO) -->
         <div class="admin-box" style="border-top-color:#0d2a4d;">
-            <h3>🖼️ Logo del Sitio (Encabezado)</h3>
+            <h3>🏷️ Identidad de la Liga (Nombre y Logo)</h3>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:4px 0 14px;">
+                <input type="text" id="input-nombre-liga-sitio" maxlength="80" placeholder="Nombre de tu liga (ej. Liga Municipal de Fútbol)" style="flex:1; min-width:220px;">
+                <button type="button" onclick="guardarNombreLiga()" style="background:#0d2a4d;">💾 Guardar Nombre</button>
+            </div>
             <p style="font-size:0.8rem; color:#555; margin-top:-8px;">Sube una imagen para reemplazar el escudo del encabezado en las 3 páginas (Admin, Árbitro y Sitio Público). Presiona "🚀 Publicar" (arriba) para que se refleje en los demás dispositivos. "Quitar" regresa al escudo original.</p>
             <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
                 <img id="logo-sitio-preview" src="" alt="Logo actual" style="width:70px; height:70px; object-fit:contain; border:1px solid #ccc; border-radius:8px; background:#fff; padding:4px;">
@@ -973,7 +977,7 @@
             <p style="font-size:0.8rem; color:#555; margin-top:-8px;">Estos datos se usan en todas las credenciales oficiales que imprimas. Se guardan una sola vez por temporada.</p>
             <form id="form-config-credencial">
                 <label>Nombre de la Liga (como debe aparecer en la credencial):</label>
-                <input type="text" id="cfg-nombre-liga" placeholder="Ej. LIGA DE FUTBOL COSMAR SPORT CLUB">
+                <input type="text" id="cfg-nombre-liga" placeholder="Ej. LIGA DE FUTBOL ACAPULCO">
                 <label>Encabezado línea 1 (Ej. FEDERACIÓN MEXICANA DE FÚTBOL ASOC., A.C.):</label>
                 <input type="text" id="cfg-asociacion" placeholder="Ej. FEDERACIÓN MEXICANA DE FÚTBOL ASOC., A.C.">
                 <label>Encabezado línea 2 (Ej. SECTOR AFICIONADO ASOCIACIÓN GUERRERO):</label>
@@ -1282,13 +1286,14 @@
             transition: opacity .25s, transform .25s;
         }
         #toast-conectados.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
-        #toast-conectados .tc-titulo { font-size: 0.85rem; font-weight: bold; }
+        #toast-conectados .tc-titulo { font-size: 1.05rem; font-weight: 800; }
         #toast-conectados .tc-detalle { font-size: 0.75rem; opacity: 0.85; margin-top: 2px; }
         .conectado-fila { display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px solid #eef1f6; }
         .conectado-fila:last-child { border-bottom: none; }
         .conectado-icono { font-size: 1.3rem; flex-shrink: 0; }
         .conectado-info { flex: 1; min-width: 0; }
         .conectado-nombre { font-size: 0.88rem; font-weight: bold; color: #0d2a4d; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .conectado-nombre.conectado-nombre-grande { font-size: 1.2rem; font-weight: 800; color: #0b3d91; }
         .conectado-seccion { font-size: 0.75rem; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .conectado-tiempo { font-size: 0.72rem; color: #888; flex-shrink: 0; }
         .conectado-arbitro { background: #eaf4ff; border-radius: 8px; padding-left: 8px; padding-right: 8px; }
@@ -1310,11 +1315,23 @@
             <p id="conectados-resumen" style="font-size:0.8rem; color:#666; margin:0 0 12px;"></p>
             <p id="conectados-error" style="display:none; background:#fdecea; color:#c62828; font-size:0.8rem; font-weight:bold; padding:8px 10px; border-radius:6px; margin:0 0 12px;"></p>
             <div id="lista-conectados" style="max-height:45vh; overflow-y:auto;"></div>
+            <h4 style="margin:14px 0 6px; color:#0d2a4d; font-size:0.9rem;">👥 Visitantes de hoy</h4>
+            <div id="visitantes-hoy" style="max-height:25vh; overflow-y:auto;"></div>
+            <h4 style="margin:14px 0 6px; color:#0d2a4d; font-size:0.9rem;">✉️ Enviar mensaje a visitantes</h4>
+            <select id="msg-destino" style="width:100%; padding:8px; margin-bottom:6px;"><option value="todos">Todos los visitantes</option></select>
+            <textarea id="msg-texto" maxlength="200" rows="2" placeholder="Ej. Hoy hay cambio de cancha en el partido de las 5:00 pm" style="width:100%; padding:8px; box-sizing:border-box; resize:vertical;"></textarea>
+            <div style="display:flex; gap:8px; margin-top:6px;">
+                <button type="button" onclick="enviarMensajeVisitantes()" style="flex:1;">📨 Enviar</button>
+                <button type="button" onclick="quitarMensajeGeneral()" style="flex:1; background:#c62828;">🗑️ Quitar mensaje a todos</button>
+            </div>
+            <p id="msg-estado" style="font-size:0.75rem; color:#666; margin:6px 0 0;"></p>
+            <h4 style="margin:14px 0 6px; color:#0d2a4d; font-size:0.9rem;">🎙️ Ingresos de árbitros hoy</h4>
+            <div id="ingresos-arbitros-hoy" style="max-height:25vh; overflow-y:auto;"></div>
             <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;">
                 <button type="button" id="btn-avisos-conectados" onclick="alternarAvisosConectados()" style="flex:1;">🔔 Sonido y avisos: activados</button>
                 <button type="button" onclick="reproducirSonidoNuevoVisitante()" style="flex:1; background:#455a64;">🔊 Probar sonido</button>
             </div>
-            <p style="font-size:0.72rem; color:#888; margin:10px 0 0;">Solo aparece quien está usando el sitio: si alguien deja la página sin tocar nada por 2 minutos o cambia de pestaña, deja de contarse hasta que regrese. Los visitantes son anónimos. Los árbitros aparecen mientras tengan su panel abierto con su PIN y no se quitan por inactividad.</p>
+            <p style="font-size:0.72rem; color:#888; margin:10px 0 0;">Solo aparece quien está usando el sitio: si alguien deja la página sin tocar nada por 2 minutos o cambia de pestaña, deja de contarse hasta que regrese. Los visitantes aparecen con el nombre que escriben al entrar (es opcional; si no lo ponen, salen como anónimos). Los árbitros aparecen mientras tengan su panel abierto con su PIN y no se quitan por inactividad.</p>
         </div>
     </div>
 
@@ -1619,7 +1636,7 @@
             </div>
             <div>
                 <label>Página de Facebook que transmite:</label>
-                <input type="text" id="fb-live-pagina" placeholder="Ej. Liga de Futbol CoSmar SPORT CLUB (o el link de la página)">
+                <input type="text" id="fb-live-pagina" placeholder="Ej. Liga de Futbol Acapulco (o el link de la página)">
             </div>
         </div>
         <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; margin-top:12px; cursor:pointer;">
@@ -1869,6 +1886,10 @@
         let iniciandoConectados = false;
         // Visitas del día
         let refSesionesHoy = null;
+        let refIngresosArbHoy = null;        // ingresos de árbitros del día (sesionesArbitros/AAAA-MM-DD)
+        let fechaIngresosArb = '';
+        let ingresosArbHoy = null;           // null = todavía no llegan
+        let errorIngresosArb = false;
         let fechaSesionesEscuchada = '';
         let sesionesHoy = null;              // null = todavía no llegan
         let errorSesiones = false;
@@ -1940,6 +1961,8 @@
         function detenerEscuchaConectados() {
             if (refConectados) { refConectados.off('value', alCambiarConectados); refConectados = null; }
             if (refSesionesHoy) { refSesionesHoy.off('value', alCambiarSesiones); refSesionesHoy = null; }
+            if (refIngresosArbHoy) { refIngresosArbHoy.off('value', alCambiarIngresosArb); refIngresosArbHoy = null; }
+            fechaIngresosArb = ''; ingresosArbHoy = null; errorIngresosArb = false;
             clearInterval(timerCambioDia);
             fechaSesionesEscuchada = '';
             sesionesHoy = null;
@@ -2004,6 +2027,7 @@
         function textoDondeEsta(info) {
             if (!info) return '';
             const partes = [];
+            if (info.nombre) partes.push('👤 ' + info.nombre);
             if (info.equipo) partes.push('⭐ ' + info.equipo);
             partes.push('viendo ' + (info.seccion || 'Inicio'));
             return partes.join(' · ');
@@ -2039,8 +2063,21 @@
             const acumula = !!toast && toast.classList.contains('visible') && toastConectadosTipo === 'visitante';
             toastConectadosNuevos = acumula ? toastConectadosNuevos + idsNuevos.length : idsNuevos.length;
             const total = visitantesVivos().length;
+            const unico = idsNuevos.length === 1 ? conectadosActuales[idsNuevos[0]] : null;
+            if (unico && unico.visitas > 1 && !acumula) {
+                // Visitante que ya había entrado otros días: aviso y sonido distintos.
+                if (unico.visitas >= 3 && ahora - ultimoSonidoConectados > 0) reproducirSonidoNuevoVisitante(3);
+                mostrarToastPresencia(
+                    '🔁 ' + (unico.nombre || 'Un visitante') + ' volvió · visita #' + unico.visitas,
+                    'Ahora hay ' + total + (total === 1 ? ' persona' : ' personas') + ' en el sitio',
+                    textoDondeEsta(unico),
+                    'visitante'
+                );
+                toastConectadosNuevos = 1;
+                return;
+            }
             mostrarToastPresencia(
-                toastConectadosNuevos === 1 ? '🆕 Nuevo visitante en el sitio' : '🆕 ' + toastConectadosNuevos + ' visitantes nuevos en el sitio',
+                toastConectadosNuevos === 1 ? ('🆕 Nuevo visitante' + (conectadosActuales[idsNuevos[0]] && conectadosActuales[idsNuevos[0]].nombre ? ': ' + conectadosActuales[idsNuevos[0]].nombre : ' en el sitio')) : '🆕 ' + toastConectadosNuevos + ' visitantes nuevos en el sitio',
                 'Ahora hay ' + total + (total === 1 ? ' persona' : ' personas') + ' en el sitio',
                 toastConectadosNuevos === 1 ? textoDondeEsta(conectadosActuales[idsNuevos[0]]) : '',
                 'visitante'
@@ -2093,6 +2130,9 @@
         function pintarListaConectados() {
             const modal = document.getElementById('modal-conectados');
             if (!modal || modal.style.display === 'none') return;
+            pintarIngresosArbitros();
+            pintarVisitantesHoy();
+            llenarDestinosMensaje();
             const cont = document.getElementById('lista-conectados');
             const resumen = document.getElementById('conectados-resumen');
             const err = document.getElementById('conectados-error');
@@ -2142,8 +2182,11 @@
                     nombre.textContent = 'Árbitro · ' + (info.nombre || 'sin nombre');
                     donde.textContent = 'En su panel de árbitro · ' + (info.dispositivo === 'movil' ? '📱 celular' : '💻 computadora');
                 } else {
-                    nombre.textContent = info.equipo ? 'Visitante · ⭐ ' + info.equipo : 'Visitante anónimo';
-                    donde.textContent = (enRegistro ? '📝 ' : '') + 'Viendo: ' + (info.seccion || 'Inicio');
+                    if (info.nombre) nombre.classList.add('conectado-nombre-grande');
+                    nombre.textContent = info.nombre
+                        ? info.nombre
+                        : (info.equipo ? 'Visitante · ⭐ ' + info.equipo : 'Visitante anónimo');
+                    donde.textContent = (enRegistro ? '📝 ' : '') + (info.visitas > 1 ? '🔁 Visita #' + info.visitas + ' · ' : '') + (info.nombre && info.equipo ? '⭐ ' + info.equipo + ' · ' : '') + 'Viendo: ' + (info.seccion || 'Inicio');
                 }
                 datos.appendChild(nombre);
                 datos.appendChild(donde);
@@ -2158,8 +2201,192 @@
         }
 
         // ----- Visitas del día y pico de conectados (tarjetas de "Resumen de hoy") -----
+        function escucharIngresosArbitrosHoy() {
+            if (!firebase.auth().currentUser) return;
+            const fecha = fechaMexico(ahoraServidorConectados());
+            if (refIngresosArbHoy && fechaIngresosArb === fecha) return;
+            if (refIngresosArbHoy) { refIngresosArbHoy.off('value', alCambiarIngresosArb); refIngresosArbHoy = null; ingresosArbHoy = null; }
+            fechaIngresosArb = fecha;
+            errorIngresosArb = false;
+            refIngresosArbHoy = firebase.database().ref('sesionesArbitros/' + fecha);
+            refIngresosArbHoy.on('value', alCambiarIngresosArb, function () {
+                errorIngresosArb = true;
+                refIngresosArbHoy = null;
+                fechaIngresosArb = '';   // el chequeo de cada minuto lo reintenta
+                pintarIngresosArbitros();
+                pintarTarjetasVisitas();
+            });
+        }
+
+        function alCambiarIngresosArb(snap) {
+            errorIngresosArb = false;
+            ingresosArbHoy = snap.val() || {};
+            pintarIngresosArbitros();
+            pintarTarjetasVisitas();
+        }
+
+        function listaIngresosArbitros() {
+            const o = ingresosArbHoy || {};
+            return Object.keys(o).map(k => o[k]).filter(x => x && typeof x === 'object' && x.i)
+                .sort((a, b) => (b.i || 0) - (a.i || 0));
+        }
+
+        // Todo lo que viene de Firebase se pone con textContent (nunca como HTML).
+        function pintarIngresosArbitros() {
+            const cont = document.getElementById('ingresos-arbitros-hoy');
+            if (!cont) return;
+            cont.textContent = '';
+            const aviso = function (txt, rojo) {
+                const p = document.createElement('p');
+                p.style.cssText = 'text-align:center; font-size:0.8rem; padding:10px 0; margin:0; color:' + (rojo ? '#c62828' : '#888') + ';';
+                p.textContent = txt;
+                cont.appendChild(p);
+            };
+            if (errorIngresosArb) return aviso('Firebase no dejó leer "sesionesArbitros". Agrega esa regla en Realtime Database > Reglas y recarga esta página.', true);
+            if (ingresosArbHoy === null) return aviso('Cargando…', false);
+            const lista = listaIngresosArbitros();
+            if (!lista.length) return aviso('Ningún árbitro ha entrado hoy.', false);
+            const enLinea = new Set(arbitrosVivos().map(par => par[1].nombre || ''));
+            lista.forEach(function (x) {
+                const fila = document.createElement('div');
+                fila.className = 'conectado-fila conectado-arbitro';
+                fila.style.marginBottom = '4px';
+                const icono = document.createElement('div');
+                icono.className = 'conectado-icono';
+                icono.textContent = '🎙️';
+                const datos = document.createElement('div');
+                datos.className = 'conectado-info';
+                const nombre = document.createElement('div');
+                nombre.className = 'conectado-nombre';
+                nombre.textContent = x.n || 'Árbitro';
+                const detalle = document.createElement('div');
+                detalle.className = 'conectado-seccion';
+                let t = 'Entró a las ' + horaMexico(x.i);
+                if (x.f) t += ' · Salió a las ' + horaMexico(x.f);
+                else if (enLinea.has(x.n || '')) t += ' · 🟢 En línea ahora';
+                else t += ' · sin hora de salida';
+                detalle.textContent = t + (x.d === 'movil' ? ' · 📱' : (x.d === 'pc' ? ' · 💻' : ''));
+                datos.appendChild(nombre);
+                datos.appendChild(detalle);
+                const tiempo = document.createElement('div');
+                tiempo.className = 'conectado-tiempo';
+                tiempo.textContent = tiempoRelativoConectado(x.i);
+                fila.appendChild(icono);
+                fila.appendChild(datos);
+                fila.appendChild(tiempo);
+                cont.appendChild(fila);
+            });
+        }
+
+        // ----- Visitantes de hoy con nombre (salen de sesiones/AAAA-MM-DD) -----
+        function pintarVisitantesHoy() {
+            const cont = document.getElementById('visitantes-hoy');
+            if (!cont) return;
+            cont.textContent = '';
+            const nota = function (txt, rojo) {
+                const p = document.createElement('p');
+                p.style.cssText = 'text-align:center; font-size:0.8rem; padding:10px 0; margin:0; color:' + (rojo ? '#c62828' : '#888') + ';';
+                p.textContent = txt;
+                cont.appendChild(p);
+            };
+            if (errorSesiones) return nota('Firebase no dejó leer \"sesiones\". Revisa las reglas.', true);
+            if (sesionesHoy === null || sesionesHoy === undefined) return nota('Cargando…', false);
+            const porPersona = {};
+            Object.keys(sesionesHoy).forEach(function (sid) {
+                const s = sesionesHoy[sid];
+                if (!s || typeof s !== 'object' || !s.v || !s.i) return;
+                const p = porPersona[s.v] || (porPersona[s.v] = { v: s.v, n: '', primera: s.i, ultima: s.i, salida: 0, entradas: 0 });
+                p.entradas++;
+                if (s.n) p.n = s.n;
+                if (s.i < p.primera) p.primera = s.i;
+                if (s.i >= p.ultima) { p.ultima = s.i; p.salida = s.f || 0; }
+            });
+            const todos = Object.keys(porPersona).map(k => porPersona[k]);
+            const conNombre = todos.filter(p => p.n).sort((x, y) => y.ultima - x.ultima);
+            const anonimos = todos.length - conNombre.length;
+            if (!todos.length) return nota('Todavía no ha entrado nadie hoy.', false);
+            conNombre.forEach(function (p) {
+                const fila = document.createElement('div');
+                fila.className = 'conectado-fila';
+                const icono = document.createElement('div');
+                icono.className = 'conectado-icono';
+                icono.textContent = '👤';
+                const datos = document.createElement('div');
+                datos.className = 'conectado-info';
+                const nombre = document.createElement('div');
+                nombre.className = 'conectado-nombre conectado-nombre-grande';
+                nombre.textContent = p.n;
+                const detalle = document.createElement('div');
+                detalle.className = 'conectado-seccion';
+                const enLinea = !!(conectadosActuales && conectadosActuales[p.v] && conectadosVivos().some(par => par[0] === p.v));
+                let t = 'Entró a las ' + horaMexico(p.primera);
+                if (p.entradas > 1) t += ' · ' + p.entradas + ' entradas';
+                t += enLinea ? ' · 🟢 En línea ahora' : (p.salida ? ' · Salió a las ' + horaMexico(p.salida) : '');
+                detalle.textContent = t;
+                datos.appendChild(nombre);
+                datos.appendChild(detalle);
+                fila.appendChild(icono);
+                fila.appendChild(datos);
+                cont.appendChild(fila);
+            });
+            if (anonimos > 0) nota((conNombre.length ? '+ ' : '') + anonimos + (anonimos === 1 ? ' visitante anónimo' : ' visitantes anónimos'), false);
+        }
+
+        // ----- Mensajes del administrador a los visitantes (nodo mensajes/) -----
+        let destinosMensajeClave = '';
+        function llenarDestinosMensaje() {
+            const sel = document.getElementById('msg-destino');
+            if (!sel) return;
+            const opciones = [['todos', 'Todos los visitantes']];
+            visitantesVivos().forEach(function (par) {
+                opciones.push([par[0], (par[1].nombre || 'Anónimo') + ' · ' + (par[1].dispositivo === 'movil' ? '📱' : '💻')]);
+            });
+            const clave = JSON.stringify(opciones);
+            if (clave === destinosMensajeClave) return;   // sin cambios: no se mueve el menú mientras lo usas
+            destinosMensajeClave = clave;
+            const actual = sel.value;
+            sel.textContent = '';
+            opciones.forEach(function (o) {
+                const op = document.createElement('option');
+                op.value = o[0];
+                op.textContent = o[1];
+                sel.appendChild(op);
+            });
+            if (opciones.some(o => o[0] === actual)) sel.value = actual;
+        }
+
+        function estadoMensaje(txt, rojo) {
+            const el = document.getElementById('msg-estado');
+            if (!el) return;
+            el.textContent = txt;
+            el.style.color = rojo ? '#c62828' : '#2e7d32';
+        }
+
+        function enviarMensajeVisitantes() {
+            if (!firebase.auth().currentUser) return estadoMensaje('Inicia sesión para enviar mensajes.', true);
+            const destino = document.getElementById('msg-destino').value || 'todos';
+            const texto = document.getElementById('msg-texto').value.trim().slice(0, 200);
+            if (!texto) return estadoMensaje('Escribe el mensaje primero.', true);
+            const ts = ahoraServidorConectados();
+            const duracion = destino === 'todos' ? 2 * 60 * 60 * 1000 : 60 * 60 * 1000;   // todos: 2 h · uno solo: 1 h
+            firebase.database().ref('mensajes/' + destino).set({ texto: texto, ts: ts, vence: ts + duracion })
+                .then(function () {
+                    document.getElementById('msg-texto').value = '';
+                    estadoMensaje(destino === 'todos' ? '✅ Mensaje enviado a todos (se muestra durante 2 horas).' : '✅ Mensaje enviado (se muestra durante 1 hora).', false);
+                })
+                .catch(function () { estadoMensaje('No se pudo enviar. Revisa las reglas de \"mensajes\" en Firebase.', true); });
+        }
+
+        function quitarMensajeGeneral() {
+            if (!firebase.auth().currentUser) return estadoMensaje('Inicia sesión primero.', true);
+            firebase.database().ref('mensajes/todos').remove()
+                .then(function () { estadoMensaje('🗑️ Mensaje general retirado.', false); })
+                .catch(function () { estadoMensaje('No se pudo quitar el mensaje.', true); });
+        }
+
         function escucharSesionesHoy() {
             if (!firebase.auth().currentUser) return;
+            escucharIngresosArbitrosHoy();
             const fecha = fechaMexico(ahoraServidorConectados());
             if (refSesionesHoy && fechaSesionesEscuchada === fecha) return;
             if (refSesionesHoy) { refSesionesHoy.off('value', alCambiarSesiones); refSesionesHoy = null; sesionesHoy = null; }
@@ -2176,6 +2403,7 @@
         function alCambiarSesiones(snap) {
             errorSesiones = false;
             sesionesHoy = snap.val() || {};
+            pintarVisitantesHoy();
             pintarTarjetasVisitas();
         }
 
@@ -2221,7 +2449,7 @@
             const tarjetas = [
                 { valor: st ? st.visitas : '—', etiqueta: 'Visitas hoy al sitio', sub: errorSesiones ? sinPermiso : (st ? 'personas distintas' : 'cargando…'), color: '#0d2a4d' },
                 { valor: st ? st.pico : '—', etiqueta: 'Pico de conectados', sub: errorSesiones ? sinPermiso : (st && st.pico ? 'a las ' + horaMexico(st.horaPico) : '—'), color: '#6a1b9a' },
-                { valor: arbs.length, etiqueta: 'Árbitros en línea', sub: arbs.length ? arbs.map(par => par[1].nombre || 'Árbitro').join(', ') : 'ninguno ahora', color: arbs.length ? '#1565c0' : '#78909c' }
+                { valor: arbs.length, etiqueta: 'Árbitros en línea', sub: arbs.length ? arbs.map(par => par[1].nombre || 'Árbitro').join(', ') : ((listaIngresosArbitros()[0]) ? 'último: ' + (listaIngresosArbitros()[0].n || 'Árbitro') + ' ' + horaMexico(listaIngresosArbitros()[0].i) : 'ninguno ahora'), color: arbs.length ? '#1565c0' : '#78909c' }
             ];
             tarjetas.forEach(function (t) {
                 const caja = document.createElement('div');
@@ -2306,7 +2534,32 @@
             });
         }
 
+        const NOMBRE_LIGA_DEFAULT = 'Liga de Futbol Acapulco';
+        function nombreLigaActual() {
+            const n = (typeof db !== 'undefined' && db && db.config && db.config.nombreLiga) ? String(db.config.nombreLiga).trim() : '';
+            return (!n || /cosmar/i.test(n)) ? NOMBRE_LIGA_DEFAULT : n;
+        }
+
+        function aplicarNombreLiga() {
+            const n = nombreLigaActual();
+            const a = document.getElementById('nombre-liga-login'); if (a) a.textContent = n;
+            const campo = document.getElementById('input-nombre-liga-sitio'); if (campo && document.activeElement !== campo) campo.value = n;
+            const cfg = document.getElementById('cfg-nombre-liga'); if (cfg && document.activeElement !== cfg) cfg.value = n;
+            document.title = n + ' - Panel Avanzado Pro';
+        }
+
+        function guardarNombreLiga() {
+            const v = (document.getElementById('input-nombre-liga-sitio').value || '').trim();
+            if (!v) return alert('Escribe el nombre de tu liga.');
+            if (!db.config) db.config = crearConfigCredencialDefault();
+            db.config.nombreLiga = v;
+            guardarDB();
+            aplicarNombreLiga();
+            alert('✅ Nombre guardado: ' + v + '. Presiona "🚀 Publicar" para que se vea en el sitio público y en el árbitro.');
+        }
+
         function aplicarLogoSitio() {
+            aplicarNombreLiga();
             const logo = document.querySelector('.admin-header-logo');
             if (!logo) return;
             logo.src = (db.config && db.config.logoSitio) ? db.config.logoSitio : LOGO_LIGA_DEFAULT;
@@ -2396,7 +2649,7 @@
 
         function crearConfigCredencialDefault() {
             return {
-                nombreLiga: 'LIGA DE FUTBOL COSMAR SPORT CLUB',
+                nombreLiga: 'LIGA DE FUTBOL ACAPULCO',
                 asociacion: '',
                 asociacion2: '',
                 temporada: '',
@@ -2473,6 +2726,7 @@
             if (obj.liguillaActiva === undefined) obj.liguillaActiva = false;
             if (!obj.config) obj.config = crearConfigCredencialDefault();
             if (obj.config.logoSitio === undefined) obj.config.logoSitio = '';
+            if (!obj.config.nombreLiga || /cosmar/i.test(obj.config.nombreLiga)) obj.config.nombreLiga = 'LIGA DE FUTBOL ACAPULCO';
             (obj.equipos || []).forEach(eq => { if (!eq.pin) eq.pin = String(Math.floor(100000 + Math.random() * 900000)); });
             (obj.arbitros || []).forEach(arb => { if (!arb.pin) arb.pin = String(Math.floor(100000 + Math.random() * 900000)); });
             // Folio secuencial del N° CAM (00001, 00002...): si es la primera vez que se
@@ -4264,7 +4518,7 @@
                             <p><strong>FECHA DE NACIMIENTO:</strong> ${formatearFechaCarnet(j.fechaNacimiento)}</p>
                             <p><strong>FECHA DE EXPEDICIÓN:</strong> ${formatearFechaCarnet(c.fechaExpedicion)}</p>
                             <p><strong>NACIONALIDAD:</strong> ${j.nacionalidad || 'MEXICANA'}</p>
-                            <p class="carnet-datos-liga">${c.nombreLiga || 'LIGA DE FUTBOL COSMAR SPORT CLUB'}</p>
+                            <p class="carnet-datos-liga">${c.nombreLiga || 'LIGA DE FUTBOL ACAPULCO'}</p>
                         </div>
                     </div>
                     <div class="carnet-footer">
@@ -4297,7 +4551,7 @@
             win.document.head.appendChild(style);
 
             win.document.body.innerHTML = `
-                <h2 style="text-align:center; color:#0b2f5c;">${(db.config && db.config.nombreLiga) || 'LIGA DE FUTBOL COSMAR SPORT CLUB'} - CREDENCIALES OFICIALES</h2>
+                <h2 style="text-align:center; color:#0b2f5c;">${(db.config && db.config.nombreLiga) || 'LIGA DE FUTBOL ACAPULCO'} - CREDENCIALES OFICIALES</h2>
                 <div style="text-align:center;">
                     ${jugantes.map((j, idx) => generarCarnetHTML(j, eq, qrs[idx])).join('')}
                 </div>
@@ -4371,7 +4625,7 @@
             ctx.fillStyle = '#e0932e';
             ctx.font = 'bold 18px Segoe UI';
             ctx.textAlign = 'center';
-            ctx.fillText('LIGA DE FUTBOL COSMAR SPORT CLUB', 250, 40);
+            ctx.fillText(nombreLigaActual().toUpperCase(), 250, 40);
 
             ctx.fillStyle = '#ffffff';
             ctx.font = '14px Segoe UI';
@@ -4390,7 +4644,7 @@
 
             ctx.fillStyle = '#ffffff';
             ctx.font = 'italic 12px Segoe UI';
-            ctx.fillText('www.ligacosmarsportclub.com', 250, 275);
+            ctx.fillText((db.config && db.config.urlPublica) ? db.config.urlPublica.replace(/^https?:\/\//, '') : '', 250, 275);
 
             document.getElementById('preview-banner-container').style.display = 'block';
         }
@@ -4419,7 +4673,7 @@
             return `
             <div style="background:#fff; border:1px solid var(--border); border-radius:10px; padding:18px;">
                 <div style="text-align:center; border-bottom:2px solid #eee; padding-bottom:10px; margin-bottom:12px;">
-                    <strong style="font-size:1.05rem; color:#0b2f5c;">Liga de Futbol CoSmar SPORT CLUB - Cédula Oficial</strong><br>
+                    <strong style="font-size:1.05rem; color:#0b2f5c;">${escapeHtml(nombreLigaActual())} - Cédula Oficial</strong><br>
                     <span style="font-size:0.8rem; color:#666;">Temporada ${c.temporada || '-'} · ${etiquetaJornada(p.jornada)}</span>
                 </div>
                 <p><b>${loc}</b> ${p.golesLocal ?? 0} - ${p.golesVisita ?? 0} <b>${vis}</b> ${p.penaltis ? ` (Penaltis: ${p.penaltis.local}-${p.penaltis.visita})` : ''}</p>
@@ -4713,7 +4967,7 @@
             doc.setTextColor(255, 255, 255);
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(14);
-            doc.text('LIGA DE FUTBOL COSMAR SPORT CLUB', pageWidth / 2, 11, { align: 'center' });
+            doc.text(nombreLigaActual().toUpperCase(), pageWidth / 2, 11, { align: 'center' });
             doc.setFontSize(11);
             doc.text('CÉDULA OFICIAL DE ARBITRAJE', pageWidth / 2, 18, { align: 'center' });
             y = 32;

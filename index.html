@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liga de Futbol CoSmar SPORT CLUB - Sitio Oficial</title>
-    <meta name="description" content="Sitio oficial de la Liga de Futbol CoSmar SPORT CLUB: tabla de posiciones, resultados en vivo, fichas de jugadores y más.">
+    <title>Liga de Futbol Acapulco - Sitio Oficial</title>
+    <meta name="description" content="Sitio oficial de la Liga de Futbol Acapulco: tabla de posiciones, resultados en vivo, fichas de jugadores y más.">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Liga de Futbol CoSmar SPORT CLUB - Sitio Oficial">
-    <meta property="og:description" content="Tabla de posiciones, resultados en vivo, goleo y fichas de jugadores de la Liga de Futbol CoSmar SPORT CLUB.">
+    <meta property="og:title" content="Liga de Futbol Acapulco - Sitio Oficial">
+    <meta property="og:description" content="Tabla de posiciones, resultados en vivo, goleo y fichas de jugadores de la Liga de Futbol Acapulco.">
     <meta property="og:image" content="https://tiendadayh.github.io/Liga-Futbol-Acapulco/icon-512.png">
     <meta property="og:url" content="https://tiendadayh.github.io/Liga-Futbol-Acapulco/">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Liga de Futbol CoSmar SPORT CLUB - Sitio Oficial">
-    <meta name="twitter:description" content="Tabla de posiciones, resultados en vivo, goleo y fichas de jugadores de la Liga de Futbol CoSmar SPORT CLUB.">
+    <meta name="twitter:title" content="Liga de Futbol Acapulco - Sitio Oficial">
+    <meta name="twitter:description" content="Tabla de posiciones, resultados en vivo, goleo y fichas de jugadores de la Liga de Futbol Acapulco.">
     <meta name="twitter:image" content="https://tiendadayh.github.io/Liga-Futbol-Acapulco/icon-512.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -889,6 +889,37 @@
         /* --- Barra "Mi Equipo": elegir equipo favorito y resaltarlo en todo el sitio --- */
         .mi-equipo-bar { background: var(--light); border-bottom: 1px solid var(--border); position: relative; z-index: 2; }
         .mi-equipo-inner { max-width: 900px; margin: 0 auto; padding: 8px 16px; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .saludo-equipo { flex-basis: 100%; text-align: center; font-size: 0.9rem; font-weight: 600; color: var(--text); padding-bottom: 2px; }
+        .saludo-equipo.en-vivo { color: #c62828; font-weight: 800; }
+        #mensaje-liga { position: fixed; left: 50%; top: 14px; transform: translate(-50%, -140%); width: min(92vw, 420px); z-index: 400; background: linear-gradient(135deg, #0b2f5c, #1565c0); color: #fff; border-radius: 14px; padding: 14px 40px 14px 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); transition: transform 0.35s ease; text-align: left; }
+        #mensaje-liga.visible { transform: translate(-50%, 0); }
+        #mensaje-liga .ml-titulo { font-size: 0.78rem; font-weight: 700; opacity: 0.8; letter-spacing: 0.3px; }
+        #mensaje-liga .ml-saludo { font-size: 1.15rem; font-weight: 800; margin-top: 4px; }
+        #mensaje-liga .ml-texto { font-size: 0.95rem; margin-top: 2px; white-space: pre-wrap; word-break: break-word; }
+        #mensaje-liga .ml-cerrar { position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.18); border: none; color: #fff; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 0.95rem; }
+        .quiniela-partido { display: grid; grid-template-columns: 1fr; gap: 8px; padding: 12px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--card-bg); }
+        .quiniela-cab { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-muted); }
+        .quiniela-opciones { display: grid; grid-template-columns: 1fr 0.7fr 1fr; gap: 6px; }
+        .quiniela-op { padding: 10px 6px; border-radius: 10px; border: 2px solid var(--border); background: var(--light); color: var(--text); font-weight: 700; font-size: 0.82rem; cursor: pointer; line-height: 1.2; word-break: break-word; }
+        .quiniela-op:hover:not(:disabled) { border-color: var(--primary); }
+        .quiniela-op:disabled { cursor: default; opacity: 0.75; }
+        .quiniela-op.elegida { border-color: var(--primary); background: var(--primary); color: #fff; opacity: 1; }
+        .quiniela-op.acierto { border-color: #2e7d32; background: #2e7d32; color: #fff; opacity: 1; }
+        .quiniela-op.fallo { border-color: #c62828; background: #c62828; color: #fff; opacity: 1; }
+        .quiniela-op.resultado-real { box-shadow: 0 0 0 3px rgba(46,125,50,0.35); }
+        .quiniela-fila { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+        .quiniela-fila.yo { background: rgba(21,101,192,0.1); border-radius: 8px; }
+        .quiniela-pos { width: 30px; text-align: center; font-weight: 800; }
+        .quiniela-nombre { flex: 1; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .quiniela-pts { font-weight: 800; color: var(--primary); }
+        .quiniela-sub { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; }
+        .saludo-visitante { flex-basis: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; cursor: pointer; padding: 4px 0 2px; text-align: center; }
+        .saludo-icono { font-size: 1.5rem; line-height: 1; }
+        .saludo-frase { font-size: 1.05rem; font-weight: 600; color: var(--text); }
+        .saludo-nombre { font-size: 1.5rem; font-weight: 800; color: var(--primary); letter-spacing: 0.2px; word-break: break-word; }
+        .saludo-editar { font-size: 0.8rem; opacity: 0.55; }
+        .saludo-visitante:hover .saludo-editar { opacity: 1; }
+        @media (max-width: 600px) { .saludo-nombre { font-size: 1.3rem; } .saludo-frase { font-size: 0.95rem; } }
         .mi-equipo-cta { font-size: 0.8rem; font-weight: 700; color: var(--secondary); cursor: pointer; }
         .mi-equipo-cta:hover { text-decoration: underline; }
         .mi-equipo-elegido { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text); }
@@ -1002,10 +1033,10 @@
         <button class="install-btn" id="btn-instalar-app" onclick="instalarAppPWA()">📲 Instalar App</button>
         <div class="header-shine" id="header-shine"></div>
         <div class="site-header-content">
-            <img src="icon-512.png"
-                alt="Escudo Liga de Futbol CoSmar Sport Club" class="site-header-logo">
+            <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='white' stroke='%230b2f5c' stroke-width='4'/><polygon points='50,30 69,44 62,66 38,66 31,44' fill='%230b2f5c'/><path d='M50 30V6M69 44L92 36M62 66L77 86M38 66L23 86M31 44L8 36' stroke='%230b2f5c' stroke-width='4' fill='none'/></svg>"
+                alt="Escudo Liga de Futbol Acapulco" class="site-header-logo">
             <div>
-                <h1>LIGA DE FUTBOL COSMAR SPORT CLUB</h1>
+                <h1 id="nombre-liga-h1">LIGA DE FUTBOL ACAPULCO</h1>
                 <p>Portal Oficial</p>
             </div>
         </div>
@@ -1020,6 +1051,14 @@
                 <button type="button" class="mi-equipo-cambiar" onclick="abrirModalMiEquipo()">Cambiar</button>
                 <button type="button" class="mi-equipo-quitar" onclick="quitarEquipoFavorito()" title="Quitar equipo favorito">✕</button>
             </div>
+            <div id="saludo-visitante" class="saludo-visitante" role="button" tabindex="0" title="Toca para cambiar tu nombre"
+                 onclick="abrirModalNombreVisitante()" onkeydown="if(event.key==='Enter') abrirModalNombreVisitante()">
+                <span id="saludo-icono" class="saludo-icono"></span>
+                <span id="saludo-frase" class="saludo-frase"></span>
+                <span id="saludo-nombre" class="saludo-nombre"></span>
+                <span class="saludo-editar">✏️</span>
+            </div>
+            <div id="saludo-equipo" class="saludo-equipo hidden"></div>
         </div>
     </div>
 
@@ -1037,6 +1076,7 @@
             <a href="#bracket-sec" id="nav-link-bracket" class="hidden">Cuadro Liguilla</a>
             <a href="#tablon-sec">Tablón</a>
             <a href="#jornadas-sec">Calendario En Vivo</a>
+            <a href="#quiniela-sec">Quiniela</a>
             <a href="#posiciones-sec">Posiciones</a>
             <a href="#ofensiva-defensiva-sec">Ofensiva/Defensiva</a>
             <a href="#goleo-sec">Goleo</a>
@@ -1098,6 +1138,17 @@
                 </select>
             </div>
             <div id="lista-partidos-jornada"></div>
+        </section>
+
+        <!-- QUINIELA -->
+        <section id="quiniela-sec" class="card-section">
+            <div class="header-section-flex">
+                <h2>🎯 Quiniela de la Jornada</h2>
+            </div>
+            <p id="quiniela-intro" style="color:var(--text-muted); font-size:0.88rem; margin-top:-4px;">Adivina quién gana cada partido: un punto por cada acierto. Una vez enviado, tu pronóstico ya no se puede cambiar, y se cierra cuando empieza el partido.</p>
+            <div id="quiniela-partidos"></div>
+            <h3 style="margin:18px 0 8px;">🏆 Tabla de aciertos</h3>
+            <div id="quiniela-tabla"></div>
         </section>
 
         <!-- POSICIONES -->
@@ -1323,7 +1374,7 @@
                     <details style="background:var(--light); border:1px solid var(--border); border-radius:8px; padding:10px 14px; font-size:0.82rem;">
                         <summary style="cursor:pointer; font-weight:600;">📄 Aviso de Privacidad (léelo antes de enviar tu solicitud)</summary>
                         <div style="margin-top:10px; line-height:1.5; color:#555;">
-                            <p>La Liga de Futbol CoSmar SPORT CLUB recaba los datos de este formulario (nombre, número, categoría, posición, lugar y fecha de nacimiento, nacionalidad y fotografía) con la única finalidad de gestionar tu registro como jugador, elaborar tu credencial oficial y mostrar tu información deportiva (nombre, foto, número y estadísticas) en el sitio público de la liga.</p>
+                            <p>La <span class="nombre-liga-txt">Liga de Futbol Acapulco</span> recaba los datos de este formulario (nombre, número, categoría, posición, lugar y fecha de nacimiento, nacionalidad y fotografía) con la única finalidad de gestionar tu registro como jugador, elaborar tu credencial oficial y mostrar tu información deportiva (nombre, foto, número y estadísticas) en el sitio público de la liga.</p>
                             <p>Estos datos no se venden ni se comparten con terceros ajenos a la liga. Puedes solicitar la corrección o eliminación de tus datos contactando a la administración de la liga.</p>
                             <p>Todas las solicitudes son revisadas y deben ser aprobadas por la administración de la liga antes de quedar registradas.</p>
                         </div>
@@ -1342,8 +1393,8 @@
     <footer class="site-footer" id="site-footer">
         <div class="footer-top">
             <div class="footer-brand">
-                <img src="icon-512.png" alt="Escudo Liga de Futbol CoSmar Sport Club" class="footer-logo">
-                <h3>LIGA DE FUTBOL COSMAR SPORT CLUB</h3>
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='white' stroke='%230b2f5c' stroke-width='4'/><polygon points='50,30 69,44 62,66 38,66 31,44' fill='%230b2f5c'/><path d='M50 30V6M69 44L92 36M62 66L77 86M38 66L23 86M31 44L8 36' stroke='%230b2f5c' stroke-width='4' fill='none'/></svg>" alt="Escudo Liga de Futbol Acapulco" class="footer-logo">
+                <h3 id="nombre-liga-footer">LIGA DE FUTBOL ACAPULCO</h3>
                 <p>Portal oficial del torneo: calendario, resultados en vivo, tabla de posiciones, estadísticas y fichas de jugadores, actualizados al instante.</p>
                 <div class="footer-redes">
                     <a href="#tablon-sec" title="Tablón de Avisos" aria-label="Tablón de Avisos">📢</a>
@@ -1383,7 +1434,7 @@
         </div>
         <hr class="footer-divider">
         <div class="footer-bottom">
-            <p>© <span id="footer-anio"></span> Liga de Futbol CoSmar Sport Club. Todos los derechos reservados.</p>
+            <p>© <span id="footer-anio"></span> <span class="nombre-liga-txt">Liga de Futbol Acapulco</span>. Todos los derechos reservados.</p>
             <p class="footer-credito">Sitio desarrollado por Alexis Brayan Carlos Ponce</p>
             <a href="#" class="footer-back-top" onclick="window.scrollTo({top:0, behavior:'smooth'}); return false;">⬆️ Volver arriba</a>
         </div>
@@ -1463,6 +1514,22 @@
             <h3 style="margin-top:0;">⭐ Elige tu equipo favorito</h3>
             <p style="color:var(--text-muted); font-size:0.85rem; margin-top:-6px;">Lo vamos a resaltar en la Tabla de Posiciones, el Calendario y el marcador de arriba.</p>
             <div id="grid-elegir-equipo" class="grid-elegir-equipo"></div>
+        </div>
+    </div>
+
+    <!-- MODAL NOMBRE DEL VISITANTE -->
+    <div id="modal-nombre-visitante" class="modal hidden" onclick="if(event.target === this) omitirNombreVisitante()">
+        <div class="modal-content" style="max-width:400px;">
+            <button class="close-modal" onclick="omitirNombreVisitante()" aria-label="Cerrar">×</button>
+            <h3 style="margin-top:0;">👋 ¡Bienvenido a la liga!</h3>
+            <p style="color:var(--text-muted); font-size:0.88rem; margin-top:-6px;">¿Cómo te llamas? Así la liga sabe quién nos visita. Es opcional.</p>
+            <input type="text" id="input-nombre-visitante" maxlength="40" autocomplete="given-name" placeholder="Tu nombre o apodo"
+                   style="width:100%; padding:11px 12px; border:1px solid var(--border); border-radius:8px; font-size:1rem; box-sizing:border-box;"
+                   onkeydown="if(event.key==='Enter') guardarNombreVisitante()">
+            <div style="display:flex; gap:10px; margin-top:14px;">
+                <button type="button" class="btn" style="flex:1;" onclick="guardarNombreVisitante()">Entrar</button>
+                <button type="button" class="btn" style="flex:1; background:transparent; color:var(--text-muted); border:1px solid var(--border);" onclick="omitirNombreVisitante()">Ahora no</button>
+            </div>
         </div>
     </div>
 
@@ -1666,6 +1733,7 @@
                     'tablon-sec': 'Tablón de Avisos',
                     'encuesta-sec': 'Encuestas Rápidas',
                     'jornadas-sec': 'Calendario y Resultados',
+                    'quiniela-sec': 'Quiniela',
                     'posiciones-sec': 'Tabla de Posiciones',
                     'ofensiva-defensiva-sec': 'Ofensiva y Defensiva',
                     'goleo-sec': 'Goleo Individual',
@@ -1687,7 +1755,23 @@
                     try { localStorage.setItem('ligaConexionId', id); } catch (e) { /* sin almacenamiento: id nuevo en cada carga */ }
                 }
 
+                window.ligaVisitanteId = id;
                 const ref = firebase.database().ref('conectados/' + id);
+
+                // Cuenta en cuántos DÍAS distintos ha entrado este navegador (para reconocer visitantes frecuentes).
+                function contarVisitaDelDia() {
+                    try {
+                        const hoy = new Date().toISOString().slice(0, 10);
+                        let total = parseInt(localStorage.getItem('ligaVisitasTotal') || '0', 10) || 0;
+                        if (localStorage.getItem('ligaVisitaUltimoDia') !== hoy) {
+                            total += 1;
+                            localStorage.setItem('ligaVisitasTotal', String(total));
+                            localStorage.setItem('ligaVisitaUltimoDia', hoy);
+                        }
+                        return Math.max(total, 1);
+                    } catch (e) { return 1; }
+                }
+                const visitasTotales = contarVisitaDelDia();
                 const TS = firebase.database.ServerValue.TIMESTAMP;
                 const dispositivo = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'movil' : 'pc';
 
@@ -1718,6 +1802,17 @@
                     console.warn('Presencia: no se pudo escribir en "conectados" (revisa las reglas de Firebase).', err && err.message);
                 }
 
+                function nombreVisitante() {
+                    try { return String(localStorage.getItem('ligaNombreVisitante') || '').trim().slice(0, 40); }
+                    catch (e) { return ''; }
+                }
+                // Lo llama el modal de nombre cuando el visitante lo guarda o lo cambia.
+                window.actualizarNombrePresencia = function () {
+                    actualizarPresencia(true);
+                    const n = nombreVisitante();
+                    if (sesionRef && n) sesionRef.update({ n: n }).catch(() => {});   // la visita de hoy queda con su nombre
+                };
+
                 function nombreEquipoFavorito() {
                     try {
                         const favId = obtenerEquipoFavoritoId();
@@ -1733,7 +1828,7 @@
                         sesionRef = r;
                         // Si esta conexión se cae, el servidor anota solo la hora de salida.
                         r.onDisconnect().update({ f: TS })
-                            .then(() => r.set({ v: id, i: TS }))
+                            .then(() => r.set(nombreVisitante() ? { v: id, i: TS, n: nombreVisitante() } : { v: id, i: TS }))
                             .catch(alFallar);
                     } catch (e) { alFallar(e); }
                 }
@@ -1755,6 +1850,8 @@
                     ref.onDisconnect().remove()
                         .then(() => ref.set({
                             tipo: 'visitante',
+                            nombre: nombreVisitante(),
+                            visitas: visitasTotales,
                             seccion: seccion,
                             equipo: nombreEquipoFavorito(),
                             dispositivo: dispositivo,
@@ -1783,7 +1880,7 @@
                     const ahora = Date.now();
                     if (!forzar && ahora - ultimaEscritura < MIN_ENTRE_ESCRITURAS_MS) return;
                     ultimaEscritura = ahora;
-                    ref.update({ seccion: seccion, equipo: nombreEquipoFavorito(), ultimaActividad: TS }).catch(alFallar);
+                    ref.update({ nombre: nombreVisitante(), seccion: seccion, equipo: nombreEquipoFavorito(), ultimaActividad: TS }).catch(alFallar);
                 }
 
                 function marcarActividad() {
@@ -1840,6 +1937,43 @@
         })();
 
 
+        // ===== Mensajes del administrador: llegan a todos los visitantes o solo a uno =====
+        // El admin escribe en mensajes/todos o mensajes/<id del visitante>; cada mensaje trae su hora de vencimiento.
+        (function escucharMensajesDelAdmin() {
+            try {
+                const idV = window.ligaVisitanteId;
+                if (!idV) return;
+                let offset = 0;
+                firebase.database().ref('.info/serverTimeOffset').on('value', s => { offset = s.val() || 0; });
+                function vistos() { try { return JSON.parse(localStorage.getItem('ligaMensajesVistos') || '{}') || {}; } catch (e) { return {}; } }
+                function marcarVisto(clave, ts) { try { const v = vistos(); v[clave] = ts; localStorage.setItem('ligaMensajesVistos', JSON.stringify(v)); } catch (e) { } }
+                function mostrar(clave, m) {
+                    let caja = document.getElementById('mensaje-liga');
+                    if (!caja) {
+                        caja = document.createElement('div');
+                        caja.id = 'mensaje-liga';
+                        caja.innerHTML = '<button type="button" class="ml-cerrar" aria-label="Cerrar mensaje">✕</button><div class="ml-titulo">✉️ Mensaje de la liga</div><div class="ml-saludo"></div><div class="ml-texto"></div>';
+                        document.body.appendChild(caja);
+                    }
+                    const n = String(localStorage.getItem('ligaNombreVisitante') || '').trim();
+                    caja.querySelector('.ml-saludo').textContent = n ? 'Hola, ' + n + ':' : '';
+                    caja.querySelector('.ml-texto').textContent = m.texto;
+                    caja.querySelector('.ml-cerrar').onclick = function () { marcarVisto(clave, m.ts); caja.classList.remove('visible'); };
+                    requestAnimationFrame(() => caja.classList.add('visible'));
+                    try { if (navigator.vibrate) navigator.vibrate(120); } catch (e) { }
+                }
+                ['todos', idV].forEach(clave => {
+                    firebase.database().ref('mensajes/' + clave).on('value', snap => {
+                        const m = snap.val();
+                        if (!m || typeof m.texto !== 'string' || !m.texto) return;
+                        if ((m.vence || 0) <= Date.now() + offset) return;       // ya venció
+                        if (vistos()[clave] === m.ts) return;                    // ya lo cerró
+                        mostrar(clave, m);
+                    }, () => { /* sin permiso de lectura: no pasa nada */ });
+                });
+            } catch (err) { console.warn('Mensajes de la liga no disponibles:', err); }
+        })();
+
         // --- Logo del sitio (encabezado) personalizable desde admin.html ---
         const LOGO_LIGA_DEFAULT = document.querySelector('.site-header-logo') ? document.querySelector('.site-header-logo').src : '';
         // ---- PWA: registro de service worker e instalación como app ----
@@ -1872,7 +2006,22 @@
             });
         }
 
+        const NOMBRE_LIGA_DEFAULT = 'Liga de Futbol Acapulco';
+        function nombreLigaActual() {
+            const n = (typeof db !== 'undefined' && db && db.config && db.config.nombreLiga) ? String(db.config.nombreLiga).trim() : '';
+            return (!n || /cosmar/i.test(n)) ? NOMBRE_LIGA_DEFAULT : n;
+        }
+
+        function aplicarNombreLiga() {
+            const n = nombreLigaActual();
+            const h1 = document.getElementById('nombre-liga-h1'); if (h1) h1.textContent = n.toUpperCase();
+            const hf = document.getElementById('nombre-liga-footer'); if (hf) hf.textContent = n.toUpperCase();
+            document.querySelectorAll('.nombre-liga-txt').forEach(el => { el.textContent = n; });
+            document.title = n + ' - Sitio Oficial';
+        }
+
         function aplicarLogoSitio() {
+            aplicarNombreLiga();
             const logos = document.querySelectorAll('.site-header-logo, .footer-logo');
             if (!logos.length) return;
             const src = (db.config && db.config.logoSitio) ? db.config.logoSitio : LOGO_LIGA_DEFAULT;
@@ -2483,6 +2632,7 @@
         function actualizarVistaTodo() {
             aplicarLogoSitio();
             actualizarBarraMiEquipo();
+            try { renderizarQuiniela(); } catch (e) { console.warn('Quiniela:', e); }
             renderizarPatrocinadores();
             renderizarReglamentoPublico();
             const contNoticias = document.getElementById('noticias-contenedor');
@@ -2918,6 +3068,214 @@
         // en la Tabla de Posiciones, el Calendario y el mini marcador del header. =====
         const CLAVE_EQUIPO_FAVORITO = 'ligaEquipoFavoritoId';
 
+        // ----- Línea bajo el saludo: posición del equipo favorito y su próximo partido -----
+        function fechaHoraPartido(p) {
+            if (!p || !p.fecha) return null;
+            const d = new Date(p.fecha + 'T' + (p.hora && /^\d{1,2}:\d{2}/.test(p.hora) ? p.hora : '00:00'));
+            return isNaN(d) ? null : d;
+        }
+
+        function pintarLineaMiEquipo(eq) {
+            const el = document.getElementById('saludo-equipo');
+            if (!el) return;
+            if (!eq) { el.classList.add('hidden'); el.textContent = ''; el.classList.remove('en-vivo'); return; }
+            const jugandoVivo = db.partidos.some(p => ESTADOS_PARTIDO_EN_VIVO.includes(p.estadoVivo) && !p.jugado && (p.localId === eq.id || p.visitaId === eq.id));
+            if (jugandoVivo) {
+                el.textContent = '🔴 ¡' + eq.nombre + ' está jugando en vivo ahora!';
+                el.classList.add('en-vivo'); el.classList.remove('hidden');
+                return;
+            }
+            el.classList.remove('en-vivo');
+            const partes = [];
+            const tabla = calcularTablaPosiciones();
+            const pos = tabla.findIndex(t => t.id === eq.id);
+            if (pos >= 0 && tabla[pos].pj > 0) partes.push('⭐ ' + eq.nombre + ' va en el lugar ' + (pos + 1) + ' con ' + tabla[pos].pts + ' pts');
+            const inicioHoy = new Date(); inicioHoy.setHours(0, 0, 0, 0);
+            const pendientes = db.partidos
+                .filter(p => !p.jugado && (p.localId === eq.id || p.visitaId === eq.id))
+                .map(p => ({ p: p, f: fechaHoraPartido(p) }))
+                .filter(x => !x.f || x.f >= inicioHoy)
+                .sort((a, b) => (a.f ? a.f.getTime() : Infinity) - (b.f ? b.f.getTime() : Infinity) || (a.p.jornada || 0) - (b.p.jornada || 0));
+            if (pendientes.length) {
+                const x = pendientes[0];
+                const rivalId = x.p.localId === eq.id ? x.p.visitaId : x.p.localId;
+                const rival = db.equipos.find(e => e.id === rivalId);
+                let cuando = x.p.jornada ? 'Jornada ' + x.p.jornada : 'por definir';
+                if (x.f) {
+                    const manana = new Date(inicioHoy); manana.setDate(manana.getDate() + 1);
+                    const dia = x.f.toDateString() === new Date().toDateString() ? 'hoy'
+                        : (x.f.toDateString() === manana.toDateString() ? 'mañana' : x.f.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' }));
+                    cuando = dia + (x.p.hora ? ' ' + x.f.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' }) : '');
+                }
+                partes.push('Próximo partido: vs ' + (rival ? rival.nombre : 'por definir') + ' · ' + cuando);
+            }
+            el.textContent = partes.join('  ·  ');
+            el.classList.toggle('hidden', partes.length === 0);
+        }
+
+        // ----- Quiniela: pronósticos 1-X-2 con tabla de aciertos -----
+        var quinielaDatos = {};      // { partidoId: { idVisitante: { n, p, t } } }
+        var quinielaError = false;
+        try {
+            firebase.database().ref('quiniela').on('value', snap => {
+                quinielaDatos = snap.val() || {}; quinielaError = false;
+                try { renderizarQuiniela(); } catch (e) { }
+            }, () => { quinielaError = true; try { renderizarQuiniela(); } catch (e) { } });
+        } catch (e) { console.warn('Quiniela no disponible:', e); }
+
+        function idMiVisitante() {
+            try { return window.ligaVisitanteId || localStorage.getItem('ligaConexionId') || ''; } catch (e) { return window.ligaVisitanteId || ''; }
+        }
+
+        function resultadoPartido(p) {
+            if (!p.jugado) return null;
+            return p.golesLocal > p.golesVisita ? '1' : (p.golesLocal < p.golesVisita ? '2' : 'X');
+        }
+
+        function quinielaCerrada(p) {
+            if (p.jugado || ESTADOS_PARTIDO_EN_VIVO.includes(p.estadoVivo)) return true;
+            const f = fechaHoraPartido(p);
+            return !!(f && f.getTime() <= Date.now());
+        }
+
+        function renderizarQuiniela() {
+            const cont = document.getElementById('quiniela-partidos');
+            const tab = document.getElementById('quiniela-tabla');
+            if (!cont || !tab || typeof db === 'undefined' || !db || !db.partidos) return;
+            const miId = idMiVisitante();
+            const conEquipos = db.partidos.filter(p => p.localId && p.visitaId);
+            const pendientes = conEquipos.filter(p => !p.jugado);
+            if (quinielaError) { cont.innerHTML = '<p style="color:var(--text-muted);">La quiniela no está disponible por ahora.</p>'; tab.innerHTML = ''; return; }
+            if (!pendientes.length) {
+                cont.innerHTML = '<p style="color:var(--text-muted);">No hay partidos por pronosticar por ahora. ¡Vuelve en la próxima jornada!</p>';
+            } else {
+                const jor = Math.min.apply(null, pendientes.map(p => p.jornada || 0));
+                const partidos = conEquipos.filter(p => (p.jornada || 0) === jor)
+                    .sort((a, b) => (fechaHoraPartido(a) ? fechaHoraPartido(a).getTime() : 0) - (fechaHoraPartido(b) ? fechaHoraPartido(b).getTime() : 0));
+                cont.innerHTML = partidos.map(p => {
+                    const loc = db.equipos.find(e => e.id === p.localId);
+                    const vis = db.equipos.find(e => e.id === p.visitaId);
+                    const miPick = quinielaDatos[p.id] && quinielaDatos[p.id][miId] ? quinielaDatos[p.id][miId].p : null;
+                    const real = resultadoPartido(p);
+                    const cerrada = quinielaCerrada(p);
+                    const f = fechaHoraPartido(p);
+                    const cuando = f ? f.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' }) + (p.hora ? ' · ' + f.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' }) : '') : '';
+                    const estado = real ? 'Final: ' + p.golesLocal + ' - ' + p.golesVisita : (cerrada ? '🔒 Cerrado' : '');
+                    const op = (clave, texto) => {
+                        let clases = 'quiniela-op';
+                        if (miPick === clave) clases += real ? (real === clave ? ' acierto' : ' fallo') : ' elegida';
+                        else if (real === clave) clases += ' resultado-real';
+                        const off = (cerrada || miPick) ? ' disabled' : '';
+                        return '<button type="button" class="' + clases + '"' + off + ' onclick="enviarPronostico(' + p.id + ", '" + clave + "')\">" + escapeHtml(texto) + '</button>';
+                    };
+                    return '<div class="quiniela-partido"><div class="quiniela-cab"><span>' + escapeHtml(cuando) + '</span><span>' + escapeHtml(estado) + '</span></div>' +
+                        '<div class="quiniela-opciones">' + op('1', loc ? loc.nombre : 'Local') + op('X', 'Empate') + op('2', vis ? vis.nombre : 'Visita') + '</div>' +
+                        (miPick && !real ? '<div class="quiniela-sub">✅ Tu pronóstico ya está guardado</div>' : '') + '</div>';
+                }).join('');
+            }
+            // Tabla de aciertos
+            const resultados = {};
+            conEquipos.forEach(p => { const r = resultadoPartido(p); if (r) resultados[p.id] = r; });
+            const jug = {};
+            Object.keys(quinielaDatos).forEach(pid => {
+                const picks = quinielaDatos[pid] || {};
+                Object.keys(picks).forEach(vid => {
+                    const k = picks[vid];
+                    if (!k || typeof k !== 'object') return;
+                    const j = jug[vid] || (jug[vid] = { n: '', a: 0, t: 0, ult: 0 });
+                    if ((k.t || 0) >= j.ult) { j.n = k.n || j.n; j.ult = k.t || 0; }
+                    if (resultados[pid]) { j.t++; if (resultados[pid] === k.p) j.a++; }
+                });
+            });
+            const lista = Object.keys(jug).map(vid => Object.assign({ vid: vid }, jug[vid])).filter(j => j.t > 0)
+                .sort((x, y) => y.a - x.a || (y.a / y.t) - (x.a / x.t) || y.t - x.t);
+            if (!lista.length) { tab.innerHTML = '<p style="color:var(--text-muted); font-size:0.88rem;">Todavía no hay partidos terminados con pronósticos. ¡Sé el primero en sumar puntos!</p>'; return; }
+            const medallas = ['🥇', '🥈', '🥉'];
+            tab.innerHTML = lista.slice(0, 10).map((j, i) =>
+                '<div class="quiniela-fila' + (j.vid === miId ? ' yo' : '') + '"><span class="quiniela-pos">' + (medallas[i] || (i + 1)) + '</span>' +
+                '<span class="quiniela-nombre">' + escapeHtml(j.n || 'Anónimo') + (j.vid === miId ? ' (tú)' : '') + '</span>' +
+                '<span class="quiniela-pts">' + j.a + ' <span class="quiniela-sub">de ' + j.t + '</span></span></div>').join('');
+            const yo = lista.findIndex(j => j.vid === miId);
+            if (yo >= 10) tab.innerHTML += '<p class="quiniela-sub" style="margin-top:8px;">Vas en el lugar ' + (yo + 1) + ' con ' + lista[yo].a + ' aciertos de ' + lista[yo].t + '.</p>';
+        }
+
+        function enviarPronostico(pid, opcion) {
+            const nombre = obtenerNombreVisitante();
+            if (!nombre) { mostrarToast('Primero dinos cómo te llamas para jugar la quiniela.', 'info'); abrirModalNombreVisitante(); return; }
+            const p = db.partidos.find(x => x.id === pid);
+            if (!p || quinielaCerrada(p)) { mostrarToast('Este partido ya está cerrado para pronósticos.', 'error'); renderizarQuiniela(); return; }
+            const vid = idMiVisitante();
+            if (!vid) { mostrarToast('No pudimos identificar tu dispositivo.', 'error'); return; }
+            firebase.database().ref('quiniela/' + pid + '/' + vid)
+                .set({ n: nombre, p: opcion, t: firebase.database.ServerValue.TIMESTAMP })
+                .then(() => mostrarToast('🎯 ¡Pronóstico guardado, ' + escapeHtml(nombre) + '!', 'exito'))
+                .catch(() => mostrarToast('No se pudo guardar tu pronóstico. Intenta de nuevo.', 'error'));
+        }
+
+        // ----- Nombre del visitante (opcional): se guarda en este navegador y se envía a la presencia en vivo -----
+        const CLAVE_NOMBRE_VISITANTE = 'ligaNombreVisitante';
+        const CLAVE_NOMBRE_OMITIDO = 'ligaNombreOmitido';
+
+        function obtenerNombreVisitante() {
+            try { return String(localStorage.getItem(CLAVE_NOMBRE_VISITANTE) || '').trim().slice(0, 40); }
+            catch (e) { return ''; }
+        }
+
+        // Saludo según la hora del dispositivo: madrugada y noche = noches, hasta las 11:59 = días, hasta las 18:59 = tardes.
+        function saludoPorHora(fecha) {
+            const h = (fecha || new Date()).getHours();
+            if (h >= 5 && h < 12) return { icono: '☀️', frase: '¡Buenos días' };
+            if (h >= 12 && h < 19) return { icono: '🌤️', frase: '¡Buenas tardes' };
+            return { icono: '🌙', frase: '¡Buenas noches' };
+        }
+
+        function pintarNombreVisitante() {
+            const caja = document.getElementById('saludo-visitante');
+            if (!caja) return;
+            const n = obtenerNombreVisitante();
+            const sal = saludoPorHora();
+            document.getElementById('saludo-icono').textContent = sal.icono;
+            document.getElementById('saludo-frase').textContent = n ? sal.frase + ',' : sal.frase + '! Toca aquí y dinos cómo te llamas';
+            document.getElementById('saludo-nombre').textContent = n ? n + '!' : '';
+        }
+
+        function abrirModalNombreVisitante() {
+            const input = document.getElementById('input-nombre-visitante');
+            input.value = obtenerNombreVisitante();
+            document.getElementById('modal-nombre-visitante').classList.remove('hidden');
+            setTimeout(() => input.focus(), 50);
+        }
+
+        function guardarNombreVisitante() {
+            const nombre = document.getElementById('input-nombre-visitante').value.replace(/\s+/g, ' ').trim().slice(0, 40);
+            try {
+                if (nombre) localStorage.setItem(CLAVE_NOMBRE_VISITANTE, nombre);
+                else localStorage.removeItem(CLAVE_NOMBRE_VISITANTE);
+                localStorage.setItem(CLAVE_NOMBRE_OMITIDO, '1');
+            } catch (e) { /* almacenamiento bloqueado */ }
+            cerrarModal('modal-nombre-visitante');
+            pintarNombreVisitante();
+            if (typeof window.actualizarNombrePresencia === 'function') window.actualizarNombrePresencia();
+            if (nombre) mostrarToast(saludoPorHora().frase + ', ' + escapeHtml(nombre) + '!', 'exito');
+        }
+
+        function omitirNombreVisitante() {
+            try { localStorage.setItem(CLAVE_NOMBRE_OMITIDO, '1'); } catch (e) { }
+            cerrarModal('modal-nombre-visitante');
+        }
+
+        setInterval(pintarNombreVisitante, 60 * 1000);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            pintarNombreVisitante();
+            // Primera visita: se pregunta una sola vez; si dice "Ahora no" ya no vuelve a salir (queda el chip de arriba).
+            let yaPregunto = false;
+            try { yaPregunto = !!localStorage.getItem(CLAVE_NOMBRE_VISITANTE) || !!localStorage.getItem(CLAVE_NOMBRE_OMITIDO); } catch (e) { yaPregunto = true; }
+            if (!yaPregunto) setTimeout(() => {
+                if (!document.querySelector('.modal:not(.hidden)')) abrirModalNombreVisitante();
+            }, 1500);
+        });
+
         function obtenerEquipoFavoritoId() {
             const v = localStorage.getItem(CLAVE_EQUIPO_FAVORITO);
             const id = v ? parseInt(v) : null;
@@ -2954,6 +3312,7 @@
             const elegido = document.getElementById('mi-equipo-elegido');
             if (!sinElegir || !elegido) return;
             const eq = db.equipos.find(e => e.id === obtenerEquipoFavoritoId());
+            try { pintarLineaMiEquipo(eq); } catch (e) { /* db incompleto: no se muestra */ }
             if (eq) {
                 sinElegir.classList.add('hidden');
                 elegido.classList.remove('hidden');
@@ -3912,7 +4271,7 @@
 
             if (navigator.share) {
                 try {
-                    await navigator.share({ title: j ? `Perfil de ${escapeHtml(j.nombre)}` : 'Perfil de jugador', text: 'Mira este perfil en la Liga de Futbol CoSmar SPORT CLUB', url: enlace });
+                    await navigator.share({ title: j ? `Perfil de ${escapeHtml(j.nombre)}` : 'Perfil de jugador', text: 'Mira este perfil en la ' + nombreLigaActual(), url: enlace });
                     return;
                 } catch (err) { /* si el usuario cancela el share, caemos a copiar el enlace */ }
             }
@@ -3927,7 +4286,7 @@
         }
 
         function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); }
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { cerrarModal('ficha-modal'); cerrarModal('modal-equipo'); cerrarModal('modal-arbitro'); cerrarModal('modal-cancha'); } });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { cerrarModal('ficha-modal'); cerrarModal('modal-equipo'); cerrarModal('modal-arbitro'); cerrarModal('modal-cancha'); cerrarModal('modal-nombre-visitante'); } });
 
         function verEquipo(id) {
             const eq = db.equipos.find(e => e.id === id);
@@ -4158,7 +4517,7 @@
             ctx.textAlign = 'center';
             ctx.fillStyle = '#f0b429';
             ctx.font = 'bold 34px Arial';
-            ctx.fillText('LIGA DE FUTBOL COSMAR SPORT CLUB', W / 2, 100);
+            ctx.fillText(nombreLigaActual().toUpperCase(), W / 2, 100);
             ctx.fillStyle = '#ffffff';
             ctx.font = '24px Arial';
             ctx.fillText(etiquetaJornada(p.jornada), W / 2, 140);
@@ -4270,14 +4629,14 @@
             ctx.fillText(`Árbitro: ${p.arbitro || 'Por definir'}`, W / 2, H - 95);
             ctx.font = 'italic 18px Arial';
             ctx.fillStyle = '#94a3b8';
-            ctx.fillText('Sitio Oficial · Liga de Futbol CoSmar SPORT CLUB', W / 2, H - 40);
+            ctx.fillText('Sitio Oficial · ' + nombreLigaActual(), W / 2, H - 40);
 
             const nombreArchivo = `resultado-${nameL}-vs-${nameV}.png`.replace(/\s+/g, '-');
             return new Promise(resolve => canvas.toBlob(blob => resolve(blob ? {
                 blob,
                 nombreArchivo,
                 titulo: `${nameL} ${p.golesLocal ?? 0}-${p.golesVisita ?? 0} ${nameV}`,
-                texto: `Resultado Liga de Futbol CoSmar SPORT CLUB · ${etiquetaJornada(p.jornada)}`
+                texto: `Resultado ${nombreLigaActual()} · ${etiquetaJornada(p.jornada)}`
             } : null), 'image/png'));
         }
 
@@ -4352,7 +4711,7 @@
             ctx.textBaseline = 'alphabetic';
             ctx.fillStyle = '#f0b429';
             ctx.font = 'bold 36px Arial';
-            ctx.fillText('LIGA DE FUTBOL COSMAR SPORT CLUB', W / 2, 70);
+            ctx.fillText(nombreLigaActual().toUpperCase(), W / 2, 70);
             ctx.fillStyle = '#ffffff';
             ctx.font = 'bold 28px Arial';
             ctx.fillText('🗓️ CARTELERA DE LA JORNADA', W / 2, 112);
@@ -4444,7 +4803,7 @@
             ctx.textAlign = 'center';
             ctx.font = 'italic 18px Arial';
             ctx.fillStyle = '#94a3b8';
-            ctx.fillText('Sitio Oficial · Liga de Futbol CoSmar SPORT CLUB', W / 2, H - 22);
+            ctx.fillText('Sitio Oficial · ' + nombreLigaActual(), W / 2, H - 22);
 
             const nombreArchivo = `cartelera-${etiquetaJornadaCorta(jornada)}-${new Date().toISOString().slice(0, 10)}.png`.replace(/\s+/g, '-');
             return new Promise(resolve => {
@@ -4463,7 +4822,7 @@
 
             if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
                 try {
-                    await navigator.share({ files: [archivo], title: `Cartelera · ${etiquetaJornada(jornada)}`, text: `Cartelera de la ${etiquetaJornada(jornada)} · Liga de Futbol CoSmar SPORT CLUB` });
+                    await navigator.share({ files: [archivo], title: `Cartelera · ${etiquetaJornada(jornada)}`, text: `Cartelera de la ${etiquetaJornada(jornada)} · ${nombreLigaActual()}` });
                     return;
                 } catch (err) { /* si el usuario cancela el share, caemos a la descarga */ }
             }
@@ -4521,7 +4880,7 @@
             ctx.textBaseline = 'alphabetic';
             ctx.fillStyle = '#f0b429';
             ctx.font = 'bold 40px Arial';
-            ctx.fillText('LIGA DE FUTBOL COSMAR SPORT CLUB', W / 2, 90);
+            ctx.fillText(nombreLigaActual().toUpperCase(), W / 2, 90);
             ctx.fillStyle = '#ffffff';
             ctx.font = '26px Arial';
             ctx.fillText('Tabla de Posiciones', W / 2, 128);
@@ -4601,7 +4960,7 @@
             ctx.textAlign = 'center';
             ctx.font = 'italic 18px Arial';
             ctx.fillStyle = '#94a3b8';
-            ctx.fillText('Sitio Oficial · Liga de Futbol CoSmar SPORT CLUB', W / 2, H - 22);
+            ctx.fillText('Sitio Oficial · ' + nombreLigaActual(), W / 2, H - 22);
 
             const nombreArchivo = `tabla-posiciones-${new Date().toISOString().slice(0, 10)}.png`;
             return new Promise(resolve => {
