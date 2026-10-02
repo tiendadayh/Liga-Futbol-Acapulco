@@ -1480,6 +1480,56 @@
     </div>
 
     <!-- MODAL DE EDICIÓN -->
+    <div id="modal-corregir-partido" class="modal-overlay" style="display:none;" onclick="if(event.target === this) cerrarCorreccionPartido()">
+        <div class="modal-box" style="max-width:680px; max-height:90vh; overflow-y:auto;">
+            <button type="button" class="close-modal-gestion" onclick="cerrarCorreccionPartido()">×</button>
+            <h3 id="corr-titulo">✏️ Corregir partido</h3>
+            <p id="corr-subtitulo" style="font-size:0.8rem; color:#666; margin:0 0 12px;"></p>
+            <input type="hidden" id="corr-id">
+
+            <label>Marcador final:</label>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                <span id="corr-nombre-local" style="flex:1; text-align:right; font-weight:700; font-size:0.85rem;"></span>
+                <input type="number" id="corr-glocal" min="0" value="0" style="width:64px; text-align:center;">
+                <span>-</span>
+                <input type="number" id="corr-gvisita" min="0" value="0" style="width:64px; text-align:center;">
+                <span id="corr-nombre-visita" style="flex:1; font-weight:700; font-size:0.85rem;"></span>
+            </div>
+
+            <label style="display:flex; align-items:center; gap:6px; font-weight:600;">
+                <input type="checkbox" id="corr-chk-pen" onchange="document.getElementById('corr-pen-box').style.display = this.checked ? 'flex' : 'none'"> Se definió por penales
+            </label>
+            <div id="corr-pen-box" style="display:none; align-items:center; gap:8px; margin:6px 0 10px;">
+                <input type="number" id="corr-pen-local" min="0" value="0" style="width:64px; text-align:center;">
+                <span>-</span>
+                <input type="number" id="corr-pen-visita" min="0" value="0" style="width:64px; text-align:center;">
+            </div>
+
+            <label>MVP del partido:</label>
+            <select id="corr-mvp"></select>
+
+            <label>Pago de arbitraje:</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+                <div><span id="corr-pago-etq-local" style="font-size:0.75rem; color:#666;"></span>
+                    <select id="corr-pago-local"><option value="">Sin registrar</option><option value="si">Pagó</option><option value="no">No pagó (queda adeudo)</option></select></div>
+                <div><span id="corr-pago-etq-visita" style="font-size:0.75rem; color:#666;"></span>
+                    <select id="corr-pago-visita"><option value="">Sin registrar</option><option value="si">Pagó</option><option value="no">No pagó (queda adeudo)</option></select></div>
+            </div>
+
+            <label>Goles y tarjetas por jugador:</label>
+            <div style="display:grid; grid-template-columns:1fr 54px 54px 54px; gap:6px; font-size:0.72rem; font-weight:700; color:#666; padding:0 4px;">
+                <span>Jugador</span><span style="text-align:center;">⚽ Gol</span><span style="text-align:center;">🟨 Amar.</span><span style="text-align:center;">🟥 Roja</span>
+            </div>
+            <div id="corr-jugadores" style="display:flex; flex-direction:column; gap:4px; margin-bottom:12px;"></div>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button type="button" onclick="guardarCorreccionPartido()" style="flex:2;">💾 Guardar corrección</button>
+                <button type="button" onclick="anularResultadoPartido()" style="flex:1; background:#c0392b; color:#fff;">↩️ Anular resultado</button>
+            </div>
+            <p style="font-size:0.72rem; color:#888; margin:8px 0 0;">Al guardar se recalculan solos los goles y tarjetas de los jugadores, la tabla, la disciplina (suspensiones y multas) y el adeudo de arbitraje, sin duplicar nada.</p>
+        </div>
+    </div>
+
     <div id="modal-editar" class="modal-overlay" style="display:none;" onclick="if(event.target === this) cerrarEdicion()">
         <div class="modal-box">
             <button type="button" class="close-modal-gestion" onclick="cerrarEdicion()">×</button>
@@ -5593,6 +5643,7 @@ ${cuerpo}`;
                                     <span>${p.fecha || 'Sin fecha'} ${p.hora || ''} · ${estado}${p.oculto ? ' · 🙈 Oculto del sitio público' : ''}</span>
                                 </div>
                                 <div class="gestion-acciones">
+                                    <button type="button" class="btn-editar-fila" title="Corregir marcador, goles, tarjetas, MVP y pagos de este partido" onclick="abrirCorreccionPartido(${p.id})">✏️ Corregir</button>
                                     <button type="button" class="btn-editar-fila" title="${p.oculto ? 'Mostrar de nuevo en el sitio público' : 'Ocultar del sitio público sin borrar sus datos'}" onclick="alternarOcultoPartido(${p.id})">${p.oculto ? '👁️ Mostrar' : '🙈 Ocultar'}</button>
                                     <button type="button" class="btn-eliminar-fila" onclick="eliminarPartido(${p.id})">🗑️</button>
                                 </div>
@@ -6022,6 +6073,208 @@ ${cuerpo}`;
             guardarDB();
             renderizarGestion();
             alert(`Listo, se eliminaron ${idsAEliminar.length} partido(s) duplicado(s) de la Liguilla.`);
+        }
+
+        /* ===== Corrección manual de partidos ya jugados ===== */
+        function revertirPagoArbitraje(eqId, pagadoPrevio) {
+            if (!eqId || pagadoPrevio === undefined) return;
+            const f = asegurarFinanzas(eqId);
+            if (!pagadoPrevio) f.adeudoArbitrajes = Math.max(0, (f.adeudoArbitrajes || 0) - 1);
+        }
+
+        // Resta del acumulado de cada jugador lo que este partido le había sumado.
+        function revertirEstadisticasPartido(p) {
+            (p.estadisticasJugadores || []).forEach(prev => {
+                const j = db.jugadores.find(x => x.id === prev.jugadorId);
+                if (!j) return;
+                j.goles = Math.max(0, (j.goles || 0) - (prev.goles || 0));
+                j.amarillas = Math.max(0, (j.amarillas || 0) - (prev.amarillas || 0));
+                j.rojas = Math.max(0, (j.rojas || 0) - (prev.rojas || 0));
+            });
+        }
+
+        function abrirCorreccionPartido(id) {
+            const p = db.partidos.find(x => x.id === id);
+            if (!p) return;
+            const eqL = db.equipos.find(e => e.id === p.localId);
+            const eqV = db.equipos.find(e => e.id === p.visitaId);
+            const nomL = eqL?.nombre || 'Local';
+            const nomV = eqV?.nombre || 'Visita';
+
+            document.getElementById('corr-id').value = id;
+            document.getElementById('corr-titulo').textContent = `✏️ Corregir: ${nomL} vs ${nomV}`;
+            document.getElementById('corr-subtitulo').textContent = `${etiquetaJornada(p.jornada)} · ${p.fecha || 'Sin fecha'} ${p.hora || ''}` + (p.jugado ? '' : ' · Este partido aún no está marcado como jugado; al guardar se marcará como finalizado.');
+            document.getElementById('corr-nombre-local').textContent = nomL;
+            document.getElementById('corr-nombre-visita').textContent = nomV;
+            document.getElementById('corr-glocal').value = p.golesLocal || 0;
+            document.getElementById('corr-gvisita').value = p.golesVisita || 0;
+
+            const hayPen = !!p.penaltis;
+            document.getElementById('corr-chk-pen').checked = hayPen;
+            document.getElementById('corr-pen-box').style.display = hayPen ? 'flex' : 'none';
+            document.getElementById('corr-pen-local').value = p.penaltis?.local || 0;
+            document.getElementById('corr-pen-visita').value = p.penaltis?.visita || 0;
+
+            const jugadores = db.jugadores
+                .filter(j => j.equipoId === p.localId || j.equipoId === p.visitaId)
+                .sort((a, b) => (a.equipoId === p.localId ? 0 : 1) - (b.equipoId === p.localId ? 0 : 1) || a.nombre.localeCompare(b.nombre));
+
+            document.getElementById('corr-mvp').innerHTML = '<option value="">-- Sin MVP --</option>' +
+                jugadores.map(j => `<option value="${j.id}" ${p.mvpJugadorId === j.id ? 'selected' : ''}>${escapeHtml(j.nombre)} (${escapeHtml(j.equipoId === p.localId ? nomL : nomV)})</option>`).join('');
+
+            const valorPago = v => v === true ? 'si' : (v === false ? 'no' : '');
+            document.getElementById('corr-pago-etq-local').textContent = nomL;
+            document.getElementById('corr-pago-etq-visita').textContent = nomV;
+            document.getElementById('corr-pago-local').value = valorPago(p.arbitrajePagoLocal);
+            document.getElementById('corr-pago-visita').value = valorPago(p.arbitrajePagoVisita);
+
+            let equipoPrevio = null;
+            document.getElementById('corr-jugadores').innerHTML = jugadores.length ? jugadores.map(j => {
+                const s = (p.estadisticasJugadores || []).find(x => x.jugadorId === j.id) || { goles: 0, amarillas: 0, rojas: 0 };
+                let cab = '';
+                if (j.equipoId !== equipoPrevio) {
+                    equipoPrevio = j.equipoId;
+                    cab = `<div style="font-size:0.75rem; font-weight:800; color:var(--dark); background:#f0f4f8; padding:4px 8px; border-radius:6px; margin-top:4px;">${escapeHtml(j.equipoId === p.localId ? nomL : nomV)}</div>`;
+                }
+                return `${cab}
+                    <div class="corr-fila" data-jugadorid="${j.id}" style="display:grid; grid-template-columns:1fr 54px 54px 54px; gap:6px; align-items:center;">
+                        <span style="font-size:0.82rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(j.nombre)}</span>
+                        <input type="number" class="corr-in-gol" min="0" value="${s.goles || 0}" style="padding:4px; text-align:center;">
+                        <input type="number" class="corr-in-amr" min="0" max="2" value="${s.amarillas || 0}" style="padding:4px; text-align:center;">
+                        <input type="number" class="corr-in-rjs" min="0" max="1" value="${s.rojas || 0}" style="padding:4px; text-align:center;">
+                    </div>`;
+            }).join('') : '<p style="font-size:0.8rem; color:#888;">Estos equipos no tienen jugadores registrados.</p>';
+
+            document.getElementById('modal-corregir-partido').style.display = 'flex';
+        }
+
+        function cerrarCorreccionPartido() {
+            document.getElementById('modal-corregir-partido').style.display = 'none';
+        }
+
+        // Mantiene la línea de tiempo (goles/amarillas/rojas) del partido igual a lo que se corrigió,
+        // para que si el árbitro reabre la cédula no aparezcan los números viejos.
+        function sincronizarEventosPartido(p, filas) {
+            if (!Array.isArray(p.eventos)) p.eventos = [];
+            filas.forEach(f => {
+                [['gol', f.g], ['amarilla', f.a], ['roja', f.r]].forEach(([tipo, n]) => {
+                    const actuales = p.eventos.filter(ev => ev.tipo === tipo && ev.desc === f.jug.nombre);
+                    if (actuales.length > n) {
+                        const sobran = actuales.slice(n).map(ev => ev.id);
+                        p.eventos = p.eventos.filter(ev => !sobran.includes(ev.id));
+                    } else {
+                        for (let i = actuales.length; i < n; i++) {
+                            p.eventos.push({ id: Date.now() + Math.floor(Math.random() * 1000000), min: 0, tipo, desc: f.jug.nombre, manual: true });
+                        }
+                    }
+                });
+            });
+        }
+
+        async function guardarCorreccionPartido() {
+            const id = parseInt(document.getElementById('corr-id').value);
+            const p = db.partidos.find(x => x.id === id);
+            if (!p) return;
+
+            const gl = parseInt(document.getElementById('corr-glocal').value);
+            const gv = parseInt(document.getElementById('corr-gvisita').value);
+            if (isNaN(gl) || isNaN(gv) || gl < 0 || gv < 0) return mostrarAlerta('Escribe un marcador válido (números de 0 en adelante).', { icono: '⚠️' });
+
+            const filas = [];
+            let errorFila = '';
+            document.querySelectorAll('#corr-jugadores .corr-fila').forEach(row => {
+                const jug = db.jugadores.find(j => j.id === parseInt(row.dataset.jugadorid));
+                if (!jug) return;
+                const g = Math.max(0, parseInt(row.querySelector('.corr-in-gol').value) || 0);
+                const a = Math.max(0, parseInt(row.querySelector('.corr-in-amr').value) || 0);
+                const r = Math.max(0, parseInt(row.querySelector('.corr-in-rjs').value) || 0);
+                if (a > 2) errorFila = `${jug.nombre}: máximo 2 amarillas en un partido.`;
+                if (r > 1) errorFila = `${jug.nombre}: máximo 1 roja directa en un partido.`;
+                filas.push({ jug, g, a, r });
+            });
+            if (errorFila) return mostrarAlerta(errorFila, { icono: '⚠️' });
+
+            const golesJugL = filas.filter(f => f.jug.equipoId === p.localId).reduce((s, f) => s + f.g, 0);
+            const golesJugV = filas.filter(f => f.jug.equipoId === p.visitaId).reduce((s, f) => s + f.g, 0);
+            if (golesJugL !== gl || golesJugV !== gv) {
+                const ok = await confirmarAccion(`Los goles por jugador suman ${golesJugL} - ${golesJugV}, pero el marcador es ${gl} - ${gv}. Esto es normal si hubo autogoles o no quieres detallar quién anotó. ¿Guardar así?`, { textoConfirmar: 'Guardar así', neutral: true });
+                if (!ok) return;
+            }
+
+            // 1) Deshacer lo que el partido había sumado antes
+            revertirEstadisticasPartido(p);
+            revertirPagoArbitraje(p.localId, p.arbitrajePagoLocal);
+            revertirPagoArbitraje(p.visitaId, p.arbitrajePagoVisita);
+
+            // 2) Aplicar los datos corregidos
+            p.golesLocal = gl;
+            p.golesVisita = gv;
+            p.jugado = true;
+            p.estadoVivo = 'finalizado';
+            if (p.facebookEnVivo) p.facebookEnVivo = false;
+            p.mvpJugadorId = parseInt(document.getElementById('corr-mvp').value) || null;
+            p.penaltis = document.getElementById('corr-chk-pen').checked
+                ? { local: parseInt(document.getElementById('corr-pen-local').value) || 0, visita: parseInt(document.getElementById('corr-pen-visita').value) || 0 }
+                : null;
+
+            p.tarjetasDetalle = [];
+            p.estadisticasJugadores = [];
+            filas.forEach(({ jug, g, a, r }) => {
+                jug.goles = (jug.goles || 0) + g;
+                jug.amarillas = (jug.amarillas || 0) + a;
+                jug.rojas = (jug.rojas || 0) + r;
+                for (let i = 0; i < a; i++) p.tarjetasDetalle.push({ jugadorId: jug.id, tipo: 'amarilla' });
+                for (let i = 0; i < r; i++) p.tarjetasDetalle.push({ jugadorId: jug.id, tipo: 'roja' });
+                if (a === 2) p.tarjetasDetalle.push({ jugadorId: jug.id, tipo: 'roja_doble' });
+                if (g || a || r) p.estadisticasJugadores.push({ jugadorId: jug.id, goles: g, amarillas: a, rojas: r });
+            });
+            sincronizarEventosPartido(p, filas);
+
+            // 3) Pagos de arbitraje
+            const aplicarPago = (valor, eqId, campo) => {
+                if (valor === '') { delete p[campo]; return; }
+                p[campo] = (valor === 'si');
+                registrarPagoArbitraje(eqId, p[campo]);
+            };
+            aplicarPago(document.getElementById('corr-pago-local').value, p.localId, 'arbitrajePagoLocal');
+            aplicarPago(document.getElementById('corr-pago-visita').value, p.visitaId, 'arbitrajePagoVisita');
+
+            p.correccionManual = { en: new Date().toISOString(), veces: ((p.correccionManual && p.correccionManual.veces) || 0) + 1 };
+            if (p.cedula) p.cedula.corregidaManualEn = p.correccionManual.en;
+
+            cerrarCorreccionPartido();
+            guardarDB();
+            mostrarAlerta('Partido corregido. Marcador, estadísticas, disciplina y adeudos ya se actualizaron.', { icono: '✅' });
+        }
+
+        async function anularResultadoPartido() {
+            const id = parseInt(document.getElementById('corr-id').value);
+            const p = db.partidos.find(x => x.id === id);
+            if (!p) return;
+            const ok = await confirmarAccion('¿Anular el resultado de este partido? Volverá a quedar como "Programado": se borran el marcador, la cédula, los goles/tarjetas de este partido (también se restan a los jugadores) y el adeudo de arbitraje que generó. El partido NO se elimina.', { textoConfirmar: 'Anular resultado' });
+            if (!ok) return;
+
+            revertirEstadisticasPartido(p);
+            revertirPagoArbitraje(p.localId, p.arbitrajePagoLocal);
+            revertirPagoArbitraje(p.visitaId, p.arbitrajePagoVisita);
+
+            p.jugado = false;
+            p.estadoVivo = 'programado';
+            p.golesLocal = 0;
+            p.golesVisita = 0;
+            p.mvpJugadorId = null;
+            p.penaltis = null;
+            p.tarjetasDetalle = [];
+            p.estadisticasJugadores = [];
+            p.eventos = [];
+            delete p.cedula;
+            delete p.arbitrajePagoLocal;
+            delete p.arbitrajePagoVisita;
+            delete p.correccionManual;
+
+            cerrarCorreccionPartido();
+            guardarDB();
+            mostrarAlerta('Resultado anulado. El partido volvió a quedar como programado.', { icono: '↩️' });
         }
 
         async function eliminarPartido(id) {
