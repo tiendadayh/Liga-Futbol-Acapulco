@@ -165,6 +165,45 @@
 
         .hidden { display: none !important; }
 
+        /* --- Escáner QR --- */
+        .qr-caja { padding: 0 !important; overflow: hidden; max-width: 520px !important; }
+        .qr-head { background: var(--dark); color: #fff; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #f5b301; }
+        .qr-head h3 { margin: 0; color: #fff; font-size: 1.05rem; }
+        .qr-head small { color: #cbd5e1; font-size: 0.72rem; }
+        .qr-body { padding: 14px 18px 18px; }
+        .qr-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+        .qr-tabs button { flex: 1; background: #e2e8f0; color: #334155; padding: 9px 4px; font-size: 0.8rem; border-radius: 8px; box-shadow: none; }
+        .qr-tabs button.on { background: var(--dark); color: #fff; box-shadow: inset 0 -3px 0 #f5b301; }
+        .qr-ctrl { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+        .qr-ctrl input, .qr-ctrl select { width: auto; flex: 1; min-width: 100px; }
+        .qr-visor { border-radius: 12px; overflow: hidden; background: #000; min-height: 220px; border: 3px solid #f5b301; }
+        .qr-ficha { display: flex; gap: 12px; align-items: center; margin-top: 10px; padding: 10px; border-radius: 10px; border: 2px solid #e2e8f0; background: #f8fafc; }
+        .qr-ficha.ok { border-color: #16a34a; background: #f0fdf4; }
+        .qr-ficha.err { border-color: #dc2626; background: #fef2f2; }
+        .qr-ficha.info { border-color: #2563eb; background: #eff6ff; }
+        .qr-foto { width: 62px; height: 62px; border-radius: 50%; background: var(--dark); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.2rem; flex-shrink: 0; overflow: hidden; border: 2px solid #f5b301; }
+        .qr-foto img { width: 100%; height: 100%; object-fit: cover; }
+        .qr-ficha-txt { font-size: 0.84rem; line-height: 1.4; color: #1e293b; }
+        .qr-ficha-txt b { font-size: 0.95rem; }
+        .qr-listas { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+        .qr-listas h5 { margin: 0 0 4px; font-size: 0.78rem; }
+        .qr-chip { display: flex; align-items: center; justify-content: space-between; gap: 4px; font-size: 0.74rem; background: #f1f5f9; border-radius: 6px; padding: 3px 6px; margin-bottom: 3px; }
+        .qr-chip button { padding: 0 6px; font-size: 0.7rem; background: var(--primary); border-radius: 4px; line-height: 1.4; }
+        .qr-vacio { font-size: 0.74rem; color: #94a3b8; margin: 0; }
+        /* Verificación de credencial: foto grande + Coincide / No coincide */
+        .qr-verif { margin-top: 10px; border: 3px solid #f5b301; border-radius: 14px; background: #fffbeb; padding: 14px; text-align: center; }
+        .qr-verif h4 { margin: 0 0 4px; font-size: 0.95rem; color: #92400e; }
+        .qr-verif-foto { width: min(70vw, 260px); aspect-ratio: 3 / 4; margin: 8px auto; border-radius: 12px; background: #0d2a4d; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 700; overflow: hidden; border: 3px solid #0d2a4d; }
+        .qr-verif-foto img { width: 100%; height: 100%; object-fit: cover; }
+        .qr-verif-datos { font-size: 0.9rem; line-height: 1.4; color: #1e293b; margin-bottom: 4px; }
+        .qr-verif-datos b { font-size: 1.05rem; }
+        .qr-verif-aviso { font-size: 0.78rem; color: #b45309; margin: 4px 0 8px; }
+        .qr-verif-btns { display: flex; gap: 8px; margin-top: 8px; }
+        .qr-verif-btns button { flex: 1; padding: 14px 6px; font-size: 0.95rem; font-weight: 700; border-radius: 10px; }
+        .qr-revisados { margin-top: 10px; font-size: 0.74rem; color: #334155; }
+        .qr-revisados .rv-ok { color: #15803d; } .qr-revisados .rv-err { color: #b91c1c; font-weight: 700; }
+        #qr-conexion { display: block; margin-top: 2px; }
+
         /* --- Modal de Firma de Conformidad de la Cédula --- */
         .modal-firma-overlay {
             position: fixed; inset: 0; background: rgba(11,47,92,0.78);
@@ -541,6 +580,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 </head>
 
 <body>
@@ -629,6 +669,7 @@
                 <div id="seccion-timeline-dinamica" style="margin-top: 15px; display:none; background:#f9f9f9; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
                     <label style="font-weight: bold; color: var(--dark); display:block; margin-bottom:4px;">⏰ Incidencias en Vivo</label>
                     <p style="font-size:0.75rem; color:#6b7280; margin:0 0 8px;">Cada evento que inyectes se suma automáticamente al marcador y a la fila del jugador en "Rendimiento Individual" de abajo. Si te equivocas, usa ✏️ Editar o 🗑️ Eliminar en la lista.</p>
+                    <button type="button" onclick="abrirEscanerQR('incidencia')" style="background:#0d2a4d; margin-bottom:10px;">📷 Registrar gol / tarjeta escaneando QR</button>
                     <div style="display:flex; gap: 8px; flex-wrap: wrap;">
                         <input type="number" id="time-minuto" placeholder="Min" style="width:70px;" min="1" max="120">
                         <select id="time-tipo" onchange="alternarCamposIncidencia()" style="width:160px;">
@@ -654,16 +695,17 @@
 
                 <fieldset style="border:1px solid var(--border); border-radius:8px; padding:12px; margin-top:15px;">
                     <legend style="padding:0 6px; font-weight:700; color:var(--dark); font-size:0.9rem;">🧩 Alineación Titular</legend>
-                    <p style="font-size:0.75rem; color:#6b7280; margin-top:-4px;">Marca los 10 jugadores que iniciaron el partido en cada equipo. El resto del plantel queda como suplente automáticamente.</p>
+                    <p style="font-size:0.75rem; color:#6b7280; margin-top:-4px;">Marca los 11 jugadores que iniciaron el partido en cada equipo. El resto del plantel queda como suplente automáticamente.</p>
+                    <button type="button" onclick="abrirEscanerQR('titular')" style="background:#0d2a4d; margin-bottom:10px;">📷 Escanear QR de credenciales (titulares)</button>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
                         <div>
                             <label id="ced-titulares-lbl-local" style="color:var(--primary);">Titulares Local</label>
-                            <span id="ced-titulares-contador-local" style="font-size:0.75rem; color:#6b7280; margin-left:6px;">0/10</span>
+                            <span id="ced-titulares-contador-local" style="font-size:0.75rem; color:#6b7280; margin-left:6px;">0/11</span>
                             <div id="ced-titulares-local" style="display:flex; flex-direction:column; gap:3px; max-height:220px; overflow-y:auto; margin-top:6px; border:1px solid var(--border); border-radius:6px; padding:8px;"></div>
                         </div>
                         <div>
                             <label id="ced-titulares-lbl-visita" style="color:var(--secondary);">Titulares Visitante</label>
-                            <span id="ced-titulares-contador-visita" style="font-size:0.75rem; color:#6b7280; margin-left:6px;">0/10</span>
+                            <span id="ced-titulares-contador-visita" style="font-size:0.75rem; color:#6b7280; margin-left:6px;">0/11</span>
                             <div id="ced-titulares-visita" style="display:flex; flex-direction:column; gap:3px; max-height:220px; overflow-y:auto; margin-top:6px; border:1px solid var(--border); border-radius:6px; padding:8px;"></div>
                         </div>
                     </div>
@@ -672,6 +714,7 @@
                 <fieldset style="border:1px solid var(--border); border-radius:8px; padding:12px; margin-top:15px;">
                     <legend style="padding:0 6px; font-weight:700; color:var(--dark); font-size:0.9rem;">🔁 Cambios (Sustituciones)</legend>
                     <p style="font-size:0.75rem; color:#6b7280; margin-top:-4px;">Selecciona quién sale y quién entra — ya no se escribe a mano. También puedes registrar cambios desde "Incidencias en Vivo" y aparecerán aquí solos.</p>
+                    <button type="button" onclick="abrirEscanerQR('cambio')" style="background:#0d2a4d; margin-bottom:10px;">📷 Escanear cambio con QR (Sale → Entra)</button>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
                         <div>
                             <label id="ced-cambio-lbl-local" style="color:var(--primary);">Cambios Local</label>
@@ -827,6 +870,60 @@
         </div>
     </div>
 
+    <div id="modal-escaner-qr" class="modal-firma-overlay hidden">
+        <div class="modal-firma-caja qr-caja">
+            <div class="qr-head">
+                <div>
+                    <h3>📷 Escanear Credencial</h3>
+                    <small id="qr-partido-lbl"></small>
+                    <small id="qr-conexion"></small>
+                </div>
+            </div>
+            <div class="qr-body">
+                <div class="qr-tabs">
+                    <button type="button" id="qr-btn-modo-titular" onclick="cambiarModoEscaner('titular')">🧩 Titulares</button>
+                    <button type="button" id="qr-btn-modo-cambio" onclick="cambiarModoEscaner('cambio')">🔁 Cambio</button>
+                    <button type="button" id="qr-btn-modo-incidencia" onclick="cambiarModoEscaner('incidencia')">⚽ Incidencia</button>
+                </div>
+                <p id="qr-instruccion" style="font-size:0.82rem; color:#334155; margin:0 0 10px;"></p>
+                <div id="qr-controles" class="qr-ctrl hidden">
+                    <select id="qr-tipo">
+                        <option value="gol">⚽ Gol</option>
+                        <option value="autogol">❌ Autogol</option>
+                        <option value="amarilla">🟨 Amarilla</option>
+                        <option value="roja">🟥 Roja</option>
+                    </select>
+                    <input type="number" id="qr-min" placeholder="Minuto" min="1" max="120">
+                    <button type="button" id="qr-btn-reiniciar" onclick="reiniciarCambioEscaner()" style="background:#64748b; padding:8px 12px;">↩️ Reiniciar</button>
+                </div>
+                <div id="qr-reader" class="qr-visor"></div>
+                <div id="qr-verif" class="qr-verif hidden">
+                    <h4>🪪 Verifica la credencial</h4>
+                    <div class="qr-verif-datos">Compara esta foto con la persona que tienes enfrente.</div>
+                    <div id="qr-verif-foto" class="qr-verif-foto">?</div>
+                    <div id="qr-verif-datos" class="qr-verif-datos"></div>
+                    <div id="qr-verif-aviso" class="qr-verif-aviso hidden"></div>
+                    <div class="qr-verif-btns">
+                        <button type="button" id="qr-verif-ok" onclick="resolverVerificacion('coincide')" style="background:#16a34a;">✅ Coincide</button>
+                        <button type="button" id="qr-verif-no" onclick="resolverVerificacion('no_coincide')" style="background:#dc2626;">❌ No coincide</button>
+                    </div>
+                    <button type="button" id="qr-verif-sinfoto" class="hidden" onclick="resolverVerificacion('sin_foto')" style="margin-top:8px; width:100%; background:#64748b; padding:10px;">Aceptar sin foto (queda anotado)</button>
+                </div>
+                <div id="qr-ficha" class="qr-ficha info">
+                    <div id="qr-foto" class="qr-foto">📷</div>
+                    <div id="qr-ficha-txt" class="qr-ficha-txt">Apunta la cámara al QR de la credencial.</div>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                    <button type="button" onclick="deshacerUltimoEscaneo()" style="background:#64748b; flex:1; padding:8px;">↩️ Deshacer último</button>
+                </div>
+                <div id="qr-listas" class="qr-listas"></div>
+                <div id="qr-revisados" class="qr-revisados"></div>
+                <div id="qr-historial" style="margin-top:10px; font-size:0.76rem; color:#64748b; display:flex; flex-direction:column; gap:2px;"></div>
+                <button type="button" onclick="cerrarEscanerQR()" style="margin-top:14px; width:100%; background:var(--dark);">✔️ Listo / Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-firma-cedula" class="modal-firma-overlay hidden">
         <div class="modal-firma-caja">
             <h3 style="margin-top:0;">✍️ Validación y Firma de Conformidad</h3>
@@ -928,9 +1025,19 @@
             appId: "1:426642299369:web:b3486f21982fd5f3515378",
             measurementId: "G-4NB813C868"
         };
-        firebase.initializeApp(firebaseConfig);
-        firebase.analytics();
-        const firebaseDbRef = firebase.database().ref('liga_premier_db');
+        // Si la página se abre SIN internet y los scripts de Firebase no están en caché, `firebase`
+        // no existe: en vez de romper todo el panel, se usa un sustituto que deja los cambios
+        // pendientes para subirlos cuando regrese la señal.
+        const FIREBASE_DISPONIBLE = (typeof firebase !== 'undefined');
+        let firebaseDbRef;
+        if (FIREBASE_DISPONIBLE) {
+            firebase.initializeApp(firebaseConfig);
+            try { firebase.analytics(); } catch (e) { /* analítica opcional */ }
+            firebaseDbRef = firebase.database().ref('liga_premier_db');
+        } else {
+            const sinFirebase = () => Promise.reject(new Error('Firebase no disponible (sin internet)'));
+            firebaseDbRef = { set: sinFirebase, once: sinFirebase, on: () => { } };
+        }
         let recibiendoDeFirebase = false; // evita que nuestro propio guardado se re-procese como si viniera de otro dispositivo
 
         // ===== Presencia del árbitro: el admin ve "🎙️ Árbitro en línea" en admin.html =====
@@ -1158,7 +1265,7 @@
         // usan mientras el admin no haya guardado los suyos propios en db.reglamento.
         const REGLAMENTO_DEFAULTS = {
             duracionMinutos: 25, numTiempos: 2, toleranciaMinutos: 10,
-            jugadoresTitulares: 7, jugadoresSuplentes: 5,
+            jugadoresTitulares: 11, jugadoresSuplentes: 5,
             cuotaArbitraje: 300, cuotaInscripcionEquipo: 0, cuotaInscripcionJugador: 0,
             balonOficial: '', categoriaTexto: 'Libre',
             amarillasParaAcumulada: 3,
@@ -1199,37 +1306,219 @@
         intentarRestaurarSesionArbitro();
 
         let arbitroActual = '';
+
+        // ===== Modo sin internet =====
+        // Todo lo que capture el árbitro se guarda primero en el teléfono. Si no hay señal, queda
+        // "pendiente" (la marca sobrevive aunque cierre la app o se apague el teléfono) y se sube
+        // solo al volver la conexión. La subida FUSIONA con lo que haya en la nube: no pisa lo que
+        // el administrador haya cambiado mientras tanto, solo aplica lo que se tocó en este teléfono.
+        const CLAVE_PENDIENTE = 'liga_premier_pendiente_arbitro';
+        const CLAVE_BASE = 'liga_premier_base_hashes';
         let cambiosPendientesOffline = false;
+        try { cambiosPendientesOffline = localStorage.getItem(CLAVE_PENDIENTE) === '1'; } catch (e) { }
+        let conexionNube = null;          // true/false según Firebase (.info/connected); null = aún no se sabe
+        let sincronizandoNube = false;
 
-        function guardarDB() {
-            localStorage.setItem('liga_premier_db', JSON.stringify(db));
-            intentarAutoBackup();
-
-            if (!navigator.onLine) {
-                cambiosPendientesOffline = true;
-                actualizarBannerConexion();
-                return;
-            }
-
-            recibiendoDeFirebase = true;
-            firebaseDbRef.set(db).then(() => {
-                cambiosPendientesOffline = false;
-                actualizarBannerConexion();
-            }).catch(err => {
-                console.warn('No se pudo sincronizar con Firebase', err);
-                cambiosPendientesOffline = true;
-                actualizarBannerConexion();
-            }).finally(() => { recibiendoDeFirebase = false; });
+        function marcarPendiente(valor) {
+            cambiosPendientesOffline = !!valor;
+            try {
+                if (valor) localStorage.setItem(CLAVE_PENDIENTE, '1');
+                else localStorage.removeItem(CLAVE_PENDIENTE);
+            } catch (e) { }
+            actualizarBannerConexion();
         }
 
-        // --- Modo sin internet ---
-        // Todo se sigue guardando en este dispositivo aunque se vaya la señal en la cancha.
-        // En cuanto vuelve el internet, lo que quedó pendiente se sube solo.
+        // navigator.onLine miente con señal muy débil; Firebase sabe si realmente hay conexión.
+        function hayNube() { return navigator.onLine && conexionNube !== false; }
+
+        function guardarLocal() {
+            try {
+                localStorage.setItem('liga_premier_db', JSON.stringify(db));
+                return true;
+            } catch (e) {
+                console.warn('No se pudo guardar en el teléfono', e);
+                mostrarAvisoAutoguardado('⚠️ El almacenamiento del teléfono está lleno: libera espacio o sincroniza pronto.');
+                return false;
+            }
+        }
+
+        // --- Huellas para saber qué cambió en este teléfono desde la última sincronización ---
+        function canon(v) {
+            if (Array.isArray(v)) return '[' + v.filter(x => x !== undefined).map(canon).join(',') + ']';
+            if (v && typeof v === 'object') {
+                return '{' + Object.keys(v).sort().filter(k => {
+                    const x = v[k];
+                    return x !== undefined && x !== null && !(Array.isArray(x) && !x.length) &&
+                        !(typeof x === 'object' && !Array.isArray(x) && !Object.keys(x).length);
+                }).map(k => JSON.stringify(k) + ':' + canon(v[k])).join(',') + '}';
+            }
+            return JSON.stringify(v === undefined ? null : v);
+        }
+        function huella(v) {
+            const t = canon(v);
+            let h = 5381;
+            const paso = t.length > 4000 ? 53 : 1;        // las fotos (base64) se muestrean para no frenar el teléfono
+            for (let i = 0; i < t.length; i += paso) h = ((h << 5) + h + t.charCodeAt(i)) | 0;
+            return t.length + ':' + h;
+        }
+        const COLECCIONES_SYNC = ['equipos', 'jugadores', 'partidos', 'comunicados', 'arbitros', 'campos', 'historialFichajes', 'solicitudes'];
+        function aArray(x) { return Array.isArray(x) ? x.filter(Boolean) : (x && typeof x === 'object' ? Object.values(x).filter(Boolean) : []); }
+        function esColeccionConId(arr) { return Array.isArray(arr) && arr.every(it => it && it.id !== undefined); }
+
+        function calcularBase(obj) {
+            const base = { col: {}, obj: {}, prim: {} };
+            Object.keys(obj).forEach(k => {
+                const v = obj[k];
+                if (COLECCIONES_SYNC.includes(k) && esColeccionConId(aArray(v))) {
+                    base.col[k] = {};
+                    aArray(v).forEach(it => { base.col[k][String(it.id)] = huella(it); });
+                } else if (v && typeof v === 'object' && !Array.isArray(v)) {
+                    base.obj[k] = {};
+                    Object.keys(v).forEach(sk => { base.obj[k][sk] = huella(v[sk]); });
+                } else {
+                    base.prim[k] = huella(v);
+                }
+            });
+            return base;
+        }
+        function guardarBase(obj) {
+            try { localStorage.setItem(CLAVE_BASE, JSON.stringify(calcularBase(obj))); } catch (e) { }
+        }
+        function leerBase() {
+            try { return JSON.parse(localStorage.getItem(CLAVE_BASE)); } catch (e) { return null; }
+        }
+
+        // Une lo capturado en este teléfono con lo que hay en la nube. Gana lo del teléfono SOLO en
+        // lo que se tocó aquí; lo demás se queda como esté en la nube.
+        function riquezaPartido(p) {
+            return ((p && p.eventos) || []).length + ((p && p.verificaciones) || []).length +
+                ((p && p.titularesLocal) || []).length + ((p && p.titularesVisita) || []).length + (p && p.jugado ? 1 : 0);
+        }
+
+        function fusionarConNube(local, remoto, base) {
+            const merged = normalizarDB(JSON.parse(JSON.stringify(remoto || {})));
+            let aplicados = 0, conflictos = 0;
+            const sinBase = !base;
+            const b = base || { col: {}, obj: {}, prim: {} };
+
+            Object.keys(local).forEach(k => {
+                const vLocal = local[k];
+                if (COLECCIONES_SYNC.includes(k) && esColeccionConId(aArray(vLocal))) {
+                    const arrLocal = aArray(vLocal);
+                    let arrM = aArray(merged[k]);
+                    const idxM = new Map(arrM.map((it, i) => [String(it.id), i]));
+                    const baseK = b.col[k] || {};
+                    const idsLocal = new Set();
+                    arrLocal.forEach(it => {
+                        const id = String(it.id); idsLocal.add(id);
+                        const hL = huella(it), hB = baseK[id];
+                        const enNube = idxM.has(id);
+                        if (!sinBase && hL === hB) return;                       // no se tocó aquí
+                        if (enNube) {
+                            const remotoIt = arrM[idxM.get(id)];
+                            const hR = huella(remotoIt);
+                            if (hR === hL) return;                               // ya es igual en la nube
+                            if (sinBase && (k !== 'partidos' || riquezaPartido(it) <= riquezaPartido(remotoIt))) return; // sin referencia: solo gana el partido con más captura
+                            if (hB !== undefined && hR !== hB) conflictos++;     // también cambió en la nube
+                            arrM[idxM.get(id)] = it; aplicados++;
+                        } else {
+                            if (!sinBase && hB !== undefined) return;            // otro lo borró en la nube: se respeta
+                            arrM.push(it); idxM.set(id, arrM.length - 1); aplicados++;
+                        }
+                    });
+                    if (!sinBase) {                                              // borrados en este teléfono
+                        Object.keys(baseK).forEach(id => {
+                            if (idsLocal.has(id) || !idxM.has(id)) return;
+                            if (huella(arrM[idxM.get(id)]) !== baseK[id]) return; // alguien lo editó en la nube: se conserva
+                            arrM[idxM.get(id)] = null; aplicados++;
+                        });
+                        arrM = arrM.filter(Boolean);
+                    }
+                    merged[k] = arrM;
+                } else if (vLocal && typeof vLocal === 'object' && !Array.isArray(vLocal)) {
+                    const baseO = b.obj[k] || {};
+                    const mo = (merged[k] && typeof merged[k] === 'object' && !Array.isArray(merged[k])) ? merged[k] : (merged[k] = {});
+                    Object.keys(vLocal).forEach(sk => {
+                        const hL = huella(vLocal[sk]);
+                        if (!sinBase && hL === baseO[sk]) return;
+                        if (sinBase) return;
+                        if (huella(mo[sk]) === hL) return;
+                        if (baseO[sk] !== undefined && huella(mo[sk]) !== baseO[sk]) conflictos++;
+                        mo[sk] = vLocal[sk]; aplicados++;
+                    });
+                } else if (!sinBase && huella(vLocal) !== b.prim[k] && huella(merged[k]) !== huella(vLocal)) {
+                    merged[k] = vLocal; aplicados++;
+                }
+            });
+            return { merged, aplicados, conflictos };
+        }
+
+        function conTiempoLimite(promesa, ms) {
+            return Promise.race([promesa, new Promise((_, rej) => setTimeout(() => rej(new Error('tiempo agotado')), ms))]);
+        }
+
+        function guardarDB() {
+            guardarLocal();
+            intentarAutoBackup();
+
+            if (!hayNube()) {
+                marcarPendiente(true);
+                return;
+            }
+            // Si ya había algo pendiente, se sube con fusión (no se sobrescribe a ciegas la nube).
+            if (cambiosPendientesOffline) { sincronizarPendiente(); return; }
+
+            recibiendoDeFirebase = true;
+            const respaldo = setTimeout(() => { recibiendoDeFirebase = false; }, 10000);
+            conTiempoLimite(firebaseDbRef.set(db), 10000).then(() => {
+                guardarBase(db);
+                actualizarBannerConexion();
+            }).catch(err => {
+                // Con señal muy débil el guardado puede no confirmarse: queda pendiente y se reintenta solo.
+                console.warn('No se pudo confirmar la sincronización con Firebase', err);
+                marcarPendiente(true);
+            }).finally(() => { clearTimeout(respaldo); recibiendoDeFirebase = false; });
+        }
+
+        async function sincronizarPendiente() {
+            if (sincronizandoNube || !cambiosPendientesOffline || !hayNube()) return;
+            sincronizandoNube = true;
+            actualizarBannerConexion();
+            try {
+                const snap = await conTiempoLimite(firebaseDbRef.once('value'), 12000);
+                const remoto = snap.val() || {};
+                const { merged, aplicados, conflictos } = fusionarConNube(db, remoto, leerBase());
+                recibiendoDeFirebase = true;
+                await conTiempoLimite(firebaseDbRef.set(merged), 15000);
+                db = normalizarDB(merged);
+                guardarLocal();
+                guardarBase(db);
+                marcarPendiente(false);
+                try { refrescarSelectorArbitros(); aplicarLogoSitio(); } catch (e) { }
+                mostrarAvisoAutoguardado(conflictos
+                    ? `✅ Sincronizado (${aplicados} cambios). ${conflictos} coincidían con cambios del administrador: se conservó lo capturado aquí.`
+                    : `✅ Sincronizado: ${aplicados} cambio${aplicados === 1 ? '' : 's'} subido${aplicados === 1 ? '' : 's'}.`);
+            } catch (err) {
+                console.warn('Sincronización pendiente falló; se reintentará', err);   // sigue pendiente
+            } finally {
+                recibiendoDeFirebase = false;
+                sincronizandoNube = false;
+                actualizarBannerConexion();
+            }
+        }
+
         function actualizarBannerConexion() {
+            const sinRed = !hayNube();
+            const estado = document.getElementById('qr-conexion');
+            if (estado) {
+                estado.textContent = sinRed ? '📴 Sin internet: se guarda en este teléfono'
+                    : (cambiosPendientesOffline ? '🔄 Sincronizando pendientes...' : '🟢 En línea');
+                estado.style.color = sinRed ? '#fbbf24' : '#cbd5e1';
+            }
             const banner = document.getElementById('banner-sin-conexion');
             if (!banner) return;
-            if (!navigator.onLine) {
-                banner.textContent = '📴 Sin conexión — tus cambios se están guardando en este teléfono y se subirán solos cuando vuelva el internet.';
+            if (sinRed) {
+                banner.textContent = '📴 Sin conexión — puedes seguir capturando: todo se guarda en este teléfono y se subirá solo cuando vuelva el internet.';
                 banner.classList.remove('hidden');
             } else if (cambiosPendientesOffline) {
                 banner.textContent = '🔄 Ya hay internet — sincronizando lo que quedó pendiente...';
@@ -1240,31 +1529,32 @@
         }
 
         window.addEventListener('offline', actualizarBannerConexion);
-        window.addEventListener('online', () => {
-            actualizarBannerConexion();
-            if (cambiosPendientesOffline) {
-                recibiendoDeFirebase = true;
-                firebaseDbRef.set(db).then(() => {
-                    cambiosPendientesOffline = false;
+        window.addEventListener('online', () => { actualizarBannerConexion(); sincronizarPendiente(); });
+        if (FIREBASE_DISPONIBLE) {
+            try {
+                firebase.database().ref('.info/connected').on('value', snap => {
+                    conexionNube = snap.val() === true;
                     actualizarBannerConexion();
-                    mostrarAvisoAutoguardado('✅ Cambios pendientes sincronizados.');
-                }).catch(() => {
-                    // seguirá pendiente; se reintentará en el próximo guardarDB() o próxima reconexión
-                }).finally(() => { recibiendoDeFirebase = false; });
-            }
-        });
+                    if (conexionNube) sincronizarPendiente();
+                });
+            } catch (e) { }
+        }
+        // Reintento periódico: con señal intermitente el evento "online" puede no llegar.
+        setInterval(() => { if (cambiosPendientesOffline && hayNube()) sincronizarPendiente(); }, 15000);
+        actualizarBannerConexion();
 
         // --- Sincronización automática en tiempo real con Firebase ---
         // Cada vez que admin.html publica, o el árbitro guarda algo desde otro dispositivo,
         // esta página recibe el cambio sola, sin recargar y sin perder lo que se esté escribiendo.
         firebaseDbRef.on('value', function (snapshot) {
             if (recibiendoDeFirebase) return;
-            if (cambiosPendientesOffline) return; // no aceptar datos remotos hasta subir lo pendiente de este dispositivo
+            if (cambiosPendientesOffline) { sincronizarPendiente(); return; } // primero se sube lo pendiente de este teléfono (con fusión)
             const datosNube = snapshot.val();
             if (!datosNube) return;
             db = datosNube;
             normalizarDB(db);
-            localStorage.setItem('liga_premier_db', JSON.stringify(db));
+            guardarLocal();
+            guardarBase(db);
             refrescarSelectorArbitros();
             if (arbitroSesion) { aplicarIdentidadPorPin(); } else { intentarRestaurarSesionArbitro(); }
             aplicarLogoSitio();
@@ -1977,11 +2267,11 @@
             };
             pintar('ced-titulares-local', jugadoresLocal, titLocal);
             pintar('ced-titulares-visita', jugadoresVisita, titVisita);
-            document.getElementById('ced-titulares-contador-local').innerText = `${titLocal.length}/10`;
-            document.getElementById('ced-titulares-contador-visita').innerText = `${titVisita.length}/10`;
+            document.getElementById('ced-titulares-contador-local').innerText = `${titLocal.length}/11`;
+            document.getElementById('ced-titulares-contador-visita').innerText = `${titVisita.length}/11`;
         }
 
-        // Marca/desmarca un jugador como titular, con tope de 10 por equipo.
+        // Marca/desmarca un jugador como titular, con tope de 11 por equipo.
         function alternarTitular(partidoId, jugadorId, marcado) {
             const partido = db.partidos.find(p => p.id === partidoId);
             if (!partido) return;
@@ -1992,8 +2282,8 @@
             if (!partido[clave]) partido[clave] = [];
 
             if (marcado) {
-                if (partido[clave].length >= 10) {
-                    alert('Ya seleccionaste 10 titulares para este equipo. Desmarca alguno antes de agregar otro.');
+                if (partido[clave].length >= 11) {
+                    alert('Ya seleccionaste 11 titulares para este equipo. Desmarca alguno antes de agregar otro.');
                     desplegarCargaIncidencias(partidoId);
                     return;
                 }
@@ -2005,8 +2295,8 @@
             const nombreLocal = db.equipos.find(e => e.id === partido.localId)?.nombre || 'Local';
             const nombreVisita = db.equipos.find(e => e.id === partido.visitaId)?.nombre || 'Visita';
             void nombreLocal; void nombreVisita;
-            document.getElementById('ced-titulares-contador-local').innerText = `${(partido.titularesLocal || []).length}/10`;
-            document.getElementById('ced-titulares-contador-visita').innerText = `${(partido.titularesVisita || []).length}/10`;
+            document.getElementById('ced-titulares-contador-local').innerText = `${(partido.titularesLocal || []).length}/11`;
+            document.getElementById('ced-titulares-contador-visita').innerText = `${(partido.titularesVisita || []).length}/11`;
             guardarDB();
         }
 
@@ -2236,6 +2526,418 @@
             contenedor.style.display = 'flex';
         }
 
+        // ===== Escáner de QR de credenciales (titulares, cambios e incidencias) =====
+        // El QR impreso en la credencial lleva el enlace ...?jugador=<id>; de ahí se saca el id del jugador.
+        let escanerQR = null;
+        let escanerModo = 'titular';
+        let escanerCambioSale = null;
+        let escanerUltimo = { texto: '', t: 0 };
+        let escanerHistorial = [];
+        let escanerUltimaAccion = null;
+        let escanerPendiente = null;   // credencial leída que espera "Coincide / No coincide"
+
+        function beepEscaner(ok) {
+            try {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (AC) {
+                    const c = new AC(), o = c.createOscillator(), g = c.createGain();
+                    o.frequency.value = ok ? 880 : 220; g.gain.value = 0.08;
+                    o.connect(g); g.connect(c.destination); o.start();
+                    setTimeout(() => { o.stop(); c.close(); }, ok ? 120 : 300);
+                }
+            } catch (e) { }
+            if (navigator.vibrate) navigator.vibrate(ok ? 60 : [80, 60, 80]);
+        }
+
+        function extraerIdJugadorDeQR(texto) {
+            const t = String(texto || '').trim();
+            if (/^\d+$/.test(t)) return parseInt(t, 10);
+            try {
+                const v = new URL(t).searchParams.get('jugador');
+                if (v && /^\d+$/.test(v)) return parseInt(v, 10);
+            } catch (e) { }
+            const m = t.match(/[?&]jugador=(\d+)/);
+            return m ? parseInt(m[1], 10) : null;
+        }
+
+        function partidoActualEscaner() {
+            const pId = parseInt(document.getElementById('admin-res-partido').value);
+            return db.partidos.find(x => x.id === pId) || null;
+        }
+
+        // Jugadores que están en la cancha ahora: titulares + entradas - salidas.
+        function idsEnCanchaEquipo(p, equipoId) {
+            const esLocal = equipoId === p.localId;
+            const set = new Set(esLocal ? (p.titularesLocal || []) : (p.titularesVisita || []));
+            (p.eventos || []).filter(ev => ev.tipo === 'cambio').slice().sort((a, b) => a.min - b.min).forEach(ev => {
+                const s = db.jugadores.find(j => j.nombre === ev.saleNombre && j.equipoId === equipoId);
+                const e = db.jugadores.find(j => j.nombre === ev.entraNombre && j.equipoId === equipoId);
+                if (s) set.delete(s.id);
+                if (e) set.add(e.id);
+            });
+            return set;
+        }
+
+        function refrescarTitularesEscaner(p) {
+            const hab = db.jugadores.filter(j => (j.equipoId === p.localId || j.equipoId === p.visitaId) && !jugadorBloqueadoPorDisciplina(j, db, p.jornada).bloqueado);
+            renderTitularesCedula(p, hab.filter(j => j.equipoId === p.localId), hab.filter(j => j.equipoId === p.visitaId));
+        }
+
+        function iniciales(nombre) {
+            return String(nombre || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0].toUpperCase()).join('');
+        }
+
+        function pintarFichaEscaner(tipo, j, mensaje) {
+            const ficha = document.getElementById('qr-ficha');
+            ficha.className = 'qr-ficha ' + tipo;
+            const foto = document.getElementById('qr-foto');
+            if (j && j.foto) foto.innerHTML = `<img src="${j.foto}" alt="Foto de ${escapeHtml(j.nombre)}">`;
+            else if (j) foto.textContent = iniciales(j.nombre);
+            else foto.textContent = tipo === 'err' ? '⚠️' : '📷';
+            let cab = '';
+            if (j) {
+                const eq = db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Otro equipo';
+                cab = `<b>${escapeHtml(j.nombre)}</b>${j.numero ? ` · #${escapeHtml(String(j.numero))}` : ''}<br><span style="color:#64748b;">${escapeHtml(eq)}</span><br>`;
+            }
+            document.getElementById('qr-ficha-txt').innerHTML = cab + mensaje;
+        }
+
+        function pintarListasEscaner(p) {
+            const cont = document.getElementById('qr-listas');
+            if (!p) { cont.innerHTML = ''; return; }
+            const lado = (equipoId, clave) => {
+                const nombre = db.equipos.find(e => e.id === equipoId)?.nombre || '';
+                if (escanerModo === 'titular') {
+                    const ids = p[clave] || [];
+                    const chips = ids.map(id => {
+                        const j = db.jugadores.find(x => x.id === id);
+                        return j ? `<div class="qr-chip"><span>${j.numero ? '#' + escapeHtml(String(j.numero)) + ' ' : ''}${escapeHtml(j.nombre)}</span><button type="button" onclick="quitarTitularQR(${j.id})" title="Quitar">✕</button></div>` : '';
+                    }).join('');
+                    return `<div><h5>${escapeHtml(nombre)} — Titulares ${ids.length}/11</h5>${chips || '<p class="qr-vacio">Sin escanear.</p>'}</div>`;
+                }
+                const set = idsEnCanchaEquipo(p, equipoId);
+                const chips = Array.from(set).map(id => {
+                    const j = db.jugadores.find(x => x.id === id);
+                    return j ? `<div class="qr-chip"><span>${j.numero ? '#' + escapeHtml(String(j.numero)) + ' ' : ''}${escapeHtml(j.nombre)}</span></div>` : '';
+                }).join('');
+                return `<div><h5>${escapeHtml(nombre)} — En cancha ${set.size}</h5>${chips || '<p class="qr-vacio">Registra primero los titulares.</p>'}</div>`;
+            };
+            cont.innerHTML = lado(p.localId, 'titularesLocal') + lado(p.visitaId, 'titularesVisita');
+        }
+
+        function quitarTitularQR(jugadorId) {
+            const p = partidoActualEscaner();
+            const j = db.jugadores.find(x => x.id === jugadorId);
+            if (!p || !j) return;
+            const clave = j.equipoId === p.localId ? 'titularesLocal' : 'titularesVisita';
+            p[clave] = (p[clave] || []).filter(id => id !== jugadorId);
+            guardarDB();
+            refrescarTitularesEscaner(p);
+            avisoEscaner('info', `Quitaste a <b>${escapeHtml(j.nombre)}</b> de los titulares.`, j);
+        }
+
+        function actualizarPanelEscaner() {
+            const p = partidoActualEscaner();
+            const inst = document.getElementById('qr-instruccion');
+            const ctrl = document.getElementById('qr-controles');
+            ['titular', 'cambio', 'incidencia'].forEach(m => {
+                document.getElementById('qr-btn-modo-' + m).className = escanerModo === m ? 'on' : '';
+            });
+            document.getElementById('qr-tipo').style.display = escanerModo === 'incidencia' ? '' : 'none';
+            document.getElementById('qr-btn-reiniciar').style.display = escanerModo === 'cambio' ? '' : 'none';
+            if (escanerModo === 'titular') {
+                inst.innerHTML = 'Escanea a cada jugador que <b>inicia</b> el partido. Máximo 11 por equipo.';
+                ctrl.classList.add('hidden');
+            } else if (escanerModo === 'cambio') {
+                ctrl.classList.remove('hidden');
+                inst.innerHTML = escanerCambioSale
+                    ? `🔻 Sale: <b>${escapeHtml(escanerCambioSale.nombre)}</b>. Escribe el minuto y escanea al jugador que <b>ENTRA</b>.`
+                    : 'Paso 1: escanea al jugador que <b>SALE</b>. Paso 2: escanea al que <b>ENTRA</b> (con el minuto escrito).';
+            } else {
+                ctrl.classList.remove('hidden');
+                inst.innerHTML = 'Elige el tipo de incidencia, escribe el <b>minuto</b> y escanea al jugador. Se suma al marcador y a la cédula.';
+            }
+            if (p) {
+                const nL = db.equipos.find(e => e.id === p.localId)?.nombre || 'Local';
+                const nV = db.equipos.find(e => e.id === p.visitaId)?.nombre || 'Visita';
+                document.getElementById('qr-partido-lbl').textContent = `${nL} ${p.golesLocal || 0} - ${p.golesVisita || 0} ${nV}`;
+            }
+            pintarListasEscaner(p);
+            pintarRevisadosEscaner(p);
+            actualizarBannerConexion();
+            document.getElementById('qr-historial').innerHTML = escanerHistorial.slice(0, 5).map(h => `<div>• ${h}</div>`).join('');
+        }
+
+        function avisoEscaner(tipo, mensaje, jugador) {
+            pintarFichaEscaner(tipo, jugador || null, mensaje);
+            if (tipo !== 'info') beepEscaner(tipo === 'ok');
+            if (tipo === 'ok') escanerHistorial.unshift(mensaje);
+            actualizarPanelEscaner();
+        }
+
+        function manejarLecturaQR(texto) {
+            if (escanerPendiente) return;   // esperando Coincide / No coincide
+            const ahora = Date.now();
+            if (texto === escanerUltimo.texto && ahora - escanerUltimo.t < 3000) return;
+            escanerUltimo = { texto, t: ahora };
+
+            const p = partidoActualEscaner();
+            if (!p) return avisoEscaner('err', 'Selecciona un partido primero.');
+            const id = extraerIdJugadorDeQR(texto);
+            if (id === null) return avisoEscaner('err', 'Ese QR no es de una credencial de jugador.');
+            const j = db.jugadores.find(x => x.id === id);
+            if (!j) return avisoEscaner('err', 'No encontré a ese jugador (¿baja o credencial de otra liga?).');
+            if (j.equipoId !== p.localId && j.equipoId !== p.visitaId)
+                return avisoEscaner('err', '❌ Es de otro equipo; no juega este partido.', j);
+            const est = jugadorBloqueadoPorDisciplina(j, db, p.jornada);
+            if (est.bloqueado)
+                return avisoEscaner('err', `❌ No puede jugar: ${est.suspendido ? 'SUSPENDIDO' : 'MULTA PENDIENTE'}.`, j);
+
+            const modo = escanerModo;
+            const ejecutar = () => {
+                const pp = partidoActualEscaner();
+                const jj = db.jugadores.find(x => x.id === j.id);
+                if (!pp || !jj) return;
+                if (modo === 'titular') registrarTitularPorQR(pp, jj);
+                else if (modo === 'cambio') registrarPasoCambioQR(pp, jj);
+                else registrarIncidenciaPorQR(pp, jj);
+            };
+            // Si ya se comprobó su identidad en este partido, no se vuelve a preguntar.
+            if (jugadorYaVerificado(p, j.id)) ejecutar();
+            else solicitarVerificacion(p, j, modo, ejecutar);
+        }
+
+        // ===== Verificación de credencial (anti-suplantación) =====
+        // Cada jugador se verifica una vez por partido: se muestra su foto grande y el árbitro
+        // confirma si coincide con quien tiene enfrente. Queda anotado en p.verificaciones.
+        function jugadorYaVerificado(p, jugadorId) {
+            const regs = (p.verificaciones || []).filter(v => v.jugadorId === jugadorId);
+            return regs.length > 0 && regs[regs.length - 1].resultado !== 'no_coincide';
+        }
+
+        function solicitarVerificacion(p, j, modo, ejecutar) {
+            escanerPendiente = { jugadorId: j.id, modo, ejecutar };
+            try { if (escanerQR && escanerQR.isScanning) escanerQR.pause(true); } catch (e) { }
+            beepEscaner(true);
+            const eq = db.equipos.find(e => e.id === j.equipoId)?.nombre || '';
+            const foto = document.getElementById('qr-verif-foto');
+            if (j.foto) foto.innerHTML = `<img src="${j.foto}" alt="Foto de ${escapeHtml(j.nombre)}">`;
+            else foto.textContent = iniciales(j.nombre);
+            document.getElementById('qr-verif-datos').innerHTML =
+                `<b>${escapeHtml(j.nombre)}</b>${j.numero ? ` · #${escapeHtml(String(j.numero))}` : ''}<br><span style="color:#64748b;">${escapeHtml(eq)}</span>`;
+            const aviso = document.getElementById('qr-verif-aviso');
+            const prev = (p.verificaciones || []).filter(v => v.jugadorId === j.id);
+            const msgs = [];
+            if (!j.foto) msgs.push('⚠️ Este jugador no tiene foto registrada: no se puede comparar. Pide otra identificación.');
+            if (prev.length && prev[prev.length - 1].resultado === 'no_coincide') msgs.push('⚠️ Antes se marcó "No coincide" en este partido.');
+            aviso.innerHTML = msgs.join('<br>');
+            aviso.classList.toggle('hidden', !msgs.length);
+            document.getElementById('qr-verif-ok').style.display = j.foto ? '' : 'none';
+            document.getElementById('qr-verif-sinfoto').classList.toggle('hidden', !!j.foto);
+            document.getElementById('qr-reader').style.display = 'none';
+            document.getElementById('qr-ficha').style.display = 'none';
+            document.getElementById('qr-verif').classList.remove('hidden');
+            document.getElementById('qr-verif').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+
+        function anotarVerificacion(p, j, resultado, modo) {
+            if (!p.verificaciones) p.verificaciones = [];
+            p.verificaciones.push({
+                id: Date.now() + Math.floor(Math.random() * 1000),
+                jugadorId: j.id, nombre: j.nombre, numero: j.numero || '',
+                equipoId: j.equipoId, resultado, modo,
+                arbitro: arbitroSesion || '', ts: Date.now(), sinConexion: !hayNube()
+            });
+            guardarDB();
+        }
+
+        function resolverVerificacion(resultado) {
+            const pend = escanerPendiente;
+            if (!pend) return;
+            escanerPendiente = null;
+            const p = partidoActualEscaner();
+            const j = db.jugadores.find(x => x.id === pend.jugadorId);
+            document.getElementById('qr-verif').classList.add('hidden');
+            document.getElementById('qr-reader').style.display = '';
+            document.getElementById('qr-ficha').style.display = '';
+            try { if (escanerQR) escanerQR.resume(); } catch (e) { }
+            escanerUltimo = { texto: '', t: 0 };
+            if (!p || !j) return;
+            anotarVerificacion(p, j, resultado, pend.modo);
+            if (resultado === 'no_coincide') {
+                avisoEscaner('err', '🚫 NO COINCIDE: posible suplantación. Quedó anotado y NO se registró en el partido.', j);
+            } else {
+                pend.ejecutar();
+                if (resultado === 'sin_foto') escanerHistorial.unshift(`🪪 ${escapeHtml(j.nombre)} aceptado sin foto`);
+                actualizarPanelEscaner();
+            }
+        }
+
+        function pintarRevisadosEscaner(p) {
+            const cont = document.getElementById('qr-revisados');
+            if (!cont) return;
+            const regs = (p && p.verificaciones) || [];
+            if (!regs.length) { cont.innerHTML = ''; return; }
+            const ultimo = {};
+            regs.forEach(v => { ultimo[v.jugadorId] = v; });
+            const lista = Object.values(ultimo);
+            const ok = lista.filter(v => v.resultado === 'coincide').map(v => escapeHtml(v.nombre));
+            const sf = lista.filter(v => v.resultado === 'sin_foto').map(v => escapeHtml(v.nombre));
+            const no = lista.filter(v => v.resultado === 'no_coincide').map(v => escapeHtml(v.nombre));
+            cont.innerHTML = `<b>🪪 Credenciales revisadas</b>` +
+                (ok.length ? `<div class="rv-ok">✅ Coincide (${ok.length}): ${ok.join(', ')}</div>` : '') +
+                (sf.length ? `<div>➖ Sin foto (${sf.length}): ${sf.join(', ')}</div>` : '') +
+                (no.length ? `<div class="rv-err">❌ No coincide (${no.length}): ${no.join(', ')}</div>` : '');
+        }
+
+        function registrarTitularPorQR(p, j) {
+            const esLocal = j.equipoId === p.localId;
+            const clave = esLocal ? 'titularesLocal' : 'titularesVisita';
+            if (!p[clave]) p[clave] = [];
+            const nombreEq = db.equipos.find(e => e.id === j.equipoId)?.nombre || '';
+            if (p[clave].includes(j.id))
+                return avisoEscaner('info', 'ℹ️ Ya estaba registrado como titular.', j);
+            if (p[clave].length >= 11)
+                return avisoEscaner('err', `❌ ${escapeHtml(nombreEq)} ya tiene 11 titulares. Quita alguno de la lista antes de agregar otro.`, j);
+            p[clave].push(j.id);
+            escanerUltimaAccion = { tipo: 'titular', jugadorId: j.id };
+            guardarDB();
+            refrescarTitularesEscaner(p);
+            avisoEscaner('ok', `✅ Titular de ${escapeHtml(nombreEq)} (${p[clave].length}/11)`, j);
+        }
+
+        function registrarPasoCambioQR(p, j) {
+            const enCancha = idsEnCanchaEquipo(p, j.equipoId);
+            const alin = (j.equipoId === p.localId ? p.titularesLocal : p.titularesVisita) || [];
+            if (!escanerCambioSale) {
+                if (alin.length > 0 && !enCancha.has(j.id))
+                    return avisoEscaner('err', '❌ No está en la cancha, no puede salir. Escanea al jugador que sale.', j);
+                escanerCambioSale = j;
+                return avisoEscaner('info', '🔻 Sale. Ahora escanea al jugador que ENTRA.', j);
+            }
+            if (j.id === escanerCambioSale.id)
+                return avisoEscaner('err', 'Escaneaste al mismo jugador. Escanea al que ENTRA (o usa "Reiniciar").', j);
+            if (j.equipoId !== escanerCambioSale.equipoId)
+                return avisoEscaner('err', `❌ El cambio debe ser del mismo equipo que ${escapeHtml(escanerCambioSale.nombre)}.`, j);
+            if (enCancha.has(j.id))
+                return avisoEscaner('err', '❌ Ya está en la cancha.', j);
+            const min = document.getElementById('qr-min').value;
+            if (!min) {
+                escanerUltimo = { texto: '', t: 0 };
+                return avisoEscaner('err', 'Escribe el minuto del cambio y vuelve a escanear al jugador que ENTRA.', j);
+            }
+            const sale = escanerCambioSale;
+            const ok = registrarCambio(min, sale.nombre, j.nombre);
+            if (ok) {
+                escanerCambioSale = null;
+                escanerUltimaAccion = { tipo: 'evento', eventoId: p.eventos[p.eventos.length - 1].id };
+                document.getElementById('qr-min').value = '';
+                avisoEscaner('ok', `🔁 Min ${min}': sale ${escapeHtml(sale.nombre)}, entra ${escapeHtml(j.nombre)}`, j);
+            }
+        }
+
+        function registrarIncidenciaPorQR(p, j) {
+            const tipo = document.getElementById('qr-tipo').value;
+            const min = document.getElementById('qr-min').value;
+            if (!min) {
+                escanerUltimo = { texto: '', t: 0 };
+                return avisoEscaner('err', 'Escribe el minuto y vuelve a escanear al jugador.', j);
+            }
+            const alin = (j.equipoId === p.localId ? p.titularesLocal : p.titularesVisita) || [];
+            if (alin.length > 0 && !idsEnCanchaEquipo(p, j.equipoId).has(j.id))
+                return avisoEscaner('err', '❌ No está en la cancha (no es titular ni entró de cambio).', j);
+            if (!p.eventos) p.eventos = [];
+            const evento = { id: Date.now() + Math.floor(Math.random() * 1000), min: parseInt(min), tipo: tipo, desc: j.nombre };
+            p.eventos.push(evento);
+            aplicarEfectoEvento(p, evento, 1);
+            renderListaEventos(p);
+            guardarDB();
+            escanerUltimaAccion = { tipo: 'evento', eventoId: evento.id };
+            document.getElementById('qr-min').value = '';
+            const icono = { gol: '⚽ Gol', autogol: '❌ Autogol', amarilla: '🟨 Amarilla', roja: '🟥 Roja' }[tipo];
+            avisoEscaner('ok', `${icono} al min ${min}'`, j);
+        }
+
+        function deshacerUltimoEscaneo() {
+            const p = partidoActualEscaner();
+            const u = escanerUltimaAccion;
+            if (!p || !u) return avisoEscaner('info', 'No hay nada que deshacer.');
+            if (u.tipo === 'titular') {
+                const j = db.jugadores.find(x => x.id === u.jugadorId);
+                if (j) {
+                    const clave = j.equipoId === p.localId ? 'titularesLocal' : 'titularesVisita';
+                    p[clave] = (p[clave] || []).filter(id => id !== j.id);
+                    guardarDB();
+                    refrescarTitularesEscaner(p);
+                }
+            } else {
+                const ev = (p.eventos || []).find(e => e.id === u.eventoId);
+                if (ev) {
+                    aplicarEfectoEvento(p, ev, -1);
+                    p.eventos = p.eventos.filter(e => e.id !== u.eventoId);
+                    renderListaEventos(p);
+                    renderListaCambios(p);
+                    guardarDB();
+                }
+            }
+            escanerUltimaAccion = null;
+            escanerHistorial.shift();
+            escanerUltimo = { texto: '', t: 0 };
+            avisoEscaner('info', '↩️ Último registro deshecho.');
+        }
+
+        function reiniciarCambioEscaner() {
+            escanerCambioSale = null;
+            escanerUltimo = { texto: '', t: 0 };
+            avisoEscaner('info', 'Cambio reiniciado. Escanea al jugador que SALE.');
+        }
+
+        function cambiarModoEscaner(modo) {
+            if (escanerPendiente) return;   // primero se resuelve la verificación en curso
+            escanerModo = modo;
+            escanerCambioSale = null;
+            escanerUltimo = { texto: '', t: 0 };
+            avisoEscaner('info', 'Apunta la cámara al QR de la credencial.');
+        }
+
+        async function abrirEscanerQR(modo) {
+            if (!partidoActualEscaner()) { alert('Selecciona un partido primero.'); return; }
+            escanerModo = modo || 'titular';
+            escanerCambioSale = null;
+            escanerUltimo = { texto: '', t: 0 };
+            escanerHistorial = [];
+            escanerUltimaAccion = null;
+            escanerPendiente = null;
+            document.getElementById('qr-verif').classList.add('hidden');
+            document.getElementById('qr-reader').style.display = '';
+            document.getElementById('qr-ficha').style.display = '';
+            document.getElementById('modal-escaner-qr').classList.remove('hidden');
+            avisoEscaner('info', 'Apunta la cámara al QR de la credencial.');
+            if (typeof Html5Qrcode === 'undefined') {
+                return avisoEscaner('err', 'No se pudo cargar el escáner (revisa tu conexión a internet).');
+            }
+            try {
+                escanerQR = new Html5Qrcode('qr-reader');
+                await escanerQR.start(
+                    { facingMode: 'environment' },
+                    { fps: 10, qrbox: (w, h) => { const s = Math.floor(Math.min(w, h) * 0.7); return { width: s, height: s }; } },
+                    txt => manejarLecturaQR(txt),
+                    () => { }
+                );
+            } catch (err) {
+                avisoEscaner('err', 'No se pudo abrir la cámara. Da permiso de cámara al navegador (la página debe abrirse con https://).');
+            }
+        }
+
+        async function cerrarEscanerQR() {
+            try { if (escanerQR && escanerQR.isScanning) await escanerQR.stop(); } catch (e) { }
+            try { if (escanerQR) escanerQR.clear(); } catch (e) { }
+            escanerQR = null;
+            escanerCambioSale = null;
+            escanerPendiente = null;
+            document.getElementById('modal-escaner-qr').classList.add('hidden');
+        }
+
         // --- Firma de Conformidad de la Cédula (validación de ambos equipos antes de publicar) ---
         let cedulaPendientePartidoId = null;
         let firmaCtx = { local: null, visita: null };
@@ -2276,6 +2978,7 @@
                 ${statsJugadores.length ? `<p>📝 Goles/Tarjetas: ${statsJugadores.join(' · ')}</p>` : ''}
                 ${cambiosTexto ? `<p>🔁 Cambios: ${cambiosTexto.replace(/\n/g, ' · ')}</p>` : ''}
                 ${incidentes ? `<p>🚨 Incidentes: ${incidentes.replace(/\n/g, ' · ')}</p>` : ''}
+                ${(partido.verificaciones || []).length ? `<p>🪪 Credenciales revisadas: ${new Set(partido.verificaciones.filter(v => v.resultado !== 'no_coincide').map(v => v.jugadorId)).size} ✔${partido.verificaciones.filter(v => v.resultado === 'no_coincide').length ? ` · <b style="color:#b91c1c;">${partido.verificaciones.filter(v => v.resultado === 'no_coincide').length} ✖ NO COINCIDE</b>` : ''}</p>` : ''}
                 <p style="color:#94a3b8; margin-top:6px;">Revisa con detalle en el formulario antes de firmar. Si algo está mal, usa "Volver a Editar".</p>
             `;
         }

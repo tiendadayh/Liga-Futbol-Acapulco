@@ -1640,14 +1640,22 @@
     <div class="admin-box" style="margin-top: 25px; border-top-color: #e91e63;">
         <h3>🎴 Generador de Credenciales Oficiales de Jugadores</h3>
         <p style="font-size:0.85rem; color:#555;">Imprime las fichas/credenciales oficiales con código QR para mesa de
-            control.</p>
+            control. Cada ficha mide 10 × 6 cm y caben 8 por hoja carta. Puedes juntar jugadores de uno o de varios equipos en la misma hoja.</p>
         <div style="display:flex; gap:15px; flex-wrap:wrap;">
-            <select id="credencial-equipo" style="flex:1;">
-                <option value="">-- Selecciona Equipo Completo --</option>
+            <select id="credencial-equipo" style="flex:1;" onchange="renderSeleccionCredenciales()">
+                <option value="">-- 1) Elige un equipo --</option>
             </select>
-            <button type="button" onclick="imprimirCredencialesEquipo()" style="background:#e91e63;">🖨️ Generar
-                Credenciales Imprimibles</button>
         </div>
+        <div id="credencial-seleccion"></div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+            <button type="button" onclick="agregarACredenciales()" style="background:#2563eb;">➕ 2) Agregar marcados a la hoja</button>
+        </div>
+        <div id="credencial-cola" style="margin-top:12px;"></div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+            <button type="button" onclick="imprimirCredencialesEquipo()" style="background:#e91e63;">🖨️ 3) Imprimir hoja(s)</button>
+            <button type="button" onclick="vaciarColaCredenciales()" style="background:#64748b;">🗑️ Vaciar hoja</button>
+        </div>
+        <p style="font-size:0.78rem; color:#777; margin:8px 0 0;">Para fichas de varios equipos: elige un equipo, marca jugadores, "Agregar"; cambia de equipo y repite. Al final imprime. Con 1 ficha sale arriba a la izquierda, 2 van juntas, y así hasta 8 por hoja.</p>
     </div>
 
     <!-- MÓDULO: GENERADOR DE BANNERS REDES SOCIALES -->
@@ -2716,7 +2724,7 @@
         // (o está vacío), el valor por defecto de aquí — así nunca truena aunque falte el campo.
         const REGLAMENTO_DEFAULTS = {
             duracionMinutos: 25, numTiempos: 2, toleranciaMinutos: 10,
-            jugadoresTitulares: 7, jugadoresSuplentes: 5,
+            jugadoresTitulares: 11, jugadoresSuplentes: 5,
             cuotaArbitraje: 300, cuotaInscripcionEquipo: 0, cuotaInscripcionJugador: 0,
             balonOficial: '', categoriaTexto: 'Libre',
             amarillasParaAcumulada: 3,
@@ -3117,7 +3125,39 @@
 
         function publicarEnFirebase() {
             mostrarFirebaseStatus('⏳ Publicando...', false);
-            firebaseDbRef.set(db).then(() => {
+
+            // Firebase rechaza cualquier campo "undefined" (lanza error al instante y la pantalla se quedaba en "Publicando...").
+            // Pasar por JSON los elimina y deja una copia limpia.
+            let datos, pesoMB;
+            try {
+                const texto = JSON.stringify(db);
+                datos = JSON.parse(texto);
+                pesoMB = texto.length / (1024 * 1024);
+            } catch (err) {
+                mostrarFirebaseStatus('❌ No se pudo preparar la información para publicar. (' + err.message + ')', true);
+                return;
+            }
+            if (pesoMB > 14) {
+                mostrarFirebaseStatus(`❌ La información pesa ${pesoMB.toFixed(1)} MB y Firebase no acepta más de ~16 MB por publicación. Usa "🗜️ Liberar espacio" en Respaldo de Datos o borra fotos que ya no necesites.`, true);
+                return;
+            }
+
+            let terminado = false;
+            const aviso = setTimeout(() => {
+                if (!terminado) mostrarFirebaseStatus('⏳ Sigue sin confirmar la publicación. Revisa tu conexión a internet y que tu sesión de administrador siga activa.', true);
+            }, 20000);
+
+            let promesa;
+            try {
+                promesa = firebaseDbRef.set(datos);
+            } catch (err) {
+                terminado = true; clearTimeout(aviso);
+                mostrarFirebaseStatus('❌ No se pudo publicar: ' + err.message, true);
+                return;
+            }
+
+            promesa.then(() => {
+                terminado = true; clearTimeout(aviso);
                 hayCambiosSinPublicar = false;
                 contadorCambiosPendientes = 0;
                 idsSolicitudesResueltasSinPublicar.clear();
@@ -3128,7 +3168,11 @@
                 actualizarUltimaPublicacionUI();
                 mostrarFirebaseStatus(`✅ Publicado (${new Date().toLocaleTimeString('es-MX')}). El sitio público y el árbitro ya lo ven.`, false);
             }).catch(err => {
-                mostrarFirebaseStatus('❌ No se pudo publicar. Revisa tu conexión a internet. (' + err.message + ')', true);
+                terminado = true; clearTimeout(aviso);
+                const sinPermiso = err && (err.code === 'PERMISSION_DENIED' || /permission/i.test(err.message || ''));
+                mostrarFirebaseStatus(sinPermiso
+                    ? '❌ Firebase no te dejó publicar (sin permiso). Cierra sesión y vuelve a entrar como administrador. (' + err.message + ')'
+                    : '❌ No se pudo publicar. (' + (err && err.message ? err.message : err) + ')', true);
             });
         }
 
@@ -3965,6 +4009,7 @@
                 e.preventDefault();
                 const locId = parseInt(document.getElementById('admin-part-local').value);
                 const visId = parseInt(document.getElementById('admin-part-visita').value);
+                if (locId === visId) { mostrarAlerta('El equipo local y el visitante no pueden ser el mismo.', { icono: '⚠️' }); return; }
 
                 const finLoc = db.finanzas[locId];
                 const finVis = db.finanzas[visId];
@@ -4499,7 +4544,7 @@
                 const cont = document.createElement('div');
                 cont.style.cssText = 'position:absolute; left:-9999px; top:-9999px;';
                 document.body.appendChild(cont);
-                new QRCode(cont, { text: texto, width: tam || 120, height: tam || 120, correctLevel: QRCode.CorrectLevel.M });
+                new QRCode(cont, { text: texto, width: tam || 320, height: tam || 320, correctLevel: QRCode.CorrectLevel.M });
                 setTimeout(() => {
                     const canvas = cont.querySelector('canvas');
                     const dataUrl = canvas ? canvas.toDataURL('image/png') : '';
@@ -4509,32 +4554,48 @@
             });
         }
 
+        // ===== Credenciales: tamaño real 10 cm x 6 cm, hasta 8 por hoja carta =====
+        // Hoja carta vertical (21.59 x 27.94 cm): 2 columnas x 4 filas de 10 x 6 cm. Las fichas se
+        // acomodan de izquierda a derecha y de arriba hacia abajo: 1 ficha queda arriba a la
+        // izquierda, 2 una junto a otra, etc. hasta 8. Si son más de 8, se arma otra hoja.
+        const CARNET_POR_HOJA = 8;
+        const FOTO_VACIA_CARNET = 'data:image/svg+xml;utf8,' + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='250' height='300'><rect width='250' height='300' fill='#e5e9ef'/><circle cx='125' cy='115' r='48' fill='#a7b2c2'/><path d='M25 300c0-70 45-110 100-110s100 40 100 110z' fill='#a7b2c2'/></svg>");
+
         function estiloCarnetCSS() {
             return `
-                body { font-family: Arial, Helvetica, sans-serif; background: #f4f4f4; padding: 20px; }
-                .carnet { width: 540px; background: #fff; border: 2px solid #0b2f5c; border-radius: 10px; display: inline-block; margin: 12px; padding: 16px; box-sizing: border-box; position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.12); page-break-inside: avoid; vertical-align: top; text-align: left; }
-                .carnet-numero { flex-shrink: 0; background: #d1140f; color: #fff; font-weight: bold; font-size: 1.3rem; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.25); }
-                .carnet-header { display: flex; align-items: center; gap: 10px; border-bottom: 2px solid #0b2f5c; padding-bottom: 8px; margin-bottom: 10px; }
-                .carnet-escudo { width: 54px; height: 54px; object-fit: contain; flex-shrink: 0; }
+                * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                body { font-family: Arial, Helvetica, sans-serif; background: #d9dde3; margin: 0; padding: 0; }
+                .barra-impresion { background: #0b2f5c; color: #fff; padding: 10px 16px; font-size: 14px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+                .barra-impresion button { background: #e91e63; color: #fff; border: 0; border-radius: 6px; padding: 8px 14px; font-weight: bold; cursor: pointer; }
+                .barra-impresion small { opacity: .85; }
+                .hoja { width: 21.59cm; height: 27.9cm; margin: 14px auto; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.25); box-sizing: border-box; padding: 1cm 0 0 0.795cm; display: grid; grid-template-columns: 10cm 10cm; grid-auto-rows: 6cm; row-gap: 0.3cm; column-gap: 0; align-content: start; overflow: hidden; page-break-after: always; break-after: page; }
+                .hoja:last-child { page-break-after: auto; break-after: auto; }
+                .carnet { width: 10cm; height: 6cm; box-sizing: border-box; padding: 0.18cm 0.3cm 0.18cm; background: #fff; border: 1.5px solid #0b2f5c; border-radius: 0.25cm; display: flex; flex-direction: column; overflow: hidden; text-align: left; page-break-inside: avoid; break-inside: avoid; }
+                .carnet-header { display: flex; align-items: center; gap: 0.2cm; border-bottom: 1.5px solid #0b2f5c; padding-bottom: 0.08cm; margin-bottom: 0.1cm; height: 0.85cm; flex-shrink: 0; box-sizing: border-box; }
+                .carnet-escudo { width: 0.7cm; height: 0.7cm; object-fit: contain; flex-shrink: 0; }
                 .carnet-header-texto { flex: 1; text-align: center; }
-                .carnet-linea-chica { font-size: 0.66rem; line-height: 1.3; color: #0b2f5c; text-transform: uppercase; }
-                .carnet-cuerpo { display: flex; gap: 14px; }
-                .carnet-foto { width: 100px; height: 128px; object-fit: cover; border: 2px solid #0b2f5c; flex-shrink: 0; background: #eee; }
-                .carnet-datos { flex: 1; }
-                .carnet-datos p { margin: 3px 0; font-size: 0.72rem; line-height: 1.3; color: #1a1a1a; }
+                .carnet-linea-chica { font-size: 5.5pt; line-height: 1.25; color: #0b2f5c; text-transform: uppercase; }
+                .carnet-numero { flex-shrink: 0; background: #d1140f; color: #fff; font-weight: bold; font-size: 10pt; width: 0.7cm; height: 0.7cm; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1.5px solid #fff; box-shadow: 0 0 2px rgba(0,0,0,.4); }
+                .carnet-cuerpo { flex: 1; min-height: 0; display: flex; gap: 0.25cm; }
+                .carnet-col-izq { width: 2.5cm; flex-shrink: 0; display: flex; flex-direction: column; }
+                .carnet-foto { width: 2.5cm; height: 3cm; flex-shrink: 0; object-fit: cover; border: 1.5px solid #0b2f5c; background: #eee; display: block; box-sizing: border-box; }
+                .carnet-folio { font-size: 5pt; color: #666; margin-top: 0.12cm; line-height: 1.3; }
+                .carnet-col-der { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; }
+                .carnet-datos p { margin: 0.02cm 0; font-size: 5.8pt; line-height: 1.15; color: #1a1a1a; }
                 .carnet-datos strong { color: #0b2f5c; }
-                .carnet-datos-liga { font-weight: bold; color: #d1140f !important; margin-top: 6px !important; text-transform: uppercase; }
-                .carnet-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 18px; gap: 10px; }
-                .carnet-folio { font-size: 0.6rem; color: gray; white-space: nowrap; }
-                .carnet-qr-box { text-align: center; flex-shrink: 0; }
-                .carnet-qr-box img { width: 52px; height: 52px; display: block; margin: 0 auto 2px; }
-                .carnet-qr-box span { font-size: 0.48rem; color: #555; line-height: 1.1; display: block; max-width: 60px; }
-                .carnet-firmas { display: flex; gap: 20px; }
-                .carnet-firma { text-align: center; font-size: 0.58rem; color: #333; width: 130px; }
-                .carnet-firma-linea { display: block; border-top: 1px solid #333; margin-bottom: 3px; height: 20px; }
+                .carnet-datos-liga { font-weight: bold; color: #d1140f !important; margin-top: 0.07cm !important; text-transform: uppercase; }
+                .carnet-pie { display: flex; align-items: flex-end; justify-content: space-between; gap: 0.2cm; }
+                .carnet-firmas { flex: 1; display: flex; gap: 0.2cm; align-items: flex-end; padding-bottom: 0.05cm; }
+                .carnet-firma { flex: 1; text-align: center; font-size: 4.8pt; color: #333; line-height: 1.2; }
+                .carnet-firma-linea { display: block; border-top: 0.5pt solid #333; margin-bottom: 0.04cm; height: 0.4cm; }
+                .carnet-qr-box { width: 1.75cm; flex-shrink: 0; text-align: center; }
+                .carnet-qr-box img { width: 1.75cm; height: 1.75cm; aspect-ratio: 1 / 1; display: block; object-fit: contain; background: #fff; border: 0.5pt solid #0b2f5c; padding: 0.04cm; box-sizing: border-box; image-rendering: pixelated; }
+                .carnet-qr-box span { display: block; font-size: 3.4pt; line-height: 1.1; color: #333; font-weight: bold; margin-top: 0.03cm; }
+                @page { size: letter portrait; margin: 0; }
                 @media print {
-                    .carnet { box-shadow: none; }
-                    @page { size: landscape; margin: 10mm; }
+                    body { background: #fff; }
+                    .barra-impresion { display: none; }
+                    .hoja { margin: 0; box-shadow: none; }
                 }
             `;
         }
@@ -4543,7 +4604,7 @@
             const c = db.config || crearConfigCredencialDefault();
             const folio = `LFCSC-${String(j.folioNum || 1).padStart(5, '0')}`;
             const bloqueQR = qrDataUrl
-                ? `<div class="carnet-qr-box"><img src="${qrDataUrl}" alt="Código QR del perfil del jugador"><span>Escanea para ver el perfil</span></div>`
+                ? `<div class="carnet-qr-box"><img src="${qrDataUrl}" alt="Código QR del perfil del jugador"><span>ESCANEA PARA VER EL PERFIL</span></div>`
                 : '';
             return `
                 <div class="carnet">
@@ -4553,61 +4614,157 @@
                             ${c.asociacion ? `<div class="carnet-linea-chica" style="font-weight:bold;">${c.asociacion}</div>` : ''}
                             ${c.asociacion2 ? `<div class="carnet-linea-chica">${c.asociacion2}</div>` : ''}
                             <div class="carnet-linea-chica">TEMPORADA: ${c.temporada || ''} &nbsp; N° AFILIACIÓN: ______</div>
-                            <div class="carnet-linea-chica" style="margin-top:3px; font-weight:bold;">ACREDITA QUE:</div>
+                            <div class="carnet-linea-chica" style="font-weight:bold;">ACREDITA QUE:</div>
                         </div>
                         <div class="carnet-numero">${j.numero || '-'}</div>
                     </div>
                     <div class="carnet-cuerpo">
-                        <img class="carnet-foto" src="${j.foto || 'https://placehold.co/100x128?text=Foto'}" alt="${escapeHtml(j.nombre)}">
-                        <div class="carnet-datos">
-                            <p><strong>EL EQUIPO:</strong> ${eq ? eq.nombre : 'Agente Libre'}</p>
-                            <p><strong>REGISTRA A:</strong> ${escapeHtml(j.nombre)}</p>
-                            <p><strong>COMO:</strong> JUGADOR</p>
-                            <p><strong>CATEGORÍA:</strong> ${j.categoria || ''}</p>
-                            <p><strong>LUGAR DE NACIMIENTO:</strong> ${j.lugarNacimiento || ''}</p>
-                            <p><strong>FECHA DE NACIMIENTO:</strong> ${formatearFechaCarnet(j.fechaNacimiento)}</p>
-                            <p><strong>FECHA DE EXPEDICIÓN:</strong> ${formatearFechaCarnet(c.fechaExpedicion)}</p>
-                            <p><strong>NACIONALIDAD:</strong> ${j.nacionalidad || 'MEXICANA'}</p>
-                            <p class="carnet-datos-liga">${c.nombreLiga || 'LIGA DE FUTBOL ACAPULCO'}</p>
+                        <div class="carnet-col-izq">
+                            <img class="carnet-foto" src="${j.foto || FOTO_VACIA_CARNET}" alt="${escapeHtml(j.nombre)}">
+                            <div class="carnet-folio">N° CAM:<br>${folio}</div>
                         </div>
-                    </div>
-                    <div class="carnet-footer">
-                        <div class="carnet-folio">N° CAM:<br>${folio}</div>
-                        ${bloqueQR}
-                        <div class="carnet-firmas">
-                            <div class="carnet-firma"><span class="carnet-firma-linea"></span>FIRMA DEL JUGADOR</div>
-                            <div class="carnet-firma"><span class="carnet-firma-linea"></span>PRESIDENTE DE LA LIGA${c.presidente ? '<br>' + c.presidente : ''}</div>
+                        <div class="carnet-col-der">
+                            <div class="carnet-datos">
+                                <p><strong>EL EQUIPO:</strong> ${eq ? eq.nombre : 'Agente Libre'}</p>
+                                <p><strong>REGISTRA A:</strong> ${escapeHtml(j.nombre)}</p>
+                                <p><strong>COMO:</strong> JUGADOR</p>
+                                <p><strong>CATEGORÍA:</strong> ${j.categoria || ''}</p>
+                                <p><strong>LUGAR DE NACIMIENTO:</strong> ${j.lugarNacimiento || ''}</p>
+                                <p><strong>FECHA DE NACIMIENTO:</strong> ${formatearFechaCarnet(j.fechaNacimiento)}</p>
+                                <p><strong>FECHA DE EXPEDICIÓN:</strong> ${formatearFechaCarnet(c.fechaExpedicion)}</p>
+                                <p><strong>NACIONALIDAD:</strong> ${j.nacionalidad || 'MEXICANA'}</p>
+                                <p class="carnet-datos-liga">${c.nombreLiga || 'LIGA DE FUTBOL ACAPULCO'}</p>
+                            </div>
+                            <div class="carnet-pie">
+                                <div class="carnet-firmas">
+                                    <div class="carnet-firma"><span class="carnet-firma-linea"></span>FIRMA DEL JUGADOR</div>
+                                    <div class="carnet-firma"><span class="carnet-firma-linea"></span>PRESIDENTE DE LA LIGA${c.presidente ? '<br>' + c.presidente : ''}</div>
+                                </div>
+                                ${bloqueQR}
+                            </div>
                         </div>
                     </div>
                 </div>
             `;
         }
 
-        async function imprimirCredencialesEquipo() {
-            const eqId = parseInt(document.getElementById('credencial-equipo').value);
-            if (!eqId) return alert("Selecciona un equipo.");
-            const eq = db.equipos.find(e => e.id === eqId);
-            const jugantes = db.jugadores.filter(j => j.equipoId === eqId);
-
-            if (jugantes.length === 0) return alert("El equipo seleccionado no posee futbolistas registrados.");
-
-            const qrs = await Promise.all(jugantes.map(j => generarQRDataURL(construirEnlacePerfilJugador(j.id))));
-
-            const win = window.open('', '', 'width=800,height=600');
-            win.document.title = `Credenciales Oficiales - ${escapeHtml(eq.nombre)}`;
-
+        // Arma las hojas carta (6 fichas por hoja) y abre la ventana de impresión.
+        // items: [{ j: jugador, eq: equipo, qr: dataURL del QR }]
+        function abrirHojasCredenciales(titulo, items) {
+            const hojas = [];
+            for (let i = 0; i < items.length; i += CARNET_POR_HOJA) {
+                hojas.push(items.slice(i, i + CARNET_POR_HOJA));
+            }
+            const win = window.open('', '', 'width=900,height=700');
+            if (!win) { alert('El navegador bloqueó la ventana de impresión. Permite las ventanas emergentes para este sitio.'); return; }
+            win.document.title = titulo;
             const style = win.document.createElement('style');
             style.textContent = estiloCarnetCSS();
             win.document.head.appendChild(style);
-
+            const n = items.length;
             win.document.body.innerHTML = `
-                <h2 style="text-align:center; color:#0b2f5c;">${(db.config && db.config.nombreLiga) || 'LIGA DE FUTBOL ACAPULCO'} - CREDENCIALES OFICIALES</h2>
-                <div style="text-align:center;">
-                    ${jugantes.map((j, idx) => generarCarnetHTML(j, eq, qrs[idx])).join('')}
+                <div class="barra-impresion">
+                    <button type="button" onclick="window.print()">🖨️ Imprimir</button>
+                    <span>${n} credencial${n === 1 ? '' : 'es'} · ${hojas.length} hoja${hojas.length === 1 ? '' : 's'} tamaño carta</span>
+                    <small>Al imprimir elige: Carta, vertical, escala 100% (no "ajustar a la página") y márgenes "Ninguno" o "Predeterminados".</small>
                 </div>
+                ${hojas.map(h => `<div class="hoja">${h.map(it => generarCarnetHTML(it.j, it.eq, it.qr)).join('')}</div>`).join('')}
             `;
-
             win.onload = function () { win.print(); };
+        }
+
+        // Hoja de impresión: se van agregando jugadores de uno o varios equipos y al final se imprime todo junto.
+        let colaCredenciales = [];
+
+        function renderSeleccionCredenciales() {
+            const cont = document.getElementById('credencial-seleccion');
+            if (!cont) return;
+            const eqId = parseInt(document.getElementById('credencial-equipo').value);
+            if (!eqId) { cont.innerHTML = ''; return; }
+            const jugs = db.jugadores.filter(j => j.equipoId === eqId);
+            if (!jugs.length) { cont.innerHTML = '<p style="font-size:0.8rem; color:#888;">Este equipo no tiene jugadores registrados.</p>'; return; }
+            cont.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin:10px 0 6px;">
+                    <label style="margin:0; font-weight:bold;"><input type="checkbox" id="cred-todos" onchange="alternarTodosCredenciales(this.checked)" style="width:auto;"> Marcar todos</label>
+                    <span id="cred-contador" style="font-size:0.8rem; color:#555;"></span>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:4px 12px; max-height:220px; overflow:auto; border:1px solid #e5e7eb; border-radius:6px; padding:8px;">
+                    ${jugs.map(j => `<label style="font-size:0.82rem; display:flex; gap:6px; align-items:center; margin:0;"><input type="checkbox" class="cred-chk" value="${j.id}" onchange="actualizarContadorCredenciales()" style="width:auto;"> ${j.numero ? '#' + escapeHtml(String(j.numero)) + ' ' : ''}${escapeHtml(j.nombre)}${colaCredenciales.includes(j.id) ? ' <span style="color:#16a34a;">✔ en la hoja</span>' : ''}</label>`).join('')}
+                </div>`;
+            actualizarContadorCredenciales();
+        }
+
+        function alternarTodosCredenciales(marcado) {
+            document.querySelectorAll('.cred-chk').forEach(c => { c.checked = marcado; });
+            actualizarContadorCredenciales();
+        }
+
+        function actualizarContadorCredenciales() {
+            const chks = Array.from(document.querySelectorAll('.cred-chk'));
+            const n = chks.filter(c => c.checked).length;
+            const todos = document.getElementById('cred-todos');
+            if (todos) todos.checked = chks.length > 0 && n === chks.length;
+            const lbl = document.getElementById('cred-contador');
+            if (lbl) lbl.textContent = `${n} marcado${n === 1 ? '' : 's'} en este equipo`;
+        }
+
+        function idsMarcadosCredenciales() {
+            return Array.from(document.querySelectorAll('.cred-chk')).filter(c => c.checked).map(c => parseInt(c.value));
+        }
+
+        function agregarACredenciales() {
+            const ids = idsMarcadosCredenciales();
+            if (!ids.length) return alert('Marca al menos un jugador de la lista.');
+            ids.forEach(id => { if (!colaCredenciales.includes(id)) colaCredenciales.push(id); });
+            renderColaCredenciales();
+            renderSeleccionCredenciales();   // limpia las marcas y muestra "en la hoja"
+        }
+
+        function quitarDeCredenciales(id) {
+            colaCredenciales = colaCredenciales.filter(x => x !== id);
+            renderColaCredenciales();
+            renderSeleccionCredenciales();
+        }
+
+        function vaciarColaCredenciales() {
+            colaCredenciales = [];
+            renderColaCredenciales();
+            renderSeleccionCredenciales();
+        }
+
+        function renderColaCredenciales() {
+            const cont = document.getElementById('credencial-cola');
+            if (!cont) return;
+            colaCredenciales = colaCredenciales.filter(id => db.jugadores.some(j => j.id === id));
+            const n = colaCredenciales.length;
+            if (!n) { cont.innerHTML = '<p style="font-size:0.82rem; color:#888; margin:0;">La hoja está vacía. Agrega jugadores para armarla.</p>'; return; }
+            const hojas = Math.ceil(n / CARNET_POR_HOJA);
+            cont.innerHTML = `
+                <div style="border:2px dashed #e91e63; border-radius:8px; padding:10px;">
+                    <div style="font-weight:bold; font-size:0.85rem; margin-bottom:6px;">🧾 En la hoja: ${n} ficha${n === 1 ? '' : 's'} · ${hojas} hoja${hojas === 1 ? '' : 's'} (8 por hoja)</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                        ${colaCredenciales.map((id, i) => {
+                            const j = db.jugadores.find(x => x.id === id);
+                            const eq = db.equipos.find(e => e.id === j.equipoId);
+                            return `<span style="background:#fce7f3; border-radius:14px; padding:3px 4px 3px 10px; font-size:0.78rem; display:inline-flex; gap:6px; align-items:center;">${i + 1}. ${escapeHtml(j.nombre)} <small style="color:#666;">(${escapeHtml(eq ? eq.nombre : 'Libre')})</small><button type="button" onclick="quitarDeCredenciales(${j.id})" title="Quitar" style="background:#e91e63; border-radius:50%; width:20px; height:20px; padding:0; font-size:0.7rem; line-height:1;">✕</button></span>`;
+                        }).join('')}
+                    </div>
+                </div>`;
+        }
+
+        async function imprimirCredencialesEquipo() {
+            // Se imprime lo que está en la hoja + lo que esté marcado ahora en la lista (sin repetir).
+            const ids = colaCredenciales.slice();
+            idsMarcadosCredenciales().forEach(id => { if (!ids.includes(id)) ids.push(id); });
+            const jugantes = ids.map(id => db.jugadores.find(j => j.id === id)).filter(Boolean);
+            if (!jugantes.length) return alert('Agrega o marca al menos un jugador para imprimir su credencial.');
+
+            const qrs = await Promise.all(jugantes.map(j => generarQRDataURL(construirEnlacePerfilJugador(j.id))));
+            const equipos = new Set(jugantes.map(j => j.equipoId));
+            const titulo = equipos.size === 1
+                ? `Credenciales Oficiales - ${(db.equipos.find(e => e.id === jugantes[0].equipoId) || {}).nombre || ''}`
+                : 'Credenciales Oficiales';
+            abrirHojasCredenciales(titulo, jugantes.map((j, i) => ({ j, eq: db.equipos.find(e => e.id === j.equipoId), qr: qrs[i] })));
         }
 
         async function imprimirCredencialJugador(id) {
@@ -4615,21 +4772,7 @@
             if (!j) return;
             const eq = db.equipos.find(e => e.id === j.equipoId);
             const qr = await generarQRDataURL(construirEnlacePerfilJugador(j.id));
-
-            const win = window.open('', '', 'width=650,height=500');
-            win.document.title = `Credencial Oficial - ${escapeHtml(j.nombre)}`;
-
-            const style = win.document.createElement('style');
-            style.textContent = estiloCarnetCSS();
-            win.document.head.appendChild(style);
-
-            win.document.body.innerHTML = `
-                <div style="text-align:center;">
-                    ${generarCarnetHTML(j, eq, qr)}
-                </div>
-            `;
-
-            win.onload = function () { win.print(); };
+            abrirHojasCredenciales(`Credencial Oficial - ${j.nombre}`, [{ j, eq, qr }]);
         }
 
         // Muestra en una ventana emergente el código QR y el enlace directo al perfil
@@ -5362,11 +5505,20 @@ ${cuerpo}`;
         }
 
         function actualizarFormularios() {
-            const selects = ['admin-jug-equipo', 'admin-part-local', 'admin-part-visita', 'credencial-equipo'];
+            const selects = ['admin-jug-equipo', 'admin-part-local', 'admin-part-visita'];
             selects.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.innerHTML = db.equipos.map(eq => `<option value="${eq.id}">${escapeHtml(eq.nombre)}</option>`).join('');
             });
+
+            const selCred = document.getElementById('credencial-equipo');
+            if (selCred) {
+                const previo = selCred.value;
+                selCred.innerHTML = '<option value="">-- 1) Elige un equipo --</option>' + db.equipos.map(eq => `<option value="${eq.id}">${escapeHtml(eq.nombre)}</option>`).join('');
+                if (previo && db.equipos.some(e => String(e.id) === previo)) selCred.value = previo;
+                renderSeleccionCredenciales();
+                renderColaCredenciales();
+            }
 
             document.getElementById('admin-part-arbitro').innerHTML = '<option value="">-- Selecciona Árbitro Central --</option>' + db.arbitros.map(a => `<option value="${escapeHtml(a.nombre)}">${escapeHtml(a.nombre)} (${escapeHtml(a.colegio)})</option>`).join('');
             document.getElementById('admin-part-estadio').innerHTML = '<option value="">-- Selecciona Cancha --</option>' + db.campos.map(c => `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`).join('');

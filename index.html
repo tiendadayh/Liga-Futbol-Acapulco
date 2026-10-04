@@ -1047,8 +1047,6 @@ header .site-header-logo{transform:perspective(500px) rotateY(calc(var(--px,0)*1
 /* 5) Reveal al hacer scroll */
 .fx-ready .fx-reveal{opacity:0;transform:perspective(900px) translateY(40px) rotateX(10deg);transition:opacity .6s,transform .75s cubic-bezier(.2,.7,.3,1)}
 .fx-ready .fx-reveal.fx-in{opacity:1;transform:none}
-/* 6) Balón 3D */
-#fx-balon{position:absolute;right:16px;bottom:6px;width:96px;height:96px;z-index:1;pointer-events:none}
 /* 7) Celebración de gol */
 .fx-confeti{position:fixed;inset:0;width:100%;height:100%;z-index:1600;pointer-events:none}
 @keyframes fxShake{0%,100%{transform:none}15%{transform:translateX(-6px) rotate(-3deg) scale(1.12)}30%{transform:translateX(6px) rotate(3deg) scale(1.12)}45%{transform:translateX(-4px) rotate(-2deg)}60%{transform:translateX(4px) rotate(2deg)}80%{transform:scale(1.06)}}
@@ -1062,7 +1060,6 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
 [data-theme="dark"] .toast{background:rgba(16,28,52,.78);border-color:rgba(255,255,255,.1)}
 #alerta-gol{background:linear-gradient(135deg,rgba(11,47,92,.86),rgba(18,58,102,.8))!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 .card-section{box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 20px 44px -24px rgba(11,47,92,.5)}
-@media (max-width:600px){#fx-balon{width:62px;height:62px;right:8px;bottom:4px}}
 @media (prefers-reduced-motion:reduce){.fx-ready .fx-reveal{opacity:1;transform:none;transition:none}.fx-shake{animation:none}header .fx-orb,header .site-header-logo{transition:none}}
 </style>
 </head>
@@ -2075,7 +2072,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
         // usan mientras el admin no haya guardado los suyos propios en db.reglamento.
         const REGLAMENTO_DEFAULTS = {
             duracionMinutos: 25, numTiempos: 2, toleranciaMinutos: 10,
-            jugadoresTitulares: 7, jugadoresSuplentes: 5,
+            jugadoresTitulares: 11, jugadoresSuplentes: 5,
             cuotaArbitraje: 300, cuotaInscripcionEquipo: 0, cuotaInscripcionJugador: 0,
             balonOficial: '', categoriaTexto: 'Libre',
             amarillasParaAcumulada: 3,
@@ -5192,48 +5189,6 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
         var a = document.getElementById('alerta-gol'); if (a) { ob.disconnect(); vigilarAlertaGol(a); }
     }).observe(document.body, { childList: true });
 
-    /* 6) Balón 3D giratorio (Three.js, se carga aparte y es opcional) */
-    function iniciarBalon() {
-        var T = window.THREE; if (!T || !header) return;
-        var cv = document.createElement('canvas'); cv.id = 'fx-balon'; cv.setAttribute('aria-hidden', 'true'); header.appendChild(cv);
-        var r; try { r = new T.WebGLRenderer({ canvas: cv, alpha: true, antialias: true }); } catch (e) { cv.remove(); return; }
-        r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-        var w = cv.clientWidth || 96, h = cv.clientHeight || 96; r.setSize(w, h, false);
-        var sc = new T.Scene(), cam = new T.PerspectiveCamera(35, w / h, .1, 10); cam.position.z = 3.6;
-        var g = new T.IcosahedronGeometry(1, 1), base = new T.IcosahedronGeometry(1, 0).attributes.position, orig = [], i, k, o;
-        for (i = 0; i < base.count; i++) orig.push(new T.Vector3().fromBufferAttribute(base, i));
-        var pos = g.attributes.position, col = new Float32Array(pos.count * 3), v = new T.Vector3();
-        for (i = 0; i < pos.count; i += 3) {   // triángulos pegados a un vértice original = "pentágonos" negros
-            var neg = false;
-            for (k = 0; k < 3; k++) { v.fromBufferAttribute(pos, i + k); for (o = 0; o < orig.length; o++) if (v.distanceToSquared(orig[o]) < 1e-4) neg = true; }
-            var c = neg ? .06 : .97;
-            for (k = 0; k < 3; k++) { col[(i + k) * 3] = c; col[(i + k) * 3 + 1] = c; col[(i + k) * 3 + 2] = c; }
-        }
-        g.setAttribute('color', new T.BufferAttribute(col, 3));
-        var m = new T.Mesh(g, new T.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: .45, metalness: .05 }));
-        sc.add(m); sc.add(new T.AmbientLight(0xffffff, .85));
-        var luz = new T.DirectionalLight(0xffffff, 1); luz.position.set(2, 3, 4); sc.add(luz);
-        var visible = true;
-        if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { visible = es[0].isIntersecting; }).observe(header);
-        var t = 0;
-        (function anim() {
-            requestAnimationFrame(anim);
-            if (!visible || document.hidden) return;
-            t += .02;
-            var px = parseFloat(header.style.getPropertyValue('--px')) || 0, py = parseFloat(header.style.getPropertyValue('--py')) || 0;
-            m.rotation.y += .012 + px * .02; m.rotation.x += (py * .8 - m.rotation.x) * .04;
-            m.position.y = Math.sin(t) * .08;
-            r.render(sc, cam);
-        })();
-        if (REDUCIDO) { m.rotation.set(.3, .5, 0); r.render(sc, cam); }
-    }
-    window.addEventListener('load', function () {
-        setTimeout(function () {
-            var s = document.createElement('script');
-            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
-            s.onload = iniciarBalon; document.head.appendChild(s);
-        }, 600);
-    });
 })();
 </script>
 </body>
