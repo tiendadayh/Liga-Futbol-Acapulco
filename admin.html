@@ -2808,10 +2808,11 @@
 
         normalizarDB(db);
 
-        // Los avisos de registro (equipo/jugador/árbitro) y traspasos se publican
-        // automáticamente en el Tablón y se autoeliminan pasados 2 días; los avisos
-        // manuales (formulario "Publicar Anuncio") no llevan esta marca y no expiran solos.
-        const TRES_DIAS_MS = 2 * 24 * 60 * 60 * 1000;
+        // TODAS las publicaciones del Tablón (los avisos automáticos de registro/traspaso y los
+        // anuncios manuales del formulario "Publicar Anuncio") duran 1 día y luego se quitan solas.
+        // Para avisos antiguos sin 'ts' se usa su id, que es la hora en que se crearon.
+        const DURACION_AVISO_MS = 24 * 60 * 60 * 1000;
+        function momentoAviso(c) { return c.ts || c.id || 0; }
 
         // "extra" permite adjuntar datos opcionales al aviso, como el id del jugador
         // (jugadorId) y su foto (imagen), para que en el sitio público el aviso muestre
@@ -2832,7 +2833,7 @@
 
         function limpiarAvisosExpirados() {
             if (!db.comunicados) return;
-            db.comunicados = db.comunicados.filter(c => !(c.autoGenerado && (Date.now() - (c.ts || 0) > TRES_DIAS_MS)));
+            db.comunicados = db.comunicados.filter(c => (Date.now() - momentoAviso(c)) <= DURACION_AVISO_MS);
         }
 
         limpiarAvisosExpirados();
@@ -3895,8 +3896,8 @@
                     guardarDB();
                     alert("Aviso actualizado.");
                 } else {
-                    db.comunicados.unshift({ id: Date.now(), titulo: document.getElementById('com-titulo').value.trim(), tipo: document.getElementById('com-tipo').value, contenido: document.getElementById('com-contenido').value.trim(), imagen: fotoB64, fecha: new Date().toLocaleDateString('es-MX') });
-                    this.reset(); guardarDB(); alert("Anuncio publicado.");
+                    db.comunicados.unshift({ id: Date.now(), titulo: document.getElementById('com-titulo').value.trim(), tipo: document.getElementById('com-tipo').value, contenido: document.getElementById('com-contenido').value.trim(), imagen: fotoB64, fecha: new Date().toLocaleDateString('es-MX'), ts: Date.now() });
+                    this.reset(); guardarDB(); alert("Anuncio publicado. Se quitará solo en 24 horas.");
                 }
             });
 
@@ -6010,8 +6011,8 @@ ${cuerpo}`;
             if (listaComunicados) {
                 const iconoTipo = { aviso: '📢', sancion: '⚠️', cronica: '📰', registro: '🆕', traspaso: '🔄' };
                 listaComunicados.innerHTML = (db.comunicados || []).length ? db.comunicados.map(c => {
-                    const diasRestantes = c.autoGenerado ? Math.max(0, Math.ceil((TRES_DIAS_MS - (Date.now() - (c.ts || 0))) / (24 * 60 * 60 * 1000))) : null;
-                    const notaAuto = c.autoGenerado ? ` · <span style="color:#888;">se quita solo en ${diasRestantes} día(s)</span>` : '';
+                    const horasRestantes = Math.max(0, Math.ceil((DURACION_AVISO_MS - (Date.now() - momentoAviso(c))) / (60 * 60 * 1000)));
+                    const notaAuto = ` · <span style="color:#888;">se quita solo en ${horasRestantes} h</span>`;
                     const esEditable = c.tipo === 'aviso' || c.tipo === 'sancion';
                     return `
                     <div class="gestion-fila">
