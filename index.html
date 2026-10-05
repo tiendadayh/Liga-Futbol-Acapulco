@@ -1006,7 +1006,6 @@
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
     <script>
         // La página siempre inicia desde arriba y no conserva el scroll anterior.
         // Esto evita que el banner EN VIVO quede visualmente encima de la cabecera
@@ -1309,11 +1308,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
         <!-- JUGADORES -->
         <section id="jugadores-sec" class="card-section">
             <h2>Fichas De Jugadores Oficial</h2>
-            <div class="filter-container">
-                <input type="text" id="input-buscar-jugador" placeholder="🔍 Buscar jugador...">
-                <select id="select-filtrar-equipo"><option value="todos">Todos los Equipos</option></select>
-            </div>
-            <div id="grid-jugadores" class="grid"></div>
+            <button type="button" class="btn btn-secondary" onclick="abrirListaJugadores()" style="width:100%; padding:14px; font-size:1rem; margin-top:10px;">📇 Ver todos los jugadores (<span id="total-jugadores-lista">0</span>)</button>
         </section>
 
         <!-- EQUIPOS Y ÁRBITROS -->
@@ -1482,6 +1477,19 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
     <script>document.getElementById('footer-anio').textContent = new Date().getFullYear();</script>
 
     <!-- MODAL FICHA TÉCNICA (tarjeta con flip 3D) -->
+    <div id="modal-lista-jugadores" class="modal hidden" onclick="if(event.target === this) cerrarModal('modal-lista-jugadores')">
+        <div class="modal-content" style="max-width:860px; text-align:left;">
+            <button class="close-modal" onclick="cerrarModal('modal-lista-jugadores')">×</button>
+            <h2 style="margin:0 40px 4px 0;">📇 Jugadores (orden A-Z)</h2>
+            <p style="margin:0 0 10px; font-size:0.85rem; color:var(--text-muted);">Toca un jugador para ver su ficha.</p>
+            <div class="filter-container">
+                <input type="text" id="input-buscar-jugador" placeholder="🔍 Buscar jugador...">
+                <select id="select-filtrar-equipo"><option value="todos">Todos los Equipos</option></select>
+            </div>
+            <div id="grid-jugadores" class="grid" style="max-height:62vh; overflow-y:auto; padding-right:4px;"></div>
+        </div>
+    </div>
+
     <div id="ficha-modal" class="modal hidden" onclick="if(event.target === this) cerrarModal('ficha-modal')">
         <div class="modal-content ficha-tecnica-content ficha-3d-wrap" style="max-width:560px;">
             <button class="close-modal" onclick="cerrarModal('ficha-modal')">×</button>
@@ -1749,7 +1757,6 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
             measurementId: "G-4NB813C868"
         };
         firebase.initializeApp(firebaseConfig);
-        firebase.analytics();
         const firebaseDbRef = firebase.database().ref('liga_premier_db');
         let recibiendoDeFirebase = false;
 
@@ -3022,11 +3029,11 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
             const proximos = (db.partidos || [])
                 .filter(p => !p.jugado && p.fecha)
                 .map(p => ({ p, ts: new Date(p.fecha + 'T' + (p.hora || '00:00')).getTime() }))
-                .filter(x => !isNaN(x.ts))
+                .filter(x => !isNaN(x.ts) && x.ts >= ahora)   // si la hora ya pasó, el partido deja de mostrarse
                 .sort((a, b) => a.ts - b.ts);
 
-            const siguiente = (favoritoId !== null && proximos.find(x => (x.p.localId === favoritoId || x.p.visitaId === favoritoId) && x.ts >= ahora))
-                || proximos.find(x => x.ts >= ahora) || proximos[0];
+            const siguiente = (favoritoId !== null && proximos.find(x => x.p.localId === favoritoId || x.p.visitaId === favoritoId))
+                || proximos[0];
 
             if (!siguiente) {
                 cont.classList.add('hidden');
@@ -3209,33 +3216,25 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
             const conEquipos = db.partidos.filter(p => p.localId && p.visitaId);
             const pendientes = conEquipos.filter(p => !p.jugado);
             if (quinielaError) { cont.innerHTML = '<p style="color:var(--text-muted);">La quiniela no está disponible por ahora.</p>'; tab.innerHTML = ''; return; }
-            if (!pendientes.length) {
-                cont.innerHTML = '<p style="color:var(--text-muted);">No hay partidos por pronosticar por ahora. ¡Vuelve en la próxima jornada!</p>';
-            } else {
+            const intro = document.getElementById('quiniela-intro');
+            let porPronosticar = [];
+            if (pendientes.length) {
                 const jor = Math.min.apply(null, pendientes.map(p => p.jornada || 0));
-                const partidos = conEquipos.filter(p => (p.jornada || 0) === jor)
+                // Solo se muestran los partidos abiertos en los que este usuario todavía no ha elegido.
+                porPronosticar = conEquipos.filter(p => (p.jornada || 0) === jor)
+                    .filter(p => !quinielaCerrada(p) && !(quinielaDatos[p.id] && quinielaDatos[p.id][miId]))
                     .sort((a, b) => (fechaHoraPartido(a) ? fechaHoraPartido(a).getTime() : 0) - (fechaHoraPartido(b) ? fechaHoraPartido(b).getTime() : 0));
-                cont.innerHTML = partidos.map(p => {
-                    const loc = db.equipos.find(e => e.id === p.localId);
-                    const vis = db.equipos.find(e => e.id === p.visitaId);
-                    const miPick = quinielaDatos[p.id] && quinielaDatos[p.id][miId] ? quinielaDatos[p.id][miId].p : null;
-                    const real = resultadoPartido(p);
-                    const cerrada = quinielaCerrada(p);
-                    const f = fechaHoraPartido(p);
-                    const cuando = f ? f.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' }) + (p.hora ? ' · ' + f.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' }) : '') : '';
-                    const estado = real ? 'Final: ' + p.golesLocal + ' - ' + p.golesVisita : (cerrada ? '🔒 Cerrado' : '');
-                    const op = (clave, texto) => {
-                        let clases = 'quiniela-op';
-                        if (miPick === clave) clases += real ? (real === clave ? ' acierto' : ' fallo') : ' elegida';
-                        else if (real === clave) clases += ' resultado-real';
-                        const off = (cerrada || miPick) ? ' disabled' : '';
-                        return '<button type="button" class="' + clases + '"' + off + ' onclick="enviarPronostico(' + p.id + ", '" + clave + "')\">" + escapeHtml(texto) + '</button>';
-                    };
-                    return '<div class="quiniela-partido"><div class="quiniela-cab"><span>' + escapeHtml(cuando) + '</span><span>' + escapeHtml(estado) + '</span></div>' +
-                        '<div class="quiniela-opciones">' + op('1', loc ? loc.nombre : 'Local') + op('X', 'Empate') + op('2', vis ? vis.nombre : 'Visita') + '</div>' +
-                        (miPick && !real ? '<div class="quiniela-sub">✅ Tu pronóstico ya está guardado</div>' : '') + '</div>';
-                }).join('');
             }
+            if (intro) intro.style.display = porPronosticar.length ? '' : 'none';
+            cont.innerHTML = porPronosticar.map(p => {
+                const loc = db.equipos.find(e => e.id === p.localId);
+                const vis = db.equipos.find(e => e.id === p.visitaId);
+                const f = fechaHoraPartido(p);
+                const cuando = f ? f.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' }) + (p.hora ? ' · ' + f.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' }) : '') : '';
+                const op = (clave, texto) => '<button type="button" class="quiniela-op" onclick="enviarPronostico(' + p.id + ", '" + clave + "')\">" + escapeHtml(texto) + '</button>';
+                return '<div class="quiniela-partido"><div class="quiniela-cab"><span>' + escapeHtml(cuando) + '</span><span></span></div>' +
+                    '<div class="quiniela-opciones">' + op('1', loc ? loc.nombre : 'Local') + op('X', 'Empate') + op('2', vis ? vis.nombre : 'Visita') + '</div></div>';
+            }).join('');
             // Tabla de aciertos
             const resultados = {};
             conEquipos.forEach(p => { const r = resultadoPartido(p); if (r) resultados[p.id] = r; });
@@ -3254,12 +3253,12 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
                 .sort((x, y) => y.a - x.a || (y.a / y.t) - (x.a / x.t) || y.t - x.t);
             if (!lista.length) { tab.innerHTML = '<p style="color:var(--text-muted); font-size:0.88rem;">Todavía no hay partidos terminados con pronósticos. ¡Sé el primero en sumar puntos!</p>'; return; }
             const medallas = ['🥇', '🥈', '🥉'];
-            tab.innerHTML = lista.slice(0, 10).map((j, i) =>
+            tab.innerHTML = lista.slice(0, 5).map((j, i) =>
                 '<div class="quiniela-fila' + (j.vid === miId ? ' yo' : '') + '"><span class="quiniela-pos">' + (medallas[i] || (i + 1)) + '</span>' +
                 '<span class="quiniela-nombre">' + escapeHtml(j.n || 'Anónimo') + (j.vid === miId ? ' (tú)' : '') + '</span>' +
                 '<span class="quiniela-pts">' + j.a + ' <span class="quiniela-sub">de ' + j.t + '</span></span></div>').join('');
             const yo = lista.findIndex(j => j.vid === miId);
-            if (yo >= 10) tab.innerHTML += '<p class="quiniela-sub" style="margin-top:8px;">Vas en el lugar ' + (yo + 1) + ' con ' + lista[yo].a + ' aciertos de ' + lista[yo].t + '.</p>';
+            if (yo >= 5) tab.innerHTML += '<p class="quiniela-sub" style="margin-top:8px;">Vas en el lugar ' + (yo + 1) + ' con ' + lista[yo].a + ' aciertos de ' + lista[yo].t + '.</p>';
         }
 
         function enviarPronostico(pid, opcion) {
@@ -3506,7 +3505,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
             const ofensiva = [...estadisticas].sort((a, b) => b.gf - a.gf || a.gc - b.gc);
             const defensiva = [...estadisticas].sort((a, b) => a.gc - b.gc || b.gf - a.gf);
 
-            document.getElementById('tabla-ofensiva-body').innerHTML = ofensiva.length ? ofensiva.map((eq, idx) => `
+            document.getElementById('tabla-ofensiva-body').innerHTML = ofensiva.length ? ofensiva.slice(0, 5).map((eq, idx) => `
                 <tr>
                     <td><b>${idx + 1}</b></td>
                     <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${escapeHtml(eq.nombre)}" loading="lazy"><span>${escapeHtml(eq.nombre)}</span></div></td>
@@ -3514,7 +3513,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
                 </tr>
             `).join('') : estadoVacioFila(3, '⚽', 'Aún no hay partidos jugados.');
 
-            document.getElementById('tabla-defensiva-body').innerHTML = defensiva.length ? defensiva.map((eq, idx) => `
+            document.getElementById('tabla-defensiva-body').innerHTML = defensiva.length ? defensiva.slice(0, 5).map((eq, idx) => `
                 <tr>
                     <td><b>${idx + 1}</b></td>
                     <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${escapeHtml(eq.nombre)}" loading="lazy"><span>${escapeHtml(eq.nombre)}</span></div></td>
@@ -3538,7 +3537,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
                 return { nombre: p.nombre, equipo: eq?.nombre || 'Libre', foto: p.foto, goles: golesContra, pj: partidos, prom: partidos > 0 ? (golesContra/partidos).toFixed(2) : 0 };
             }).sort((a,b) => a.prom - b.prom);
 
-            document.getElementById('tabla-porteros-body').innerHTML = data.map((pt, idx) => `
+            document.getElementById('tabla-porteros-body').innerHTML = data.slice(0, 5).map((pt, idx) => `
                 <tr>
                     <td><b>${idx+1}</b></td>
                     <td><div class="cel-jugador"><img class="foto-tabla" src="${pt.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(pt.nombre)}</span><span class="equipo-cel">${escapeHtml(pt.equipo)}</span></div></td>
@@ -3985,7 +3984,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
         function actualizarVistaGoleo() {
             let goleadores = [...db.jugadores].filter(j => j.goles > 0).sort((a,b) => b.goles - a.goles);
             document.getElementById('tabla-goleo-body').innerHTML = goleadores.length
-                ? goleadores.map((jug, idx) => `<tr><td><b>${idx + 1}</b></td><td><div class="cel-jugador"><img class="foto-tabla" src="${jug.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(jug.nombre)}</span></div></td><td>${db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre'}</td><td><b>${jug.goles} ⚽</b> ${idx === 0 ? '🏆' : ''}</td></tr>`).join('')
+                ? goleadores.slice(0, 5).map((jug, idx) => `<tr><td><b>${idx + 1}</b></td><td><div class="cel-jugador"><img class="foto-tabla" src="${jug.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(jug.nombre)}</span></div></td><td>${db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre'}</td><td><b>${jug.goles} ⚽</b> ${idx === 0 ? '🏆' : ''}</td></tr>`).join('')
                 : estadoVacioFila(4, '⚽', 'Aún no hay goleadores; se llenará conforme se jueguen partidos.');
             renderPodio('podio-goleo', goleadores.map(jug => ({
                 foto: jug.foto, nombre: jug.nombre,
@@ -3996,9 +3995,10 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
 
         function actualizarVistaDisciplina() {
             const jugadoresOrdenados = [...db.jugadores].sort((a, b) => ((b.rojas || 0) * 3 + (b.amarillas || 0)) - ((a.rojas || 0) * 3 + (a.amarillas || 0)));
-            document.getElementById('tabla-disciplina-body').innerHTML = jugadoresOrdenados.map((j, idx) => {
+            const jugadoresConTarjetas = jugadoresOrdenados.filter(j => (j.amarillas || 0) > 0 || (j.rojas || 0) > 0);
+            document.getElementById('tabla-disciplina-body').innerHTML = jugadoresConTarjetas.length ? jugadoresConTarjetas.slice(0, 5).map((j, idx) => {
                 return `<tr><td>${idx + 1}</td><td><div class="cel-jugador"><img class="foto-tabla" src="${j.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(j.nombre)}</span></div></td><td>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</td><td>${j.amarillas || 0}</td><td>${j.rojas || 0}</td><td>${textoEstadoSuspensionJugador(j)}</td></tr>`;
-            }).join('');
+            }).join('') : estadoVacioFila(6, '🟨', 'Aún no hay tarjetas.');
             const conSanciones = jugadoresOrdenados.filter(j => (j.amarillas || 0) > 0 || (j.rojas || 0) > 0);
             renderPodio('podio-disciplina', conSanciones.map(j => ({
                 foto: j.foto, nombre: j.nombre,
@@ -4020,7 +4020,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
                 const rojas = jugadoresEq.reduce((s, j) => s + (j.rojas || 0), 0);
                 return { ...eq, amarillas, rojas, puntos: amarillas + rojas * 3 };
             }).sort((a, b) => a.puntos - b.puntos || a.rojas - b.rojas);
-            cont.innerHTML = fairPlay.length ? fairPlay.map((eq, idx) => `
+            cont.innerHTML = fairPlay.length ? fairPlay.slice(0, 5).map((eq, idx) => `
                 <tr>
                     <td><b>${idx + 1}</b></td>
                     <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${escapeHtml(eq.nombre)}" loading="lazy"><span>${escapeHtml(eq.nombre)}</span></div></td>
@@ -4034,10 +4034,24 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
         function filtrarJugadores() {
             const txt = document.getElementById('input-buscar-jugador').value.toLowerCase();
             const eqFiltro = document.getElementById('select-filtrar-equipo').value;
-            let filtrados = db.jugadores.filter(j => j.nombre.toLowerCase().includes(txt) && (eqFiltro === 'todos' || j.equipoId === parseInt(eqFiltro)));
+            const total = document.getElementById('total-jugadores-lista');
+            if (total) total.textContent = db.jugadores.length;
+            const filtrados = db.jugadores.filter(j => j.nombre.toLowerCase().includes(txt) && (eqFiltro === 'todos' || j.equipoId === parseInt(eqFiltro)))
+                .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' }));
+            let letraActual = '';
             document.getElementById('grid-jugadores').innerHTML = filtrados.length
-                ? filtrados.map(j => `<div class="jugador-card" onclick="verFicha(${j.id})"><img src="${j.foto || 'https://placehold.co/100'}" alt="${escapeHtml(j.nombre)}" loading="lazy"><h3>${escapeHtml(j.nombre)}</h3><p>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</p></div>`).join('')
+                ? filtrados.map(j => {
+                    const letra = (j.nombre.trim().charAt(0) || '#').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+                    const encabezado = letra !== letraActual ? `<h3 style="grid-column:1/-1; margin:8px 0 0; color:var(--primary); border-bottom:2px solid var(--border);">${escapeHtml(letra)}</h3>` : '';
+                    letraActual = letra;
+                    return encabezado + `<div class="jugador-card" onclick="verFicha(${j.id})"><img src="${j.foto || 'https://placehold.co/100'}" alt="${escapeHtml(j.nombre)}" loading="lazy"><h3>${escapeHtml(j.nombre)}</h3><p>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</p></div>`;
+                }).join('')
                 : estadoVacio('🔍', 'No se encontraron jugadores con ese filtro.');
+        }
+
+        function abrirListaJugadores() {
+            filtrarJugadores();
+            document.getElementById('modal-lista-jugadores').classList.remove('hidden');
         }
 
         // ===== DISCIPLINA (solo lectura): mismas reglas que admin.html/arbitro.html — 3 amarillas
@@ -4350,7 +4364,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
         }
 
         function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); }
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { cerrarModal('ficha-modal'); cerrarModal('modal-equipo'); cerrarModal('modal-arbitro'); cerrarModal('modal-cancha'); cerrarModal('modal-nombre-visitante'); } });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { cerrarModal('ficha-modal'); cerrarModal('modal-lista-jugadores'); cerrarModal('modal-equipo'); cerrarModal('modal-arbitro'); cerrarModal('modal-cancha'); cerrarModal('modal-nombre-visitante'); } });
 
         function verEquipo(id) {
             const eq = db.equipos.find(e => e.id === id);
