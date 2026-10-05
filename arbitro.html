@@ -1973,11 +1973,41 @@
             document.getElementById('box-cedula').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
+
+        // Carga bajo demanda las librerías de PDF (con CDN de respaldo) si no se cargaron con la página.
+        function cargarScriptConRespaldo(urls) {
+            return new Promise((resolve, reject) => {
+                let i = 0;
+                const probar = () => {
+                    if (i >= urls.length) return reject(new Error('No se pudo descargar ' + urls[0]));
+                    const s = document.createElement('script');
+                    s.src = urls[i++];
+                    s.onload = resolve;
+                    s.onerror = () => { s.remove(); probar(); };
+                    document.head.appendChild(s);
+                };
+                probar();
+            });
+        }
+        async function asegurarLibsPDF(necesitaCanvas) {
+            try {
+                if (!window.jspdf) await cargarScriptConRespaldo([
+                    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js',
+                    'https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js'
+                ]);
+                if (necesitaCanvas && !window.html2canvas) await cargarScriptConRespaldo([
+                    'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+                    'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js'
+                ]);
+            } catch (e) { console.error(e); }
+            return !!window.jspdf && (!necesitaCanvas || !!window.html2canvas);
+        }
+
         // Genera un PDF de la Cédula Oficial de Arbitraje ya cerrada, para que el árbitro lleve su propio control/archivo.
-        function descargarCedulaPDF(partidoId) {
+        async function descargarCedulaPDF(partidoId) {
             const p = db.partidos.find(part => part.id === partidoId);
             if (!p || !p.cedula) return alert('Esta cédula aún no ha sido cerrada.');
-            if (!window.jspdf) return alert('No se pudo cargar el generador de PDF. Revisa tu conexión a internet e inténtalo de nuevo.');
+            if (!(await asegurarLibsPDF(false))) return alert('No se pudo cargar el generador de PDF. Revisa tu conexión a internet e inténtalo de nuevo.');
 
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ unit: 'mm', format: 'a4' });
