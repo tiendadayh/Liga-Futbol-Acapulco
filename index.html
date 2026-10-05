@@ -695,7 +695,7 @@
 
         /* ===== ESCUDOS CON EFECTO 3D (tilt al pasar el cursor / tocar) ===== */
         .escudo-3d { transition: transform 0.15s ease-out, box-shadow 0.15s ease-out; transform-style: preserve-3d; will-change: transform; cursor: pointer; }
-        .escudo-3d:hover, .escudo-3d.escudo-3d-activo { box-shadow: 0 10px 18px rgba(0,0,0,0.28); }
+        .escudo-3d-desactivado { box-shadow: 0 10px 18px rgba(0,0,0,0.28); }
 
         /* ===== BRACKET / TROFEO 3D ===== */
         .bracket-tarjeta-3d { animation: bracketEntrada3D 0.6s cubic-bezier(.2,.7,.3,1.1) both; }
@@ -2355,16 +2355,27 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
         // --- Sincronización automática en tiempo real con Firebase ---
         // Cuando admin.html publica cambios, este sitio público los recibe solo,
         // sin recargar la página, sin importar el dispositivo.
+        // Rendimiento: si los datos que llegan son idénticos a los ya mostrados no se redibuja nada,
+        // y si llegan varios cambios seguidos se redibuja una sola vez (en vez de una por cada uno).
+        let ultimoJsonNube = '';
+        let renderNubePendiente = null;
         firebaseDbRef.on('value', function (snapshot) {
             if (recibiendoDeFirebase) return;
             const datosNube = snapshot.val();
             if (!datosNube) return;
+            const jsonNube = JSON.stringify(datosNube);
+            const primeraVez = ultimoJsonNube === '';
+            if (jsonNube === ultimoJsonNube) return;   // nada cambió
+            ultimoJsonNube = jsonNube;
             db = datosNube;
             normalizarDB(db);
             try { detectarGolesNuevos(db); } catch (err) { console.warn('Alerta de gol no disponible:', err); }   // nunca debe romper la actualización
-            localStorage.setItem('liga_premier_db', JSON.stringify(db));
-            actualizarVistaTodo();
-            mostrarAvisoAutoguardado('🔄 Datos actualizados.');
+            try { localStorage.setItem('liga_premier_db', jsonNube); } catch (err) { /* sin espacio o sin almacenamiento: no es crítico */ }
+            clearTimeout(renderNubePendiente);
+            renderNubePendiente = setTimeout(function () {
+                actualizarVistaTodo();
+                if (!primeraVez) mostrarAvisoAutoguardado('🔄 Datos actualizados.');
+            }, primeraVez ? 0 : 300);
         });
 
         // --- Aviso flotante reutilizable ---
@@ -4285,7 +4296,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
         function restaurarEscudo3D(el) { el.style.transform = ''; el.classList.remove('escudo-3d-activo'); }
         document.addEventListener('mousemove', (e) => {
             const el = e.target.closest && e.target.closest('.escudo-3d');
-            if (el) { el.classList.add('escudo-3d-activo'); inclinarEscudo3D(el, e.clientX, e.clientY); }
+            /* inclinación de escudos desactivada */
         });
         document.addEventListener('mouseout', (e) => {
             const el = e.target.closest && e.target.closest('.escudo-3d');
@@ -4293,7 +4304,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
         });
         document.addEventListener('touchstart', (e) => {
             const el = e.target.closest && e.target.closest('.escudo-3d');
-            if (el) { const t = e.touches[0]; el.classList.add('escudo-3d-activo'); inclinarEscudo3D(el, t.clientX, t.clientY); }
+            /* inclinación de escudos desactivada */
         }, { passive: true });
         document.addEventListener('touchend', (e) => {
             const el = e.target.closest && e.target.closest('.escudo-3d');
@@ -5077,7 +5088,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
         el.style.transform = 'perspective(800px) rotateX(' + ((.5 - py) * 10) + 'deg) rotateY(' + ((px - .5) * 12) + 'deg) translateZ(8px)';
         g.style.setProperty('--gx', (px * 100) + '%'); g.style.setProperty('--gy', (py * 100) + '%');
     }
-    if (!REDUCIDO) {
+    if (false) { /* inclinación de tarjetas desactivada */
         document.addEventListener('pointermove', function (e) {
             if (e.pointerType === 'touch') return;
             var el = e.target.closest ? e.target.closest(SEL) : null;
