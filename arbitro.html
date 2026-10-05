@@ -2694,6 +2694,13 @@
                 return avisoEscaner('err', `❌ No puede jugar: ${est.suspendido ? 'SUSPENDIDO' : 'MULTA PENDIENTE'}.`, j);
 
             const modo = escanerModo;
+            // El minuto se revisa ANTES de pedir la verificación de credencial: así no queda
+            // anotada una verificación de una acción que luego se rechaza por falta de minuto.
+            const necesitaMinuto = modo === 'incidencia' || (modo === 'cambio' && escanerCambioSale);
+            if (necesitaMinuto && !document.getElementById('qr-min').value) {
+                escanerUltimo = { texto: '', t: 0 };
+                return avisoEscaner('err', modo === 'cambio' ? 'Escribe el minuto del cambio y vuelve a escanear al jugador que ENTRA.' : 'Escribe el minuto y vuelve a escanear al jugador.', j);
+            }
             const ejecutar = () => {
                 const pp = partidoActualEscaner();
                 const jj = db.jugadores.find(x => x.id === j.id);

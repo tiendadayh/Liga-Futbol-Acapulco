@@ -902,6 +902,13 @@
         <p id="disciplina-vacio" style="color:gray; font-size:0.85rem; display:none; margin-top:10px;">No hay tarjetas rojas ni suspensiones registradas todavía.</p>
     </div>
 
+    <!-- MÓDULO: VERIFICACIÓN DE CREDENCIALES (posibles suplantaciones detectadas por el árbitro) -->
+    <div class="admin-box" style="margin-bottom: 25px; border-top-color: #7c2d12;">
+        <h3>🪪 Verificación de Credenciales: "No coincide"</h3>
+        <p style="font-size:0.85rem; color:#555; margin-top:-8px;">Casos en que el árbitro, al escanear el QR, marcó que la persona NO coincide con la foto del jugador (posible suplantación). Revísalos y márcalos como revisados.</p>
+        <div id="suplantaciones-lista"></div>
+    </div>
+
     <div class="admin-grid">
         <!-- CREAR COMUNICADO / AVISO -->
         <div class="admin-box">
@@ -2894,6 +2901,8 @@
             renderizarFinanzas();
             renderizarDisciplina();
             renderizarGestion();
+            renderizarOnceIdeal();
+            renderizarSuplantaciones();
             renderizarResumenDia();
             renderizarCorreccionEstadisticas();
             actualizarVisibilidadLiguillaAdmin();
@@ -3044,6 +3053,8 @@
                     renderizarSolicitudes();
                     renderizarFinanzas();
                     renderizarGestion();
+                    renderizarOnceIdeal();
+                    renderizarSuplantaciones();
             renderizarResumenDia();
             renderizarCorreccionEstadisticas();
                     mostrarAvisoAutoguardado('🔄 Datos actualizados desde otra pestaña.');
@@ -3200,6 +3211,8 @@
                 renderizarSolicitudes();
                 renderizarFinanzas();
                 renderizarGestion();
+                renderizarOnceIdeal();
+                renderizarSuplantaciones();
             renderizarResumenDia();
             renderizarCorreccionEstadisticas();
                 renderizarEncuestasAdmin();
@@ -3223,6 +3236,8 @@
                 renderizarSolicitudes();
                 renderizarFinanzas();
                 renderizarGestion();
+                renderizarOnceIdeal();
+                renderizarSuplantaciones();
             renderizarResumenDia();
             renderizarCorreccionEstadisticas();
                 renderizarEncuestasAdmin();
@@ -3736,6 +3751,8 @@
             renderizarFinanzas();
             renderizarDisciplina();
             renderizarGestion();
+            renderizarOnceIdeal();
+            renderizarSuplantaciones();
             renderizarResumenDia();
             renderizarCorreccionEstadisticas();
             actualizarVisibilidadLiguillaAdmin();
@@ -3997,7 +4014,8 @@
                 db.config.temporada = document.getElementById('cfg-temporada').value.trim();
                 db.config.fechaExpedicion = document.getElementById('cfg-fecha-expedicion').value;
                 db.config.presidente = document.getElementById('cfg-presidente').value.trim();
-                db.config.urlPublica = document.getElementById('cfg-url-publica').value.trim().replace(/\s+/g, '');
+                db.config.urlPublica = normalizarUrlPublica(document.getElementById('cfg-url-publica').value);
+                document.getElementById('cfg-url-publica').value = db.config.urlPublica;
                 if (nuevoEscudoLiga) db.config.escudoLiga = nuevoEscudoLiga;
                 document.getElementById('cfg-escudo-liga').value = '';
                 guardarDB();
@@ -4427,6 +4445,156 @@
             return filas.sort((a, b) => b.sancion.jornada - a.sancion.jornada || b.sancion.partidoId - a.sancion.partidoId);
         }
 
+        // ===== Suplantaciones detectadas por el árbitro (verificación de credencial) =====
+        function renderizarSuplantaciones() {
+            const cont = document.getElementById('suplantaciones-lista');
+            if (!cont) return;
+            const casos = [];
+            db.partidos.forEach(p => (p.verificaciones || []).forEach(v => {
+                if (v.resultado === 'no_coincide') casos.push({ p, v });
+            }));
+            if (!casos.length) { cont.innerHTML = '<p style="color:gray; font-size:0.85rem;">No hay casos de "No coincide" registrados.</p>'; return; }
+            casos.sort((a, b) => (b.v.ts || 0) - (a.v.ts || 0));
+            const nomEq = id => (db.equipos.find(e => e.id === id) || {}).nombre || '—';
+            const pendientes = casos.filter(c => !c.v.revisada).length;
+            cont.innerHTML = `<p style="font-size:0.85rem; margin:0 0 8px;"><b>${pendientes}</b> pendiente(s) de revisar · ${casos.length} en total</p>
+                <div style="overflow-x:auto;"><table style="width:100%; text-align:left; border-collapse:collapse; font-size:0.85rem;">
+                <thead><tr style="background:#f4f4f4;"><th style="padding:8px;">Jugador</th><th>Equipo</th><th>Partido</th><th>Árbitro</th><th>Fecha</th><th>Estado</th></tr></thead>
+                <tbody>${casos.map(({ p, v }) => `<tr style="border-bottom:1px solid #eee; ${v.revisada ? 'opacity:.6;' : ''}">
+                    <td style="padding:8px;"><b>${escapeHtml(v.nombre || '')}</b>${v.numero ? ' #' + escapeHtml(String(v.numero)) : ''}</td>
+                    <td>${escapeHtml(nomEq(v.equipoId))}</td>
+                    <td>J${escapeHtml(String(p.jornada))}: ${escapeHtml(nomEq(p.localId))} vs ${escapeHtml(nomEq(p.visitaId))}</td>
+                    <td>${escapeHtml(v.arbitro || '—')}</td>
+                    <td>${v.ts ? new Date(v.ts).toLocaleString('es-MX') : '—'}${v.sinConexion ? ' (sin internet)' : ''}</td>
+                    <td><button type="button" style="width:auto; padding:4px 10px; margin:0;" onclick="alternarSuplantacionRevisada(${p.id}, ${v.id})">${v.revisada ? '↩ Reabrir' : '✔ Marcar revisada'}</button></td>
+                </tr>`).join('')}</tbody></table></div>`;
+        }
+
+        function alternarSuplantacionRevisada(partidoId, verifId) {
+            const p = db.partidos.find(x => x.id === partidoId);
+            const v = p && (p.verificaciones || []).find(x => x.id === verifId);
+            if (!v) return;
+            v.revisada = !v.revisada;
+            guardarDB();
+        }
+
+        // ===== ONCE IDEAL / MVP DE LA SEMANA =====
+        const XI_LIMITES = { portero: 1, defensa: 4, medio: 3, delantero: 3 };
+        let xiSel = { ids: [], mvp: '' };
+
+        function categoriaXIDePosicion(pos) {
+            const p = String(pos || '').toLowerCase();
+            if (p.includes('portero')) return 'portero';
+            if (p.includes('medio')) return 'medio';
+            if (p.includes('lateral') || p.includes('defensa')) return 'defensa';
+            if (p.includes('extremo') || p.includes('delantero')) return 'delantero';
+            return null;
+        }
+
+        function renderizarOnceIdeal() {
+            if (!document.getElementById('xi-lista-portero')) return;
+            const idsValidos = new Set(db.jugadores.map(j => j.id));
+            xiSel.ids = xiSel.ids.filter(id => idsValidos.has(id));
+            const nombreEq = id => (db.equipos.find(e => e.id === id) || {}).nombre || 'Libre';
+            Object.keys(XI_LIMITES).forEach(cat => {
+                const cont = document.getElementById('xi-lista-' + cat);
+                const jugs = db.jugadores.filter(j => categoriaXIDePosicion(j.posicion) === cat)
+                    .sort((a, b) => nombreEq(a.equipoId).localeCompare(nombreEq(b.equipoId)) || String(a.nombre).localeCompare(String(b.nombre)));
+                cont.innerHTML = jugs.length ? jugs.map(j => `
+                    <label style="display:flex; align-items:center; gap:6px; background:#f4f6fa; border:1px solid #d7dce6; border-radius:20px; padding:5px 12px; font-size:0.82rem; cursor:pointer; margin:0; font-weight:normal;">
+                        <input type="checkbox" style="width:auto; margin:0;" value="${escapeHtml(String(j.id))}" data-cat="${cat}" ${xiSel.ids.includes(j.id) ? 'checked' : ''} onchange="alternarXIJugador(this)">
+                        ${escapeHtml(j.nombre)} <small style="color:#777;">(${escapeHtml(nombreEq(j.equipoId))})</small>
+                    </label>`).join('') : '<span style="font-size:0.8rem; color:#888;">Sin jugadores con esta posición registrada.</span>';
+            });
+            actualizarSelectMvpXI();
+            renderizarOnceGuardados();
+        }
+
+        function actualizarSelectMvpXI() {
+            const sel = document.getElementById('xi-mvp');
+            if (!sel) return;
+            if (!xiSel.ids.includes(xiSel.mvp)) xiSel.mvp = '';
+            sel.innerHTML = '<option value="">-- Selecciona Jugador --</option>' + xiSel.ids.map(id => {
+                const j = db.jugadores.find(x => x.id === id);
+                return j ? `<option value="${escapeHtml(String(j.id))}" ${j.id === xiSel.mvp ? 'selected' : ''}>${escapeHtml(j.nombre)}</option>` : '';
+            }).join('');
+            sel.onchange = () => { const j = db.jugadores.find(x => String(x.id) === sel.value); xiSel.mvp = j ? j.id : ''; };
+        }
+
+        function alternarXIJugador(chk) {
+            const j = db.jugadores.find(x => String(x.id) === chk.value);
+            if (!j) return;
+            const cat = chk.dataset.cat;
+            if (chk.checked) {
+                const enCat = xiSel.ids.filter(id => categoriaXIDePosicion((db.jugadores.find(x => x.id === id) || {}).posicion) === cat).length;
+                if (enCat >= XI_LIMITES[cat]) {
+                    chk.checked = false;
+                    mostrarAlerta('En esta posición solo caben ' + XI_LIMITES[cat] + ' jugador(es) (formación 1-4-3-3).');
+                    return;
+                }
+                xiSel.ids.push(j.id);
+            } else {
+                xiSel.ids = xiSel.ids.filter(id => id !== j.id);
+            }
+            actualizarSelectMvpXI();
+        }
+
+        function renderizarOnceGuardados() {
+            const cont = document.getElementById('xi-lista-guardados');
+            if (!cont) return;
+            const jornadas = Object.keys(db.xiIdealAdmin || {}).map(Number).sort((a, b) => b - a);
+            if (!jornadas.length) { cont.innerHTML = '<p style="font-size:0.82rem; color:#888;">Aún no hay Onces guardados.</p>'; return; }
+            const publica = jornadas[0];
+            cont.innerHTML = '<h4 style="margin:0 0 8px;">Onces guardados</h4>' + jornadas.map(n => {
+                const e = db.xiIdealAdmin[n] || {};
+                const mvp = db.jugadores.find(j => j.id === e.mvp);
+                return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; padding:8px 10px; border:1px solid #e1e4ea; border-radius:8px; margin-bottom:6px; font-size:0.85rem;">
+                    <span><b>Jornada ${n}</b> · ${(e.jugadores || []).length} jugadores${mvp ? ' · ⭐ ' + escapeHtml(mvp.nombre) : ''}${n === publica ? ' · <span style="color:#1a7f37;">visible en el sitio</span>' : ''}</span>
+                    <span><button type="button" style="width:auto; padding:4px 10px; margin:0 4px 0 0;" onclick="cargarOnceIdeal(${n})">Editar</button><button type="button" style="width:auto; padding:4px 10px; margin:0; background:#c0392b;" onclick="eliminarOnceIdeal(${n})">Eliminar</button></span>
+                </div>`;
+            }).join('');
+        }
+
+        function cargarOnceIdeal(n) {
+            const e = (db.xiIdealAdmin || {})[n];
+            if (!e) return;
+            document.getElementById('xi-jornada').value = n;
+            xiSel.ids = (e.jugadores || []).slice();
+            xiSel.mvp = e.mvp || '';
+            renderizarOnceIdeal();
+        }
+
+        async function eliminarOnceIdeal(n) {
+            if (!(await confirmarAccion('¿Eliminar el Once Ideal de la jornada ' + n + '?'))) return;
+            delete db.xiIdealAdmin[n];
+            sincronizarOnceConSitio();
+            guardarDB();
+        }
+
+        // El sitio público muestra el Once de la jornada MÁS RECIENTE guardada.
+        function sincronizarOnceConSitio() {
+            const jornadas = Object.keys(db.xiIdealAdmin || {}).map(Number).sort((a, b) => b - a);
+            const e = jornadas.length ? db.xiIdealAdmin[jornadas[0]] : null;
+            db.jugadores.forEach(j => {
+                const dentro = !!(e && (e.jugadores || []).includes(j.id));
+                j.xiIdeal = dentro ? [jornadas[0]] : [];
+                j.xiMvp = !!(e && dentro && e.mvp === j.id);
+            });
+        }
+
+        function guardarOnceIdeal() {
+            const jornada = parseInt(document.getElementById('xi-jornada').value, 10);
+            if (!jornada || jornada < 1) { mostrarAlerta('Escribe el número de jornada.'); return; }
+            if (!xiSel.ids.length) { mostrarAlerta('Elige al menos un jugador para el Once Ideal.'); return; }
+            if (xiSel.mvp && !xiSel.ids.includes(xiSel.mvp)) xiSel.mvp = '';
+            db.xiIdealAdmin[jornada] = { jugadores: xiSel.ids.slice(), mvp: xiSel.mvp || '', fecha: Date.now() };
+            sincronizarOnceConSitio();
+            xiSel = { ids: [], mvp: '' };
+            document.getElementById('xi-jornada').value = '';
+            guardarDB();
+            mostrarAlerta('✅ Once Ideal de la jornada ' + jornada + ' guardado.');
+        }
+
         function renderizarDisciplina() {
             const tbody = document.getElementById('tabla-centro-disciplina');
             const vacio = document.getElementById('disciplina-vacio');
@@ -4527,10 +4695,20 @@
             return `${d} / ${mes} / ${y}`;
         }
 
+        // Deja la URL pública lista para un QR que el celular abra como enlace: sin espacios,
+        // con https:// si faltaba, y sin "#..." (index.html lee ?jugador=ID antes del #).
+        function normalizarUrlPublica(url) {
+            let u = String(url || '').trim().replace(/\s+/g, '');
+            if (!u) return '';
+            u = u.split('#')[0];
+            if (!/^https?:\/\//i.test(u)) u = 'https://' + u.replace(/^\/+/, '');
+            return u;
+        }
+
         // Construye el enlace al perfil público del jugador en index.html, a partir de la
         // URL configurada en "Configuración de Credenciales". Devuelve '' si no hay URL configurada.
         function construirEnlacePerfilJugador(id) {
-            const base = (db.config && db.config.urlPublica || '').trim();
+            const base = normalizarUrlPublica(db.config && db.config.urlPublica);
             if (!base) return '';
             const separador = base.includes('?') ? '&' : '?';
             return `${base}${separador}jugador=${id}`;
@@ -4785,8 +4963,11 @@
                 alert('Primero configura la "URL pública del sitio" en 🪪 Configuración de Credenciales para poder generar el enlace del perfil.');
                 return;
             }
-            const qr = await generarQRDataURL(enlace, 220);
+            // La ventana se abre ANTES de generar el QR (mientras el clic sigue "vigente"),
+            // porque abrirla después de un await es lo que más provoca el bloqueo de emergentes.
             const win = window.open('', '', 'width=380,height=480');
+            if (!win) { alert('El navegador bloqueó la ventana emergente. Permite las ventanas emergentes para este sitio e inténtalo de nuevo.'); return; }
+            const qr = await generarQRDataURL(enlace, 220);
             win.document.title = `Perfil público - ${escapeHtml(j.nombre)}`;
             win.document.body.innerHTML = `
                 <div style="font-family:Arial, sans-serif; text-align:center; padding:24px;">
@@ -6224,6 +6405,8 @@ ${cuerpo}`;
             db.partidos = db.partidos.filter(p => !idsAEliminar.includes(p.id));
             guardarDB();
             renderizarGestion();
+            renderizarOnceIdeal();
+            renderizarSuplantaciones();
             alert(`Listo, se eliminaron ${idsAEliminar.length} partido(s) duplicado(s) de la Liguilla.`);
         }
 

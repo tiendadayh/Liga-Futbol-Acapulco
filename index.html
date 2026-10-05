@@ -3929,10 +3929,11 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
         const coordsXI = [{ t: 88, l: 50 }, { t: 68, l: 20 }, { t: 72, l: 40 }, { t: 72, l: 60 }, { t: 68, l: 80 }, { t: 45, l: 25 }, { t: 50, l: 50 }, { t: 45, l: 75 }, { t: 20, l: 20 }, { t: 15, l: 50 }, { t: 20, l: 80 }];
         function renderXI() {
             const cancha = document.getElementById('posiciones-cancha'); cancha.innerHTML = '';
-            let elegidos = db.jugadores.filter(j => j.xiIdeal && j.xiIdeal.length > 0);
+            const ordenXI = pos => { const p = String(pos || '').toLowerCase(); if (p.includes('portero')) return 0; if (p.includes('medio')) return 2; if (p.includes('lateral') || p.includes('defensa')) return 1; return 3; };
+            let elegidos = db.jugadores.filter(j => j.xiIdeal && j.xiIdeal.length > 0).sort((a, b) => ordenXI(a.posicion) - ordenXI(b.posicion));
             for (let i = 0; i < 11; i++) {
                 const pos = coordsXI[i]; const jug = elegidos[i];
-                cancha.innerHTML += jug ? `<div class="xi-jugador" style="top:${pos.t}%; left:${pos.l}%;"><img src="${jug.foto || 'https://placehold.co/50'}" alt="${escapeHtml(jug.nombre)}" loading="lazy"><p>${jug.nombre.split(' ')[0]}</p></div>` : '';
+                cancha.innerHTML += jug ? `<div class="xi-jugador" style="top:${pos.t}%; left:${pos.l}%;"><img src="${jug.foto || 'https://placehold.co/50'}" alt="${escapeHtml(jug.nombre)}" loading="lazy"><p>${jug.xiMvp ? '⭐ ' : ''}${escapeHtml(jug.nombre.split(' ')[0])}</p></div>` : '';
             }
         }
 
