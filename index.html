@@ -2367,6 +2367,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
             const primeraVez = ultimoJsonNube === '';
             if (jsonNube === ultimoJsonNube) return;   // nada cambió
             ultimoJsonNube = jsonNube;
+            datosNubeRecibidos = true;
             db = datosNube;
             normalizarDB(db);
             try { detectarGolesNuevos(db); } catch (err) { console.warn('Alerta de gol no disponible:', err); }   // nunca debe romper la actualización
@@ -2681,6 +2682,9 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
         }
 
         function actualizarVistaTodo() {
+            // Enlace compartido (?jugador=ID): se abre la ficha lo primero y aislada, para que un
+            // error al pintar cualquier otra sección no impida que el perfil se muestre.
+            try { intentarAbrirFichaDesdeURL(); } catch (e) { console.warn('Ficha desde enlace:', e); fichaURLYaAbierta = false; }
             aplicarLogoSitio();
             actualizarBarraMiEquipo();
             try { renderizarQuiniela(); } catch (e) { console.warn('Quiniela:', e); }
@@ -2762,6 +2766,8 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
         // Si la página se abrió con ?jugador=<id> (por ejemplo, al escanear el QR de una
         // credencial), abre automáticamente la ficha pública de ese jugador una sola vez.
         let fichaURLYaAbierta = false;
+        let datosNubeRecibidos = false;
+        let avisoFichaNoEncontrada = false;
         function intentarAbrirFichaDesdeURL() {
             if (fichaURLYaAbierta) return;
             const idParam = new URLSearchParams(window.location.search).get('jugador');
@@ -2769,7 +2775,13 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
             const id = parseInt(idParam);
             if (isNaN(id)) return;
             const existe = db.jugadores.find(j => j.id === id);
-            if (!existe) return;
+            if (!existe) {
+                if (datosNubeRecibidos && !avisoFichaNoEncontrada) {
+                    avisoFichaNoEncontrada = true;
+                    try { mostrarToast('No encontramos a ese jugador. Puede que el enlace sea antiguo o que aún no esté publicado.', 'info'); } catch (e) { }
+                }
+                return;
+            }
             fichaURLYaAbierta = true;
             verFicha(id);
             const sec = document.getElementById('jugadores-sec');
