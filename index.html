@@ -1003,6 +1003,32 @@
             .mm-nombre { max-width: 44px !important; }
             nav a { font-size: 0.6rem !important; padding: 7px 5px !important; }
         }
+            /* ===== AJUSTE MÓVIL PRO: encabezado ordenado, tablas que caben completas y todo centrado ===== */
+        html { overflow-x: hidden; }
+        @media (max-width: 600px) {
+            header { padding: 12px 12px 18px !important; }
+            header .theme-switch, header .alerta-gol-switch, header .install-btn.visible {
+                position: static !important; display: inline-flex !important; align-items: center; justify-content: center;
+                margin: 0 4px 10px !important; padding: 7px 12px !important; font-size: 0.72rem !important;
+            }
+            .site-header-content { justify-content: center !important; text-align: center; }
+            .estado-vacio { grid-column: 1 / -1; width: 100%; margin: 0 auto; }
+            .tabla-equipos, .card-section table { min-width: 0 !important; width: 100%; font-size: 0.68rem !important; }
+            .tabla-equipos th, .tabla-equipos td, .card-section table th, .card-section table td { padding: 7px 3px !important; text-align: center; }
+            .tabla-equipos th:first-child, .tabla-equipos td:first-child, .card-section table th:first-child, .card-section table td:first-child { padding-left: 6px !important; }
+            .equipo-celda { flex-direction: row !important; justify-content: flex-start; text-align: left !important; gap: 5px !important; }
+            .equipo-celda .escudo-tab { width: 24px !important; height: 24px !important; margin: 0 !important; flex-shrink: 0; border-radius: 50%; object-fit: cover; }
+            .equipo-celda span { white-space: normal !important; word-break: normal !important; overflow-wrap: normal !important; font-size: 0.68rem !important; line-height: 1.15; text-align: left; }
+            .card-section table th:nth-child(2), .card-section table td:nth-child(2) { text-align: left; }
+            .card-section table td { font-size: 0.7rem !important; }
+            .card-section table th { white-space: normal; font-size: 0.62rem !important; line-height: 1.15; }
+            .cel-jugador { flex-direction: row !important; align-items: center; justify-content: flex-start; text-align: left !important; gap: 6px !important; }
+            .cel-jugador .foto-tabla { width: 26px !important; height: 26px !important; flex-shrink: 0; }
+            .cel-jugador .nombre-cel { max-width: none !important; word-break: normal !important; overflow-wrap: normal; font-size: 0.68rem !important; }
+            table:has(#tabla-posiciones-body) th:last-child, table:has(#tabla-posiciones-body) td:last-child { display: none; }
+            .quiniela-op { font-size: 0.72rem; word-break: normal; overflow-wrap: anywhere; padding: 9px 4px; }
+            .card-section > h2, .card-section > .header-section-flex { text-align: center; justify-content: center; }
+        }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>

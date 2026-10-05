@@ -684,6 +684,27 @@
             .admin-box { padding: 10px !important; }
             .btn, button:not(.close-modal-gestion) { font-size: 0.72rem !important; padding: 7px 10px !important; }
         }
+        /* ===== Secciones tipo ventana (clic en el título para abrir/cerrar) ===== */
+        .admin-box.vent { align-self: start; padding-top: 0; padding-bottom: 0; }
+        .admin-box.vent > .vent-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; padding: 16px 0; margin: 0; }
+        .admin-box.vent > .vent-cab:focus-visible { outline: 2px solid var(--secondary); outline-offset: 2px; border-radius: 8px; }
+        .admin-box.vent > h3.vent-cab { border-bottom: 2px solid var(--border); padding-bottom: 14px; margin-bottom: 0; }
+        .admin-box.vent.cerrada > h3.vent-cab { border-bottom-color: transparent; }
+        .vent-flecha { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: rgba(11, 47, 92, 0.08); color: var(--dark); font-size: 0.8rem; transition: transform 0.25s; }
+        .admin-box.vent:not(.cerrada) .vent-flecha { transform: rotate(180deg); }
+        .admin-box.vent > .vent-cuerpo { padding: 16px 0 22px; }
+        .admin-box.vent.cerrada > .vent-cuerpo { display: none; }
+        .admin-grid > .admin-box.vent:not(.cerrada) { grid-column: 1 / -1; }
+        .vent-barra { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; margin: 0 0 16px; position: relative; z-index: 1; }
+        .vent-barra button { background: var(--dark); color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+        .vent-barra button.sec { background: #e8edf3; color: var(--dark); }
+        /* ===== AJUSTE MÓVIL: botón de salir sin flotar encima del contenido y etiquetas con aire ===== */
+        @media (max-width: 600px) {
+            #btn-cerrar-sesion { position: absolute !important; top: 18px !important; right: 18px !important; padding: 6px 10px !important; font-size: 0.72rem !important; }
+            label { margin-bottom: 4px; display: inline-block; }
+            table:has(#tabla-control-financiero) { min-width: 600px; }
+            table:has(#tabla-control-financiero) td, table:has(#tabla-control-financiero) th { padding: 8px 6px; vertical-align: middle; }
+        }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
@@ -2951,7 +2972,7 @@
             ];
 
             cont.innerHTML = tarjetas.map(t => `
-                <div style="background:#fff; border-radius:10px; padding:14px; text-align:center; border-left:5px solid ${t.color}; cursor:pointer;" onclick="document.querySelector('${t.ancla}')?.scrollIntoView({behavior:'smooth'})">
+                <div style="background:#fff; border-radius:10px; padding:14px; text-align:center; border-left:5px solid ${t.color}; cursor:pointer;" onclick="abrirVentanaDe('${t.ancla}');document.querySelector('${t.ancla}')?.scrollIntoView({behavior:'smooth'})">
                     <div style="font-size:1.7rem; font-weight:bold; color:${t.color};">${t.valor}</div>
                     <div style="font-size:0.78rem; color:#555;">${t.etiqueta}</div>
                 </div>
@@ -6006,7 +6027,7 @@ ${cuerpo}`;
                             <div class="gestion-fila" style="${p.oculto ? 'opacity:0.55;' : ''}">
                                 <div class="gestion-info">
                                     <strong>${loc} vs ${vis}</strong>
-                                    <span>${p.fecha || 'Sin fecha'} ${p.hora || ''} · ${estado}${p.oculto ? ' · 🙈 Oculto del sitio público' : ''}</span>
+                                    <span>${p.fecha || 'Sin fecha'} ${p.hora || ''} · ${estado}${p.oculto ? (p.ocultoAuto ? ' · 📁 Archivado (cédula cerrada)' : ' · 🙈 Oculto del sitio público') : ''}</span>
                                 </div>
                                 <div class="gestion-acciones">
                                     <button type="button" class="btn-editar-fila" title="Corregir marcador, goles, tarjetas, MVP y pagos de este partido" onclick="abrirCorreccionPartido(${p.id})">✏️ Corregir</button>
@@ -6361,6 +6382,7 @@ ${cuerpo}`;
             document.getElementById('titulo-form-comunicado').innerText = '✏️ Editando Aviso';
             document.getElementById('btn-submit-comunicado').innerText = '💾 Guardar Cambios';
             document.getElementById('btn-cancelar-edicion-comunicado').style.display = 'inline-block';
+            abrirVentanaDe('#form-comunicado');
             document.getElementById('form-comunicado').scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
@@ -6412,6 +6434,7 @@ ${cuerpo}`;
             const p = db.partidos.find(x => x.id === id);
             if (!p) return;
             p.oculto = !p.oculto;
+            delete p.ocultoAuto; // si lo cambias a mano, deja de ser "archivado automático"
             guardarDB();
         }
 
@@ -6627,6 +6650,7 @@ ${cuerpo}`;
             revertirPagoArbitraje(p.visitaId, p.arbitrajePagoVisita);
 
             p.jugado = false;
+            if (p.ocultoAuto) { p.oculto = false; delete p.ocultoAuto; delete p.archivadoEn; } // vuelve al calendario público
             p.estadoVivo = 'programado';
             p.golesLocal = 0;
             p.golesVisita = 0;
@@ -6684,6 +6708,85 @@ ${cuerpo}`;
             const el = e.target.closest && e.target.closest('.escudo-3d');
             if (el) setTimeout(() => restaurarEscudo3D(el), 400);
         }, { passive: true });
+
+
+    </script>
+    <script>
+        /* ===== Secciones tipo ventana: cada caja del panel se abre/cierra con un clic ===== */
+        (function () {
+            var CLAVE = 'liga_admin_ventanas_abiertas';
+            function leer() { try { return JSON.parse(localStorage.getItem(CLAVE) || '[]'); } catch (e) { return []; } }
+            function guardar() {
+                try {
+                    var abiertas = [];
+                    document.querySelectorAll('.admin-box.vent').forEach(function (b) { if (!b.classList.contains('cerrada')) abiertas.push(b.dataset.ventId); });
+                    localStorage.setItem(CLAVE, JSON.stringify(abiertas));
+                } catch (e) { }
+            }
+            function fijar(box, abrir) {
+                box.classList.toggle('cerrada', !abrir);
+                var cab = box.querySelector(':scope > .vent-cab');
+                if (cab) cab.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+            }
+            window.abrirVentanaDe = function (sel) {
+                var el = typeof sel === 'string' ? document.querySelector(sel) : sel;
+                var box = el && el.closest ? el.closest('.admin-box.vent') : null;
+                if (box && box.classList.contains('cerrada')) { fijar(box, true); guardar(); }
+            };
+            function armar() {
+                var abiertasPrevias = leer();
+                var cajas = Array.prototype.slice.call(document.querySelectorAll('body .admin-box'));
+                cajas.forEach(function (box, idx) {
+                    if (box.classList.contains('vent') || box.closest('.modal, [id^="modal"]')) return;
+                    var h3 = box.querySelector('h3');
+                    if (!h3) return;
+                    var cab = h3;
+                    while (cab.parentElement && cab.parentElement !== box) cab = cab.parentElement;
+                    if (cab.parentElement !== box) return;
+                    var titulo = (h3.textContent || '').trim();
+                    box.dataset.ventId = 'v' + idx + '-' + titulo.slice(0, 24);
+                    var cuerpo = document.createElement('div');
+                    cuerpo.className = 'vent-cuerpo';
+                    var sig = cab.nextSibling;
+                    while (sig) { var n = sig.nextSibling; cuerpo.appendChild(sig); sig = n; }
+                    box.appendChild(cuerpo);
+                    var flecha = document.createElement('span');
+                    flecha.className = 'vent-flecha';
+                    flecha.textContent = '▼';
+                    flecha.setAttribute('aria-hidden', 'true');
+                    cab.appendChild(flecha);
+                    cab.classList.add('vent-cab');
+                    cab.setAttribute('role', 'button');
+                    cab.setAttribute('tabindex', '0');
+                    box.classList.add('vent');
+                    fijar(box, abiertasPrevias.indexOf(box.dataset.ventId) !== -1);
+                    function alternar(ev) {
+                        if (ev.target.closest && ev.target.closest('button, a, input, select, textarea')) return;
+                        fijar(box, box.classList.contains('cerrada'));
+                        guardar();
+                    }
+                    cab.addEventListener('click', alternar);
+                    cab.addEventListener('keydown', function (ev) {
+                        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); alternar(ev); }
+                    });
+                });
+                var primera = document.querySelector('.admin-box.vent');
+                if (primera && !document.getElementById('vent-barra')) {
+                    var barra = document.createElement('div');
+                    barra.id = 'vent-barra';
+                    barra.className = 'vent-barra';
+                    barra.innerHTML = '<button type="button" id="vent-abrir-todo">Abrir todo</button><button type="button" id="vent-cerrar-todo" class="sec">Cerrar todo</button>';
+                    primera.parentNode.insertBefore(barra, primera);
+                    document.getElementById('vent-abrir-todo').addEventListener('click', function () {
+                        document.querySelectorAll('.admin-box.vent').forEach(function (b) { fijar(b, true); }); guardar();
+                    });
+                    document.getElementById('vent-cerrar-todo').addEventListener('click', function () {
+                        document.querySelectorAll('.admin-box.vent').forEach(function (b) { fijar(b, false); }); guardar();
+                    });
+                }
+            }
+            armar();
+        })();
 
     </script>
 </body>

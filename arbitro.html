@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liga de Futbol Acapulco - Panel del Árbitros</title>
+    <title>Liga de Futbol Acapulco - Panel de Árbitros</title>
     <meta name="description" content="Panel de árbitros de la Liga de Futbol Acapulco: consulta y gestión de los partidos asignados a dirigir.">
     <meta name="robots" content="noindex, nofollow">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Liga de Futbol Acapulco - Panel del Árbitros">
+    <meta property="og:title" content="Liga de Futbol Acapulco - Panel de Árbitros">
     <meta property="og:description" content="Panel de árbitros de la Liga de Futbol Acapulco.">
     <meta property="og:image" content="https://tiendadayh.github.io/Liga-Futbol-Acapulco/icon-512.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -575,6 +575,11 @@
             .box, .admin-box { padding: 10px !important; }
             .estado-btn { font-size: 0.7rem !important; padding: 6px 10px !important; }
         }
+        /* ===== AJUSTE MÓVIL: botón de salir sin flotar encima del contenido y etiquetas con aire ===== */
+        @media (max-width: 600px) {
+            #btn-cerrar-sesion { position: absolute !important; top: 18px !important; right: 18px !important; padding: 6px 10px !important; font-size: 0.72rem !important; }
+            label { margin-bottom: 4px; display: inline-block; }
+        }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
@@ -600,7 +605,7 @@
             <div class="arbitro-header-content">
                 <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='white' stroke='%230b2f5c' stroke-width='4'/><polygon points='50,30 69,44 62,66 38,66 31,44' fill='%230b2f5c'/><path d='M50 30V6M69 44L92 36M62 66L77 86M38 66L23 86M31 44L8 36' stroke='%230b2f5c' stroke-width='4' fill='none'/></svg>" alt="Logo Liga de Futbol Acapulco" class="arbitro-header-logo">
                 <div>
-                    <h1>🎙️ Panel del Árbitros</h1>
+                    <h1>🎙️ Panel de Árbitros</h1>
                     <p id="nombre-liga-header">Liga de Futbol Acapulco - Cédula Oficial del Partido</p>
                 </div>
             </div>
@@ -1210,7 +1215,7 @@
             const n = nombreLigaActual();
             const a = document.getElementById('nombre-liga-login'); if (a) a.textContent = n;
             const b = document.getElementById('nombre-liga-header'); if (b) b.textContent = n + ' - Cédula Oficial del Partido';
-            document.title = n + ' - Panel del Árbitros';
+            document.title = n + ' - Panel de Árbitros';
         }
 
         function aplicarLogoSitio() {
@@ -3138,6 +3143,11 @@
             partido.mvpJugadorId = parseInt(document.getElementById('admin-res-mvp').value) || null;
             partido.jugado = true;
             partido.estadoVivo = 'finalizado';
+            // Al cerrar la cédula el partido se quita del calendario público (index.html),
+            // pero se queda guardado completo (marcador, cédula, firmas, estadísticas).
+            partido.oculto = true;
+            partido.ocultoAuto = true;
+            partido.archivadoEn = new Date().toISOString();
             partido.tarjetasDetalle = [];
             // Si estaba marcado como transmisión en vivo por Facebook, se apaga solo al
             // finalizar (la página que transmitió se conserva, para que el sitio público
@@ -3229,7 +3239,7 @@
             document.getElementById('modal-firma-cedula').classList.add('hidden');
             cedulaPendientePartidoId = null;
             cargarPartidosDelArbitro(arbitroActual);
-            alert("✅ Cédula cerrada y publicada con la firma de conformidad de ambos equipos.");
+            alert("✅ Cédula cerrada y guardada con la firma de conformidad de ambos equipos. El partido ya se quitó del calendario público y quedó registrado.");
         }
     </script>
 </body>
