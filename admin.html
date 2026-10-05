@@ -691,6 +691,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 
 <body>
@@ -4844,12 +4845,43 @@
             win.document.body.innerHTML = `
                 <div class="barra-impresion">
                     <button type="button" onclick="window.print()">🖨️ Imprimir</button>
+                    <button type="button" id="btn-pdf-cred" style="background:#16a34a;" onclick="window.opener.descargarPDFCredenciales(window, this)">📄 Descargar PDF</button>
                     <span>${n} credencial${n === 1 ? '' : 'es'} · ${hojas.length} hoja${hojas.length === 1 ? '' : 's'} tamaño carta</span>
                     <small>Al imprimir elige: Carta, vertical, escala 100% (no "ajustar a la página") y márgenes "Ninguno" o "Predeterminados".</small>
                 </div>
                 ${hojas.map(h => `<div class="hoja">${h.map(it => generarCarnetHTML(it.j, it.eq, it.qr)).join('')}</div>`).join('')}
             `;
             win.onload = function () { win.print(); };
+        }
+
+        // Descarga en PDF (carta vertical) las hojas que se ven en la ventana de credenciales.
+        async function descargarPDFCredenciales(win, boton) {
+            if (!window.jspdf || !window.html2canvas) {
+                win.alert('No se pudo cargar el generador de PDF. Revisa tu conexión a internet e inténtalo de nuevo.');
+                return;
+            }
+            const hojas = win.document.querySelectorAll('.hoja');
+            if (!hojas.length) return;
+            const textoOriginal = boton.textContent;
+            boton.disabled = true;
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ unit: 'mm', format: 'letter', orientation: 'portrait' });
+                for (let i = 0; i < hojas.length; i++) {
+                    boton.textContent = `⏳ Generando ${i + 1}/${hojas.length}...`;
+                    const canvas = await window.html2canvas(hojas[i], { scale: 3, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
+                    if (i > 0) doc.addPage('letter', 'portrait');
+                    doc.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 215.9, 279.4);
+                }
+                const nombre = (win.document.title || 'Credenciales').replace(/[\\/:*?"<>|]+/g, '').trim() || 'Credenciales';
+                doc.save(nombre + '.pdf');
+            } catch (err) {
+                console.error(err);
+                win.alert('No se pudo generar el PDF: ' + (err && err.message ? err.message : err));
+            } finally {
+                boton.disabled = false;
+                boton.textContent = textoOriginal;
+            }
         }
 
         // Hoja de impresión: se van agregando jugadores de uno o varios equipos y al final se imprime todo junto.
