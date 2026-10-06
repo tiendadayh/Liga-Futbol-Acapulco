@@ -440,6 +440,10 @@
         @keyframes pulso-vivo { 0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.7); } 70% { box-shadow: 0 0 0 6px rgba(255,255,255,0); } 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); } }
         .badge-en-vivo.badge-medio-tiempo { background: var(--warning); box-shadow: 0 8px 18px -4px rgba(224,147,46,0.5); }
         .badge-en-vivo.badge-medio-tiempo .dot-vivo { animation: none; }
+        .badge-en-vivo.badge-reprogramar { background: #d98200; box-shadow: 0 8px 18px -4px rgba(217,130,0,0.45); }
+        .badge-en-vivo.badge-reprogramar .dot-vivo { animation: none; }
+        .lc-estado.repro { color:#b86e00; }
+        .lc-cuenta.repro { background:#fff3dc; color:#8a5200; border:1px solid #f3c77a; }
         .badge-en-vivo.badge-programado { background: #6c757d; box-shadow: 0 8px 18px -4px rgba(108,117,125,0.45); }
         .badge-en-vivo.badge-programado .dot-vivo { animation: none; }
         .badge-en-vivo.badge-finalizado { background: #0d7d6f; box-shadow: 0 8px 18px -4px rgba(13,125,111,0.45); }
@@ -3992,6 +3996,28 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
 
         const partidosMarcadorFinalAnimado = new Set(); // ids de partidos cuyo flip 3D del marcador final ya se reprodujo en esta sesión
 
+        // Un partido programado cuya fecha ya pasó (y que no se jugó ni está en vivo) se marca
+        // como "POR REPROGRAMAR" en el calendario público, sin borrarlo.
+        function hoyMexicoISO() {
+            try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); }
+            catch (e) { return new Date().toISOString().slice(0, 10); }
+        }
+        function partidoVencidoSinJugar(p) {
+            if (p.jugado) return false;
+            if (typeof ESTADOS_PARTIDO_EN_VIVO !== 'undefined' && ESTADOS_PARTIDO_EN_VIVO.includes(p.estadoVivo)) return false;
+            const f = /^(\d{4}-\d{2}-\d{2})/.exec(p.fecha || '');
+            if (!f) return false;
+            return f[1] < hoyMexicoISO();
+        }
+        // Si cambia el día con la página abierta, se refresca el calendario para ocultar los vencidos.
+        (function () {
+            let diaVisto = hoyMexicoISO();
+            setInterval(function () {
+                const d = hoyMexicoISO();
+                if (d !== diaVisto) { diaVisto = d; try { actualizarVistaJornadas(); } catch (e) {} }
+            }, 5 * 60 * 1000);
+        })();
+
         function actualizarVistaJornadas() {
             const jFiltro = parseInt(document.getElementById('select-jornada-filtro').value);
             const contenedor = document.getElementById('lista-partidos-jornada');
@@ -4083,6 +4109,8 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
                     estadoBadge = `<div class="badge-en-vivo badge-medio-tiempo"><span class="dot-vivo"></span>MEDIO TIEMPO</div>`;
                 } else if (enVivo) {
                     estadoBadge = `<div class="badge-en-vivo"><span class="dot-vivo"></span>${ETIQUETAS_ESTADO_PARTIDO[p.estadoVivo] || 'EN VIVO'}</div>`;
+                } else if (partidoVencidoSinJugar(p)) {
+                    estadoBadge = `<div class="badge-en-vivo badge-reprogramar"><span class="dot-vivo"></span>POR REPROGRAMAR</div>`;
                 } else {
                     estadoBadge = `<div class="badge-en-vivo badge-programado"><span class="dot-vivo"></span>PROGRAMADO ${p.hora ? '· ' + p.hora : ''}</div>`;
                 }
@@ -4133,6 +4161,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
                 if (p.jugado) { etiqueta = 'FINAL'; claseEtiqueta = 'fin'; }
                 else if (p.estadoVivo === 'medio_tiempo') { etiqueta = 'MEDIO TIEMPO'; claseEtiqueta = 'vivo'; }
                 else if (enVivo) { etiqueta = ETIQUETAS_ESTADO_PARTIDO[p.estadoVivo] || 'EN VIVO'; claseEtiqueta = 'vivo'; }
+                else if (partidoVencidoSinJugar(p)) { etiqueta = 'POR REPROGRAMAR'; claseEtiqueta = 'repro'; }
                 else { etiqueta = 'POR JUGAR'; claseEtiqueta = 'pend'; }
                 const hayMarcador = p.jugado || enVivo;
                 const marcadorTarjeta = hayMarcador
@@ -4240,6 +4269,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
             if (p.jugado) cuenta = '<div class="lc-cuenta fin">Partido finalizado</div>';
             else if (enVivo) cuenta = '<div class="lc-cuenta vivo"><span class="lc-punto"></span>En juego ahora</div>';
             else if (ts === null) cuenta = '<div class="lc-cuenta fin">Fecha por definir</div>';
+            else if (partidoVencidoSinJugar(p)) cuenta = '<div class="lc-cuenta repro">Nueva fecha por definir</div>';
             else cuenta = `<div class="lc-cuenta" data-ts="${ts}"></div>`;
             return `<div class="lc-fh">${fechaHtml}<div class="lc-hora"><span class="lc-hora-icono">🕐</span><div class="lc-hora-txt">${horaHtml}</div></div></div>${cuenta}`;
         }
