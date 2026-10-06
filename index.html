@@ -510,6 +510,10 @@
         .cancha:hover { transform: perspective(1300px) rotateX(6deg); }
         .linea-medio { position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: rgba(255,255,255,0.5); }
         .circulo-medio { position: absolute; top: 50%; left: 50%; width: 100px; height: 100px; border: 2px solid rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); }
+        .xi-vacio { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:min(80%,420px); text-align:center; color:#fff; display:flex; flex-direction:column; gap:6px; align-items:center; background:rgba(0,0,0,.28); border:1px solid rgba(255,255,255,.35); border-radius:14px; padding:16px 18px; backdrop-filter:blur(3px); }
+        .xi-vacio-icono { font-size:2rem; }
+        .xi-vacio strong { font-size:1rem; }
+        .xi-vacio span:last-child { font-size:0.82rem; opacity:.9; }
         .xi-jugador { position: absolute; transform: translate(-50%, -50%); text-align: center; color: white; width: 80px; transition: transform 0.2s ease; transform-style: preserve-3d; }
         .xi-jugador:hover { transform: translate(-50%, -50%) translateZ(34px) scale(1.1); }
         .xi-jugador img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; background: white; box-shadow: var(--shadow-xs); }
@@ -2008,6 +2012,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
                         // Si esta conexión se cae, el servidor anota solo la hora de salida.
                         r.onDisconnect().update({ f: TS })
                             .then(() => r.set(nombreVisitante() ? { v: id, i: TS, n: nombreVisitante() } : { v: id, i: TS }))
+                            .then(() => marcarSeccionVista(seccion))
                             .catch(alFallar);
                     } catch (e) { alFallar(e); }
                 }
@@ -2068,11 +2073,19 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
                     if (!deseado) registrar(); else actualizarPresencia(false);
                 }
 
+                // Anota (sin duplicar) qué secciones vio esta visita; el admin las suma en su historial.
+                function marcarSeccionVista(nombre) {
+                    if (!sesionRef || !nombre) return;
+                    const clave = String(nombre).replace(/[.$#\[\]\/]/g, '-').slice(0, 40);
+                    sesionRef.child('sec').child(clave).set(true).catch(() => {});
+                }
+
                 function cambiarSeccion(nombre) {
                     if (nombre === seccion) return;
                     seccion = nombre;
                     clearTimeout(timerSeccion);
-                    timerSeccion = setTimeout(() => actualizarPresencia(true), 3000);
+                    const nombreVista = nombre;
+                    timerSeccion = setTimeout(() => { actualizarPresencia(true); marcarSeccionVista(nombreVista); }, 3000);
                 }
 
                 // Estado de la conexión con Firebase: si se cae, el servidor ya borró la entrada
@@ -4257,6 +4270,10 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
             const cancha = document.getElementById('posiciones-cancha'); cancha.innerHTML = '';
             const ordenXI = pos => { const p = String(pos || '').toLowerCase(); if (p.includes('portero')) return 0; if (p.includes('medio')) return 2; if (p.includes('lateral') || p.includes('defensa')) return 1; return 3; };
             let elegidos = db.jugadores.filter(j => j.xiIdeal && j.xiIdeal.length > 0).sort((a, b) => ordenXI(a.posicion) - ordenXI(b.posicion));
+            if (!elegidos.length) {
+                cancha.innerHTML = '<div class="xi-vacio"><span class="xi-vacio-icono">🏅</span><strong>Aún no hay Once Ideal esta semana</strong><span>Cuando la liga lo publique, aquí aparecerán los 11 mejores jugadores de la jornada.</span></div>';
+                return;
+            }
             for (let i = 0; i < 11; i++) {
                 const pos = coordsXI[i]; const jug = elegidos[i];
                 cancha.innerHTML += jug ? `<div class="xi-jugador" style="top:${pos.t}%; left:${pos.l}%;"><img src="${jug.foto || 'https://placehold.co/50'}" alt="${escapeHtml(jug.nombre)}" loading="lazy"><p>${jug.xiMvp ? '⭐ ' : ''}${escapeHtml(jug.nombre.split(' ')[0])}</p></div>` : '';

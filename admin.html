@@ -747,6 +747,11 @@
         <h3>📋 Resumen de hoy</h3>
         <div id="resumen-dia-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:12px; margin-top:10px;"></div>
         <div id="resumen-visitas-grid" style="display:none; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:12px; margin-top:12px;"></div>
+        <div style="margin-top:16px; background:#fff; border-radius:10px; padding:14px;">
+            <h4 style="margin:0 0 8px; color:#0d2a4d; font-size:0.95rem;">📈 Historial de visitas al sitio</h4>
+            <button type="button" id="btn-historial-visitas" onclick="cargarHistorialVisitas()" style="width:100%; padding:9px; margin-bottom:10px;">Cargar últimos 30 días</button>
+            <div id="historial-visitas"></div>
+        </div>
     </div>
 
     <!-- RESPALDO Y RESTAURACIÓN DE DATOS -->
@@ -2559,6 +2564,107 @@
                 caja.appendChild(sub);
                 cont.appendChild(caja);
             });
+        }
+
+        // ----- Historial de visitas (últimos 30 días) -----
+        // Lee sesiones/AAAA-MM-DD de cada día. "Visitas" = veces que alguien entró;
+        // "Personas" = visitantes distintos. Las secciones salen del campo 'sec' que guarda index.html.
+        async function cargarHistorialVisitas() {
+            const cont = document.getElementById('historial-visitas');
+            const btn = document.getElementById('btn-historial-visitas');
+            if (!cont) return;
+            if (btn) { btn.disabled = true; btn.textContent = 'Cargando…'; }
+            cont.textContent = '';
+            const DIAS = 30, hoyMs = Date.now() + 0;
+            const fechas = [];
+            for (let i = 0; i < DIAS; i++) fechas.push(fechaMexico(hoyMs - i * 86400000));
+            let fallos = 0;
+            const lecturas = await Promise.all(fechas.map(function (f) {
+                return firebase.database().ref('sesiones/' + f).once('value')
+                    .then(function (snap) { return { f: f, datos: snap.val() || {} }; })
+                    .catch(function () { fallos++; return { f: f, datos: null }; });
+            }));
+            if (btn) { btn.disabled = false; btn.textContent = 'Actualizar historial'; }
+            if (fallos === DIAS) {
+                const e = document.createElement('p');
+                e.style.cssText = 'color:#c62828; font-size:0.8rem; font-weight:bold;';
+                e.textContent = 'Firebase no dejó leer el historial de "sesiones". Revisa las reglas de Realtime Database.';
+                cont.appendChild(e);
+                return;
+            }
+            const porDia = lecturas.map(function (l) {
+                const ses = Object.values(l.datos || {});
+                const personas = new Set(ses.map(function (x) { return x && x.v; }).filter(Boolean));
+                return { f: l.f, visitas: ses.length, personas: personas, ses: ses };
+            });
+            const resumir = function (n) {
+                const trozo = porDia.slice(0, n), pers = new Set();
+                let vis = 0;
+                trozo.forEach(function (d) { vis += d.visitas; d.personas.forEach(function (p) { pers.add(p); }); });
+                return { vis: vis, pers: pers.size };
+            };
+            const r1 = resumir(1), r7 = resumir(7), r30 = resumir(30);
+            const kpis = [['Hoy', r1], ['7 días', r7], ['30 días', r30]];
+            const grid = document.createElement('div');
+            grid.style.cssText = 'display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:10px;';
+            kpis.forEach(function (k) {
+                const c = document.createElement('div');
+                c.style.cssText = 'background:#f4f6fa; border-radius:8px; padding:8px; text-align:center;';
+                c.innerHTML = '<div style="font-size:1.25rem; font-weight:bold; color:#0d2a4d;"></div><div style="font-size:0.72rem; color:#555;"></div><div style="font-size:0.68rem; color:#888;"></div>';
+                c.children[0].textContent = k[1].pers;
+                c.children[1].textContent = 'personas · ' + k[0];
+                c.children[2].textContent = k[1].vis + ' visitas';
+                grid.appendChild(c);
+            });
+            cont.appendChild(grid);
+
+            // Barras por día (del más viejo al más nuevo)
+            const dias = porDia.slice().reverse();
+            const max = Math.max(1, ...dias.map(function (d) { return d.personas.size; }));
+            const barras = document.createElement('div');
+            barras.style.cssText = 'display:flex; align-items:flex-end; gap:2px; height:70px; margin-bottom:4px;';
+            dias.forEach(function (d) {
+                const b = document.createElement('div');
+                b.title = d.f + ': ' + d.personas.size + ' personas, ' + d.visitas + ' visitas';
+                b.style.cssText = 'flex:1; background:#378ADD; border-radius:2px 2px 0 0; min-height:2px; height:' + Math.max(3, Math.round(d.personas.size / max * 100)) + '%;';
+                barras.appendChild(b);
+            });
+            cont.appendChild(barras);
+            const eje = document.createElement('div');
+            eje.style.cssText = 'display:flex; justify-content:space-between; font-size:0.65rem; color:#888; margin-bottom:10px;';
+            eje.innerHTML = '<span></span><span>hoy</span>';
+            eje.children[0].textContent = dias[0].f.slice(5);
+            cont.appendChild(eje);
+
+            // Secciones más vistas (cuántas visitas pasaron por cada una)
+            const conteo = {};
+            porDia.forEach(function (d) {
+                d.ses.forEach(function (x) {
+                    if (x && x.sec) Object.keys(x.sec).forEach(function (k) { conteo[k] = (conteo[k] || 0) + 1; });
+                });
+            });
+            const top = Object.keys(conteo).sort(function (a, b) { return conteo[b] - conteo[a]; }).slice(0, 8);
+            const tit = document.createElement('div');
+            tit.style.cssText = 'font-size:0.82rem; font-weight:bold; margin:4px 0;';
+            tit.textContent = 'Secciones más vistas (30 días)';
+            cont.appendChild(tit);
+            if (!top.length) {
+                const n = document.createElement('p');
+                n.style.cssText = 'font-size:0.75rem; color:#888; margin:0;';
+                n.textContent = 'Aún no hay datos de secciones. Se empiezan a juntar desde que subes el nuevo index.html.';
+                cont.appendChild(n);
+            } else {
+                const mx = conteo[top[0]];
+                top.forEach(function (k) {
+                    const fila = document.createElement('div');
+                    fila.style.cssText = 'display:flex; align-items:center; gap:6px; font-size:0.74rem; margin:3px 0;';
+                    fila.innerHTML = '<span style="width:130px; color:#555; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span><span style="flex:1; height:8px; background:#eef1f5; border-radius:4px; overflow:hidden;"><i style="display:block; height:100%; background:#378ADD;"></i></span><b style="width:34px; text-align:right;"></b>';
+                    fila.children[0].textContent = k;
+                    fila.children[1].firstChild.style.width = Math.round(conteo[k] / mx * 100) + '%';
+                    fila.children[2].textContent = conteo[k];
+                    cont.appendChild(fila);
+                });
+            }
         }
 
         function actualizarBotonAvisosConectados() {
