@@ -1251,6 +1251,14 @@
             const inputPin = document.getElementById('login-pin');
             if (inputPin) inputPin.value = '';
             document.getElementById('pantalla-login').style.display = 'flex';
+            try {
+                const sel = document.getElementById('arbitro-selector');
+                if (sel) { sel.disabled = false; sel.value = ''; sel.style.background = ''; sel.style.cursor = ''; }
+                const candado = document.getElementById('candado-identidad-msg');
+                if (candado) candado.classList.add('hidden');
+                cargarPartidosDelArbitro('');
+                mostrarPerfilArbitro('');
+            } catch (err) { console.warn(err); }
         }
 
         let arbitroSesion = '';
@@ -1311,7 +1319,7 @@
             return obj;
         }
         normalizarDB(db);
-        intentarRestaurarSesionArbitro();
+        // (La sesión se restaura en DOMContentLoaded, cuando todo el script ya está definido.)
 
         let arbitroActual = '';
 
@@ -1758,6 +1766,7 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             refrescarSelectorArbitros();
+            intentarRestaurarSesionArbitro();
             aplicarIdentidadPorPin();
             actualizarBannerConexion();
             aplicarLogoSitio();
