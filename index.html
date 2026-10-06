@@ -349,6 +349,74 @@
         #lista-partidos-jornada .partido-item:nth-child(3) { animation-delay: 0.12s; }
         #lista-partidos-jornada .partido-item:nth-child(4) { animation-delay: 0.18s; }
         #lista-partidos-jornada .partido-item:nth-child(n+5) { animation-delay: 0.24s; }
+
+        /* ===== Franja de escudos de equipos (arriba del todo) ===== */
+                .franja-escudos { position:relative; z-index:2; background:none; border:none; padding:14px 10px 2px; margin-top:4px; }
+        .franja-escudos.hidden { display:none; }
+        .franja-escudos-track { display:flex; justify-content:center; align-items:center; gap:22px; overflow-x:auto; scrollbar-width:none; padding:2px 6px; }
+        .franja-escudos-track::-webkit-scrollbar { display:none; }
+        .franja-escudos-track.desborda { justify-content:flex-start; }
+        .fe-item { flex:0 0 auto; background:none; border:none; padding:0; cursor:pointer; display:flex; }
+        .fe-item img { width:38px; height:38px; object-fit:contain; border-radius:4px; background:rgba(255,255,255,0.06); transition:transform .15s; }
+        .fe-item:hover img, .fe-item:focus-visible img { transform:scale(1.25); }
+        @media (max-width:600px) { .franja-escudos-track { gap:16px; } .fe-item img { width:34px; height:34px; } }
+        /* ===== MVP con foto ===== */
+        .mvp-partido { margin-top:12px; display:flex; align-items:center; gap:12px; background:linear-gradient(135deg,#fff8dc,#ffe9a8); border:1px solid #f0c24b; border-radius:12px; padding:10px 14px; cursor:pointer; color:#3b2f00; transition:transform .15s, box-shadow .15s; }
+        .mvp-partido:hover { transform:translateY(-2px); box-shadow:0 6px 14px rgba(240,194,75,.35); }
+        .mvp-foto { width:68px; height:68px; border-radius:50%; object-fit:cover; border:3px solid #f0a020; box-shadow:0 0 0 3px rgba(240,160,32,.25); flex-shrink:0; background:#fff; }
+        .mvp-datos { display:flex; flex-direction:column; gap:2px; min-width:0; text-align:left; }
+        .mvp-etiqueta { font-size:0.68rem; font-weight:800; letter-spacing:.6px; color:#a86a00; }
+        .mvp-nombre { font-size:1.05rem; line-height:1.15; }
+        .mvp-equipo { font-size:0.78rem; color:#6b5a1e; }
+        .lc-mvp { display:flex; align-items:center; gap:6px; margin:0 0 8px; padding:5px 6px; background:#fff8dc; border:1px solid #f0c24b; border-radius:8px; text-align:left; }
+        .lc-mvp img { width:30px; height:30px; border-radius:50%; object-fit:cover; border:2px solid #f0a020; flex-shrink:0; }
+        .lc-mvp span { display:flex; flex-direction:column; min-width:0; font-size:0.66rem; font-weight:700; color:#3b2f00; line-height:1.15; }
+        .lc-mvp span i { font-style:normal; font-size:0.58rem; color:#a86a00; letter-spacing:.4px; }
+        /* ===== Carrusel de partidos (estilo cartelera) ===== */
+        .lc-wrap { display:flex; align-items:center; gap:6px; margin:6px 0 14px; }
+        .lc-pista { display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x proximity; padding:6px 4px 12px; flex:1; scrollbar-width:thin; }
+        .lc-item { flex:0 0 150px; scroll-snap-align:start; display:flex; flex-direction:column; align-items:center; gap:10px; }
+        .lc-estado { font-size:0.78rem; font-weight:800; letter-spacing:.3px; }
+        .lc-estado.pend { color:#1a1a8c; } .lc-estado.vivo { color:#d1140f; } .lc-estado.fin { color:#475569; }
+        .lc-card { width:100%; background:#fff; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,.15); padding:10px 8px 8px; text-align:center; cursor:pointer; border:2px solid transparent; transition:transform .15s, box-shadow .15s; }
+        .lc-card:hover { transform:translateY(-3px); box-shadow:0 6px 14px rgba(0,0,0,.2); }
+        .lc-card.sel { border-color:var(--primary, #1f5fd6); }
+        .lc-card.fav { box-shadow:0 0 0 3px rgba(240,180,41,.35), 0 2px 8px rgba(0,0,0,.15); }
+        .lc-jornada { font-size:0.76rem; font-weight:800; color:#555; }
+        .lc-fh { display:flex; align-items:center; justify-content:space-between; gap:6px; margin:6px 0 8px; }
+        .lc-cal { width:46px; border-radius:7px; overflow:hidden; background:#fff; border:1px solid #d6dbe3; box-shadow:0 1px 3px rgba(0,0,0,.12); display:flex; flex-direction:column; align-items:center; line-height:1; }
+        .lc-cal-sem { width:100%; background:#d1140f; color:#fff; font-size:0.56rem; font-weight:800; letter-spacing:.6px; padding:3px 0; }
+        .lc-cal-dia { font-size:1.2rem; font-weight:800; color:#1e293b; padding:3px 0 1px; }
+        .lc-cal-mes { font-size:0.58rem; font-weight:800; color:#64748b; letter-spacing:.6px; padding-bottom:4px; }
+        .lc-cal.sin { height:46px; justify-content:center; }
+        .lc-hora { display:flex; align-items:center; gap:4px; }
+        .lc-hora-icono { font-size:0.95rem; }
+        .lc-hora-txt { display:flex; align-items:baseline; gap:2px; }
+        .lc-hora-num { font-size:1.1rem; font-weight:800; color:#1e293b; letter-spacing:-.3px; }
+        .lc-hora-ampm { font-size:0.62rem; font-weight:800; color:#d1140f; }
+        .lc-cuenta { display:flex; justify-content:center; align-items:center; gap:4px; background:linear-gradient(135deg,#0f2a5c,#1f5fd6); color:#fff; border-radius:7px; padding:5px 4px; margin-bottom:8px; min-height:38px; font-size:0.68rem; font-weight:700; }
+        .lc-cuenta.fin { background:#eef1f5; color:#64748b; }
+        .lc-cuenta.vivo { background:#d1140f; color:#fff; gap:6px; }
+        .lc-punto { width:7px; height:7px; border-radius:50%; background:#fff; animation:lcPulso 1s infinite; }
+        @keyframes lcPulso { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:.3; transform:scale(.7); } }
+        .lc-seg { display:flex; flex-direction:column; align-items:center; min-width:26px; line-height:1.05; }
+        .lc-seg b { font-size:0.95rem; font-weight:800; font-variant-numeric:tabular-nums; }
+        .lc-seg i { font-style:normal; font-size:0.46rem; letter-spacing:.4px; opacity:.8; }
+        .lc-fechahora { display:flex; justify-content:space-between; font-size:0.72rem; font-weight:700; color:#9aa0a6; margin:4px 2px 10px; }
+        .lc-escudos { display:flex; justify-content:space-around; align-items:center; }
+        .lc-escudos img { width:44px; height:44px; object-fit:contain; } .lc-vs { font-size:0.8rem; font-weight:800; color:#64748b; }
+        .lc-nombres { display:flex; justify-content:space-between; gap:4px; font-size:0.62rem; color:#64748b; margin-top:4px; line-height:1.15; }
+        .lc-nombres span { flex:1; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical; }
+        .lc-marcador { display:flex; justify-content:center; align-items:center; gap:14px; min-height:26px; margin:12px 0; }
+        .lc-raya { width:9px; height:3px; background:#555; display:inline-block; } .lc-raya.claro { background:#aaa; }
+        .lc-gol { font-size:1.3rem; font-weight:800; color:#1e293b; } .lc-sep { color:#94a3b8; font-weight:700; }
+        .lc-trans { border-top:1px solid #e5e7eb; padding-top:8px; font-size:0.7rem; color:#555; display:flex; flex-direction:column; gap:4px; min-height:48px; }
+        .lc-nd { font-size:0.72rem; color:#777; } .lc-tv-link { display:inline-block; background:#1877F2; color:#fff !important; padding:4px 8px; border-radius:999px; text-decoration:none; font-size:0.68rem; } .lc-tv-link:hover { background:#0f5fd0; } .lc-tv { font-size:0.7rem; color:#1877F2; font-weight:700; }
+        .lc-info { border-top:1px solid #e5e7eb; margin-top:8px; padding-top:8px; font-size:0.7rem; color:#334155; display:flex; flex-direction:column; gap:4px; text-align:left; } .lc-info span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .lc-ver { font-size:0.72rem; color:var(--primary, #1f5fd6); margin-top:8px; padding-top:8px; border-top:1px solid #e5e7eb; font-weight:700; }
+        .lc-flecha { background:none; border:none; color:#1f5fd6; font-size:1.7rem; cursor:pointer; padding:4px 6px; line-height:1; }
+        .lc-flecha:hover { color:#0b3a99; }
+        @media (max-width:600px) { .lc-flecha { display:none; } .lc-item { flex-basis:140px; } }
         .marcador { transform-style: preserve-3d; }
         .marcador.marcador-flip-final { animation: marcadorFlipFinal 0.6s ease; }
         @keyframes marcadorFlipFinal { 0% { transform: rotateX(0deg); } 45% { transform: rotateX(100deg); } 55% { transform: rotateX(100deg); } 100% { transform: rotateX(0deg); } }
@@ -1108,6 +1176,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
                 <p>Portal Oficial</p>
             </div>
         </div>
+        <nav id="franja-escudos" class="franja-escudos hidden" aria-label="Equipos de la liga"><div class="franja-escudos-track" id="franja-escudos-track"></div></nav>
     </header>
 
     <div class="mi-equipo-bar">
@@ -1443,10 +1512,27 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
                             <p>Todas las solicitudes son revisadas y deben ser aprobadas por la administración de la liga antes de quedar registradas.</p>
                         </div>
                     </details>
-                    <label style="display:flex; align-items:flex-start; gap:8px; margin-top:10px; font-size:0.85rem; font-weight:normal;">
+                    <p style="margin:10px 0 4px; font-size:0.82rem;"><a href="#" onclick="abrirLegal('privacidad'); return false;">Aviso de Privacidad completo</a> · <a href="#" onclick="abrirLegal('terminos'); return false;">Términos</a> · <a href="#" onclick="abrirLegal('deslinde'); return false;">Deslinde</a> · <a href="#" onclick="abrirLegal('imagen'); return false;">Imagen y transmisiones</a></p>
+                    <label style="display:flex; align-items:flex-start; gap:8px; margin-top:8px; font-size:0.85rem; font-weight:normal;">
                         <input type="checkbox" id="sol-acepta-aviso" required style="margin-top:3px;">
-                        <span>He leído el Aviso de Privacidad y acepto que estos datos sean usados para el registro y que el nombre, foto, número y estadísticas del jugador sean visibles públicamente en este sitio.</span>
+                        <span>He leído el Aviso de Privacidad y acepto el tratamiento de mis datos para el registro, la credencial y el control deportivo, y que mi nombre, foto, número y estadísticas sean visibles públicamente en este sitio.</span>
                     </label>
+                    <label style="display:flex; align-items:flex-start; gap:8px; margin-top:8px; font-size:0.85rem; font-weight:normal;">
+                        <input type="checkbox" id="sol-acepta-imagen" required style="margin-top:3px;">
+                        <span>Autorizo el uso de mi imagen en fotografías, videos y transmisiones en vivo del torneo, en el sitio y redes sociales de la liga.</span>
+                    </label>
+                    <label style="display:flex; align-items:flex-start; gap:8px; margin-top:8px; font-size:0.85rem; font-weight:normal;">
+                        <input type="checkbox" id="sol-acepta-deslinde" required style="margin-top:3px;">
+                        <span>Declaro que participo voluntariamente, que estoy en condiciones físicas aptas para jugar y que acepto el Deslinde de Responsabilidad y los Términos y Condiciones.</span>
+                    </label>
+                    <div id="sol-bloque-tutor" class="hidden" style="margin-top:10px; padding:10px 12px; border:1px dashed var(--border); border-radius:8px; background:var(--light);">
+                        <p style="margin:0 0 6px; font-size:0.82rem; font-weight:700;">Eres menor de 18 años: necesitamos el permiso de tu mamá, papá o tutor</p>
+                        <input type="text" id="sol-tutor-nombre" placeholder="Nombre completo del padre, madre o tutor" style="width:100%; margin-bottom:6px;">
+                        <label style="display:flex; align-items:flex-start; gap:8px; font-size:0.82rem; font-weight:normal;">
+                            <input type="checkbox" id="sol-tutor-acepta" style="margin-top:3px;">
+                            <span>Soy el padre, madre o tutor legal del jugador, autorizo su participación y el uso de su imagen, y acepto en su nombre el Aviso de Privacidad, el Deslinde de Responsabilidad y los Términos.</span>
+                        </label>
+                    </div>
                 </div>
                 <button type="submit" class="btn-enviar-solicitud campo-solicitud-full">Enviar Solicitud</button>
             </form>
@@ -1500,10 +1586,27 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
         <div class="footer-bottom">
             <p>© <span id="footer-anio"></span> <span class="nombre-liga-txt">Liga de Futbol Acapulco</span>. Todos los derechos reservados.</p>
             <p class="footer-credito">Sitio desarrollado por Alexis Brayan Carlos Ponce</p>
+            <p class="footer-legal" style="display:flex; flex-wrap:wrap; gap:6px 14px; justify-content:center; font-size:0.8rem;">
+                <a href="#" onclick="abrirLegal('privacidad'); return false;">Aviso de Privacidad</a>
+                <a href="#" onclick="abrirLegal('terminos'); return false;">Términos y Condiciones</a>
+                <a href="#" onclick="abrirLegal('deslinde'); return false;">Deslinde de Responsabilidad</a>
+                <a href="#" onclick="abrirLegal('imagen'); return false;">Imagen y Transmisiones</a>
+            </p>
             <a href="#" class="footer-back-top" onclick="window.scrollTo({top:0, behavior:'smooth'}); return false;">⬆️ Volver arriba</a>
         </div>
     </footer>
     <script>document.getElementById('footer-anio').textContent = new Date().getFullYear();</script>
+
+    <!-- MODAL LEGAL (Aviso de privacidad, términos, deslinde, imagen) -->
+    <div id="modal-legal" class="modal hidden" onclick="if(event.target === this) cerrarModal('modal-legal')">
+        <div class="modal-content" style="max-width:820px; text-align:left;">
+            <button class="close-modal" onclick="cerrarModal('modal-legal')">×</button>
+            <h2 style="margin:0 40px 10px 0;">Información legal</h2>
+            <div id="legal-tabs" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;"></div>
+            <div id="legal-contenido" style="max-height:60vh; overflow-y:auto; padding-right:6px; font-size:0.88rem; line-height:1.55;"></div>
+            <p id="legal-version" style="margin:10px 0 0; font-size:0.75rem; color:var(--text-muted);"></p>
+        </div>
+    </div>
 
     <!-- MODAL FICHA TÉCNICA (tarjeta con flip 3D) -->
     <div id="modal-lista-jugadores" class="modal hidden" onclick="if(event.target === this) cerrarModal('modal-lista-jugadores')">
@@ -2526,6 +2629,8 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
 
         document.addEventListener("DOMContentLoaded", () => {
             document.getElementById('select-jornada-filtro').addEventListener('change', actualizarVistaJornadas);
+            const solFechaNac = document.getElementById('sol-fecha-nac');
+            if (solFechaNac) { solFechaNac.addEventListener('change', actualizarBloqueTutor); solFechaNac.addEventListener('input', actualizarBloqueTutor); }
             document.getElementById('input-buscar-jugador').addEventListener('input', filtrarJugadores);
             document.getElementById('select-filtrar-equipo').addEventListener('change', filtrarJugadores);
             
@@ -2567,6 +2672,17 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
                 if(!document.getElementById('sol-acepta-aviso').checked) {
                     return mostrarToast("Debes aceptar el Aviso de Privacidad para poder enviar la solicitud.", "error");
                 }
+                if(!document.getElementById('sol-acepta-imagen').checked) {
+                    return mostrarToast("Debes autorizar el uso de imagen para poder enviar la solicitud.", "error");
+                }
+                if(!document.getElementById('sol-acepta-deslinde').checked) {
+                    return mostrarToast("Debes aceptar el Deslinde de Responsabilidad y los Términos para poder enviar la solicitud.", "error");
+                }
+                const solEsMenor = esMenorDeEdad(document.getElementById('sol-fecha-nac').value);
+                const solTutorNombre = (document.getElementById('sol-tutor-nombre').value || '').trim().toUpperCase();
+                if (solEsMenor && (!solTutorNombre || !document.getElementById('sol-tutor-acepta').checked)) {
+                    return mostrarToast("El jugador es menor de 18 años: se requiere el nombre y la autorización del padre, madre o tutor.", "error", 6000);
+                }
                 const equipoIdSel = parseInt(document.getElementById('sol-equipo').value);
                 if (!equipoIdSel || isNaN(equipoIdSel)) {
                     restaurarDesbloqueoRegistroDeSesion();
@@ -2596,6 +2712,12 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
                     nacionalidad: document.getElementById('sol-nacionalidad').value.trim().toUpperCase() || 'MEXICANA',
                     foto: fotoB64,
                     avisoPrivacidadAceptado: true,
+                    imagenAutorizada: true,
+                    deslindeAceptado: true,
+                    esMenorDeEdad: solEsMenor,
+                    tutorNombre: solEsMenor ? solTutorNombre : '',
+                    tutorAutoriza: solEsMenor,
+                    versionLegal: LEGAL_CONFIG.version,
                     fechaAceptacionAviso: new Date().toISOString()
                 };
                 const btnEnviar = this.querySelector('.btn-enviar-solicitud');
@@ -2787,6 +2909,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
             ajustarEscalaBracket();
             renderizarPorteros();
             actualizarVistaJornadas();
+            renderizarFranjaEscudos();
             actualizarVistaGoleo();
             actualizarVistaDisciplina();
             filtrarJugadores();
@@ -3843,6 +3966,17 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
             `;
         }
 
+        function renderizarFranjaEscudos() {
+            const nav = document.getElementById('franja-escudos');
+            const track = document.getElementById('franja-escudos-track');
+            if (!nav || !track) return;
+            const equipos = (db.equipos || []).filter(e => e && e.escudo);
+            if (!equipos.length) { nav.classList.add('hidden'); track.innerHTML = ''; return; }
+            nav.classList.remove('hidden');
+            track.innerHTML = equipos.map(e => `<button type="button" class="fe-item" onclick="verEquipo(${e.id})" title="${escapeHtml(e.nombre)}" aria-label="${escapeHtml(e.nombre)}"><img src="${e.escudo}" alt="${escapeHtml(e.nombre)}" loading="lazy"></button>`).join('');
+            requestAnimationFrame(() => track.classList.toggle('desborda', track.scrollWidth > track.clientWidth + 2));
+        }
+
         const partidosMarcadorFinalAnimado = new Set(); // ids de partidos cuyo flip 3D del marcador final ya se reprodujo en esta sesión
 
         function actualizarVistaJornadas() {
@@ -3851,7 +3985,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
             const partidos = db.partidos.filter(p => p.jornada === jFiltro && !p.oculto);
             const favoritoId = obtenerEquipoFavoritoId();
 
-            contenedor.innerHTML = partidos.map(p => {
+            const filas = partidos.map(p => {
                 const esFavorito = favoritoId !== null && (p.localId === favoritoId || p.visitaId === favoritoId);
                 const equipoL = db.equipos.find(e => e.id === p.localId);
                 const equipoV = db.equipos.find(e => e.id === p.visitaId);
@@ -3867,8 +4001,14 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
                 if (p.mvpJugadorId) {
                     const mvpJug = db.jugadores.find(j => j.id === p.mvpJugadorId);
                     if (mvpJug) {
-                        mvpHtml = `<div style="margin-top:10px; font-size:0.8rem; background:#fffdf0; border:1px solid #ffe082; padding:8px; border-radius:6px; text-align:center;">
-                            <strong>⭐ MVP Oficial del Partido:</strong> ${escapeHtml(mvpJug.nombre)}
+                        const equipoMvp = db.equipos.find(e => e.id === mvpJug.equipoId);
+                        mvpHtml = `<div class="mvp-partido" onclick="verFicha(${mvpJug.id})" title="Ver ficha del jugador">
+                            <img class="mvp-foto" src="${mvpJug.foto || 'https://placehold.co/80?text=MVP'}" alt="${escapeHtml(mvpJug.nombre)}" loading="lazy">
+                            <div class="mvp-datos">
+                                <span class="mvp-etiqueta">⭐ MVP OFICIAL DEL PARTIDO</span>
+                                <strong class="mvp-nombre">${escapeHtml(mvpJug.nombre)}</strong>
+                                <span class="mvp-equipo">${equipoMvp ? escapeHtml(equipoMvp.nombre) : ''}${mvpJug.numero ? ' · #' + escapeHtml(String(mvpJug.numero)) : ''}</span>
+                            </div>
                         </div>`;
                     }
                 }
@@ -3946,7 +4086,7 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
                 }
 
 
-                return `
+                const detalle = `
                     <div class="partido-item${esFavorito ? ' partido-favorito' : ''}">
                         ${estadoBadge}
                         <div class="partido-principal">
@@ -3973,8 +4113,143 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
                         ${compartirBtn}
                     </div>
                 `;
-            }).join('') || estadoVacio('📅', 'No hay partidos programados por el momento.');
+
+                // ===== Tarjeta compacta del carrusel (estilo cartelera) =====
+                const fmtFecha = (f) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(f || ''); return m ? `${m[3]}/${m[2]}` : (f || 'Por definir'); };
+                let etiqueta, claseEtiqueta;
+                if (p.jugado) { etiqueta = 'FINAL'; claseEtiqueta = 'fin'; }
+                else if (p.estadoVivo === 'medio_tiempo') { etiqueta = 'MEDIO TIEMPO'; claseEtiqueta = 'vivo'; }
+                else if (enVivo) { etiqueta = ETIQUETAS_ESTADO_PARTIDO[p.estadoVivo] || 'EN VIVO'; claseEtiqueta = 'vivo'; }
+                else { etiqueta = 'POR JUGAR'; claseEtiqueta = 'pend'; }
+                const hayMarcador = p.jugado || enVivo;
+                const marcadorTarjeta = hayMarcador
+                    ? `<span class="lc-gol">${p.golesLocal || 0}</span><span class="lc-sep">-</span><span class="lc-gol">${p.golesVisita || 0}</span>`
+                    : `<span class="lc-raya"></span><span class="lc-raya claro"></span><span class="lc-raya"></span>`;
+                let mvpCard = '';
+                if (p.jugado && p.mvpJugadorId) {
+                    const mj = db.jugadores.find(j => j.id === p.mvpJugadorId);
+                    if (mj) mvpCard = `<div class="lc-mvp" title="MVP del partido"><img src="${mj.foto || 'https://placehold.co/60?text=MVP'}" alt="${escapeHtml(mj.nombre)}" loading="lazy"><span><i>⭐ MVP</i>${escapeHtml(mj.nombre)}</span></div>`;
+                }
+                let transmision = `<span class="lc-nd">ND</span>`;
+                if (p.facebookEnVivo) {
+                    const fbTxt = (p.facebookPagina || '').trim();
+                    const esUrlFb = /^(https?:\/\/|www\.|(m\.|fb\.)?facebook\.com|fb\.watch)/i.test(fbTxt);
+                    const urlFb = fbTxt
+                        ? (esUrlFb ? (/^https?:\/\//i.test(fbTxt) ? fbTxt : 'https://' + fbTxt) : 'https://www.facebook.com/search/top?q=' + encodeURIComponent(fbTxt))
+                        : 'https://www.facebook.com/';
+                    const etiquetaFb = (enVivo || p.estadoVivo === 'medio_tiempo') ? 'Ver en vivo' : (p.jugado ? 'Ver transmisión' : 'Ver en Facebook');
+                    transmision = `<a class="lc-tv lc-tv-link" href="${urlFb.replace(/"/g, '&quot;')}" target="_blank" rel="noopener" onclick="event.stopPropagation()">▶ ${etiquetaFb}</a>`
+                        + (fbTxt && !esUrlFb ? `<span class="lc-nd" style="font-size:0.64rem;">${escapeHtml(fbTxt)}</span>` : '');
+                }
+                const card = `
+                    <div class="lc-item">
+                        <div class="lc-estado ${claseEtiqueta}">${etiqueta}</div>
+                        <div class="lc-card${esFavorito ? ' fav' : ''}" data-pid="${p.id}" onclick="seleccionarPartidoCarrusel(${p.id})">
+                            <div class="lc-jornada">${jFiltro >= 98 ? escapeHtml(ETIQUETA_FASE_CARRUSEL(jFiltro)) : 'Jornada ' + jFiltro}</div>
+                            ${bloqueFechaHoraCarrusel(p, enVivo)}
+                            <div class="lc-escudos">
+                                <img src="${escudoL}" alt="${escapeHtml(nameL)}" title="${escapeHtml(nameL)}" loading="lazy">
+                                <span class="lc-vs">VS</span>
+                                <img src="${escudoV}" alt="${escapeHtml(nameV)}" title="${escapeHtml(nameV)}" loading="lazy">
+                            </div>
+                            <div class="lc-nombres"><span>${escapeHtml(nameL)}</span><span>${escapeHtml(nameV)}</span></div>
+                            <div class="lc-marcador">${marcadorTarjeta}</div>
+                            ${mvpCard}
+                            <div class="lc-trans"><strong>TRANSMISIÓN</strong>${transmision}</div>
+                            <div class="lc-info">
+                                <span title="Árbitro">👨‍⚖️ ${escapeHtml(p.arbitro || 'Árbitro por definir')}</span>
+                                <span title="Campo">🏟️ ${escapeHtml(p.estadio || (campoObj ? campoObj.nombre : '') || 'Campo por definir')}</span>
+                            </div>
+                            <div class="lc-ver">Ver detalle ▾</div>
+                        </div>
+                    </div>`;
+                return { id: p.id, card, detalle };
+            });
+
+            detallesPartidosCarrusel = {};
+            filas.forEach(f => { detallesPartidosCarrusel[f.id] = f.detalle; });
+
+            if (!filas.length) {
+                contenedor.innerHTML = estadoVacio('📅', 'No hay partidos programados por el momento.');
+            } else {
+                contenedor.innerHTML = `
+                    <div class="lc-wrap">
+                        <button class="lc-flecha" type="button" aria-label="Anterior" onclick="moverCarruselPartidos(-1)">&#10094;</button>
+                        <div class="lc-pista" id="lc-pista">${filas.map(f => f.card).join('')}</div>
+                        <button class="lc-flecha" type="button" aria-label="Siguiente" onclick="moverCarruselPartidos(1)">&#10095;</button>
+                    </div>
+                    <div id="lc-detalle"></div>`;
+                const sigueExistiendo = partidoCarruselSel !== null && filas.some(f => f.id === partidoCarruselSel);
+                if (!sigueExistiendo) {
+                    const vivo = partidos.find(p => ESTADOS_PARTIDO_EN_VIVO.includes(p.estadoVivo) && !p.jugado);
+                    partidoCarruselSel = (vivo || partidos[0]).id;
+                }
+                seleccionarPartidoCarrusel(partidoCarruselSel, true);
+                tickCuentaRegresivaLC();
+            }
             partidos.forEach(p => { if (p.jugado) partidosMarcadorFinalAnimado.add(p.id); });
+        }
+
+        let detallesPartidosCarrusel = {};
+        let partidoCarruselSel = null;
+        function ETIQUETA_FASE_CARRUSEL(j) {
+            return ({ 98: 'Cuartos (Ida)', 99: 'Cuartos (Vuelta)', 100: 'Semifinal (Ida)', 101: 'Semifinal (Vuelta)', 102: 'Gran Final' })[j] || ('Jornada ' + j);
+        }
+        function seleccionarPartidoCarrusel(id, silencioso) {
+            partidoCarruselSel = id;
+            document.querySelectorAll('#lc-pista .lc-card').forEach(c => c.classList.toggle('sel', Number(c.dataset.pid) === id));
+            const cont = document.getElementById('lc-detalle');
+            if (cont) cont.innerHTML = detallesPartidosCarrusel[id] || '';
+        }
+        const DIAS_CORTOS_LC = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
+        const MESES_CORTOS_LC = ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'];
+        function timestampPartidoLC(p) {
+            const f = /^(\d{4})-(\d{2})-(\d{2})/.exec(p.fecha || '');
+            const h = /^(\d{1,2}):(\d{2})/.exec(p.hora || '');
+            if (!f) return null;
+            return new Date(+f[1], +f[2] - 1, +f[3], h ? +h[1] : 0, h ? +h[2] : 0, 0).getTime();
+        }
+        function bloqueFechaHoraCarrusel(p, enVivo) {
+            const f = /^(\d{4})-(\d{2})-(\d{2})/.exec(p.fecha || '');
+            const h = /^(\d{1,2}):(\d{2})/.exec(p.hora || '');
+            let fechaHtml = '<div class="lc-cal sin"><span class="lc-cal-dia">--</span></div>';
+            if (f) {
+                const d = new Date(+f[1], +f[2] - 1, +f[3]);
+                fechaHtml = `<div class="lc-cal"><span class="lc-cal-sem">${DIAS_CORTOS_LC[d.getDay()]}</span><span class="lc-cal-dia">${+f[3]}</span><span class="lc-cal-mes">${MESES_CORTOS_LC[+f[2] - 1]}</span></div>`;
+            }
+            let horaHtml = '<span class="lc-hora-num">--:--</span>';
+            if (h) {
+                const hh = +h[1], ampm = hh >= 12 ? 'PM' : 'AM', h12 = hh % 12 === 0 ? 12 : hh % 12;
+                horaHtml = `<span class="lc-hora-num">${h12}:${h[2]}</span><span class="lc-hora-ampm">${ampm}</span>`;
+            }
+            const ts = timestampPartidoLC(p);
+            let cuenta;
+            if (p.jugado) cuenta = '<div class="lc-cuenta fin">Partido finalizado</div>';
+            else if (enVivo) cuenta = '<div class="lc-cuenta vivo"><span class="lc-punto"></span>En juego ahora</div>';
+            else if (ts === null) cuenta = '<div class="lc-cuenta fin">Fecha por definir</div>';
+            else cuenta = `<div class="lc-cuenta" data-ts="${ts}"></div>`;
+            return `<div class="lc-fh">${fechaHtml}<div class="lc-hora"><span class="lc-hora-icono">🕐</span><div class="lc-hora-txt">${horaHtml}</div></div></div>${cuenta}`;
+        }
+        function tickCuentaRegresivaLC() {
+            const els = document.querySelectorAll('.lc-cuenta[data-ts]');
+            if (!els.length) return;
+            const ahora = Date.now();
+            els.forEach(el => {
+                let diff = Math.floor((+el.dataset.ts - ahora) / 1000);
+                if (diff <= 0) { el.className = 'lc-cuenta vivo'; el.innerHTML = '<span class="lc-punto"></span>¡Por comenzar!'; el.removeAttribute('data-ts'); return; }
+                const d = Math.floor(diff / 86400); diff -= d * 86400;
+                const h = Math.floor(diff / 3600); diff -= h * 3600;
+                const m = Math.floor(diff / 60), sg = diff - m * 60;
+                const z = n => String(n).padStart(2, '0');
+                const seg = (v, l) => `<span class="lc-seg"><b>${z(v)}</b><i>${l}</i></span>`;
+                const html = seg(d, 'DÍAS') + seg(h, 'HRS') + seg(m, 'MIN') + seg(sg, 'SEG');
+                if (el.dataset.html !== html) { el.innerHTML = html; el.dataset.html = html; }
+            });
+        }
+        if (!window._lcCuentaInterval) window._lcCuentaInterval = setInterval(tickCuentaRegresivaLC, 1000);
+        function moverCarruselPartidos(dir) {
+            const pista = document.getElementById('lc-pista');
+            if (pista) pista.scrollBy({ left: dir * 480, behavior: 'smooth' });
         }
 
         const coordsXI = [{ t: 88, l: 50 }, { t: 68, l: 20 }, { t: 72, l: 40 }, { t: 72, l: 60 }, { t: 68, l: 80 }, { t: 45, l: 25 }, { t: 50, l: 50 }, { t: 45, l: 75 }, { t: 20, l: 20 }, { t: 15, l: 50 }, { t: 20, l: 80 }];
@@ -4390,6 +4665,131 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
                 } catch (err) { /* si falla el portapapeles, mostramos el enlace en un aviso */ }
             }
             prompt('Copia este enlace para compartir el perfil:', enlace);
+        }
+
+        // ===== TEXTOS LEGALES (editar LEGAL_CONFIG con los datos reales de la liga) =====
+        const LEGAL_CONFIG = {
+            responsable: 'Liga de Futbol CoSmar SPORT CLUB',
+            domicilio: '',          // Ej. 'Calle y número, Colonia, C.P., Acapulco de Juárez, Guerrero'
+            correo: '',             // Ej. 'ligacosmar@correo.com'
+            whatsapp: '744 241 1773',
+            ciudad: 'Acapulco de Juárez, Guerrero',
+            version: '2026-10',
+            actualizado: 'octubre de 2026'
+        };
+        function legalContacto() {
+            const c = LEGAL_CONFIG, partes = [];
+            if (c.domicilio) partes.push('en nuestro domicilio: ' + c.domicilio);
+            if (c.correo) partes.push('por correo electrónico a ' + c.correo);
+            partes.push('por WhatsApp al ' + c.whatsapp);
+            return partes.join('; ');
+        }
+        function legalTextos() {
+            const c = LEGAL_CONFIG;
+            const resumen = t => `<div style="background:var(--light); border-left:4px solid var(--primary, #1f5fd6); padding:10px 12px; border-radius:6px; margin-bottom:10px;"><b>En pocas palabras:</b> ${t}</div>`;
+            return {
+                privacidad: { titulo: 'Aviso de Privacidad', html: resumen('guardamos tus datos solo para inscribirte, hacer tu credencial y llevar las estadísticas del torneo. No los vendemos. Tú decides si tu foto y tu ficha se publican, y puedes pedir que las quitemos cuando quieras.') + `
+                    <h3>¿Quién cuida tus datos?</h3>
+                    <p><b>${c.responsable}</b> (la "Liga")${c.domicilio ? ', con domicilio en ' + c.domicilio : ''}. Si tienes dudas o quieres hacer una solicitud, escríbenos ${legalContacto()}.</p>
+                    <h3>¿Qué datos te pedimos?</h3>
+                    <p><b>Para identificarte:</b> nombre completo, fecha y lugar de nacimiento, nacionalidad y una fotografía.</p>
+                    <p><b>Del torneo:</b> tu equipo, número de playera, posición, categoría, goles, tarjetas, sanciones, multas y estadísticas.</p>
+                    <p><b>Si eres menor de 18 años:</b> también el nombre de tu mamá, papá o tutor, que es quien te autoriza a jugar.</p>
+                    <p><b>Lo que NO pedimos:</b> datos de salud, religión, ideas políticas, preferencias personales ni huellas o reconocimiento facial. Tu foto solo sirve para tu credencial y tu ficha.</p>
+                    <h3>¿Para qué los usamos?</h3>
+                    <p><b>Para que puedas jugar</b> (esto es necesario): inscribirte, validar tu edad y categoría, hacer tu credencial, programar partidos, llevar las actas, la tabla, las sanciones y las multas, y comprobar que eres tú quien juega.</p>
+                    <p><b>Solo si tú lo aceptas:</b> mostrar tu nombre, foto, número y estadísticas en el sitio de la liga, y publicar fotos y videos del torneo en redes sociales. Si no lo aceptas, no publicaremos tu ficha ni tu foto.</p>
+                    <h3>¿Con quién los compartimos?</h3>
+                    <p>No vendemos ni regalamos tus datos. Solo usamos servicios que hacen funcionar el sitio: Google Firebase (base de datos), GitHub (donde está alojada la página) y Facebook (para las transmisiones). También podríamos entregar datos a una autoridad si la ley nos obliga.</p>
+                    <h3>Tus derechos</h3>
+                    <p>Tienes derecho a: <b>saber</b> qué datos tenemos de ti, <b>corregirlos</b> si están mal, <b>borrarlos</b> y <b>oponerte</b> a que los usemos. También puedes <b>retirar tu permiso</b> para publicar tu foto o ficha cuando quieras.</p>
+                    <p><b>¿Cómo?</b> Mándanos un mensaje ${legalContacto()} con tu nombre completo, tu equipo y lo que quieres pedir. Te pediremos una copia de tu identificación (o la de tu tutor si eres menor) para asegurarnos de que eres tú. Te responderemos en los plazos que marca la ley.</p>
+                    <p><i>Ojo:</i> si quitamos tu foto o ficha, los resultados de los partidos en los que jugaste se quedan en el historial, porque son registros del torneo.</p>
+                    <h3>¿Cuánto tiempo los guardamos?</h3>
+                    <p>Mientras juegues en la liga y mientras haya algo pendiente (una sanción o una multa, por ejemplo). Después podemos borrar tu foto y datos personales y quedarnos solo con las estadísticas del torneo.</p>
+                    <h3>Lo que se guarda en tu celular o computadora</h3>
+                    <p>El sitio recuerda en tu navegador cosas como tu equipo favorito, tu nombre de visitante o si ya votaste en una encuesta. No usamos cookies de publicidad ni te rastreamos. Puedes borrarlo cuando quieras desde tu navegador.</p>
+                    <h3>Cambios y quejas</h3>
+                    <p>Si cambiamos este aviso, lo publicaremos aquí, y si usamos tus datos para algo nuevo, te pediremos permiso otra vez. Si crees que no respetamos tus datos, también puedes acudir a la <b>Secretaría Anticorrupción y Buen Gobierno</b>, que es la autoridad en México para este tema.</p>` },
+                terminos: { titulo: 'Términos y Condiciones', html: resumen('estas son las reglas para usar el sitio. Los datos que des deben ser verdaderos, el PIN es personal, y los resultados oficiales son los de la cédula del árbitro.') + `
+                    <h3>1. Al usar el sitio aceptas estas reglas</h3>
+                    <p>Si no estás de acuerdo con algo, por favor no uses el sitio ni envíes solicitudes de registro.</p>
+                    <h3>2. ¿Qué es este sitio?</h3>
+                    <p>Es el portal informativo de la Liga: calendario, resultados, tabla, estadísticas y avisos. <b>Los resultados oficiales son los que quedan en la cédula del árbitro</b> y revisa la administración. Si hay un error en un marcador, una estadística, una sanción o una fecha, la Liga puede corregirlo.</p>
+                    <h3>3. Registro de jugadores</h3>
+                    <ul style="margin:0 0 8px; padding-left:20px;">
+                        <li>Tus datos y tu foto deben ser <b>verdaderos y tuyos</b>. Si registras a alguien con datos falsos o suplantas a otra persona, el jugador puede ser dado de baja y el equipo puede perder puntos, según el reglamento.</li>
+                        <li>Si el jugador es menor de 18 años, debe registrarlo con permiso de su mamá, papá o tutor.</li>
+                        <li>El <b>PIN de registro</b> es de tu club. No lo compartas con personas ajenas.</li>
+                        <li>Toda solicitud la revisa la administración antes de quedar aprobada.</li>
+                    </ul>
+                    <h3>4. Lo que no se permite</h3>
+                    <ul style="margin:0 0 8px; padding-left:20px;">
+                        <li>Entrar a las áreas de administración sin permiso o tratar de alterar la información del sitio.</li>
+                        <li>Copiar masivamente los datos del sitio.</li>
+                        <li>Mandar solicitudes falsas o repetidas, o votar con trampa en las encuestas.</li>
+                        <li>Usar fotos, nombres o resultados de la Liga para vender o anunciar algo sin permiso por escrito.</li>
+                    </ul>
+                    <h3>5. Logos, escudos y fotos</h3>
+                    <p>El diseño del sitio y el nombre y logo de la Liga son de la Liga. Los escudos y nombres de los equipos son de cada club, que nos permite mostrarlos al inscribirse. Si crees que algo del sitio usa tu contenido sin tu permiso, escríbenos ${legalContacto()} y lo revisamos para quitarlo si corresponde.</p>
+                    <h3>6. Enlaces a otros sitios</h3>
+                    <p>El sitio puede llevarte a Facebook o WhatsApp. Esos servicios tienen sus propias reglas y la Liga no se hace responsable de ellos.</p>
+                    <h3>7. Si el sitio falla</h3>
+                    <p>Hacemos lo posible para que funcione siempre, pero puede haber errores o momentos en que no esté disponible. Hasta donde la ley lo permita, la Liga no responde por daños causados por eso.</p>
+                    <h3>8. Cambios y ley aplicable</h3>
+                    <p>Podemos actualizar estos términos; vale la versión que esté publicada aquí. Se rigen por las leyes de México y, si hay un conflicto, por los tribunales de ${c.ciudad}.</p>` },
+                deslinde: { titulo: 'Deslinde de Responsabilidad', html: resumen('el futbol tiene riesgos. Si juegas, lo haces porque quieres y estás en condiciones de hacerlo. La Liga no tiene seguro médico para los jugadores, así que los gastos por una lesión corren por cuenta del jugador o su familia.') + `
+                    <h3>Juegas por decisión propia</h3>
+                    <p>El futbol puede causar golpes, caídas, esguinces, fracturas y otras lesiones. Al inscribirte (o al inscribir a tu hijo o hija, si es menor) declaras que <b>juegas voluntariamente y bajo tu propia responsabilidad</b>, que estás en condiciones físicas de jugar y que conoces el reglamento de la Liga.</p>
+                    <h3>Lesiones y gastos médicos</h3>
+                    <p>La Liga <b>no tiene seguro médico ni de accidentes</b> para los jugadores, salvo que avise por escrito lo contrario. Los gastos médicos de una lesión en un partido, entrenamiento o traslado los cubre el jugador o su tutor. Te recomendamos tener tu propio seguro médico.</p>
+                    <h3>Comportamiento de equipos y porras</h3>
+                    <p>Cada equipo responde por cómo se portan sus jugadores, delegados y aficionados. Si alguien agrede a otra persona o daña las instalaciones, esa persona es la responsable, además de las sanciones del reglamento.</p>
+                    <h3>Tus cosas</h3>
+                    <p>La Liga no se hace responsable si se pierden, roban o dañan tus objetos personales o tu vehículo en las canchas o sus alrededores.</p>
+                    <h3>Hasta dónde llega este deslinde</h3>
+                    <p>Hasta donde la ley lo permita, el jugador (o su tutor) no reclamará a la Liga, a sus organizadores, árbitros y directivos por los riesgos normales de jugar futbol. Este deslinde no cubre lo que la ley no permite excluir, como cuando alguien actúa con mala intención o con negligencia grave.</p>` },
+                imagen: { titulo: 'Imagen y Transmisiones', html: resumen('los partidos se pueden grabar, fotografiar y transmitir en vivo. Si te inscribes y aceptas, la Liga puede mostrar tu imagen para promover el torneo. Puedes pedir que la quitemos cuando quieras.') + `
+                    <h3>Fotos, videos y transmisiones en vivo</h3>
+                    <p>En los partidos se toman fotos y videos, y algunos se <b>transmiten en vivo</b> (por ejemplo, por Facebook). Al inscribirte y marcar la casilla de autorización, nos permites usar tu nombre, tu imagen y tus estadísticas en el sitio y las redes de la Liga para informar y promover el torneo. Esto <b>no genera pago</b> para ninguna de las partes.</p>
+                    <h3>Si eres menor de edad</h3>
+                    <p>Solo publicamos la imagen de menores si su mamá, papá o tutor lo autorizó en el registro.</p>
+                    <h3>Si vienes como público</h3>
+                    <p>Si vas a ver un partido, puedes salir en fotos o videos generales del evento. Si no quieres aparecer, pídenos que lo quitemos ${legalContacto()}.</p>
+                    <h3>Cómo pedir que quitemos tu imagen</h3>
+                    <p>Escríbenos con tu nombre y qué foto o video quieres que retiremos. Lo quitaremos del sitio y de nuestras redes. Si el contenido ya fue compartido por otras personas o plataformas como Facebook, puede tardar más en desaparecer por completo.</p>
+                    <h3>Uso por otras personas</h3>
+                    <p>Nadie puede usar la imagen de los jugadores o el material de la Liga para publicidad, ventas o apuestas sin permiso por escrito de la Liga y de la persona que aparece.</p>` }
+            };
+        }
+        function abrirLegal(seccion) {
+            const T = legalTextos();
+            const orden = ['privacidad', 'terminos', 'deslinde', 'imagen'];
+            if (!T[seccion]) seccion = 'privacidad';
+            document.getElementById('legal-tabs').innerHTML = orden.map(k =>
+                `<button type="button" onclick="abrirLegal('${k}')" style="padding:6px 12px; border-radius:999px; border:1px solid var(--border); cursor:pointer; font-size:0.8rem; font-weight:600; ${k === seccion ? 'background:var(--primary, #1f5fd6); color:#fff; border-color:transparent;' : 'background:var(--light); color:inherit;'}">${T[k].titulo}</button>`).join('');
+            document.getElementById('legal-contenido').innerHTML = '<style>#legal-contenido h3{margin:14px 0 4px; font-size:0.95rem;} #legal-contenido p{margin:0 0 8px;}</style>' + T[seccion].html;
+            document.getElementById('legal-version').textContent = 'Última actualización: ' + LEGAL_CONFIG.actualizado + ' · Versión ' + LEGAL_CONFIG.version;
+            document.getElementById('modal-legal').classList.remove('hidden');
+            document.getElementById('legal-contenido').scrollTop = 0;
+        }
+        function esMenorDeEdad(fechaISO) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(fechaISO || '');
+            if (!m) return false;
+            const hoy = new Date(), nac = new Date(+m[1], +m[2] - 1, +m[3]);
+            let edad = hoy.getFullYear() - nac.getFullYear();
+            const md = hoy.getMonth() - nac.getMonth();
+            if (md < 0 || (md === 0 && hoy.getDate() < nac.getDate())) edad--;
+            return edad < 18;
+        }
+        function actualizarBloqueTutor() {
+            const bloque = document.getElementById('sol-bloque-tutor');
+            if (!bloque) return;
+            const menor = esMenorDeEdad(document.getElementById('sol-fecha-nac').value);
+            bloque.classList.toggle('hidden', !menor);
+            const n = document.getElementById('sol-tutor-nombre'), a = document.getElementById('sol-tutor-acepta');
+            if (n) n.required = menor;
+            if (a) a.required = menor;
         }
 
         function cerrarModal(id) { document.getElementById(id).classList.add('hidden'); }
