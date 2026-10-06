@@ -1798,6 +1798,9 @@
             const arbitroVinculado = db.arbitros.find(a => a.nombre === arbitroSesion);
 
             if (arbitroVinculado) {
+                // Al recargar, esto puede ejecutarse ANTES de que el selector tenga sus opciones:
+                // se llena primero para que el nombre quede seleccionado (si no, se ve en blanco).
+                if (!Array.from(selectorArb.options).some(o => o.value === arbitroVinculado.nombre)) refrescarSelectorArbitros();
                 selectorArb.value = arbitroVinculado.nombre;
                 selectorArb.disabled = true;
                 selectorArb.style.background = '#f0f4f8';
