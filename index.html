@@ -213,21 +213,42 @@
         .buscador-resultado-vacio { padding: 14px; text-align: center; font-size: 0.82rem; color: var(--text); opacity: 0.6; }
 
         .patrocinadores-bar {
-            background: var(--card-bg); border-bottom: 1px solid var(--border); overflow: hidden; padding: 12px 0;
+            background: var(--card-bg); border-bottom: 1px solid var(--border); overflow: hidden; padding: 18px 0;
         }
         .patrocinadores-track {
             display: flex; align-items: center; width: max-content; animation: patrocinadores-scroll 20s linear infinite;
         }
         .patrocinadores-bar:hover .patrocinadores-track { animation-play-state: paused; }
         .patrocinadores-item {
-            display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0 30px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; flex-shrink: 0; padding: 0 14px;
         }
+        .patrocinador-nombre {
+            font-family: var(--font-heading, inherit); font-weight: 800; font-size: 1.05rem; letter-spacing: 0.4px;
+            color: var(--primary); text-align: center; max-width: 620px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .patrocinador-nombre::before, .patrocinador-nombre::after { content: ''; display: inline-block; width: 18px; height: 2px; background: var(--secondary); vertical-align: middle; margin: 0 8px; border-radius: 2px; }
+        /* Cada patrocinador va en su propia "tarjeta" blanca, grande y a todo color para que se lea bien */
+        .patrocinadores-item a, .patrocinadores-item > img {
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            background: #ffffff; border: 1px solid var(--border); border-radius: 14px; padding: 8px 12px;
+            box-shadow: 0 4px 14px rgba(11,47,92,0.12);
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+        }
+        .patrocinadores-item > img { cursor: default; }
         .patrocinadores-item img {
-            height: 52px; max-width: 140px; object-fit: contain; filter: grayscale(20%); opacity: 0.85;
-            transition: filter var(--transition-fast), opacity var(--transition-fast), transform var(--transition-fast);
+            height: 210px; width: auto; max-width: 620px; object-fit: contain; display: block;
         }
-        .patrocinadores-item a { display: block; cursor: pointer; }
-        .patrocinadores-item img:hover { filter: grayscale(0%); opacity: 1; transform: scale(1.06); }
+        .patrocinadores-item > img { height: 226px; box-sizing: border-box; }
+        .patrocinadores-item a:hover, .patrocinadores-item > img:hover {
+            transform: translateY(-3px) scale(1.04); box-shadow: 0 10px 24px rgba(11,47,92,0.22);
+        }
+        @media (max-width: 768px) {
+            .patrocinadores-bar { padding: 14px 0; }
+            .patrocinadores-item { padding: 0 9px; }
+            .patrocinador-nombre { font-size: 0.9rem; max-width: 420px; }
+            .patrocinadores-item img { height: 150px; max-width: 420px; }
+            .patrocinadores-item > img { height: 166px; }
+        }
         @keyframes patrocinadores-scroll {
             from { transform: translateX(0); }
             to { transform: translateX(-50%); }
@@ -2804,13 +2825,26 @@ nav{background:linear-gradient(135deg,rgba(11,47,92,.72),rgba(6,12,26,.6))!impor
             if (!lista.length) { wrap.classList.add('hidden'); track.innerHTML = ''; return; }
 
             const itemsHtml = lista.map(p => {
-                const img = `<img src="${p.logo}" alt="${escapeHtml(p.nombre)}" title="${escapeHtml(p.nombre)}" loading="lazy">`;
-                return `<div class="patrocinadores-item">${p.link ? `<a href="${p.link}" target="_blank" rel="noopener">${img}</a>` : img}</div>`;
+                const img = `<img src="${p.logo}" alt="${escapeHtml(p.nombre)}" title="${escapeHtml(p.nombre)}">`;
+                return `<div class="patrocinadores-item"><div class="patrocinador-nombre">${escapeHtml(p.nombre)}</div>${p.link ? `<a href="${p.link}" target="_blank" rel="noopener">${img}</a>` : img}</div>`;
             }).join('');
-            // Se duplica la lista para lograr un desplazamiento continuo sin cortes
-            track.innerHTML = itemsHtml + itemsHtml;
-            track.style.animationDuration = Math.max(lista.length * 6, 14) + 's';
+            // Primero se dibuja UNA sola vez y se mide: si los patrocinadores caben en la pantalla
+            // se muestran quietos y centrados (sin repetir); solo si no caben se duplica la lista
+            // para lograr el desplazamiento continuo sin cortes.
+            const token = (renderizarPatrocinadores._t = (renderizarPatrocinadores._t || 0) + 1);
+            track.style.animation = 'none';
+            track.style.margin = '0 auto';
+            track.innerHTML = itemsHtml;
             wrap.classList.remove('hidden');
+            const imgs = Array.from(track.querySelectorAll('img'));
+            Promise.all(imgs.map(im => im.complete ? Promise.resolve() : new Promise(r => { im.onload = im.onerror = r; }))).then(() => {
+                if (token !== renderizarPatrocinadores._t) return;
+                if (track.scrollWidth <= wrap.clientWidth) return; // caben todos: quietos y centrados
+                track.style.margin = '0';
+                track.innerHTML = itemsHtml + itemsHtml;
+                track.style.animation = '';
+                track.style.animationDuration = Math.max(lista.length * 9, 18) + 's';
+            });
         }
 
         // Arma el contenido visual de "📖 Reglamento Oficial" a partir de db.reglamento
