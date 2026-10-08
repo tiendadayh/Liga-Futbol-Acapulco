@@ -807,9 +807,9 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                         <div><label>Ciudad</label><input type="text" id="ced-ciudad" placeholder="Acapulco, Gro." value="Acapulco, Gro."></div>
                     </div>
                     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-top:10px;">
-                        <div><label>Asistente 1</label><input type="text" id="ced-asistente1"></div>
-                        <div><label>Asistente 2</label><input type="text" id="ced-asistente2"></div>
-                        <div><label>Cuarto Árbitro</label><input type="text" id="ced-cuarto"></div>
+                        <div><label>Asistente 1</label><select id="ced-asistente1" onchange="refrescarOpcionesArbitrosCedula()"><option value="">-- Selecciona --</option></select></div>
+                        <div><label>Asistente 2</label><select id="ced-asistente2" onchange="refrescarOpcionesArbitrosCedula()"><option value="">-- Selecciona --</option></select></div>
+                        <div><label>Cuarto Árbitro</label><select id="ced-cuarto" onchange="refrescarOpcionesArbitrosCedula()"><option value="">-- Selecciona --</option></select></div>
                     </div>
                 </fieldset>
 
@@ -2379,6 +2379,28 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             actualizarCapitanesCedula(partido);
         }
 
+        // Asistentes y cuarto árbitro: se eligen entre los árbitros registrados (sin repetir ni incluir al árbitro principal).
+        let cedulaArbitroPrincipal = '';
+        function llenarArbitrosCedula(a1, a2, a4) {
+            const set = (id, v) => { const el = document.getElementById(id); if (el) el.dataset.valor = v || ''; };
+            set('ced-asistente1', a1); set('ced-asistente2', a2); set('ced-cuarto', a4);
+            refrescarOpcionesArbitrosCedula(true);
+        }
+        function refrescarOpcionesArbitrosCedula(desdeCarga) {
+            const ids = ['ced-asistente1', 'ced-asistente2', 'ced-cuarto'];
+            const els = ids.map(id => document.getElementById(id));
+            if (els.some(e => !e)) return;
+            const valores = els.map(e => desdeCarga ? (e.dataset.valor || '') : e.value);
+            const registrados = (db.arbitros || []).map(a => a.nombre).filter(n => n && n !== cedulaArbitroPrincipal);
+            els.forEach((el, i) => {
+                const otros = valores.filter((v, j) => j !== i && v);
+                const nombres = registrados.filter(n => !otros.includes(n));
+                if (valores[i] && !nombres.includes(valores[i])) nombres.push(valores[i]);   // conserva un valor ya guardado aunque ya no esté en la lista
+                el.innerHTML = '<option value="">-- Selecciona --</option>' + nombres.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+                el.value = valores[i] || '';
+            });
+        }
+
         // Elige al capitán del equipo entre los titulares (uno por equipo).
         function elegirCapitan(partidoId, jugadorId) {
             const partido = db.partidos.find(p => p.id === partidoId);
@@ -2597,9 +2619,8 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             document.getElementById('ced-hora').value = c.hora || p.hora || '';
             document.getElementById('ced-campo').value = c.campo || p.estadio || '';
             document.getElementById('ced-ciudad').value = c.ciudad || 'Acapulco, Gro.';
-            document.getElementById('ced-asistente1').value = c.asistente1 || '';
-            document.getElementById('ced-asistente2').value = c.asistente2 || '';
-            document.getElementById('ced-cuarto').value = c.cuartoArbitro || '';
+            cedulaArbitroPrincipal = p.arbitro || arbitroActual || '';
+            llenarArbitrosCedula(c.asistente1 || '', c.asistente2 || '', c.cuartoArbitro || '');
             document.getElementById('ced-1t-inicio').value = c.primerTiempoInicio || '';
             document.getElementById('ced-1t-fin').value = c.primerTiempoFin || '';
             document.getElementById('ced-2t-inicio').value = c.segundoTiempoInicio || '';

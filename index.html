@@ -4327,11 +4327,11 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
 
                 let alineacionesHtml = '';
                 if ((p.titularesLocal && p.titularesLocal.length) || (p.titularesVisita && p.titularesVisita.length)) {
-                    const armarColumna = (equipoId, titularesIds) => {
+                    const armarColumna = (equipoId, titularesIds, capitanId) => {
                         const plantel = db.jugadores.filter(j => j.equipoId === equipoId);
                         const titulares = plantel.filter(j => (titularesIds || []).includes(j.id));
                         const suplentes = plantel.filter(j => !(titularesIds || []).includes(j.id));
-                        const listaHtml = (arr) => arr.length ? arr.map(j => `<span onclick="verFicha(${j.id})" style="cursor:pointer; text-decoration:underline dotted;">${j.numero ? '#' + j.numero + ' ' : ''}${escapeHtml(j.nombre)}</span>`).join('<br>') : '<span style="color:#94a3b8;">—</span>';
+                        const listaHtml = (arr) => arr.length ? arr.map(j => `<span onclick="verFicha(${j.id})" style="cursor:pointer; text-decoration:underline dotted;">${j.numero ? '#' + j.numero + ' ' : ''}${escapeHtml(j.nombre)}</span>${capitanId && j.id === capitanId ? ' <span title="Capitán" style="display:inline-block; background:#f0b429; color:#0b2f5c; font-weight:800; font-size:0.62rem; padding:1px 6px; border-radius:999px; vertical-align:middle;">C · Capitán</span>' : ''}`).join('<br>') : '<span style="color:#94a3b8;">—</span>';
                         return `<div style="flex:1; min-width:130px;">
                             <strong style="font-size:0.75rem;">🟢 Titulares</strong><br>
                             <span style="font-size:0.76rem; line-height:1.6;">${listaHtml(titulares)}</span>
@@ -4342,8 +4342,8 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
                     alineacionesHtml = `<div style="margin-top:10px; font-size:0.78rem; background:#fff; border:1px solid var(--border); padding:8px 10px; border-radius:6px;">
                         <strong>🧩 Alineaciones</strong>
                         <div style="display:flex; gap:14px; margin-top:6px; flex-wrap:wrap;">
-                            ${armarColumna(p.localId, p.titularesLocal)}
-                            ${armarColumna(p.visitaId, p.titularesVisita)}
+                            ${armarColumna(p.localId, p.titularesLocal, p.capitanLocalId)}
+                            ${armarColumna(p.visitaId, p.titularesVisita, p.capitanVisitaId)}
                         </div>
                     </div>`;
                 }
