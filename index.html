@@ -1129,7 +1129,10 @@
             .quiniela-op { font-size: 0.72rem; word-break: normal; overflow-wrap: anywhere; padding: 9px 4px; }
             .card-section > h2, .card-section > .header-section-flex { text-align: center; justify-content: center; }
         }
-    </style>
+            .badge-fase { display:inline-block; vertical-align:middle; margin-left:8px; padding:3px 10px; border-radius:99px; font-size:0.62rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; background:rgba(11,42,91,.1); color:var(--primary); border:1px solid rgba(11,42,91,.25); }
+        .badge-fase.badge-liguilla { background:linear-gradient(135deg,#d9a521,#f2cd62); color:#0b2a5b; border-color:#d9a521; }
+        html[data-theme="dark"] .badge-fase:not(.badge-liguilla) { background:rgba(255,255,255,.08); color:#cfe0ff; border-color:rgba(255,255,255,.2); }
+</style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
     <script>
@@ -1410,6 +1413,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             <a href="#posiciones-sec">Posiciones</a>
             <a href="#ofensiva-defensiva-sec">Ofensiva/Defensiva</a>
             <a href="#goleo-sec">Goleo</a>
+            <a href="#goleo-liguilla-sec" id="nav-link-goleo-liguilla" class="hidden">Goleo Liguilla</a>
             <a href="#disciplina-sec">Disciplina</a>
             <a href="#porteros-sec">Guante de Oro</a>
             <a href="#headtohead-sec">Cara a Cara</a>
@@ -1503,7 +1507,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
 
         <!-- MEJOR OFENSIVA Y DEFENSIVA -->
         <section id="ofensiva-defensiva-sec" class="card-section" style="border-top-color: #2e7d32;">
-            <h2>⚔️🛡️ Mejor Ofensiva y Mejor Defensiva</h2>
+            <h2>⚔️🛡️ Mejor Ofensiva y Mejor Defensiva <span class="badge-fase">Fase Regular</span></h2>
             <div id="aviso-vivo-ofdef" class="hidden leyenda-posiciones-vivo" style="margin-top:12px;"><i class="pos-vivo-dot"></i> Partido en juego: los goles a favor y en contra incluyen el marcador actual y pueden cambiar hasta que termine el encuentro.</div>
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px; margin-top:15px;">
                 <div>
@@ -1529,7 +1533,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
 
         <!-- GOLEO INDIVIDUAL -->
         <section id="goleo-sec" class="card-section">
-            <h2>Goleo Individual</h2>
+            <h2>Goleo Individual <span class="badge-fase">Fase Regular</span></h2>
             <div id="aviso-vivo-goleo" class="hidden leyenda-posiciones-vivo"><i class="pos-vivo-dot"></i> Partido en juego: los goles marcados con <b>+n en vivo</b> pueden modificarse hasta que termine el encuentro.</div>
             <div class="podio-wrap" id="podio-goleo"></div>
             <div style="overflow-x:auto;">
@@ -1540,11 +1544,25 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             </div>
         </section>
 
+        <!-- GOLEO DE LIGUILLA (solo se muestra con la Liguilla activa) -->
+        <section id="goleo-liguilla-sec" class="card-section hidden" style="border-top-color: var(--gold, #d9a521);">
+            <h2>Goleo de Liguilla <span class="badge-fase badge-liguilla">Solo Liguilla</span></h2>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-top:-4px;">Goles anotados únicamente en Cuartos de Final, Semifinal y Final. Empieza desde cero, sin contar la fase regular.</p>
+            <div id="aviso-vivo-goleo-liguilla" class="hidden leyenda-posiciones-vivo"><i class="pos-vivo-dot"></i> Partido de Liguilla en juego: los goles marcados con <b>+n en vivo</b> pueden modificarse hasta que termine el encuentro.</div>
+            <div class="podio-wrap" id="podio-goleo-liguilla"></div>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead><tr><th>Pos</th><th>Jugador</th><th>Equipo</th><th>Goles ⚽</th></tr></thead>
+                    <tbody id="tabla-goleo-liguilla-body"></tbody>
+                </table>
+            </div>
+        </section>
+
         <!-- DISCIPLINA -->
         <section id="disciplina-sec" class="card-section">
-            <h2>Tabla de Disciplina</h2>
+            <h2>Tabla de Disciplina <span class="badge-fase">Fase Regular</span></h2>
 
-            <h3 style="margin:0 0 8px; color:var(--accent);">🏅 Fair Play por Equipo</h3>
+            <h3 style="margin:0 0 8px; color:var(--accent);">🏅 Fair Play por Equipo <span class="badge-fase">Fase Regular</span></h3>
             <p style="font-size:0.85rem; color:var(--text-muted); margin-top:-4px;">Ranking del equipo con menos sanciones acumuladas (1 punto por amarilla, 3 por roja). El más limpio va arriba.</p>
             <div style="overflow-x:auto; margin-bottom:22px;">
                 <table class="tabla-equipos">
@@ -1553,7 +1571,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
                 </table>
             </div>
 
-            <h3 style="margin:0 0 8px;">Disciplina Individual</h3>
+            <h3 style="margin:0 0 8px;">Disciplina Individual <span class="badge-fase">Fase Regular</span></h3>
             <p style="font-size:0.8rem; color:var(--text-muted); margin-top:-4px;">Top 3 con más tarjetas acumuladas (1 punto por amarilla, 3 por roja).</p>
             <div class="podio-wrap" id="podio-disciplina"></div>
             <div style="overflow-x:auto;">
@@ -1566,7 +1584,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
 
         <!-- PORTEROS MENOS GOLEADOS (GUANTE DE ORO) -->
         <section id="porteros-sec" class="card-section" style="border-top-color: #ff9800;">
-            <h2>🧤 Portero Con Menos Goles</h2>
+            <h2>🧤 Portero Con Menos Goles <span class="badge-fase">Fase Regular</span></h2>
             <div class="podio-wrap" id="podio-porteros"></div>
             <div style="overflow-x:auto;">
                 <table>
@@ -1762,6 +1780,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             <div class="footer-col">
                 <h4>Estadísticas</h4>
                 <a href="#goleo-sec">Goleo Individual</a>
+                <a href="#goleo-liguilla-sec">Goleo de Liguilla</a>
                 <a href="#disciplina-sec">Disciplina</a>
                 <a href="#porteros-sec">Guante de Oro</a>
                 <a href="#headtohead-sec">Comparador Cara a Cara</a>
@@ -2114,6 +2133,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
                     'posiciones-sec': 'Tabla de Posiciones',
                     'ofensiva-defensiva-sec': 'Ofensiva y Defensiva',
                     'goleo-sec': 'Goleo Individual',
+                    'goleo-liguilla-sec': 'Goleo de Liguilla',
                     'disciplina-sec': 'Tabla de Disciplina',
                     'porteros-sec': 'Portero con menos goles',
                     'headtohead-sec': 'Comparador Cara a Cara',
@@ -2417,7 +2437,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
         // Mismos valores por defecto del Reglamento que admin.html (ver ahí el detalle). Se
         // usan mientras el admin no haya guardado los suyos propios en db.reglamento.
         const REGLAMENTO_DEFAULTS = {
-            duracionMinutos: 25, numTiempos: 2, toleranciaMinutos: 10,
+            duracionMinutos: 25, numTiempos: 2, toleranciaMinutos: 10, jornadasRegulares: 9,
             jugadoresTitulares: 11, jugadoresSuplentes: 5,
             cuotaArbitraje: 300, cuotaInscripcionEquipo: 0, cuotaInscripcionJugador: 0,
             balonOficial: '', categoriaTexto: 'Libre',
@@ -2427,6 +2447,12 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             partidosRojaDirecta: 1, multaRojaDirecta: 150,
             notasAdicionales: ''
         };
+        // Numero de jornadas de la fase regular (se configura en Admin > Reglamento; por defecto 9).
+        // Las jornadas 1..N son fase regular; de la 98 en adelante es Liguilla.
+        function jornadasFaseRegular(dbRef) {
+            const n = parseInt(reg(dbRef || db, 'jornadasRegulares'));
+            return (n >= 1 && n <= 60) ? n : 9;
+        }
         function reg(dbRef, campo) {
             const v = dbRef.reglamento && dbRef.reglamento[campo];
             return (v === undefined || v === null || v === '') ? REGLAMENTO_DEFAULTS[campo] : v;
@@ -3031,6 +3057,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             return (
                 seccion('⚽', 'Formato del partido', rejilla(
                     dato('Duración', `${reg(db, 'numTiempos')} tiempos de ${reg(db, 'duracionMinutos')} min`) +
+                    dato('Fase regular', `${jornadasFaseRegular(db)} jornadas`) +
                     dato('Tolerancia de llegada', `${reg(db, 'toleranciaMinutos')} min`) +
                     dato('Jugadores', `${reg(db, 'jugadoresTitulares')} titulares + ${reg(db, 'jugadoresSuplentes')} suplentes`) +
                     dato('Categoría', reg(db, 'categoriaTexto') || '—') +
@@ -3156,9 +3183,11 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             renderizarBracketLiguilla();
             ajustarEscalaBracket();
             renderizarPorteros();
+            poblarJornadasRegulares('select-jornada-filtro');
             actualizarVistaJornadas();
             renderizarFranjaEscudos();
             actualizarVistaGoleo();
+            actualizarVistaGoleoLiguilla();
             actualizarVistaDisciplina();
             filtrarJugadores();
             renderXI();
@@ -3923,8 +3952,44 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             if (leyenda) leyenda.classList.toggle('hidden', !mostrarZona);
         }
 
+        // ===== Estadisticas por fase: ofensiva/defensiva, goleo individual, disciplina y portero
+        // cuentan SOLO la fase regular (jornadas 1-9). La Liguilla (jornadas 98+) tiene su
+        // propio "Goleo de Liguilla". =====
+        function jornadaMaxRegularStats() { return jornadasFaseRegular(db); }
+        function esPartidoLiguilla(p) { return (p.jornada || 0) > jornadaMaxRegularStats(); }
+        // Goles y tarjetas de cada jugador acumulados en partidos YA JUGADOS de Liguilla.
+        function statsLiguillaPorJugador() {
+            const m = {};
+            (db.partidos || []).filter(p => p.jugado && esPartidoLiguilla(p)).forEach(p => {
+                (p.estadisticasJugadores || []).forEach(st => {
+                    const o = m[st.jugadorId] || (m[st.jugadorId] = { goles: 0, amarillas: 0, rojas: 0 });
+                    o.goles += st.goles || 0; o.amarillas += st.amarillas || 0; o.rojas += st.rojas || 0;
+                });
+            });
+            return m;
+        }
+
+        // Rehace las opciones "Jornada 1..N" de un selector segun el Reglamento, sin tocar las
+        // de Liguilla (98+) y conservando la jornada elegida. Si ya hay partidos en jornadas mas
+        // altas que N, tambien se muestran para que nunca queden ocultos.
+        function poblarJornadasRegulares(idSelect) {
+            const sel = document.getElementById(idSelect);
+            if (!sel) return;
+            const maxExistente = Math.max(0, ...(db.partidos || []).map(p => p.jornada || 0).filter(j => j < 90));
+            const hasta = Math.max(jornadasFaseRegular(db), maxExistente);
+            const previo = sel.value;
+            Array.from(sel.options).filter(o => parseInt(o.value) < 90).forEach(o => o.remove());
+            const primeraLiguilla = Array.from(sel.options).find(o => parseInt(o.value) >= 90) || null;
+            for (let i = 1; i <= hasta; i++) {
+                const o = document.createElement('option');
+                o.value = String(i); o.textContent = 'Jornada ' + i;
+                sel.insertBefore(o, primeraLiguilla);
+            }
+            if (previo && Array.from(sel.options).some(o => o.value === previo)) sel.value = previo;
+        }
+
         function renderizarOfensivaDefensiva() {
-            const estadisticas = calcularTablaPosiciones(undefined, true).filter(eq => eq.pj > 0);
+            const estadisticas = calcularTablaPosiciones(jornadaMaxRegularStats(), true).filter(eq => eq.pj > 0);
             const etiquetaVivo = eq => eq.vivo ? `<span class="pos-vivo pos-vivo-${eq.vivo.res}"><i class="pos-vivo-dot"></i>En vivo</span>` : '';
             { const av = document.getElementById('aviso-vivo-ofdef'); if (av) av.classList.toggle('hidden', !estadisticas.some(eq => eq.vivo)); }
 
@@ -3954,7 +4019,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
                 let eq = db.equipos.find(e => e.id === p.equipoId);
                 let golesContra = 0; let partidos = 0;
                 if(eq) {
-                    db.partidos.filter(part => part.jugado && (part.localId === eq.id || part.visitaId === eq.id)).forEach(part => {
+                    db.partidos.filter(part => part.jugado && !esPartidoLiguilla(part) && (part.localId === eq.id || part.visitaId === eq.id)).forEach(part => {
                         partidos++;
                         if(part.localId === eq.id) golesContra += part.golesVisita;
                         else golesContra += part.golesLocal;
@@ -4614,9 +4679,9 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
 
         // Goles anotados en partidos que se están jugando ahora (aún no cerrados en la cédula),
         // tomados de las incidencias que registra el árbitro. Devuelve {jugadorId: goles}.
-        function golesEnVivoPorJugador() {
+        function golesEnVivoPorJugador(fase) {
             const mapa = {};
-            (db.partidos || []).filter(p => ESTADOS_PARTIDO_EN_VIVO.includes(p.estadoVivo) && !p.jugado).forEach(p => {
+            (db.partidos || []).filter(p => ESTADOS_PARTIDO_EN_VIVO.includes(p.estadoVivo) && !p.jugado && (fase === undefined || (fase === 'liguilla') === esPartidoLiguilla(p))).forEach(p => {
                 (p.eventos || []).filter(ev => ev && ev.tipo === 'gol').forEach(ev => {
                     const candidatos = (db.jugadores || []).filter(j => j.nombre === ev.desc);
                     const j = candidatos.find(x => x.equipoId === p.localId || x.equipoId === p.visitaId) || candidatos[0];
@@ -4627,9 +4692,10 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
         }
 
         function actualizarVistaGoleo() {
-            const golesVivo = golesEnVivoPorJugador();
+            const golesVivo = golesEnVivoPorJugador('regular');
+            const ligStats = statsLiguillaPorJugador();
             { const av = document.getElementById('aviso-vivo-goleo'); if (av) av.classList.toggle('hidden', !hayPartidoEnVivo()); }
-            let goleadores = db.jugadores.map(j => golesVivo[j.id] ? Object.assign({}, j, { goles: (j.goles || 0) + golesVivo[j.id], golesVivo: golesVivo[j.id] }) : j).filter(j => j.goles > 0).sort((a,b) => b.goles - a.goles);
+            let goleadores = db.jugadores.map(j => { const gv = golesVivo[j.id] || 0; return Object.assign({}, j, { goles: Math.max(0, (j.goles || 0) - ((ligStats[j.id] || {}).goles || 0)) + gv, golesVivo: gv }); }).filter(j => j.goles > 0).sort((a,b) => b.goles - a.goles);
             document.getElementById('tabla-goleo-body').innerHTML = goleadores.length
                 ? goleadores.slice(0, 5).map((jug, idx) => `<tr><td><b>${idx + 1}</b></td><td><div class="cel-jugador"><img class="foto-tabla" src="${jug.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(jug.nombre)}</span></div></td><td>${db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre'}</td><td><b>${jug.goles} ⚽</b> ${idx === 0 ? '🏆' : ''}${jug.golesVivo ? `<span class="pts-vivo pts-vivo-G">+${jug.golesVivo} en vivo</span>` : ''}</td></tr>`).join('')
                 : estadoVacioFila(4, '⚽', 'Aún no hay goleadores; se llenará conforme se jueguen partidos.');
@@ -4640,8 +4706,34 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             })));
         }
 
+        // Goleo de Liguilla: solo goles de partidos de Liguilla (Cuartos, Semifinal y Final).
+        // La seccion solo se muestra cuando la Liguilla ya esta activa.
+        function actualizarVistaGoleoLiguilla() {
+            const sec = document.getElementById('goleo-liguilla-sec');
+            const navLink = document.getElementById('nav-link-goleo-liguilla');
+            const activa = !!db.liguillaActiva;
+            if (sec) sec.classList.toggle('hidden', !activa);
+            if (navLink) navLink.classList.toggle('hidden', !activa);
+            if (!activa || !sec) return;
+            const ligStats = statsLiguillaPorJugador();
+            const golesVivo = golesEnVivoPorJugador('liguilla');
+            { const av = document.getElementById('aviso-vivo-goleo-liguilla'); if (av) av.classList.toggle('hidden', !Object.keys(golesVivo).length); }
+            const goleadores = db.jugadores.map(j => { const gv = golesVivo[j.id] || 0; return Object.assign({}, j, { goles: ((ligStats[j.id] || {}).goles || 0) + gv, golesVivo: gv }); })
+                .filter(j => j.goles > 0).sort((a, b) => b.goles - a.goles);
+            document.getElementById('tabla-goleo-liguilla-body').innerHTML = goleadores.length
+                ? goleadores.slice(0, 5).map((jug, idx) => `<tr><td><b>${idx + 1}</b></td><td><div class="cel-jugador"><img class="foto-tabla" src="${jug.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(jug.nombre)}</span></div></td><td>${escapeHtml(db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre')}</td><td><b>${jug.goles} ⚽</b> ${idx === 0 ? '🏆' : ''}${jug.golesVivo ? `<span class="pts-vivo pts-vivo-G">+${jug.golesVivo} en vivo</span>` : ''}</td></tr>`).join('')
+                : estadoVacioFila(4, '⚽', 'Aún no hay goles en la Liguilla; el goleo se llenará con los Cuartos de Final.');
+            renderPodio('podio-goleo-liguilla', goleadores.map(jug => ({
+                foto: jug.foto, nombre: jug.nombre,
+                sub: db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre',
+                valor: jug.goles, unidad: 'Goles'
+            })));
+        }
+
         function actualizarVistaDisciplina() {
-            const jugadoresOrdenados = [...db.jugadores].sort((a, b) => ((b.rojas || 0) * 3 + (b.amarillas || 0)) - ((a.rojas || 0) * 3 + (a.amarillas || 0)));
+            const ligStatsDisc = statsLiguillaPorJugador();
+            const jugadoresRegular = db.jugadores.map(j => { const l = ligStatsDisc[j.id] || {}; return Object.assign({}, j, { amarillas: Math.max(0, (j.amarillas || 0) - (l.amarillas || 0)), rojas: Math.max(0, (j.rojas || 0) - (l.rojas || 0)) }); });
+            const jugadoresOrdenados = [...jugadoresRegular].sort((a, b) => ((b.rojas || 0) * 3 + (b.amarillas || 0)) - ((a.rojas || 0) * 3 + (a.amarillas || 0)));
             const jugadoresConTarjetas = jugadoresOrdenados.filter(j => (j.amarillas || 0) > 0 || (j.rojas || 0) > 0);
             document.getElementById('tabla-disciplina-body').innerHTML = jugadoresConTarjetas.length ? jugadoresConTarjetas.slice(0, 5).map((j, idx) => {
                 return `<tr><td>${idx + 1}</td><td><div class="cel-jugador"><img class="foto-tabla" src="${j.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(j.nombre)}</span></div></td><td>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</td><td>${j.amarillas || 0}</td><td>${j.rojas || 0}</td><td>${textoEstadoSuspensionJugador(j)}</td></tr>`;
@@ -4660,11 +4752,12 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
         function renderizarFairPlayEquipos() {
             const cont = document.getElementById('tabla-fairplay-equipo-body');
             if (!cont) return;
-            const estadisticas = calcularTablaPosiciones().filter(eq => eq.pj > 0);
+            const estadisticas = calcularTablaPosiciones(jornadaMaxRegularStats()).filter(eq => eq.pj > 0);
+            const ligStatsFP = statsLiguillaPorJugador();
             const fairPlay = estadisticas.map(eq => {
                 const jugadoresEq = db.jugadores.filter(j => j.equipoId === eq.id);
-                const amarillas = jugadoresEq.reduce((s, j) => s + (j.amarillas || 0), 0);
-                const rojas = jugadoresEq.reduce((s, j) => s + (j.rojas || 0), 0);
+                const amarillas = jugadoresEq.reduce((s, j) => s + Math.max(0, (j.amarillas || 0) - ((ligStatsFP[j.id] || {}).amarillas || 0)), 0);
+                const rojas = jugadoresEq.reduce((s, j) => s + Math.max(0, (j.rojas || 0) - ((ligStatsFP[j.id] || {}).rojas || 0)), 0);
                 return { ...eq, amarillas, rojas, puntos: amarillas + rojas * 3 };
             }).sort((a, b) => a.puntos - b.puntos || a.rojas - b.rojas);
             cont.innerHTML = fairPlay.length ? fairPlay.slice(0, 5).map((eq, idx) => `
@@ -4729,7 +4822,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
         // ===== DISCIPLINA (solo lectura): mismas reglas que admin.html/arbitro.html — 3 amarillas
         // acumuladas, doble amarilla o roja directa = suspensión, con "limpieza" al terminar la
         // Jornada 9 (fin de fase regular; 98=Cuartos, 99=Semifinal, 100=Gran Final). =====
-        const FASE_REGULAR_MAX_JORNADA = 9;
+        // El limite de la fase regular ahora se configura en Reglamento (ver jornadasFaseRegular()).
 
         function eventosTarjetasJugador(jugadorId, dbRef) {
             const eventos = [];
@@ -4752,7 +4845,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             let contador = 0, faseAnterior = null;
             const sanciones = [];
             eventosTarjetasJugador(jugadorId, dbRef).forEach(ev => {
-                const fase = ev.jornada <= FASE_REGULAR_MAX_JORNADA ? 'regular' : 'liguilla';
+                const fase = ev.jornada <= jornadasFaseRegular(dbRef) ? 'regular' : 'liguilla';
                 if (faseAnterior === 'regular' && fase === 'liguilla') contador = 0;
                 faseAnterior = fase;
 

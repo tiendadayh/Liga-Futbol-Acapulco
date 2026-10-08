@@ -940,6 +940,8 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:14px;">
             <div><label>Duración por tiempo (min)</label><input type="number" id="reg-duracion-minutos" min="1"></div>
             <div><label>Número de tiempos</label><input type="number" id="reg-num-tiempos" min="1"></div>
+            <div><label>Jornadas de la fase regular</label><input type="number" id="reg-jornadas-regulares" min="1" max="60" oninput="actualizarCalculoJornadas()"></div>
+            <div id="reg-calculo-jornadas" style="grid-column:1/-1; background:#eef4ff; border:1px solid #c8d8f5; border-radius:10px; padding:12px 14px; font-size:0.88rem; color:#0d2a4d;"></div>
             <div><label>Tolerancia de llegada (min)</label><input type="number" id="reg-tolerancia" min="0"></div>
             <div><label>Jugadores titulares</label><input type="number" id="reg-titulares" min="1"></div>
             <div><label>Suplentes máximo</label><input type="number" id="reg-suplentes" min="0"></div>
@@ -2935,7 +2937,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
         // reg(dbRef, campo) siempre regresa el valor guardado en db.reglamento, o si no existe
         // (o está vacío), el valor por defecto de aquí — así nunca truena aunque falte el campo.
         const REGLAMENTO_DEFAULTS = {
-            duracionMinutos: 25, numTiempos: 2, toleranciaMinutos: 10,
+            duracionMinutos: 25, numTiempos: 2, toleranciaMinutos: 10, jornadasRegulares: 9,
             jugadoresTitulares: 11, jugadoresSuplentes: 5,
             cuotaArbitraje: 300, cuotaInscripcionEquipo: 0, cuotaInscripcionJugador: 0,
             balonOficial: '', categoriaTexto: 'Libre',
@@ -2945,6 +2947,12 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             partidosRojaDirecta: 1, multaRojaDirecta: 150,
             notasAdicionales: ''
         };
+        // Numero de jornadas de la fase regular (se configura en Admin > Reglamento; por defecto 9).
+        // Las jornadas 1..N son fase regular; de la 98 en adelante es Liguilla.
+        function jornadasFaseRegular(dbRef) {
+            const n = parseInt(reg(dbRef || db, 'jornadasRegulares'));
+            return (n >= 1 && n <= 60) ? n : 9;
+        }
         function reg(dbRef, campo) {
             const v = dbRef.reglamento && dbRef.reglamento[campo];
             return (v === undefined || v === null || v === '') ? REGLAMENTO_DEFAULTS[campo] : v;
@@ -3653,7 +3661,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
         // La jornada 9 es la última de la fase regular; de la 98 en adelante es Liguilla
         // (98/99=Cuartos Ida/Vuelta, 100/101=Semifinal Ida/Vuelta, 102=Gran Final). Al cruzar
         // ese límite se "limpian" las amarillas acumuladas, como en la mayoría de las ligas locales.
-        const FASE_REGULAR_MAX_JORNADA = 9;
+        // El limite de la fase regular ahora se configura en Reglamento (ver jornadasFaseRegular()).
 
         // Junta, por jugador, un evento por cada partido jugado en el que recibió tarjetas.
         function eventosTarjetasJugador(jugadorId, dbRef) {
@@ -3680,7 +3688,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             let contador = 0, faseAnterior = null;
             const sanciones = [];
             eventosTarjetasJugador(jugadorId, dbRef).forEach(ev => {
-                const fase = ev.jornada <= FASE_REGULAR_MAX_JORNADA ? 'regular' : 'liguilla';
+                const fase = ev.jornada <= jornadasFaseRegular(dbRef) ? 'regular' : 'liguilla';
                 if (faseAnterior === 'regular' && fase === 'liguilla') contador = 0;
                 faseAnterior = fase;
 
@@ -4003,6 +4011,48 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
 
         // Carga en el formulario del Reglamento los valores guardados en db.reglamento
         // (o el valor por defecto de REGLAMENTO_DEFAULTS si el admin nunca lo ha tocado).
+        // Rehace las opciones "Jornada 1..N" de un selector segun el Reglamento, sin tocar las
+        // de Liguilla (98+) y conservando la jornada elegida. Si ya hay partidos en jornadas mas
+        // altas que N, tambien se muestran para que nunca queden ocultos.
+        function poblarJornadasRegulares(idSelect) {
+            const sel = document.getElementById(idSelect);
+            if (!sel) return;
+            const maxExistente = Math.max(0, ...(db.partidos || []).map(p => p.jornada || 0).filter(j => j < 90));
+            const hasta = Math.max(jornadasFaseRegular(db), maxExistente);
+            const previo = sel.value;
+            Array.from(sel.options).filter(o => parseInt(o.value) < 90).forEach(o => o.remove());
+            const primeraLiguilla = Array.from(sel.options).find(o => parseInt(o.value) >= 90) || null;
+            for (let i = 1; i <= hasta; i++) {
+                const o = document.createElement('option');
+                o.value = String(i); o.textContent = 'Jornada ' + i;
+                sel.insertBefore(o, primeraLiguilla);
+            }
+            if (previo && Array.from(sel.options).some(o => o.value === previo)) sel.value = previo;
+        }
+
+        // Calculadora de jornadas: todos contra todos (round-robin). Si N es par: N-1 jornadas
+        // por vuelta; si N es impar: N jornadas (un equipo descansa cada jornada). Ida y vuelta = x2.
+        function actualizarCalculoJornadas() {
+            const box = document.getElementById('reg-calculo-jornadas');
+            if (!box) return;
+            const n = (db.equipos || []).length;
+            const elegido = parseInt((document.getElementById('reg-jornadas-regulares') || {}).value) || 0;
+            if (n < 2) { box.innerHTML = 'Registra al menos 2 equipos para calcular las jornadas sugeridas.'; return; }
+            const una = (n % 2 === 0) ? n - 1 : n;
+            const doble = una * 2;
+            let html = `Con <b>${n} equipos</b>: <b>${una} jornadas</b> si todos juegan contra todos una vez, o <b>${doble} jornadas</b> a ida y vuelta. Cada jornada tiene ${Math.floor(n / 2)} partidos${n % 2 ? ' y 1 equipo descansa' : ''}.<br><span style="opacity:.75;">Fórmula: jornadas = ${n % 2 ? 'N' : 'N − 1'} (por vuelta), donde N = número de equipos; ×2 si es ida y vuelta.</span>`;
+            html += `<div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;"><button type="button" class="btn btn-secondary btn-sm" onclick="usarJornadasSugeridas(${una})">Usar ${una} (una vuelta)</button><button type="button" class="btn btn-secondary btn-sm" onclick="usarJornadasSugeridas(${doble})">Usar ${doble} (ida y vuelta)</button></div>`;
+            if (elegido && elegido < una) html += `<div style="margin-top:8px; color:#b26a00;">⚠️ Con ${elegido} jornadas algunos equipos no alcanzarán a jugar contra todos los demás.</div>`;
+            const mayores = (db.partidos || []).filter(p => (p.jornada || 0) < 90 && p.jornada > elegido);
+            if (elegido && mayores.length) html += `<div style="margin-top:8px; color:#c62828;">⚠️ Ya existen partidos en jornadas mayores a ${elegido}; se contarán como Liguilla en estadísticas y disciplina hasta que subas el número.</div>`;
+            box.innerHTML = html;
+        }
+        function usarJornadasSugeridas(n) {
+            const inp = document.getElementById('reg-jornadas-regulares');
+            if (inp) inp.value = n;
+            actualizarCalculoJornadas();
+        }
+
         function cargarReglamentoFormulario() {
             const campo = document.getElementById('reg-duracion-minutos');
             if (!campo) return; // el formulario todavía no existe en el DOM
@@ -4024,6 +4074,9 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             document.getElementById('reg-partidos-roja').value = reg(db, 'partidosRojaDirecta');
             document.getElementById('reg-multa-roja').value = reg(db, 'multaRojaDirecta');
             document.getElementById('reg-notas').value = reg(db, 'notasAdicionales');
+            { const ij = document.getElementById('reg-jornadas-regulares'); if (ij) ij.value = jornadasFaseRegular(db); }
+            actualizarCalculoJornadas();
+            poblarJornadasRegulares('admin-part-jornada');
             actualizarTextoReglasDisciplina();
         }
 
@@ -4055,8 +4108,11 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                 multaDobleAmarilla: parseInt(document.getElementById('reg-multa-doble-amarilla').value) || 0,
                 partidosRojaDirecta: parseInt(document.getElementById('reg-partidos-roja').value) || 0,
                 multaRojaDirecta: parseInt(document.getElementById('reg-multa-roja').value) || 0,
-                notasAdicionales: document.getElementById('reg-notas').value.trim()
+                notasAdicionales: document.getElementById('reg-notas').value.trim(),
+                jornadasRegulares: Math.min(60, Math.max(1, parseInt((document.getElementById('reg-jornadas-regulares') || {}).value) || REGLAMENTO_DEFAULTS.jornadasRegulares))
             };
+            poblarJornadasRegulares('admin-part-jornada');
+            actualizarCalculoJornadas();
             actualizarTextoReglasDisciplina();
             guardarDB();
             alert('✅ Reglamento guardado y publicado.');

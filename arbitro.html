@@ -1314,7 +1314,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
         // Mismos valores por defecto del Reglamento que admin.html (ver ahí el detalle). Se
         // usan mientras el admin no haya guardado los suyos propios en db.reglamento.
         const REGLAMENTO_DEFAULTS = {
-            duracionMinutos: 25, numTiempos: 2, toleranciaMinutos: 10,
+            duracionMinutos: 25, numTiempos: 2, toleranciaMinutos: 10, jornadasRegulares: 9,
             jugadoresTitulares: 11, jugadoresSuplentes: 5,
             cuotaArbitraje: 300, cuotaInscripcionEquipo: 0, cuotaInscripcionJugador: 0,
             balonOficial: '', categoriaTexto: 'Libre',
@@ -1324,6 +1324,12 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             partidosRojaDirecta: 1, multaRojaDirecta: 150,
             notasAdicionales: ''
         };
+        // Numero de jornadas de la fase regular (se configura en Admin > Reglamento; por defecto 9).
+        // Las jornadas 1..N son fase regular; de la 98 en adelante es Liguilla.
+        function jornadasFaseRegular(dbRef) {
+            const n = parseInt(reg(dbRef || db, 'jornadasRegulares'));
+            return (n >= 1 && n <= 60) ? n : 9;
+        }
         function reg(dbRef, campo) {
             const v = dbRef.reglamento && dbRef.reglamento[campo];
             return (v === undefined || v === null || v === '') ? REGLAMENTO_DEFAULTS[campo] : v;
@@ -1718,7 +1724,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
         // roja directa) para saber quién está habilitado a la hora de armar la cédula. =====
         // Jornada 9 es la última de fase regular; 98=Cuartos, 99=Semifinal, 100=Gran Final: al
         // cruzar ese límite se limpian las amarillas acumuladas.
-        const FASE_REGULAR_MAX_JORNADA = 9;
+        // El limite de la fase regular ahora se configura en Reglamento (ver jornadasFaseRegular()).
 
         function eventosTarjetasJugador(jugadorId, dbRef) {
             const eventos = [];
@@ -1741,7 +1747,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             let contador = 0, faseAnterior = null;
             const sanciones = [];
             eventosTarjetasJugador(jugadorId, dbRef).forEach(ev => {
-                const fase = ev.jornada <= FASE_REGULAR_MAX_JORNADA ? 'regular' : 'liguilla';
+                const fase = ev.jornada <= jornadasFaseRegular(dbRef) ? 'regular' : 'liguilla';
                 if (faseAnterior === 'regular' && fase === 'liguilla') contador = 0;
                 faseAnterior = fase;
 
