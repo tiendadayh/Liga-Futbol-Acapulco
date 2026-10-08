@@ -1208,18 +1208,7 @@ html[data-theme="dark"]{--sk1:#1a2744;--sk2:#26385e}
 #liga-theme-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 @media (prefers-reduced-motion:reduce){.sk,.es-wrap svg{animation:none}}
 </style>
-<style id="liga-bottom-nav">
-#bottom-nav{display:none}
-@media (max-width:768px){
- #bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:7000;justify-content:space-around;align-items:stretch;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));background:rgba(11,47,92,.92);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);border-top:1px solid rgba(240,180,41,.45);box-shadow:0 -8px 24px rgba(0,0,0,.28)}
- #bottom-nav a,#bottom-nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border:0;background:none;color:rgba(255,255,255,.72);font:600 .66rem var(--font-body,system-ui);text-decoration:none;cursor:pointer;border-radius:12px;transition:color .2s,background .2s,transform .2s}
- #bottom-nav svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
- #bottom-nav .bn-act{color:#f0b429;background:rgba(240,180,41,.14);transform:translateY(-2px)}
- body{padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))!important}
- #toast-container,.toast-container,#toasts{bottom:86px!important}
-}
-@media print{#bottom-nav{display:none!important}}
-</style>
+
 <style id="liga-ficha-premium">
 .ficha-tecnica-banner{background-image:repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 12px,transparent 12px 26px),var(--gradient-header)!important}
 .ficha-tecnica-banner::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.22) 48%,rgba(240,180,41,.25) 52%,transparent 65%);background-size:250% 100%;animation:fichaFoil 5s ease-in-out infinite}
@@ -5952,13 +5941,7 @@ section.card-section{scroll-margin-top:14px}
 
 })();
 </script>
-<nav id="bottom-nav" aria-label="Navegación rápida">
-<a href="#" data-bn="top" aria-label="Inicio"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>Inicio</a>
-<a href="#jornadas-sec" data-bn="jornadas-sec" aria-label="Partidos"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Partidos</a>
-<a href="#posiciones-sec" data-bn="posiciones-sec" aria-label="Tabla"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Tabla</a>
-<a href="#equipos-arbitros-sec" data-bn="equipos-arbitros-sec" aria-label="Equipos"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg>Equipos</a>
-<button type="button" data-bn="menu" aria-label="Menú"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>Menú</button>
-</nav>
+
 <script id="liga-diseno-js">
 (function(){
 var PAGE='index';
