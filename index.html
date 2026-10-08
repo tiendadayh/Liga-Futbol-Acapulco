@@ -1246,18 +1246,27 @@ html[data-theme="dark"] #equipo-modal-stats strong{color:var(--text)!important}
 @media (max-width:560px){#equipo-modal-foto-plantel{max-height:230px}}
 </style><style>#equipo-modal-foto-plantel{cursor:default!important;pointer-events:none}</style><style id="liga-plantel-5">
 #equipo-modal-jugadores{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important}
-#equipo-modal-jugadores .jugador-card{padding:10px 6px!important;min-width:0;border-radius:14px}
-#equipo-modal-jugadores .jugador-card img{width:64px!important;height:64px!important;margin:0 auto 6px!important}
-#equipo-modal-jugadores .jugador-card h3{font-size:.76rem!important;line-height:1.2;margin:0 0 2px!important;word-break:break-word}
-#equipo-modal-jugadores .jugador-card p{font-size:.64rem!important;margin:0!important}
 @media (max-width:560px){#equipo-modal-jugadores{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
 </style><style id="liga-lista-jugadores-4">
 #grid-jugadores{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important}
-#grid-jugadores .jugador-card{padding:10px 6px!important;min-width:0;border-radius:14px}
-#grid-jugadores .jugador-card img{width:64px!important;height:64px!important;margin:0 auto 6px!important}
-#grid-jugadores .jugador-card h3{font-size:.76rem!important;line-height:1.2;margin:0 0 2px!important;word-break:break-word}
-#grid-jugadores .jugador-card p{font-size:.66rem!important;margin:0!important;word-break:break-word}
 @media (max-width:560px){#grid-jugadores{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}}
+</style><style id="liga-carta-jugador">
+.carta-jug{padding:0!important;overflow:hidden;background:#fff!important;border:1px solid #d3dce8!important;border-radius:10px!important;text-align:left!important;box-shadow:0 8px 16px -8px rgba(11,47,92,.45)!important;color:#12233f}
+
+.carta-jug .cj-foto{position:relative;width:100%;padding-top:82%;background:linear-gradient(#e6eef8,#fff);overflow:hidden}
+.carta-jug .cj-foto img{position:absolute;inset:0;width:100%!important;height:100%!important;margin:0!important;border-radius:0!important;box-shadow:none!important;object-fit:cover;object-position:center 22%}
+.carta-jug .cj-escudo{position:absolute;top:6px;left:6px;z-index:3;width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.carta-jug .cj-escudo img{width:22px!important;height:22px!important;object-fit:contain;border-radius:0!important;box-shadow:none!important;margin:0!important}
+.carta-jug .cj-info{position:relative;padding:3px 8px 8px;display:flex;flex-direction:column;gap:1px;border-top:1px solid #e5ebf3}
+.carta-jug .cj-num{font:700 1.15rem/1.1 var(--font-display,Oswald,sans-serif);color:#0b2f5c}
+.carta-jug .cj-nombre{font:600 .74rem/1.2 var(--font-body,Inter,sans-serif);color:#12233f;word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.carta-jug .cj-sub{font-size:.62rem;color:#6b7a90;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.carta-jug .cj-pos{position:absolute;right:6px;top:5px;min-width:26px;padding:3px 4px;border-radius:12px;background:#0b2f5c;color:#fff;font:700 .58rem/1 var(--font-body,Inter,sans-serif);text-align:center;border:2px solid #f0b429}
+.carta-jug:hover{transform:translateY(-4px) rotate(-.6deg)!important;border-color:#f0b429!important}
+</style><style id="liga-grupos-posicion">
+.grupo-pos-titulo{grid-column:1/-1;margin:10px 0 0;padding-bottom:4px;font:700 .95rem var(--font-display,Oswald,sans-serif);text-transform:uppercase;letter-spacing:.06em;color:var(--secondary,#c0141c);border-bottom:2px solid var(--border,#d3dce8)}
+.grupo-pos-titulo small{color:var(--text-muted,#6b7a90);font-weight:600}
+#equipo-modal-jugadores .carta-jug .cj-pos{display:none}
 </style></head>
 <body><div id="liga-skel" aria-hidden="true"><div class="sk sk-h"></div><div class="sk-w"><div class="sk-row"><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div></div></div>
 
@@ -4487,6 +4496,21 @@ html[data-theme="dark"] #equipo-modal-stats strong{color:var(--text)!important}
             `).join('') : estadoVacioFila(5, '⚔️', 'Aún no hay partidos jugados.');
         }
 
+        function cartaJugador(j, accion, sub) {
+            const eq = db.equipos.find(e => e.id === j.equipoId);
+            const pos = (j.posicion || '').trim().slice(0, 3).toUpperCase();
+            return `<div class="jugador-card carta-jug" onclick="${accion}">
+                <div class="cj-foto"><img src="${j.foto || 'https://placehold.co/200'}" alt="${escapeHtml(j.nombre)}" loading="lazy"></div>
+                ${eq && eq.escudo ? `<span class="cj-escudo"><img src="${eq.escudo}" alt="" loading="lazy"></span>` : ''}
+                <div class="cj-info">
+                    <span class="cj-num">${j.numero !== undefined && j.numero !== '' && j.numero !== null ? escapeHtml(String(j.numero)) : '&nbsp;'}</span>
+                    <span class="cj-nombre">${escapeHtml(j.nombre)}</span>
+                    <span class="cj-sub">${escapeHtml(sub || '')}</span>
+                    ${pos ? `<span class="cj-pos">${escapeHtml(pos)}</span>` : ''}
+                </div>
+            </div>`;
+        }
+
         function filtrarJugadores() {
             const txt = document.getElementById('input-buscar-jugador').value.toLowerCase();
             const eqFiltro = document.getElementById('select-filtrar-equipo').value;
@@ -4500,7 +4524,7 @@ html[data-theme="dark"] #equipo-modal-stats strong{color:var(--text)!important}
                     const letra = (j.nombre.trim().charAt(0) || '#').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
                     const encabezado = letra !== letraActual ? `<h3 style="grid-column:1/-1; margin:8px 0 0; color:var(--primary); border-bottom:2px solid var(--border);">${escapeHtml(letra)}</h3>` : '';
                     letraActual = letra;
-                    return encabezado + `<div class="jugador-card" onclick="verFicha(${j.id})"><img src="${j.foto || 'https://placehold.co/100'}" alt="${escapeHtml(j.nombre)}" loading="lazy"><h3>${escapeHtml(j.nombre)}</h3><p>${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</p></div>`;
+                    return encabezado + cartaJugador(j, `verFicha(${j.id})`, db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre');
                 }).join('')
                 : estadoVacio('🔍', 'No se encontraron jugadores con ese filtro.');
         }
@@ -5011,12 +5035,24 @@ html[data-theme="dark"] #equipo-modal-stats strong{color:var(--text)!important}
                 vacio.classList.remove('hidden');
             }
 
-            document.getElementById('equipo-modal-jugadores').innerHTML = jugadoresEquipo.map(j => `
-                <div class="jugador-card" onclick="cerrarModal('modal-equipo'); verFicha(${j.id})">
-                    <img src="${j.foto || 'https://placehold.co/100'}" alt="${escapeHtml(j.nombre)}" loading="lazy">
-                    <h3>${escapeHtml(j.nombre)}</h3>
-                    <p>${j.posicion || ''}</p>
-                </div>`).join('') || '<p style="color:var(--text-muted);">Este equipo aún no tiene jugadores registrados.</p>';
+            document.getElementById('equipo-modal-jugadores').innerHTML = (function () {
+                const grupos = [['Delanteros', /delantero|extremo/i], ['Medios', /medio/i], ['Defensas', /defensa|lateral/i], ['Porteros', /portero/i]];
+                const usados = new Set();
+                let html = '';
+                const pintar = (titulo, lista) => {
+                    if (!lista.length) return;
+                    html += `<h3 class="grupo-pos-titulo">${titulo} <small>(${lista.length})</small></h3>` +
+                        lista.sort((x, y) => (parseInt(x.numero) || 999) - (parseInt(y.numero) || 999) || x.nombre.localeCompare(y.nombre, 'es'))
+                            .map(j => cartaJugador(j, `cerrarModal('modal-equipo'); verFicha(${j.id})`, j.posicion || '')).join('');
+                };
+                grupos.forEach(([titulo, rx]) => {
+                    const lista = jugadoresEquipo.filter(j => !usados.has(j.id) && rx.test(j.posicion || ''));
+                    lista.forEach(j => usados.add(j.id));
+                    pintar(titulo, lista);
+                });
+                pintar('Otros', jugadoresEquipo.filter(j => !usados.has(j.id)));
+                return html;
+            })() || '<p style="color:var(--text-muted);">Este equipo aún no tiene jugadores registrados.</p>';
             document.getElementById('modal-equipo').classList.remove('hidden');
         }
 
