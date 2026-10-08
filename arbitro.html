@@ -1369,6 +1369,11 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
         try { cambiosPendientesOffline = localStorage.getItem(CLAVE_PENDIENTE) === '1'; } catch (e) { }
         let conexionNube = null;          // true/false según Firebase (.info/connected); null = aún no se sabe
         let sincronizandoNube = false;
+        let ultimoErrorSync = '';        // motivo real por el que falló la última subida a la nube (para mostrarlo en el banner)
+        function registrarErrorSync(err) {
+            ultimoErrorSync = String((err && (err.code || err.message)) || err || 'desconocido');
+            actualizarBannerConexion();
+        }
 
         function marcarPendiente(valor) {
             cambiosPendientesOffline = !!valor;
@@ -1521,12 +1526,15 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
 
             recibiendoDeFirebase = true;
             const respaldo = setTimeout(() => { recibiendoDeFirebase = false; }, 10000);
-            conTiempoLimite(firebaseDbRef.set(db), 10000).then(() => {
+            let promSet; try { promSet = firebaseDbRef.set(db); } catch (e) { promSet = Promise.reject(e); }
+            conTiempoLimite(promSet, 10000).then(() => {
+                ultimoErrorSync = '';
                 guardarBase(db);
                 actualizarBannerConexion();
             }).catch(err => {
                 // Con señal muy débil el guardado puede no confirmarse: queda pendiente y se reintenta solo.
                 console.warn('No se pudo confirmar la sincronización con Firebase', err);
+                ultimoErrorSync = String((err && (err.code || err.message)) || err || '');
                 marcarPendiente(true);
             }).finally(() => { clearTimeout(respaldo); recibiendoDeFirebase = false; });
         }
@@ -1544,6 +1552,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 db = normalizarDB(merged);
                 guardarLocal();
                 guardarBase(db);
+                ultimoErrorSync = '';
                 marcarPendiente(false);
                 try { refrescarSelectorArbitros(); aplicarLogoSitio(); } catch (e) { }
                 mostrarAvisoAutoguardado(conflictos
@@ -1551,6 +1560,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                     : `✅ Sincronizado: ${aplicados} cambio${aplicados === 1 ? '' : 's'} subido${aplicados === 1 ? '' : 's'}.`);
             } catch (err) {
                 console.warn('Sincronización pendiente falló; se reintentará', err);   // sigue pendiente
+                ultimoErrorSync = String((err && (err.code || err.message)) || err || '');
             } finally {
                 recibiendoDeFirebase = false;
                 sincronizandoNube = false;
@@ -1572,7 +1582,13 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 banner.textContent = '📴 Sin conexión — puedes seguir capturando: todo se guarda en este teléfono y se subirá solo cuando vuelva el internet.';
                 banner.classList.remove('hidden');
             } else if (cambiosPendientesOffline) {
-                banner.textContent = '🔄 Ya hay internet — sincronizando lo que quedó pendiente...';
+                if (/permission|PERMISSION/.test(ultimoErrorSync)) {
+                    banner.textContent = '⚠️ Firebase NO está permitiendo publicar desde este panel (permiso denegado). Lo que captures se guarda en este teléfono, pero NO llega a la web ni a otros celulares.';
+                } else if (ultimoErrorSync) {
+                    banner.textContent = '⚠️ No se pudo subir a la nube (' + ultimoErrorSync + '). Se reintenta cada 15 segundos; lo capturado está guardado en este teléfono.';
+                } else {
+                    banner.textContent = '🔄 Ya hay internet — sincronizando lo que quedó pendiente...';
+                }
                 banner.classList.remove('hidden');
             } else {
                 banner.classList.add('hidden');
