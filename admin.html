@@ -751,7 +751,35 @@ html[data-theme="dark"] [style*="#fff3cd"]{background:rgba(240,180,41,.16)!impor
 html[data-theme="dark"] [style*="#fdecea"],html[data-theme="dark"] [style*="#fee2e2"],html[data-theme="dark"] [style*="#fde2e5"]{background:rgba(255,59,59,.16)!important;color:#ffc9c9!important}
 html[data-theme="dark"] [style*="color:#333"],html[data-theme="dark"] [style*="color: #333"],html[data-theme="dark"] [style*="color:#555"],html[data-theme="dark"] [style*="color:#444"],html[data-theme="dark"] [style*="color:#0b2f5c"],html[data-theme="dark"] [style*="color: #0b2f5c"],html[data-theme="dark"] [style*="color:#1a1a1a"]{color:#dbe4f5!important}
 html[data-theme="dark"] #liga-skel{background:#0d1424}
-</style></head>
+</style><style id="liga-fotos-admin">
+.gestion-fila img:not(.escudo-3d){object-fit:cover;object-position:center 28%;object-view-box:inset(7%);background:#e9eff7}
+#admin-jug-foto-preview{object-position:center 28%;object-view-box:inset(7%)}
+#ficha-adm-foto,#ficha-adm-arb-foto,#sol-adm-foto{width:78px!important;height:98px!important;border-radius:12px!important;object-fit:cover;object-position:center 28%;object-view-box:inset(7%);border:3px solid #fff!important;box-shadow:0 0 0 3px #f0b429,0 8px 18px rgba(0,0,0,.4);background:#e9eff7;flex-shrink:0}
+.solicitud-ficha-card>img,.solicitud-ficha-card .solicitud-foto{object-fit:cover;object-position:center 28%;object-view-box:inset(7%)}
+</style><style id="liga-menu-hamburguesa">
+#liga-burger{position:fixed;top:14px;left:14px;z-index:7600;width:48px;height:48px;border-radius:14px;border:2px solid #f0b429;background:rgba(11,47,92,.92);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(0,0,0,.35);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:transform .2s}
+#liga-burger:hover{transform:scale(1.07)}
+#liga-burger svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round}
+@media (max-width:768px){#liga-burger{top:10px;left:10px;width:42px;height:42px;border-radius:12px}}
+#btn-instalar-app{left:68px!important}
+#liga-menu-fondo{position:fixed;inset:0;z-index:7700;background:rgba(5,12,28,.55);opacity:0;pointer-events:none;transition:opacity .25s}
+#liga-menu{position:fixed;top:0;left:0;bottom:0;z-index:7800;width:min(340px,88vw);background:var(--card-bg,#fff);color:#12233f;box-shadow:12px 0 40px rgba(0,0,0,.4);transform:translateX(-105%);transition:transform .28s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;border-right:3px solid #f0b429}
+html[data-theme="dark"] #liga-menu{color:#eef1f8}
+body.liga-menu-abierto #liga-menu{transform:none}
+body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
+#liga-menu header{padding:16px 16px 12px;background:linear-gradient(135deg,#0b2f5c,#7a0f14);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;border-radius:0;margin:0;text-align:left}
+#liga-menu header b{font:700 1.15rem var(--font-display,Oswald,sans-serif);letter-spacing:.05em;text-transform:uppercase}
+#liga-menu header button{width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:1.3rem;cursor:pointer;padding:0}
+#liga-menu-buscar{margin:12px 14px 6px;padding:10px 12px;border-radius:10px;border:1px solid var(--border,#d3dce8);background:var(--light,#f3f8fb);color:inherit;font:600 .9rem var(--font-body,Inter,sans-serif);outline:none;width:auto}
+#liga-menu-lista{flex:1;overflow-y:auto;padding:6px 10px 24px;margin:0;list-style:none}
+#liga-menu-lista li button{width:100%;text-align:left;display:flex;align-items:center;gap:10px;padding:12px 12px;margin:2px 0;border:0;border-radius:10px;background:none;color:inherit;font:600 .92rem var(--font-body,Inter,sans-serif);cursor:pointer;box-shadow:none}
+#liga-menu-lista li button:hover,#liga-menu-lista li button.act{background:rgba(240,180,41,.18)}
+#liga-menu-lista li button i{width:9px;height:9px;border-radius:50%;background:var(--dot,#0b2f5c);flex-shrink:0}
+#liga-menu-lista .sep{font:700 .68rem var(--font-body,Inter,sans-serif);text-transform:uppercase;letter-spacing:.1em;color:#6b7a90;padding:12px 12px 4px}
+.admin-box{scroll-margin-top:14px}
+@media print{#liga-burger,#liga-menu,#liga-menu-fondo{display:none!important}}
+</style>
+</head>
 
 <body><div id="liga-skel" aria-hidden="true"><div class="sk sk-h"></div><div class="sk-w"><div class="sk-row"><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div></div></div>
     <div id="pantalla-login" style="position:fixed; inset:0; background:linear-gradient(135deg,#0d2a4d,#1a3a6b); z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px;">
@@ -4915,32 +4943,30 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 .barra-impresion small { opacity: .85; }
                 .hoja { width: 21.59cm; height: 27.9cm; margin: 14px auto; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.25); box-sizing: border-box; padding: 1cm 0 0 0.795cm; display: grid; grid-template-columns: 10cm 10cm; grid-auto-rows: 6cm; row-gap: 0.3cm; column-gap: 0; align-content: start; overflow: hidden; page-break-after: always; break-after: page; }
                 .hoja:last-child { page-break-after: auto; break-after: auto; }
-                .carnet { width: 10cm; height: 6cm; box-sizing: border-box; padding: 0.15cm 0.3cm 0.12cm; background: #fff; border: 1.5px solid #0b2f5c; border-radius: 0.25cm; display: flex; flex-direction: column; overflow: hidden; text-align: left; page-break-inside: avoid; break-inside: avoid; }
-                .carnet-header { display: flex; align-items: center; gap: 0.2cm; border-bottom: 1.5px solid #0b2f5c; padding-bottom: 0.06cm; margin-bottom: 0.08cm; height: 0.8cm; flex-shrink: 0; box-sizing: border-box; }
-                .carnet-escudo { width: 0.7cm; height: 0.7cm; object-fit: contain; flex-shrink: 0; }
+                .carnet { position: relative; width: 10cm; height: 6cm; box-sizing: border-box; padding: 0.17cm 0.32cm 0.14cm; background: #fff; border: 0.07cm solid #c9a227; border-radius: 0.25cm; display: flex; flex-direction: column; overflow: hidden; text-align: left; page-break-inside: avoid; break-inside: avoid; }
+                .carnet::before { content: ''; position: absolute; top: 0.05cm; left: 0.05cm; right: 0.05cm; bottom: 0.05cm; border: 0.5pt solid #b8860b; border-radius: 0.18cm; pointer-events: none; }
+                .carnet::after { content: ''; position: absolute; left: 0.3cm; right: 0.3cm; bottom: 0.06cm; height: 0.05cm; background: linear-gradient(90deg,#9a7209 0%,#e8c547 25%,#b8860b 50%,#f3dc7a 75%,#9a7209 100%); border-radius: 0.03cm; }
+                .carnet-header { display: flex; align-items: center; gap: 0.2cm; position: relative; border-bottom: 0.04cm solid #c9a227; padding-bottom: 0.06cm; margin-bottom: 0.08cm; height: 1.05cm; flex-shrink: 0; box-sizing: border-box; }
+                .carnet-header::after { content: ''; position: absolute; left: 0; right: 0; bottom: -0.04cm; height: 0.04cm; background: linear-gradient(90deg,#9a7209 0%,#e8c547 25%,#b8860b 50%,#f3dc7a 75%,#9a7209 100%); }
+                .carnet-escudo { width: 1cm; height: 1cm; object-fit: contain; flex-shrink: 0; }
                 .carnet-header-texto { flex: 1; text-align: center; }
                 .carnet-linea-chica { font-size: 5.5pt; line-height: 1.25; color: #0b2f5c; text-transform: uppercase; }
-                .carnet-numero { flex-shrink: 0; background: #d1140f; color: #fff; font-weight: bold; font-size: 10pt; width: 0.7cm; height: 0.7cm; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1.5px solid #fff; box-shadow: 0 0 2px rgba(0,0,0,.4); }
+                .carnet-numero { flex-shrink: 0; background: #d1140f; color: #fff; font-weight: bold; font-size: 10pt; width: 0.7cm; height: 0.7cm; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 0.05cm solid #c9a227; box-shadow: 0 0 2px rgba(0,0,0,.4); }
                 .carnet-cuerpo { flex: 1; min-height: 0; display: flex; gap: 0.25cm; }
                 .carnet-col-izq { width: 2.5cm; flex-shrink: 0; display: flex; flex-direction: column; justify-content: space-between; align-items: center; }
-                .carnet-foto { width: 2.5cm; height: 3cm; min-height: 3cm; flex-shrink: 0; object-fit: cover; border: 1.5px solid #0b2f5c; background: #eee; display: block; box-sizing: border-box; }
+                .carnet-foto { width: 2.5cm; height: 2.75cm; min-height: 2.75cm; flex-shrink: 0; object-fit: cover; border: 0.06cm solid #c9a227; outline: 0.5pt solid #0b2f5c; outline-offset: -0.06cm; background: #eee; display: block; box-sizing: border-box; }
                 .carnet-folio { flex-shrink: 0; font-size: 5pt; color: #777; line-height: 1.3; text-align: right; padding-bottom: 0.05cm; white-space: nowrap; }
                 .carnet-col-der { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; }
-                .carnet-datos p { margin: 0.02cm 0; font-size: 5.8pt; line-height: 1.15; color: #1a1a1a; }
+                .carnet-datos p { margin: 0.02cm 0; font-size: 5.8pt; line-height: 1.15; color: #1a1a1a; border-bottom: 0.4pt solid rgba(184,134,11,.35); padding-bottom: 0.01cm; }
                 .carnet-datos strong { color: #0b2f5c; }
-                .carnet-datos-liga { font-weight: bold; color: #d1140f !important; margin-top: 0.07cm !important; text-transform: uppercase; }
+                .carnet-datos-liga { font-weight: bold; color: #d1140f !important; margin-top: 0.07cm !important; text-transform: uppercase; border-bottom: 0 !important; }
                 .carnet-pie { display: flex; align-items: flex-end; justify-content: space-between; gap: 0.2cm; }
                 .carnet-firmas { flex: 1; display: flex; gap: 0.2cm; align-items: flex-end; padding-bottom: 0.05cm; }
                 .carnet-firma { flex: 1; text-align: center; font-size: 4.8pt; color: #333; line-height: 1.2; }
-                .carnet-firma-linea { display: block; border-top: 0.5pt solid #333; margin-bottom: 0.04cm; height: 0.4cm; }
+                .carnet-firma-linea { display: block; border-top: 0.9pt solid #b8860b; margin-bottom: 0.04cm; height: 0.4cm; }
                 .carnet-qr-box { width: 2.5cm; flex-shrink: 0; text-align: center; }
-                .carnet-qr-box img { width: 1.4cm; height: 1.4cm; aspect-ratio: 1 / 1; display: block; margin: 0 auto; object-fit: contain; background: #fff; border: 0.5pt solid #0b2f5c; padding: 0.03cm; box-sizing: border-box; image-rendering: pixelated; }
+                .carnet-qr-box img { width: 1.4cm; height: 1.4cm; aspect-ratio: 1 / 1; display: block; margin: 0 auto; object-fit: contain; background: #fff; border: 0.06cm solid #c9a227; padding: 0.03cm; box-sizing: border-box; image-rendering: pixelated; }
                 .carnet-qr-box span { display: block; font-size: 3.2pt; line-height: 1.1; color: #333; font-weight: bold; margin-top: 0.02cm; }
-                .carnet { position: relative; background-image: linear-gradient(115deg, transparent 0 66%, rgba(240,180,41,.35) 66% 68%, rgba(11,47,92,.08) 68% 84%, transparent 84%); box-shadow: inset 0 0 0 0.5mm #f0b429, inset 0 0 0 0.75mm #0b2f5c; }
-                .carnet::after { content: ""; position: absolute; right: -0.9cm; bottom: -0.9cm; width: 4cm; height: 4cm; border-radius: 50%; border: 0.4cm solid rgba(11,47,92,.06); pointer-events: none; }
-                .carnet > * { position: relative; z-index: 1; }
-                .carnet-foto { box-shadow: 0 0 0 0.35mm #f0b429; }
-                * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 @page { size: letter portrait; margin: 0; }
                 @media print {
                     body { background: #fff; }
@@ -7044,5 +7070,49 @@ if(PAGE==='index'){
   });
 }
 })();
-</script></body>
+</script><button id="liga-burger" type="button" aria-label="Abrir menú de secciones"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+<div id="liga-menu-fondo"></div>
+<aside id="liga-menu" aria-label="Menú de secciones"><header><b>Ir a…</b><button type="button" id="liga-menu-cerrar" aria-label="Cerrar">×</button></header><input id="liga-menu-buscar" type="search" placeholder="Buscar sección…" autocomplete="off"><ul id="liga-menu-lista"></ul></aside>
+<script id="liga-menu-js">
+(function(){
+var lista=document.getElementById('liga-menu-lista'),buscar=document.getElementById('liga-menu-buscar');
+function secciones(){
+  var out=[],n=0;
+  document.querySelectorAll('.admin-box').forEach(function(el){
+    if(el.closest('.modal-box,.modal-scroll-box,#pantalla-login'))return;
+    if(el.offsetParent===null)return;
+    var h=el.querySelector('h3,h2');if(!h)return;
+    var t=(h.textContent||'').replace(/\s+/g,' ').trim();if(!t)return;
+    if(!el.id)el.id='adm-sec-'+(++n);
+    out.push([el.id,t,el]);
+  });
+  return out;
+}
+function actual(list){var best=null,bd=1e9;list.forEach(function(x){var d=Math.abs(x[2].getBoundingClientRect().top-80);if(d<bd){bd=d;best=x[0];}});return best;}
+function pinta(){
+  var q=(buscar.value||'').toLowerCase().trim(),all=secciones(),act=actual(all),h='';
+  var items=all.filter(function(x){return x[1].toLowerCase().indexOf(q)>-1;});
+  h+='<li class="sep">Secciones</li>';
+  if(!items.length)h+='<li class="sep">Sin resultados</li>';
+  items.forEach(function(x){var c=x[2].style.borderTopColor||'#0b2f5c';var t=x[1].replace(/&/g,'&amp;').replace(/</g,'&lt;');h+='<li><button type="button" data-sec="'+x[0]+'" class="'+(x[0]===act?'act':'')+'"><i style="--dot:'+c+'"></i>'+t+'</button></li>';});
+  if(!q||'arriba inicio'.indexOf(q)>-1)h+='<li class="sep">Atajos</li><li><button type="button" data-acc="top"><i></i>⬆️ Ir arriba</button></li>';
+  lista.innerHTML=h;
+}
+function abrir(){pinta();document.body.classList.add('liga-menu-abierto');setTimeout(function(){try{buscar.focus({preventScroll:true});}catch(e){}},300);}
+function cerrar(){document.body.classList.remove('liga-menu-abierto');buscar.blur();}
+window.ligaMenuToggle=function(){document.body.classList.contains('liga-menu-abierto')?cerrar():abrir();};
+document.getElementById('liga-burger').onclick=window.ligaMenuToggle;
+document.getElementById('liga-menu-fondo').onclick=cerrar;
+document.getElementById('liga-menu-cerrar').onclick=cerrar;
+buscar.addEventListener('input',pinta);
+lista.addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  if(b.getAttribute('data-acc')==='top'){cerrar();setTimeout(function(){window.scrollTo({top:0,behavior:'smooth'});},120);return;}
+  var el=document.getElementById(b.getAttribute('data-sec'));if(!el)return;
+  cerrar();setTimeout(function(){el.scrollIntoView({behavior:'smooth',block:'start'});},120);
+});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.body.classList.contains('liga-menu-abierto'))cerrar();});
+})();
+</script>
+</body>
 </html>
