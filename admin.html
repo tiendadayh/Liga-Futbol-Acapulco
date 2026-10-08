@@ -1029,6 +1029,9 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             <h3>Registrar Equipo</h3>
             <form id="form-add-equipo">
                 <input type="text" id="admin-eq-nombre" placeholder="Nombre del Equipo" required>
+                <input type="text" id="admin-eq-entrenador" placeholder="Entrenador">
+                <input type="text" id="admin-eq-auxiliar" placeholder="Auxiliar">
+                <small style="display:block; color:#888; margin-top:-8px; margin-bottom:8px;">El capitán se elige en cada partido, en la alineación titular.</small>
                 <label>Escudo:</label>
                 <input type="file" id="admin-eq-escudo" accept="image/*">
                 <label>Foto Plantel:</label>
@@ -1460,6 +1463,8 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                 <div><span class="lbl">Ranking ofensivo</span><span class="val" id="ficha-adm-eq-rank-of">—</span></div>
                 <div><span class="lbl">Ranking defensivo</span><span class="val" id="ficha-adm-eq-rank-def">—</span></div>
                 <div><span class="lbl">Jugadores registrados</span><span class="val" id="ficha-adm-eq-conteo">0</span></div>
+                <div><span class="lbl">Entrenador</span><span class="val" id="ficha-adm-eq-entrenador">—</span></div>
+                <div><span class="lbl">Auxiliar</span><span class="val" id="ficha-adm-eq-auxiliar">—</span></div>
             </div>
 
             <h4 style="margin:14px 0 6px; font-size:0.8rem; color:var(--primary); text-transform:uppercase;">👥 Plantilla</h4>
@@ -1702,6 +1707,12 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                     <input type="checkbox" id="edit-quitar-foto" style="width:auto;"> 🗑️ Quitar la imagen actual (dejar sin foto/escudo)
                 </label>
 
+                <div id="edit-campo-equipo-staff" style="display:none;">
+                    <label>Entrenador:</label>
+                    <input type="text" id="edit-entrenador" placeholder="Entrenador">
+                    <label>Auxiliar:</label>
+                    <input type="text" id="edit-auxiliar" placeholder="Auxiliar">
+                </div>
                 <div id="edit-campo-equipo-foto-plantel" style="display:none;">
                     <label>Reemplazar foto del plantel/equipo (opcional, deja vacío para conservar la actual):</label>
                     <input type="file" id="edit-foto-plantel" accept="image/*">
@@ -4106,7 +4117,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                     const newId = Date.now();
                     const nombreNuevoEquipo = document.getElementById('admin-eq-nombre').value.trim();
                     const pinNuevoEquipo = generarPin6Digitos();
-                    db.equipos.push({ id: newId, nombre: nombreNuevoEquipo, escudo: escudoBase64, fotoGrupal: fotoBase64, pin: pinNuevoEquipo });
+                    db.equipos.push({ id: newId, nombre: nombreNuevoEquipo, escudo: escudoBase64, fotoGrupal: fotoBase64, pin: pinNuevoEquipo, entrenador: document.getElementById('admin-eq-entrenador').value.trim(), auxiliar: document.getElementById('admin-eq-auxiliar').value.trim() });
                     db.finanzas[newId] = { adeudoArbitrajes: 0, multasLiquidadas: 0 };
                     agregarAvisoRegistro('registro', '🆕 Nuevo equipo registrado', `El equipo "${nombreNuevoEquipo}" se ha registrado en la liga.`);
                     this.reset();
@@ -4315,6 +4326,8 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                     const eq = db.equipos.find(x => x.id === id);
                     if (!eq) return;
                     eq.nombre = nombre;
+                    eq.entrenador = document.getElementById('edit-entrenador').value.trim();
+                    eq.auxiliar = document.getElementById('edit-auxiliar').value.trim();
                     if (nuevaFoto) eq.escudo = nuevaFoto;
                     else if (quitarFoto) eq.escudo = '';
                     const nuevaFotoPlantel = await convertirImagenABase64(document.getElementById('edit-foto-plantel'));
@@ -5322,8 +5335,8 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                 </div>
 
                 <div class="cedula-info-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:12px; font-size:0.85rem;">
-                    <div><b>${loc}</b><br>Entrenador: ${c.entrenadorLocal || '-'}<br>Prep. Físico: ${c.preparadorLocal || '-'}<br>Auxiliar: ${c.auxiliarLocal || '-'}<br>Capitán: ${c.capitanLocal || '-'}</div>
-                    <div><b>${vis}</b><br>Entrenador: ${c.entrenadorVisita || '-'}<br>Prep. Físico: ${c.preparadorVisita || '-'}<br>Auxiliar: ${c.auxiliarVisita || '-'}<br>Capitán: ${c.capitanVisita || '-'}</div>
+                    <div><b>${loc}</b><br>Entrenador: ${c.entrenadorLocal || '-'}<br>Auxiliar: ${c.auxiliarLocal || '-'}<br>Capitán: ${c.capitanLocal || ((db.jugadores.find(j => j.id === p.capitanLocalId) || {}).nombre) || '-'}</div>
+                    <div><b>${vis}</b><br>Entrenador: ${c.entrenadorVisita || '-'}<br>Auxiliar: ${c.auxiliarVisita || '-'}<br>Capitán: ${c.capitanVisita || ((db.jugadores.find(j => j.id === p.capitanVisitaId) || {}).nombre) || '-'}</div>
                 </div>
 
                 <div style="margin-top:12px; font-size:0.85rem;">
@@ -5648,9 +5661,9 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             // Cuerpo técnico
             saltoDePagina(30);
             texto('Cuerpo Técnico', { size: 11, bold: true, gap: 7 });
-            texto(`${loc} — Entrenador: ${c.entrenadorLocal || '-'}  ·  Prep. Físico: ${c.preparadorLocal || '-'}`, { size: 9, gap: 5 });
+            texto(`${loc} — Entrenador: ${c.entrenadorLocal || '-'}`, { size: 9, gap: 5 });
             texto(`Auxiliar: ${c.auxiliarLocal || '-'}  ·  Capitán: ${c.capitanLocal || '-'}`, { size: 9, gap: 7 });
-            texto(`${vis} — Entrenador: ${c.entrenadorVisita || '-'}  ·  Prep. Físico: ${c.preparadorVisita || '-'}`, { size: 9, gap: 5 });
+            texto(`${vis} — Entrenador: ${c.entrenadorVisita || '-'}`, { size: 9, gap: 5 });
             texto(`Auxiliar: ${c.auxiliarVisita || '-'}  ·  Capitán: ${c.capitanVisita || '-'}`, { size: 9, gap: 8 });
 
             // Cambios
@@ -6324,6 +6337,7 @@ ${cuerpo}`;
             document.getElementById('edit-foto').value = '';
             document.getElementById('edit-quitar-foto').checked = false;
             document.getElementById('edit-campo-equipo-foto-plantel').style.display = 'none';
+            document.getElementById('edit-campo-equipo-staff').style.display = 'none';
             document.getElementById('edit-foto-plantel').value = '';
             document.getElementById('edit-quitar-foto-plantel').checked = false;
             document.getElementById('edit-campo-equipo').style.display = 'none';
@@ -6342,6 +6356,9 @@ ${cuerpo}`;
                 document.getElementById('edit-nombre').value = eq.nombre;
                 document.getElementById('edit-label-foto').innerText = 'Reemplazar escudo (opcional, deja vacío para conservar el actual):';
                 document.getElementById('edit-campo-equipo-foto-plantel').style.display = 'block';
+                document.getElementById('edit-campo-equipo-staff').style.display = 'block';
+                document.getElementById('edit-entrenador').value = eq.entrenador || '';
+                document.getElementById('edit-auxiliar').value = eq.auxiliar || '';
             } else if (tipo === 'jugador') {
                 const j = db.jugadores.find(x => x.id === id);
                 if (!j) return;
@@ -6474,6 +6491,8 @@ ${cuerpo}`;
 
             const jugadores = db.jugadores.filter(j => j.equipoId === id);
             document.getElementById('ficha-adm-eq-conteo').innerText = jugadores.length;
+            document.getElementById('ficha-adm-eq-entrenador').innerText = eq.entrenador || '—';
+            document.getElementById('ficha-adm-eq-auxiliar').innerText = eq.auxiliar || '—';
 
             const lista = document.getElementById('ficha-adm-eq-plantilla');
             lista.innerHTML = jugadores.length ? jugadores.map(j => `

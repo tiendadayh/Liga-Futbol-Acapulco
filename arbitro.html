@@ -844,21 +844,20 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 </fieldset>
 
                 <fieldset style="border:1px solid var(--border); border-radius:8px; padding:12px; margin-top:15px;">
-                    <legend style="padding:0 6px; font-weight:700; color:var(--dark); font-size:0.9rem;">👔 Cuerpo Técnico y Capitanes</legend>
+                    <legend style="padding:0 6px; font-weight:700; color:var(--dark); font-size:0.9rem;">👔 Cuerpo Técnico y Capitán</legend>
+                    <p style="font-size:0.75rem; color:#6b7280; margin:0 0 8px;">El entrenador y el auxiliar se registran en Admin junto con el equipo. El capitán se elige con la <b>C</b> en la Alineación Titular.</p>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
                         <div style="display:flex; flex-direction:column; gap:8px;">
                             <strong id="ced-lbl-local" style="font-size:0.85rem; color:var(--primary);">Local</strong>
-                            <input type="text" id="ced-entrenador-local" placeholder="Entrenador">
-                            <input type="text" id="ced-preparador-local" placeholder="Preparador Físico">
-                            <input type="text" id="ced-auxiliar-local" placeholder="Auxiliar">
-                            <input type="text" id="ced-capitan-local" placeholder="Capitán">
+                            <input type="text" id="ced-entrenador-local" placeholder="Entrenador (sin registrar)" readonly>
+                            <input type="text" id="ced-auxiliar-local" placeholder="Auxiliar (sin registrar)" readonly>
+                            <input type="text" id="ced-capitan-local" placeholder="Capitán (elígelo en titulares)" readonly>
                         </div>
                         <div style="display:flex; flex-direction:column; gap:8px;">
                             <strong id="ced-lbl-visita" style="font-size:0.85rem; color:var(--secondary);">Visitante</strong>
-                            <input type="text" id="ced-entrenador-visita" placeholder="Entrenador">
-                            <input type="text" id="ced-preparador-visita" placeholder="Preparador Físico">
-                            <input type="text" id="ced-auxiliar-visita" placeholder="Auxiliar">
-                            <input type="text" id="ced-capitan-visita" placeholder="Capitán">
+                            <input type="text" id="ced-entrenador-visita" placeholder="Entrenador (sin registrar)" readonly>
+                            <input type="text" id="ced-auxiliar-visita" placeholder="Auxiliar (sin registrar)" readonly>
+                            <input type="text" id="ced-capitan-visita" placeholder="Capitán (elígelo en titulares)" readonly>
                         </div>
                     </div>
                 </fieldset>
@@ -2157,9 +2156,9 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             // Cuerpo técnico
             saltoDePagina(30);
             texto('Cuerpo Técnico', { size: 11, bold: true, gap: 7 });
-            texto(`${loc} — Entrenador: ${c.entrenadorLocal || '-'}  ·  Prep. Físico: ${c.preparadorLocal || '-'}`, { size: 9, gap: 5 });
+            texto(`${loc} — Entrenador: ${c.entrenadorLocal || '-'}`, { size: 9, gap: 5 });
             texto(`Auxiliar: ${c.auxiliarLocal || '-'}  ·  Capitán: ${c.capitanLocal || '-'}`, { size: 9, gap: 7 });
-            texto(`${vis} — Entrenador: ${c.entrenadorVisita || '-'}  ·  Prep. Físico: ${c.preparadorVisita || '-'}`, { size: 9, gap: 5 });
+            texto(`${vis} — Entrenador: ${c.entrenadorVisita || '-'}`, { size: 9, gap: 5 });
             texto(`Auxiliar: ${c.auxiliarVisita || '-'}  ·  Capitán: ${c.capitanVisita || '-'}`, { size: 9, gap: 8 });
 
             // Cambios
@@ -2359,17 +2358,52 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                     const estado = jugadorBloqueadoPorDisciplina(j, db, partido.jornada);
                     const castigado = estado.bloqueado;
                     const motivo = estado.suspendido ? 'SUSPENDIDO' : 'MULTA PENDIENTE';
+                    const esTitular = titulares.includes(j.id);
+                    const esCapitan = (partido.capitanLocalId === j.id) || (partido.capitanVisitaId === j.id);
                     return `
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
                     <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:400; cursor:${castigado ? 'not-allowed' : 'pointer'}; ${castigado ? 'color:#b91c1c;' : ''}">
-                        <input type="checkbox" style="width:auto;" ${titulares.includes(j.id) ? 'checked' : ''} ${castigado ? 'disabled' : ''} onchange="alternarTitular(${partido.id}, ${j.id}, this.checked)">
+                        <input type="checkbox" style="width:auto;" ${esTitular ? 'checked' : ''} ${castigado ? 'disabled' : ''} onchange="alternarTitular(${partido.id}, ${j.id}, this.checked)">
                         ${escapeHtml(j.nombre)}${j.numero ? ` (#${j.numero})` : ''}${castigado ? ` ❌ ${motivo}` : ''}
-                    </label>`;
+                    </label>
+                    <label title="${esTitular ? 'Marcar como capitán' : 'Primero márcalo como titular'}" style="display:flex; align-items:center; gap:3px; font-size:0.72rem; font-weight:700; color:${esCapitan ? '#b45309' : '#94a3b8'}; margin:0; cursor:${esTitular ? 'pointer' : 'not-allowed'}; white-space:nowrap;">
+                        <input type="radio" name="capitan-${contId}" style="width:auto;" ${esCapitan ? 'checked' : ''} ${esTitular ? '' : 'disabled'} onchange="elegirCapitan(${partido.id}, ${j.id})"> C
+                    </label>
+                    </div>`;
                 }).join('') : '<p style="font-size:0.78rem; color:#94a3b8; margin:0;">Sin jugadores en el plantel.</p>';
             };
             pintar('ced-titulares-local', jugadoresLocal, titLocal);
             pintar('ced-titulares-visita', jugadoresVisita, titVisita);
             document.getElementById('ced-titulares-contador-local').innerText = `${titLocal.length}/11`;
             document.getElementById('ced-titulares-contador-visita').innerText = `${titVisita.length}/11`;
+            actualizarCapitanesCedula(partido);
+        }
+
+        // Elige al capitán del equipo entre los titulares (uno por equipo).
+        function elegirCapitan(partidoId, jugadorId) {
+            const partido = db.partidos.find(p => p.id === partidoId);
+            const jugador = db.jugadores.find(j => j.id === jugadorId);
+            if (!partido || !jugador) return;
+            const esLocal = jugador.equipoId === partido.localId;
+            const claveTit = esLocal ? 'titularesLocal' : 'titularesVisita';
+            if (!(partido[claveTit] || []).includes(jugadorId)) return alert('El capitán debe estar en la alineación titular.');
+            partido[esLocal ? 'capitanLocalId' : 'capitanVisitaId'] = jugadorId;
+            guardarDB();
+            refrescarTitularesEscaner(partido);
+        }
+
+        // Si el capitán deja de ser titular, se le quita el brazalete.
+        function limpiarCapitanSiNoTitular(partido) {
+            if (partido.capitanLocalId && !(partido.titularesLocal || []).includes(partido.capitanLocalId)) partido.capitanLocalId = null;
+            if (partido.capitanVisitaId && !(partido.titularesVisita || []).includes(partido.capitanVisitaId)) partido.capitanVisitaId = null;
+        }
+
+        // Refleja el capitán elegido en los campos (solo lectura) del cuerpo técnico.
+        function actualizarCapitanesCedula(partido) {
+            const nombre = id => (db.jugadores.find(j => j.id === id) || {}).nombre || '';
+            const l = document.getElementById('ced-capitan-local'), v = document.getElementById('ced-capitan-visita');
+            if (l) l.value = nombre(partido.capitanLocalId);
+            if (v) v.value = nombre(partido.capitanVisitaId);
         }
 
         // Marca/desmarca un jugador como titular, con tope de 11 por equipo.
@@ -2391,14 +2425,15 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 if (!partido[clave].includes(jugadorId)) partido[clave].push(jugadorId);
             } else {
                 partido[clave] = partido[clave].filter(id => id !== jugadorId);
+                limpiarCapitanSiNoTitular(partido);
             }
 
             const nombreLocal = db.equipos.find(e => e.id === partido.localId)?.nombre || 'Local';
             const nombreVisita = db.equipos.find(e => e.id === partido.visitaId)?.nombre || 'Visita';
             void nombreLocal; void nombreVisita;
             document.getElementById('ced-titulares-contador-local').innerText = `${(partido.titularesLocal || []).length}/11`;
-            document.getElementById('ced-titulares-contador-visita').innerText = `${(partido.titularesVisita || []).length}/11`;
             guardarDB();
+            refrescarTitularesEscaner(partido);
         }
 
 
@@ -2569,14 +2604,13 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             document.getElementById('ced-1t-fin').value = c.primerTiempoFin || '';
             document.getElementById('ced-2t-inicio').value = c.segundoTiempoInicio || '';
             document.getElementById('ced-2t-fin').value = c.segundoTiempoFin || '';
-            document.getElementById('ced-entrenador-local').value = c.entrenadorLocal || '';
-            document.getElementById('ced-preparador-local').value = c.preparadorLocal || '';
-            document.getElementById('ced-auxiliar-local').value = c.auxiliarLocal || '';
-            document.getElementById('ced-capitan-local').value = c.capitanLocal || '';
-            document.getElementById('ced-entrenador-visita').value = c.entrenadorVisita || '';
-            document.getElementById('ced-preparador-visita').value = c.preparadorVisita || '';
-            document.getElementById('ced-auxiliar-visita').value = c.auxiliarVisita || '';
-            document.getElementById('ced-capitan-visita').value = c.capitanVisita || '';
+            const eqLocalReg = db.equipos.find(e => e.id === p.localId) || {};
+            const eqVisitaReg = db.equipos.find(e => e.id === p.visitaId) || {};
+            document.getElementById('ced-entrenador-local').value = eqLocalReg.entrenador || c.entrenadorLocal || '';
+            document.getElementById('ced-auxiliar-local').value = eqLocalReg.auxiliar || c.auxiliarLocal || '';
+            document.getElementById('ced-entrenador-visita').value = eqVisitaReg.entrenador || c.entrenadorVisita || '';
+            document.getElementById('ced-auxiliar-visita').value = eqVisitaReg.auxiliar || c.auxiliarVisita || '';
+            actualizarCapitanesCedula(p);
             document.getElementById('ced-cambio-lbl-local').innerText = `Cambios ${nombreLocal}`;
             document.getElementById('ced-cambio-lbl-visita').innerText = `Cambios ${nombreVisita}`;
             document.getElementById('ced-estado-terreno').value = c.estadoTerreno || 'Bueno';
@@ -2732,6 +2766,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             if (!p || !j) return;
             const clave = j.equipoId === p.localId ? 'titularesLocal' : 'titularesVisita';
             p[clave] = (p[clave] || []).filter(id => id !== jugadorId);
+            limpiarCapitanSiNoTitular(p);
             guardarDB();
             refrescarTitularesEscaner(p);
             avisoEscaner('info', `Quitaste a <b>${escapeHtml(j.nombre)}</b> de los titulares.`, j);
@@ -2975,6 +3010,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 if (j) {
                     const clave = j.equipoId === p.localId ? 'titularesLocal' : 'titularesVisita';
                     p[clave] = (p[clave] || []).filter(id => id !== j.id);
+                    limpiarCapitanSiNoTitular(p);
                     guardarDB();
                     refrescarTitularesEscaner(p);
                 }
@@ -3265,13 +3301,13 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 segundoTiempoInicio: document.getElementById('ced-2t-inicio').value,
                 segundoTiempoFin: document.getElementById('ced-2t-fin').value,
                 entrenadorLocal: document.getElementById('ced-entrenador-local').value.trim(),
-                preparadorLocal: document.getElementById('ced-preparador-local').value.trim(),
                 auxiliarLocal: document.getElementById('ced-auxiliar-local').value.trim(),
                 capitanLocal: document.getElementById('ced-capitan-local').value.trim(),
+                capitanLocalId: partido.capitanLocalId || null,
                 entrenadorVisita: document.getElementById('ced-entrenador-visita').value.trim(),
-                preparadorVisita: document.getElementById('ced-preparador-visita').value.trim(),
                 auxiliarVisita: document.getElementById('ced-auxiliar-visita').value.trim(),
                 capitanVisita: document.getElementById('ced-capitan-visita').value.trim(),
+                capitanVisitaId: partido.capitanVisitaId || null,
                 cambiosLocal: textoCambiosPorEquipo(partido, partido.localId),
                 cambiosVisita: textoCambiosPorEquipo(partido, partido.visitaId),
                 amonestados: '',
