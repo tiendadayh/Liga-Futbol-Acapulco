@@ -3471,5 +3471,31 @@ if(PAGE==='index'){
   });
 }
 })();
-</script></body>
+</script><style id="captura-mayusculas">
+input[type="text"]:not([data-no-mayus]), input:not([type]):not([data-no-mayus]) { text-transform: uppercase; }
+input::placeholder { text-transform: none; }
+</style>
+<script id="captura-mayusculas-js">
+(function () {
+    // Todo lo que se escribe en los campos de texto se convierte a MAYÚSCULAS mientras se teclea.
+    // Se excluyen PIN, enlaces, direcciones web, búsquedas y fechas. Para excluir otro campo: data-no-mayus.
+    var EXCLUIR = /pin|link|url|pagina|buscar|fecha|mail|correo|pass|clave|http/i;
+    function aplica(el) {
+        if (!el || el.tagName !== 'INPUT' || el.hasAttribute('data-no-mayus') || el.readOnly) return false;
+        var t = (el.getAttribute('type') || 'text').toLowerCase();
+        if (t !== 'text' && t !== 'search') return false;
+        return !EXCLUIR.test((el.id || '') + ' ' + (el.name || '') + ' ' + (el.placeholder || ''));
+    }
+    document.addEventListener('input', function (e) {
+        var el = e.target;
+        if (!aplica(el) || e.isComposing) return;
+        var mayus = el.value.toLocaleUpperCase('es');
+        if (mayus === el.value) return;
+        var ini = el.selectionStart, fin = el.selectionEnd;
+        el.value = mayus;
+        try { el.setSelectionRange(ini, fin); } catch (err) { /* algunos tipos no admiten cursor */ }
+    }, true);
+})();
+</script>
+</body>
 </html>
