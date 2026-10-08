@@ -1267,7 +1267,83 @@ html[data-theme="dark"] #equipo-modal-stats strong{color:var(--text)!important}
 .grupo-pos-titulo{grid-column:1/-1;margin:10px 0 0;padding-bottom:4px;font:700 .95rem var(--font-display,Oswald,sans-serif);text-transform:uppercase;letter-spacing:.06em;color:var(--secondary,#c0141c);border-bottom:2px solid var(--border,#d3dce8)}
 .grupo-pos-titulo small{color:var(--text-muted,#6b7a90);font-weight:600}
 #equipo-modal-jugadores .carta-jug .cj-pos{display:none}
-</style></head>
+</style><style id="liga-foto-jugador">
+.carta-jug .cj-foto{padding-top:118%!important;background:#e9eff7}
+.carta-jug .cj-foto img{object-fit:cover!important;object-position:center 35%!important;transform:scale(1.12);transform-origin:center 35%}
+.foto-tabla,.mini-cancha-thumb,.buscador-resultado img{object-fit:cover;object-position:center 35%}
+</style><style id="liga-ficha-foto">
+.ficha-foto-marco{width:110px;height:110px;border-radius:50%;overflow:hidden;border:4px solid var(--accent,#f0b429);box-shadow:0 0 0 3px #0b2f5c,0 0 0 6px #f0b429,0 12px 24px rgba(0,0,0,.4);position:relative;z-index:1;background:#e9eff7;flex-shrink:0;margin-left:auto;margin-right:auto}
+.ficha-foto-marco #modal-foto{width:100%!important;height:100%!important;border:0!important;border-radius:0!important;box-shadow:none!important;object-fit:cover;object-position:center 30%;transform:scale(1.14);transform-origin:center 30%;display:block}
+@media (max-width:560px){.ficha-foto-marco{width:84px;height:84px}}
+</style><style id="liga-ficha-foto-2">
+.ficha-foto-marco #arbitro-modal-foto{width:100%!important;height:100%!important;border:0!important;border-radius:0!important;box-shadow:none!important;object-fit:cover;object-position:center 30%;transform:scale(1.14);transform-origin:center 30%;display:block}
+.ficha-tecnica-banner{padding-top:54px!important}
+#equipo-modal-escudo{box-shadow:0 0 0 3px #0b2f5c,0 0 0 6px #f0b429,0 10px 20px rgba(0,0,0,.35);border:0!important;border-radius:14px!important;object-fit:contain!important;padding:4px;background:#fff;margin:6px}
+</style><style id="liga-carta-equipo-arbitro">
+#grid-equipos-publico,#grid-arbitros-publico{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important}
+@media (max-width:560px){#grid-equipos-publico,#grid-arbitros-publico{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}}
+.carta-equipo .cj-foto{background:radial-gradient(circle at 50% 40%,#fff 0%,#e3ecf7 100%)}
+.carta-equipo .cj-foto img{object-fit:contain!important;transform:none!important;padding:14%;box-sizing:border-box;filter:drop-shadow(0 6px 8px rgba(0,0,0,.25))}
+.arbitro-card.carta-jug .cj-info,.equipo-card.carta-jug .cj-info{text-align:left}
+</style><style id="liga-ficha-foto-carta">
+.ficha-foto-marco{width:124px!important;height:156px!important;border-radius:14px!important;border:3px solid #fff!important;box-shadow:0 0 0 3px #f0b429,0 14px 26px rgba(0,0,0,.45)!important;background:#e9eff7}
+.ficha-foto-marco #modal-foto,.ficha-foto-marco #arbitro-modal-foto{object-position:center 28%!important;transform-origin:center 28%!important}
+.ffm-escudo{position:absolute;top:6px;left:6px;z-index:3;width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #fff;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.ffm-escudo img{width:22px!important;height:22px!important;object-fit:contain;border:0!important;border-radius:0!important;box-shadow:none!important;transform:none!important}
+.ffm-num{position:absolute;left:0;bottom:0;z-index:3;padding:3px 10px 3px 8px;background:#fff;color:#0b2f5c;font:700 1.15rem/1.1 var(--font-display,Oswald,sans-serif);border-top-right-radius:12px}
+.ffm-pos{position:absolute;right:6px;bottom:6px;z-index:3;min-width:28px;padding:3px 5px;border-radius:12px;background:#0b2f5c;color:#fff;font:700 .6rem/1 var(--font-body,Inter,sans-serif);text-align:center;border:2px solid #f0b429}
+@media (max-width:560px){.ficha-foto-marco{width:96px!important;height:122px!important}}
+</style><style id="liga-carta-grande">#equipo-modal-jugadores .carta-jug .cj-pos{display:block!important}</style><style id="liga-etiqueta-pos">
+.carta-jug .cj-pos{min-width:0!important;width:auto!important;padding:5px 9px!important;font-size:.64rem!important;letter-spacing:.04em;white-space:nowrap;border-radius:14px!important}
+.ffm-pos{min-width:0!important;padding:5px 9px!important;font-size:.66rem!important;letter-spacing:.04em;white-space:nowrap;border-radius:14px!important}
+@media (max-width:560px){.carta-jug .cj-pos{font-size:.52rem!important;padding:4px 6px!important;right:5px!important}}
+</style><style id="liga-carta-chips">
+.carta-jug .cj-info{padding:17px 8px 9px!important;text-align:center!important;align-items:center;border-top:0!important;margin-top:0!important;background:#fff!important}
+.carta-jug .cj-num{position:absolute!important;left:7px;top:-15px;z-index:4;min-width:30px;height:28px;padding:0 8px!important;display:flex;align-items:center;justify-content:center;background:#0b2f5c!important;color:#fff!important;border:2px solid #fff;border-radius:7px!important;box-shadow:0 3px 8px rgba(0,0,0,.35);font:700 1.1rem/1 var(--font-display,Oswald,sans-serif)!important}
+.carta-jug .cj-pos{position:absolute!important;right:7px!important;top:-14px!important;z-index:4;min-width:0!important;padding:5px 11px!important;background:linear-gradient(180deg,#123e78,#0b2f5c)!important;color:#fff!important;border:2px solid #f0b429!important;border-radius:14px!important;font:700 .66rem/1 var(--font-body,Inter,sans-serif)!important;letter-spacing:.05em;box-shadow:0 3px 8px rgba(0,0,0,.4)}
+.carta-jug .cj-nombre{text-align:center;font-size:.76rem!important}
+.carta-jug .cj-sub{text-align:center;width:100%}
+.carta-jug .cj-escudo{width:34px!important;height:34px!important;top:7px!important;left:7px!important}
+@media (max-width:560px){.carta-jug .cj-num{min-width:24px;height:23px;font-size:.9rem!important;left:5px;top:-12px}.carta-jug .cj-pos{font-size:.5rem!important;padding:4px 6px!important;right:5px!important;top:-11px!important}.carta-jug .cj-nombre{font-size:.68rem!important}}
+.arbitro-card.carta-jug .cj-info,.equipo-card.carta-jug .cj-info{text-align:center!important}
+</style><style id="liga-ficha-limpia">.ffm-escudo,.ffm-num,.ffm-pos{display:none!important}</style><style id="liga-carta-equipo-titulo">
+.carta-equipo .cj-foto img{padding:26% 14% 14%!important}
+.carta-equipo .ce-titulo{position:absolute;left:0;right:0;top:0;z-index:2;padding:8px 8px 14px;text-align:center;font:700 .78rem/1.15 var(--font-display,Oswald,sans-serif);text-transform:uppercase;letter-spacing:.04em;color:#fff;background:linear-gradient(180deg,#0b2f5c,rgba(11,47,92,0));word-break:break-word;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.carta-equipo .cj-num{left:50%!important;transform:translateX(-50%);min-width:34px}
+.carta-equipo .cj-info{padding-top:18px!important}
+.carta-equipo .ce-jug{font-size:.72rem!important;font-weight:700;color:#0b2f5c!important;letter-spacing:.06em}
+@media (max-width:560px){.carta-equipo .ce-titulo{font-size:.62rem;padding:6px 5px 12px}.carta-equipo .ce-jug{font-size:.6rem!important}}
+</style><style id="liga-equipo-titulo-grande">
+.carta-equipo .ce-titulo{font-size:1.12rem!important;line-height:1.1!important;padding:10px 8px 16px!important;letter-spacing:.05em}
+.carta-equipo .cj-foto img{padding:30% 12% 12%!important}
+@media (max-width:560px){.carta-equipo .ce-titulo{font-size:.82rem!important;padding:7px 5px 13px!important}}
+</style><style id="liga-arbitro-etiqueta">
+.arbitro-card.carta-jug .cj-pos{left:50%!important;right:auto!important;transform:translateX(-50%);font-size:.82rem!important;padding:7px 18px!important;top:-17px!important;letter-spacing:.08em}
+@media (max-width:560px){.arbitro-card.carta-jug .cj-pos{font-size:.6rem!important;padding:5px 10px!important;top:-13px!important}}
+</style><style id="liga-cabecera-equipo">
+.equipo-modal-cabecera{justify-content:center!important;text-align:center;width:100%}
+.equipo-modal-cabecera>div{text-align:center}
+</style><style id="liga-menu-hamburguesa">
+#liga-burger{position:fixed;top:14px;left:14px;z-index:7600;width:48px;height:48px;border-radius:14px;border:2px solid #f0b429;background:rgba(11,47,92,.92);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(0,0,0,.35);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:transform .2s}
+#liga-burger:hover{transform:scale(1.07)}
+#liga-burger svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round}
+@media (max-width:768px){#liga-burger{top:10px;left:10px;width:42px;height:42px;border-radius:12px}}
+#liga-menu-fondo{position:fixed;inset:0;z-index:7700;background:rgba(5,12,28,.55);opacity:0;pointer-events:none;transition:opacity .25s}
+#liga-menu{position:fixed;top:0;left:0;bottom:0;z-index:7800;width:min(340px,88vw);background:var(--card-bg,#fff);color:var(--text,#12233f);box-shadow:12px 0 40px rgba(0,0,0,.4);transform:translateX(-105%);transition:transform .28s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;border-right:3px solid #f0b429}
+body.liga-menu-abierto #liga-menu{transform:none}
+body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
+#liga-menu header{padding:16px 16px 12px;background:linear-gradient(135deg,#0b2f5c,#7a0f14);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px}
+#liga-menu header b{font:700 1.15rem var(--font-display,Oswald,sans-serif);letter-spacing:.05em;text-transform:uppercase}
+#liga-menu header button{width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:1.3rem;cursor:pointer}
+#liga-menu-buscar{margin:12px 14px 6px;padding:10px 12px;border-radius:10px;border:1px solid var(--border,#d3dce8);background:var(--light,#f3f8fb);color:inherit;font:600 .9rem var(--font-body,Inter,sans-serif);outline:none}
+#liga-menu-lista{flex:1;overflow-y:auto;padding:6px 10px 24px;margin:0;list-style:none}
+#liga-menu-lista li button{width:100%;text-align:left;display:flex;align-items:center;gap:10px;padding:12px 12px;margin:2px 0;border:0;border-radius:10px;background:none;color:inherit;font:600 .92rem var(--font-body,Inter,sans-serif);cursor:pointer}
+#liga-menu-lista li button:hover,#liga-menu-lista li button.act{background:rgba(240,180,41,.18)}
+#liga-menu-lista li button i{width:9px;height:9px;border-radius:50%;background:var(--dot,#0b2f5c);flex-shrink:0}
+#liga-menu-lista .sep{font:700 .68rem var(--font-body,Inter,sans-serif);text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted,#6b7a90);padding:12px 12px 4px}
+section.card-section{scroll-margin-top:14px}
+@media print{#liga-burger,#liga-menu,#liga-menu-fondo{display:none!important}}
+</style><style id="liga-quitar-menu-viejo">#nav-principal-viejo{display:none!important}</style></head>
 <body><div id="liga-skel" aria-hidden="true"><div class="sk sk-h"></div><div class="sk-w"><div class="sk-row"><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div></div></div>
 
     <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
@@ -1314,7 +1390,7 @@ html[data-theme="dark"] #equipo-modal-stats strong{color:var(--text)!important}
         <div class="patrocinadores-track" id="patrocinadores-track"></div>
     </div>
 
-    <nav>
+    <nav id="nav-principal-viejo">
         <button type="button" class="nav-toggle" id="nav-toggle-btn" onclick="toggleNavMenu()" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-links">
             <span class="nav-toggle-icon">☰</span> Menú
         </button>
@@ -1738,7 +1814,7 @@ html[data-theme="dark"] #equipo-modal-stats strong{color:var(--text)!important}
                 <!-- CARA FRONTAL: identidad + stats clave -->
                 <div class="ficha-3d-cara ficha-3d-frente">
                     <div class="ficha-tecnica-banner">
-                        <img id="modal-foto" class="ficha-tecnica-foto" src="" alt="Foto del jugador">
+                        <div class="ficha-foto-marco"><img id="modal-foto" class="ficha-tecnica-foto" src="" alt="Foto del jugador"><span class="ffm-escudo" id="modal-foto-escudo"><img src="" alt=""></span><span class="ffm-num" id="modal-foto-num"></span><span class="ffm-pos" id="modal-foto-pos"></span></div>
                         <span id="modal-estado" class="ficha-tecnica-estado"></span>
                     </div>
                     <h3 id="modal-nombre" class="ficha-tecnica-nombre"></h3>
@@ -1826,7 +1902,7 @@ html[data-theme="dark"] #equipo-modal-stats strong{color:var(--text)!important}
     <div id="modal-equipo" class="modal hidden" onclick="if(event.target === this) cerrarModal('modal-equipo')">
         <div class="modal-content" style="max-width:760px; text-align:left;">
             <button class="close-modal" onclick="cerrarModal('modal-equipo')">×</button>
-            <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px;">
+            <div class="equipo-modal-cabecera" style="display:flex; align-items:center; justify-content:center; gap:15px; margin-bottom:15px;">
                 <img id="equipo-modal-escudo" class="escudo-3d" src="" style="width:70px; height:70px; border-radius:10px; object-fit:cover; border:3px solid var(--accent); background:white;" alt="Escudo del equipo">
                 <div>
                     <h3 id="equipo-modal-nombre" style="margin:0; color:var(--primary);"></h3>
@@ -1867,7 +1943,7 @@ html[data-theme="dark"] #equipo-modal-stats strong{color:var(--text)!important}
                 <!-- CARA FRONTAL: identidad + stats clave -->
                 <div class="ficha-3d-cara ficha-3d-frente">
                     <div class="ficha-tecnica-banner">
-                        <img id="arbitro-modal-foto" class="ficha-tecnica-foto" src="" alt="Foto del árbitro">
+                        <div class="ficha-foto-marco"><img id="arbitro-modal-foto" class="ficha-tecnica-foto" src="" alt="Foto del árbitro"><span class="ffm-pos">ÁRBITRO</span></div>
                         <span class="ficha-tecnica-estado estado-ok">✅ Activo</span>
                     </div>
                     <h3 id="arbitro-modal-nombre" class="ficha-tecnica-nombre"></h3>
@@ -4496,9 +4572,19 @@ html[data-theme="dark"] #equipo-modal-stats strong{color:var(--text)!important}
             `).join('') : estadoVacioFila(5, '⚔️', 'Aún no hay partidos jugados.');
         }
 
+        function etiquetaPos(pos) {
+            const t = String(pos || '').trim();
+            if (!t) return '';
+            if (/portero/i.test(t)) return 'PORTERO';
+            if (/defensa|lateral/i.test(t)) return 'DEFENSA';
+            if (/medio/i.test(t)) return 'MEDIO';
+            if (/delantero|extremo/i.test(t)) return 'DELANTERO';
+            return t.slice(0, 9).toUpperCase();
+        }
+
         function cartaJugador(j, accion, sub) {
             const eq = db.equipos.find(e => e.id === j.equipoId);
-            const pos = (j.posicion || '').trim().slice(0, 3).toUpperCase();
+            const pos = etiquetaPos(j.posicion);
             return `<div class="jugador-card carta-jug" onclick="${accion}">
                 <div class="cj-foto"><img src="${j.foto || 'https://placehold.co/200'}" alt="${escapeHtml(j.nombre)}" loading="lazy"></div>
                 ${eq && eq.escudo ? `<span class="cj-escudo"><img src="${eq.escudo}" alt="" loading="lazy"></span>` : ''}
@@ -4704,7 +4790,16 @@ html[data-theme="dark"] #equipo-modal-stats strong{color:var(--text)!important}
             const j = db.jugadores.find(jug => jug.id === id);
             if (!j) return;
             fichaActualJugadorId = id;
-            document.getElementById('modal-foto').src = j.foto || 'https://placehold.co/100';
+            document.getElementById('modal-foto').src = j.foto || 'https://placehold.co/100'; (function () {
+                const eqF = db.equipos.find(e => e.id === j.equipoId);
+                const esc = document.getElementById('modal-foto-escudo');
+                if (esc) { esc.style.display = eqF && eqF.escudo ? 'flex' : 'none'; if (eqF && eqF.escudo) esc.firstChild.src = eqF.escudo; }
+                const nm = document.getElementById('modal-foto-num');
+                if (nm) { nm.textContent = (j.numero !== undefined && j.numero !== null && j.numero !== '') ? j.numero : ''; nm.style.display = nm.textContent ? 'block' : 'none'; }
+                const ps = document.getElementById('modal-foto-pos');
+                const pt = etiquetaPos(j.posicion);
+                if (ps) { ps.textContent = pt; ps.style.display = pt ? 'block' : 'none'; }
+            })();
             document.getElementById('modal-nombre').innerText = j.nombre;
             const nombreEquipoJug = db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Agente Libre';
             document.getElementById('ficha-modal-equipo').innerText = nombreEquipoJug;
@@ -5142,26 +5237,37 @@ html[data-theme="dark"] #equipo-modal-stats strong{color:var(--text)!important}
             document.getElementById('modal-cancha').classList.remove('hidden');
         }
 
+        function cartaEquipo(eq) {
+            const n = db.jugadores.filter(j => j.equipoId === eq.id).length;
+            return `<div class="equipo-card carta-jug carta-equipo" onclick="verEquipo(${eq.id})">
+                <div class="cj-foto"><img src="${eq.escudo || 'https://placehold.co/200'}" alt="${escapeHtml(eq.nombre)}" loading="lazy"><span class="ce-titulo">${escapeHtml(eq.nombre)}</span></div>
+                <div class="cj-info">
+                    <span class="cj-num">${n}</span>
+                    <span class="cj-sub ce-jug">${n === 1 ? 'Jugador' : 'Jugadores'}</span>
+                </div>
+            </div>`;
+        }
+
+        function cartaArbitro(a) {
+            const nom = String(a.nombre).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            return `<div class="arbitro-card carta-jug" onclick="verArbitro('${nom}')">
+                <div class="cj-foto"><img src="${a.foto || 'https://placehold.co/200'}" alt="${escapeHtml(a.nombre)}" loading="lazy"></div>
+                <div class="cj-info">
+                    <span class="cj-nombre">${escapeHtml(a.nombre)}</span>
+                    <span class="cj-sub">${escapeHtml(a.colegio || 'Independiente')}</span>
+                    <span class="cj-pos">ÁRBITRO</span>
+                </div>
+            </div>`;
+        }
+
         function renderizarEquiposArbitros() {
             const contEquipos = document.getElementById('grid-equipos-publico');
             const contArbitros = document.getElementById('grid-arbitros-publico');
             if (contEquipos) {
-                contEquipos.innerHTML = db.equipos.map(eq => `
-                    <div class="equipo-card" onclick="verEquipo(${eq.id})">
-                        <img class="escudo-3d" src="${eq.escudo || 'https://placehold.co/70'}" alt="${escapeHtml(eq.nombre)}" loading="lazy">
-                        <h3>${escapeHtml(eq.nombre)}</h3>
-                        <p>${db.jugadores.filter(j => j.equipoId === eq.id).length} jugadores</p>
-                    </div>`).join('') || estadoVacio('🛡️', 'Aún no hay equipos registrados.');
+                contEquipos.innerHTML = db.equipos.map(eq => cartaEquipo(eq)).join('') || estadoVacio('🛡️', 'Aún no hay equipos registrados.');
             }
             if (contArbitros) {
-                contArbitros.innerHTML = db.arbitros.map(a => {
-                    return `
-                    <div class="arbitro-card" onclick="verArbitro('${a.nombre.replace(/'/g, "\\'")}')">
-                        <img src="${a.foto || 'https://placehold.co/70'}" alt="${escapeHtml(a.nombre)}" loading="lazy">
-                        <h3>${escapeHtml(a.nombre)}</h3>
-                        <p>${a.colegio || 'Independiente'}</p>
-                    </div>`;
-                }).join('') || estadoVacio('🧑‍⚖️', 'Aún no hay árbitros registrados.');
+                contArbitros.innerHTML = db.arbitros.map(a => cartaArbitro(a)).join('') || estadoVacio('🧑‍⚖️', 'Aún no hay árbitros registrados.');
             }
         }
 
@@ -5917,7 +6023,7 @@ if(PAGE==='index'){
       var a=e.target.closest('[data-bn]');if(!a)return;
       var k=a.getAttribute('data-bn');
       if(k==='top'){e.preventDefault();window.scrollTo({top:0,behavior:'smooth'});}
-      else if(k==='menu'){window.scrollTo({top:0,behavior:'smooth'});if(typeof toggleNavMenu==='function')toggleNavMenu();}
+      else if(k==='menu'){if(window.ligaMenuToggle)ligaMenuToggle();}
     });
     if(!('IntersectionObserver' in window))return;
     var links={};nav.querySelectorAll('a[data-bn]').forEach(function(a){links[a.getAttribute('data-bn')]=a;});
@@ -5927,6 +6033,39 @@ if(PAGE==='index'){
     links.top.classList.add('bn-act');
   });
 }
+})();
+</script><button id="liga-burger" type="button" aria-label="Abrir menú de secciones"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+<div id="liga-menu-fondo"></div>
+<aside id="liga-menu" aria-label="Menú de secciones"><header><b>Ir a…</b><button type="button" id="liga-menu-cerrar" aria-label="Cerrar">×</button></header><input id="liga-menu-buscar" type="search" placeholder="Buscar sección…" autocomplete="off"><ul id="liga-menu-lista"></ul></aside>
+<script id="liga-menu-js">
+(function(){
+var SEC=[['bracket-sec','Cuadro de Liguilla'],['tablon-sec','Tablón de Avisos'],['encuesta-sec','Encuestas Rápidas'],['jornadas-sec','Calendario y Resultados'],['quiniela-sec','Quiniela'],['posiciones-sec','Tabla de Posiciones'],['ofensiva-defensiva-sec','Ofensiva y Defensiva'],['goleo-sec','Goleo Individual'],['disciplina-sec','Tabla de Disciplina'],['porteros-sec','Portero con menos goles'],['headtohead-sec','Comparador Cara a Cara'],['xi-sec','XI MVP de la Semana'],['jugadores-sec','Fichas de Jugadores'],['equipos-arbitros-sec','Equipos y Árbitros'],['reglamento-sec','Reglamento'],['registro-sec','Solicitud de Registro']];
+var lista=document.getElementById('liga-menu-lista'),buscar=document.getElementById('liga-menu-buscar');
+function visible(el){return el&&!el.classList.contains('hidden')&&el.offsetParent!==null;}
+function actual(){var best=null,bd=1e9;SEC.forEach(function(x){var e=document.getElementById(x[0]);if(!visible(e))return;var d=Math.abs(e.getBoundingClientRect().top-80);if(d<bd){bd=d;best=x[0];}});return best;}
+function pinta(){
+  var q=(buscar.value||'').toLowerCase().trim(),act=actual(),h='';
+  var items=SEC.filter(function(x){return visible(document.getElementById(x[0]))&&x[1].toLowerCase().indexOf(q)>-1;});
+  h+='<li class="sep">Secciones</li>';
+  if(!items.length)h+='<li class="sep">Sin resultados</li>';
+  items.forEach(function(x){var e=document.getElementById(x[0]);var c=(e.style.borderTopColor)||'#0b2f5c';h+='<li><button type="button" data-sec="'+x[0]+'" class="'+(x[0]===act?'act':'')+'"><i style="--dot:'+c+'"></i>'+x[1]+'</button></li>';});
+  if(typeof abrirListaJugadores==='function'&&(!q||'jugadores lista a-z'.indexOf(q)>-1)){h+='<li class="sep">Atajos</li><li><button type="button" data-acc="jug"><i></i>Lista de jugadores (A-Z)</button></li>';}
+  lista.innerHTML=h;
+}
+function abrir(){pinta();document.body.classList.add('liga-menu-abierto');setTimeout(function(){try{buscar.focus({preventScroll:true});}catch(e){}},300);}
+function cerrar(){document.body.classList.remove('liga-menu-abierto');buscar.blur();}
+window.ligaMenuToggle=function(){document.body.classList.contains('liga-menu-abierto')?cerrar():abrir();};
+document.getElementById('liga-burger').onclick=window.ligaMenuToggle;
+document.getElementById('liga-menu-fondo').onclick=cerrar;
+document.getElementById('liga-menu-cerrar').onclick=cerrar;
+buscar.addEventListener('input',pinta);
+lista.addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  if(b.getAttribute('data-acc')==='jug'){cerrar();abrirListaJugadores();return;}
+  var id=b.getAttribute('data-sec'),el=document.getElementById(id);if(!el)return;
+  cerrar();setTimeout(function(){el.scrollIntoView({behavior:'smooth',block:'start'});},120);
+});
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.body.classList.contains('liga-menu-abierto'))cerrar();});
 })();
 </script></body>
 </html>
