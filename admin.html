@@ -3019,6 +3019,25 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
         const DURACION_AVISO_MS = 24 * 60 * 60 * 1000;
         function momentoAviso(c) { return c.ts || c.id || 0; }
 
+        // Formato de captura: nombre de equipo EN MAYÚSCULAS; nombres de personas con Inicial Mayúscula.
+        function aMayusculasEquipo(t) { return String(t || '').replace(/\s+/g, ' ').trim().toLocaleUpperCase('es'); }
+        function aNombrePropio(t) {
+            return String(t || '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('es')
+                .replace(/(^|[\s\-'])([a-záéíóúüñ])/g, (m, sep, ch) => sep + ch.toLocaleUpperCase('es'));
+        }
+        // Al salir del campo se corrige el texto a la vista de quien captura.
+        function activarFormatoCaptura(id, fn) {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('blur', () => { el.value = fn(el.value); });
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            activarFormatoCaptura('admin-eq-nombre', aMayusculasEquipo);
+            activarFormatoCaptura('admin-eq-entrenador', aNombrePropio);
+            activarFormatoCaptura('admin-eq-auxiliar', aNombrePropio);
+            activarFormatoCaptura('edit-entrenador', aNombrePropio);
+            activarFormatoCaptura('edit-auxiliar', aNombrePropio);
+        });
+
         // "extra" permite adjuntar datos opcionales al aviso, como el id del jugador
         // (jugadorId) y su foto (imagen), para que en el sitio público el aviso muestre
         // la foto del jugador y sea clicable hacia su ficha completa.
@@ -4115,9 +4134,9 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                     const escudoBase64 = await convertirImagenABase64(document.getElementById('admin-eq-escudo'));
                     const fotoBase64 = await convertirImagenABase64(document.getElementById('admin-eq-foto'));
                     const newId = Date.now();
-                    const nombreNuevoEquipo = document.getElementById('admin-eq-nombre').value.trim();
+                    const nombreNuevoEquipo = aMayusculasEquipo(document.getElementById('admin-eq-nombre').value);
                     const pinNuevoEquipo = generarPin6Digitos();
-                    db.equipos.push({ id: newId, nombre: nombreNuevoEquipo, escudo: escudoBase64, fotoGrupal: fotoBase64, pin: pinNuevoEquipo, entrenador: document.getElementById('admin-eq-entrenador').value.trim(), auxiliar: document.getElementById('admin-eq-auxiliar').value.trim() });
+                    db.equipos.push({ id: newId, nombre: nombreNuevoEquipo, escudo: escudoBase64, fotoGrupal: fotoBase64, pin: pinNuevoEquipo, entrenador: aNombrePropio(document.getElementById('admin-eq-entrenador').value), auxiliar: aNombrePropio(document.getElementById('admin-eq-auxiliar').value) });
                     db.finanzas[newId] = { adeudoArbitrajes: 0, multasLiquidadas: 0 };
                     agregarAvisoRegistro('registro', '🆕 Nuevo equipo registrado', `El equipo "${nombreNuevoEquipo}" se ha registrado en la liga.`);
                     this.reset();
@@ -4325,9 +4344,9 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                 if (tipo === 'equipo') {
                     const eq = db.equipos.find(x => x.id === id);
                     if (!eq) return;
-                    eq.nombre = nombre;
-                    eq.entrenador = document.getElementById('edit-entrenador').value.trim();
-                    eq.auxiliar = document.getElementById('edit-auxiliar').value.trim();
+                    eq.nombre = aMayusculasEquipo(nombre);
+                    eq.entrenador = aNombrePropio(document.getElementById('edit-entrenador').value);
+                    eq.auxiliar = aNombrePropio(document.getElementById('edit-auxiliar').value);
                     if (nuevaFoto) eq.escudo = nuevaFoto;
                     else if (quitarFoto) eq.escudo = '';
                     const nuevaFotoPlantel = await convertirImagenABase64(document.getElementById('edit-foto-plantel'));
