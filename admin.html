@@ -1124,14 +1124,12 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                 <select id="admin-jug-posicion">
                     <option value="">-- Selecciona --</option>
                     <option value="Portero">Portero</option>
-                    <option value="Lateral izquierdo">Lateral izquierdo</option>
-                    <option value="Lateral derecho">Lateral derecho</option>
                     <option value="Defensa central">Defensa central</option>
-                    <option value="Mediocentro defensivo">Mediocentro defensivo</option>
-                    <option value="Mediocentro central">Mediocentro central</option>
-                    <option value="Mediocentro ofensivo">Mediocentro ofensivo</option>
-                    <option value="Extremo izquierdo">Extremo izquierdo</option>
-                    <option value="Extremo derecho">Extremo derecho</option>
+                    <option value="Defensa derecho">Defensa derecho</option>
+                    <option value="Defensa izquierdo">Defensa izquierdo</option>
+                    <option value="Medio central">Medio central</option>
+                    <option value="Medio derecho">Medio derecho</option>
+                    <option value="Medio izquierdo">Medio izquierdo</option>
                     <option value="Delantero">Delantero</option>
                 </select>
                 <label>Lugar de nacimiento:</label>
@@ -1657,14 +1655,12 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                     <select id="edit-posicion">
                         <option value="">-- Selecciona --</option>
                         <option value="Portero">Portero</option>
-                        <option value="Lateral izquierdo">Lateral izquierdo</option>
-                        <option value="Lateral derecho">Lateral derecho</option>
                         <option value="Defensa central">Defensa central</option>
-                        <option value="Mediocentro defensivo">Mediocentro defensivo</option>
-                        <option value="Mediocentro central">Mediocentro central</option>
-                        <option value="Mediocentro ofensivo">Mediocentro ofensivo</option>
-                        <option value="Extremo izquierdo">Extremo izquierdo</option>
-                        <option value="Extremo derecho">Extremo derecho</option>
+                        <option value="Defensa derecho">Defensa derecho</option>
+                        <option value="Defensa izquierdo">Defensa izquierdo</option>
+                        <option value="Medio central">Medio central</option>
+                        <option value="Medio derecho">Medio derecho</option>
+                        <option value="Medio izquierdo">Medio izquierdo</option>
                         <option value="Delantero">Delantero</option>
                     </select>
                 </div>
@@ -4762,6 +4758,25 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
         const XI_LIMITES = { portero: 1, defensa: 4, medio: 3, delantero: 3 };
         let xiSel = { ids: [], mvp: '' };
 
+        // Convierte posiciones antiguas (Lateral, Mediocentro, Extremo...) a las 8 posiciones oficiales
+        function normalizarPosicionLiga(pos) {
+            const p = String(pos || '').trim().toLowerCase();
+            if (!p) return '';
+            if (p.includes('portero') || p.includes('arquero')) return 'Portero';
+            if (p.includes('lateral') || p.includes('defensa')) {
+                if (p.includes('izq')) return 'Defensa izquierdo';
+                if (p.includes('der')) return 'Defensa derecho';
+                return 'Defensa central';
+            }
+            if (p.includes('medio') || p.includes('volante')) {
+                if (p.includes('izq')) return 'Medio izquierdo';
+                if (p.includes('der')) return 'Medio derecho';
+                return 'Medio central';
+            }
+            if (p.includes('extremo') || p.includes('delantero')) return 'Delantero';
+            return '';
+        }
+
         function categoriaXIDePosicion(pos) {
             const p = String(pos || '').toLowerCase();
             if (p.includes('portero')) return 'portero';
@@ -6436,7 +6451,7 @@ ${cuerpo}`;
                 if (!j) return;
                 document.getElementById('modal-editar-titulo').innerText = '✏️ Editar Jugador';
                 document.getElementById('edit-nombre').value = j.nombre;
-                document.getElementById('edit-posicion').value = j.posicion || '';
+                document.getElementById('edit-posicion').value = normalizarPosicionLiga(j.posicion);
                 document.getElementById('edit-numero').value = j.numero || '';
                 document.getElementById('edit-categoria').value = j.categoria || 'Especial';
                 document.getElementById('edit-lugar-nac').value = j.lugarNacimiento || '';
