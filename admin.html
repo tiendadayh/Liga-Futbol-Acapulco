@@ -4270,7 +4270,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                     lugarNacimiento: document.getElementById('admin-jug-lugar-nac').value.trim().toUpperCase(),
                     fechaNacimiento: document.getElementById('admin-jug-fecha-nac').value,
                     nacionalidad: document.getElementById('admin-jug-nacionalidad').value.trim().toUpperCase() || 'MEXICANA',
-                    foto: jugadorBase64, goles: 0, amarillas: 0, rojas: 0, xiIdeal: [], folioNum: db.contadorFolioJugadores
+                    foto: jugadorBase64, goles: 0, amarillas: 0, rojas: 0, xiIdeal: [], folioNum: db.contadorFolioJugadores, fechaAlta: fechaMexico(Date.now())
                 });
                 const nombreEquipoNuevoJug = db.equipos.find(e => e.id === equipoIdSel)?.nombre || 'Agente Libre';
                 agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${nombreSel} se une al equipo ${nombreEquipoNuevoJug}.`, { jugadorId: nuevoJugadorId, imagen: jugadorBase64 || '' });
@@ -4627,7 +4627,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                 numero: sol.numero || '', categoria: sol.categoria || 'Especial',
                 lugarNacimiento: (sol.lugarNacimiento || '').toUpperCase(), fechaNacimiento: sol.fechaNacimiento || '',
                 nacionalidad: (sol.nacionalidad || 'MEXICANA').toUpperCase(),
-                foto: sol.foto, goles: 0, amarillas: 0, rojas: 0, xiIdeal: [], folioNum: db.contadorFolioJugadores
+                foto: sol.foto, goles: 0, amarillas: 0, rojas: 0, xiIdeal: [], folioNum: db.contadorFolioJugadores, fechaAlta: fechaMexico(Date.now())
             });
             const nombreEquipoSol = db.equipos.find(e => e.id === sol.equipoId)?.nombre || 'Agente Libre';
             agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${nombreSol} se une al equipo ${nombreEquipoSol}.`, { jugadorId: nuevoJugadorIdSol, imagen: sol.foto || '' });
