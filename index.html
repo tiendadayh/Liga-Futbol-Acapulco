@@ -2491,7 +2491,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
         // Las jornadas 1..N son fase regular; de la 98 en adelante es Liguilla.
         function jornadasFaseRegular(dbRef) {
             const n = parseInt(reg(dbRef || db, 'jornadasRegulares'));
-            return (n >= 1 && n <= 60) ? n : 9;
+            return (n >= 0 && n <= 60) ? n : 9;
         }
         function reg(dbRef, campo) {
             const v = dbRef.reglamento && dbRef.reglamento[campo];
@@ -3143,10 +3143,10 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
                 </details>`;
             return (
                 seccion('⚽', 'Formato del partido', rejilla(
-                    dato('Duración', `${reg(db, 'numTiempos')} tiempos de ${reg(db, 'duracionMinutos')} min`) +
-                    dato('Fase regular', `${jornadasFaseRegular(db)} jornadas`) +
+                    dato('Duración', (reg(db, 'numTiempos') > 0 && reg(db, 'duracionMinutos') > 0) ? `${reg(db, 'numTiempos')} tiempos de ${reg(db, 'duracionMinutos')} min` : 'Por definir') +
+                    dato('Fase regular', jornadasFaseRegular(db) > 0 ? `${jornadasFaseRegular(db)} jornadas` : 'Por definir') +
                     dato('Tolerancia de llegada', `${reg(db, 'toleranciaMinutos')} min`) +
-                    dato('Jugadores', `${reg(db, 'jugadoresTitulares')} titulares + ${reg(db, 'jugadoresSuplentes')} suplentes`) +
+                    dato('Jugadores', reg(db, 'jugadoresTitulares') > 0 ? `${reg(db, 'jugadoresTitulares')} titulares + ${reg(db, 'jugadoresSuplentes')} suplentes` : 'Por definir') +
                     dato('Categoría', reg(db, 'categoriaTexto') || '—') +
                     (reg(db, 'balonOficial') ? dato('Balón oficial', reg(db, 'balonOficial')) : '')
                 )) +
