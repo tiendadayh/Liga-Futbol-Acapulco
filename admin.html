@@ -782,7 +782,8 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
 #admin-jug-foto-preview{object-position:center 28%;object-view-box:inset(7%)}
 #ficha-adm-foto,#ficha-adm-arb-foto,#sol-adm-foto{width:78px!important;height:98px!important;border-radius:12px!important;object-fit:cover;object-position:center 28%;object-view-box:inset(7%);border:3px solid #fff!important;box-shadow:0 0 0 3px #f0b429,0 8px 18px rgba(0,0,0,.4);background:#e9eff7;flex-shrink:0}
 .solicitud-ficha-card>img,.solicitud-ficha-card .solicitud-foto{object-fit:cover;object-position:center 28%;object-view-box:inset(7%)}
-</style><style id="liga-menu-hamburguesa">
+</style><style id="liga-fix-botones">#liga-theme-btn{right:150px!important}</style>
+<style id="liga-menu-hamburguesa">
 #liga-burger{position:fixed;top:14px;left:14px;z-index:7600;width:48px;height:48px;border-radius:14px;border:2px solid #f0b429;background:rgba(11,47,92,.92);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 20px rgba(0,0,0,.35);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transition:transform .2s}
 #liga-burger:hover{transform:scale(1.07)}
 #liga-burger svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round}
@@ -812,10 +813,12 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
         <div style="background:#fff; border-radius:14px; padding:35px 30px; width:100%; max-width:340px; box-shadow:0 10px 40px rgba(0,0,0,0.3); text-align:center;">
             <h2 style="margin:0 0 6px; color:#0d2a4d;">🔒 Acceso Administrador</h2>
             <p id="nombre-liga-login" style="font-size:0.85rem; color:#666; margin:0 0 18px;">Liga de Futbol Acapulco</p>
-            <input type="email" id="login-email" placeholder="Correo electrónico" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box;">
-            <input type="password" id="login-password" placeholder="Contraseña" style="width:100%; padding:10px; margin-bottom:14px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box;">
+            <input type="email" id="login-email" data-no-mayus autocapitalize="none" placeholder="Correo electrónico" style="text-transform:none; width:100%; padding:10px; margin-bottom:10px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box;">
+            <input type="password" id="login-password" data-no-mayus autocapitalize="none" autocomplete="current-password" placeholder="Contraseña" style="text-transform:none; width:100%; padding:10px; margin-bottom:8px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box;">
+            <label style="display:flex; align-items:center; gap:6px; font-size:0.78rem; color:#555; margin:0 0 12px; text-align:left; cursor:pointer;"><input type="checkbox" onchange="document.getElementById('login-password').type = this.checked ? 'text' : 'password'" style="width:auto; margin:0;"> Mostrar contraseña</label>
             <button type="button" onclick="iniciarSesionAdmin()" style="width:100%; padding:11px; background:#ff9100; color:#fff; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Entrar</button>
-            <p id="login-error-msg" style="color:#c62828; font-size:0.8rem; min-height:1.1em; margin:10px 0 0;"></p>
+            <p id="login-error-msg" style="color:#c62828; font-size:0.8rem; min-height:1.1em; margin:10px 0 0; text-align:left; line-height:1.45;"></p>
+            <button type="button" onclick="recuperarContrasenaAdmin()" style="background:none; color:#0d2a4d; border:none; font-size:0.78rem; text-decoration:underline; margin-top:8px; cursor:pointer; box-shadow:none;">¿Olvidaste tu contraseña? Enviar enlace al correo</button>
         </div>
     </div>
 
@@ -975,7 +978,11 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             <div><label>Quién recibe el pago</label><input type="text" id="cp-recibio" placeholder="Nombre de quien cobra"></div>
         </div>
         <button type="button" onclick="generarComprobante()" style="background:#2e7d32;">🧾 Generar comprobante</button>
-        <div style="overflow-x:auto; margin-top:14px;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px;">
+            <span style="font-size:0.78rem; color:#555;">El estado se actualiza solo cuando el árbitro escanea el comprobante.</span>
+            <button type="button" onclick="cpRevisarEscaneos(this)" style="padding:5px 10px; font-size:0.72rem; background:#0d2a4d;">🔄 Revisar ahora</button>
+        </div>
+        <div style="overflow-x:auto; margin-top:8px;">
             <table style="width:100%; text-align:left; border-collapse:collapse; font-size:0.85rem;">
                 <thead>
                     <tr style="background:#f4f4f4;">
@@ -1144,7 +1151,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                 <input type="text" id="input-nombre-liga-sitio" maxlength="80" placeholder="Nombre de tu liga (ej. Liga Municipal de Fútbol)" style="flex:1; min-width:220px;">
                 <button type="button" onclick="guardarNombreLiga()" style="background:#0d2a4d;">💾 Guardar Nombre</button>
             </div>
-            <p style="font-size:0.8rem; color:#555; margin-top:-8px;">Sube una imagen para reemplazar el escudo del encabezado en las 3 páginas (Admin, Árbitro y Sitio Público). Presiona "🚀 Publicar" (arriba) para que se refleje en los demás dispositivos. "Quitar" regresa al escudo original.</p>
+            <p style="font-size:0.8rem; color:#555; margin-top:-8px;">Sube una imagen para reemplazar el escudo del encabezado en las 3 páginas (Admin, Árbitro y Sitio Público). Presiona "📤 Publicar cambios" (arriba) para que se refleje en los demás dispositivos. "Quitar" regresa al escudo original.</p>
             <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
                 <img id="logo-sitio-preview" src="" alt="Logo actual" style="width:70px; height:70px; object-fit:contain; border:1px solid #ccc; border-radius:8px; background:#fff; padding:4px;">
                 <div style="display:flex; flex-direction:column; gap:8px;">
@@ -2082,7 +2089,8 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
         }
 
         firebaseDbRef.child('solicitudes').on('value', function (snapshot) {
-            const remotas = snapshot.val() || [];
+            const remotasRaw = snapshot.val() || [];
+            const remotas = (Array.isArray(remotasRaw) ? remotasRaw : Object.values(remotasRaw)).filter(Boolean);
             if (!Array.isArray(db.solicitudes)) db.solicitudes = [];
             if (primeraCargaSolicitudesFirebase) {
                 // Primera lectura al abrir la página: solo sincroniza, sin sonido ni aviso.
@@ -2787,7 +2795,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             const filas = patroStatsFilas.map(function (f) {
                 return '<tr><td>' + escapeHtml(f.nombre) + '</td><td>' + f.vistas + '</td><td>' + (f.tieneLink ? f.clics : '—') + '</td><td>' + (f.tieneLink ? f.ctr.toFixed(1) + '%' : '—') + '</td></tr>';
             }).join('');
-            w.document.write('<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Resultados de patrocinadores</title><style>body{font-family:Arial,sans-serif;padding:30px;color:#111}table{border-collapse:collapse;width:100%;margin-top:16px}th,td{border:1px solid #ccc;padding:8px 10px;text-align:left}th{background:#f3f3f3}</style></head><body><h1>Resultados de patrocinadores</h1><p>' + escapeHtml(patroStatsPeriodoTxt) + ' · Generado el ' + new Date().toLocaleDateString('es-MX') + '</p><table><thead><tr><th>Patrocinador</th><th>Vistas del banner</th><th>Clics</th><th>% Clics</th></tr></thead><tbody>' + filas + '</tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>');
+            w.document.write('<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Resultados de patrocinadores</title><style>body{font-family:Arial,sans-serif;padding:30px;color:#111}table{border-collapse:collapse;width:100%;margin-top:16px}th,td{border:1px solid #ccc;padding:8px 10px;text-align:left}th{background:#f3f3f3}</style></head><body><h1>Resultados de patrocinadores</h1><p>' + escapeHtml(patroStatsPeriodoTxt) + ' · Generado el ' + new Date().toLocaleDateString('es-MX') + '</p><table><thead><tr><th>Patrocinador</th><th>Vistas del banner</th><th>Clics</th><th>% Clics</th></tr></thead><tbody>' + filas + '</tbody></table><script>window.onload=function(){window.print();}<\/script><\/body></html>');
             w.document.close();
         }
 
@@ -2976,7 +2984,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             db.config.nombreLiga = v;
             guardarDB();
             aplicarNombreLiga();
-            alert('✅ Nombre guardado: ' + v + '. Presiona "🚀 Publicar" para que se vea en el sitio público y en el árbitro.');
+            alert('✅ Nombre guardado: ' + v + '. Presiona "📤 Publicar cambios" para que se vea en el sitio público y en el árbitro.');
         }
 
         function aplicarLogoSitio() {
@@ -2999,7 +3007,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                 db.config.logoSitio = lector.result;
                 guardarDB();
                 input.value = '';
-                alert('✅ Logo actualizado en esta pantalla. Presiona "🚀 Publicar" para que se vea en el sitio público y en el árbitro.');
+                alert('✅ Logo actualizado en esta pantalla. Presiona "📤 Publicar cambios" para que se vea en el sitio público y en el árbitro.');
             };
             lector.readAsDataURL(input.files[0]);
         }
@@ -3009,7 +3017,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             if (!db.config) db.config = crearConfigCredencialDefault();
             db.config.logoSitio = '';
             guardarDB();
-            alert('✅ Logo restaurado al original en esta pantalla. Presiona "🚀 Publicar" para que se vea en los demás.');
+            alert('✅ Logo restaurado al original en esta pantalla. Presiona "📤 Publicar cambios" para que se vea en los demás.');
         }
 
         // --- Indicador de conexión con Firebase (ruta especial .info/connected) ---
@@ -3050,25 +3058,62 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             errEl.textContent = '';
             if (!email || !password) { errEl.textContent = 'Escribe tu correo y contraseña.'; return; }
             if (typeof firebase === 'undefined') { errEl.textContent = 'No cargó Firebase. Revisa tu internet y recarga la página (Ctrl+F5).'; return; }
+            errEl.style.color = '#555';
             errEl.textContent = '⏳ Entrando...';
             firebase.auth().signInWithEmailAndPassword(email, password)
-                .catch(err => {
+                .catch(async err => {
+                    errEl.style.color = '#c62828';
                     const c = (err && err.code) || '';
-                    const incorrecto = 'Correo o contraseña incorrectos.';
+                    const credencialesMal = ['auth/invalid-credential', 'auth/invalid-login-credentials', 'auth/wrong-password', 'auth/user-not-found'];
+                    if (credencialesMal.indexOf(c) !== -1) {
+                        errEl.textContent = '🔎 Revisando qué dato falla...';
+                        let metodos = null;
+                        try { metodos = await firebase.auth().fetchSignInMethodsForEmail(email); } catch (e) { metodos = null; }
+                        let diag;
+                        if (c === 'auth/user-not-found') {
+                            diag = '❌ El CORREO no está registrado.';
+                        } else if (c === 'auth/wrong-password') {
+                            diag = '❌ La CONTRASEÑA es incorrecta (el correo sí existe).';
+                        } else if (metodos && metodos.indexOf('password') !== -1) {
+                            diag = '❌ La CONTRASEÑA es incorrecta. El correo sí existe en el sistema.';
+                        } else if (metodos && metodos.length) {
+                            diag = '⚠️ Ese correo existe pero entra con otro método (' + metodos.join(', ') + '), no con contraseña.';
+                        } else {
+                            diag = '❌ Firebase no confirma el correo o la contraseña (por seguridad no dice cuál de los dos). Revisa el correo letra por letra y usa "Mostrar contraseña".';
+                        }
+                        const avisos = [];
+                        avisos.push('Correo escrito: <b>' + escapeHtml(email) + '</b>');
+                        avisos.push('Contraseña: ' + password.length + ' caracteres' + (password !== password.trim() ? ' — <b>tiene un espacio al inicio o al final</b>' : ''));
+                        if (/\s/.test(email)) avisos.push('<b>El correo tiene espacios</b>');
+                        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) avisos.push('<b>El correo no parece válido</b>');
+                        errEl.innerHTML = diag + '<br><span style="color:#555;">' + avisos.join('<br>') + '</span>';
+                        return;
+                    }
                     const mensajes = {
-                        'auth/invalid-credential': incorrecto,
-                        'auth/wrong-password': incorrecto,
-                        'auth/user-not-found': incorrecto,
                         'auth/invalid-email': 'El correo no es válido.',
-                        'auth/too-many-requests': 'Demasiados intentos fallidos. Espera unos minutos y vuelve a intentar.',
+                        'auth/too-many-requests': 'Demasiados intentos fallidos. Espera unos minutos y vuelve a intentar (o usa "¿Olvidaste tu contraseña?").',
                         'auth/user-disabled': 'Esta cuenta está deshabilitada en Firebase.',
                         'auth/network-request-failed': 'Sin conexión con Firebase. Revisa tu internet.',
                         'auth/operation-not-supported-in-this-environment': 'Abre la página desde su dirección https:// (no como archivo de tu computadora).',
                         'auth/unauthorized-domain': 'Este dominio no está autorizado en Firebase (Authentication > Configuración > Dominios autorizados).',
                         'auth/operation-not-allowed': 'El acceso con correo y contraseña está desactivado en Firebase.'
                     };
+                    if (c.indexOf('auth/requests-from-referer') === 0 || c === 'auth/invalid-api-key') {
+                        errEl.textContent = '🌐 Firebase no permite entrar desde esta dirección (' + location.host + '). Usa la página publicada, o agrega esta dirección en Firebase > Authentication > Configuración > Dominios autorizados y en Google Cloud > Credenciales > tu clave de API > restricciones de sitios web. (' + c + ')';
+                        return;
+                    }
                     errEl.textContent = (mensajes[c] || 'No se pudo entrar.') + (c ? ' (' + c + ')' : '');
                 });
+        }
+
+        function recuperarContrasenaAdmin() {
+            const email = document.getElementById('login-email').value.trim();
+            const errEl = document.getElementById('login-error-msg');
+            if (!email) { errEl.style.color = '#c62828'; errEl.textContent = 'Escribe primero tu correo y vuelve a presionar este enlace.'; return; }
+            if (typeof firebase === 'undefined') { errEl.style.color = '#c62828'; errEl.textContent = 'No cargó Firebase. Revisa tu internet y recarga la página.'; return; }
+            firebase.auth().sendPasswordResetEmail(email)
+                .then(() => { errEl.style.color = '#2e7d32'; errEl.textContent = '✅ Si ese correo está registrado, te enviamos un enlace para crear una contraseña nueva. Revisa también Spam.'; })
+                .catch(err => { errEl.style.color = '#c62828'; errEl.textContent = 'No se pudo enviar el enlace (' + ((err && err.code) || 'error') + ').'; });
         }
 
         function cerrarSesionAdmin() {
@@ -3231,7 +3276,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
 
         function limpiarAvisosExpirados() {
             if (!db.comunicados) return;
-            db.comunicados = db.comunicados.filter(c => (Date.now() - momentoAviso(c)) <= DURACION_AVISO_MS);
+            db.comunicados = db.comunicados.filter(c => (c.tipo === 'sancion' && c.jugadorId) || (Date.now() - momentoAviso(c)) <= DURACION_AVISO_MS);
         }
 
         limpiarAvisosExpirados();
@@ -3343,7 +3388,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             const tarjetas = [
                 { valor: partidosHoy.length, etiqueta: 'Partidos hoy', color: '#0d2a4d', ancla: '#form-add-partido' },
                 { valor: pendientes, etiqueta: 'Solicitudes pendientes', color: pendientes > 0 ? '#c62828' : '#2e7d32', ancla: '#lista-solicitudes-pendientes' },
-                { valor: equiposConAdeudo, etiqueta: 'Equipos con adeudo', color: equiposConAdeudo > 0 ? '#b45309' : '#2e7d32', ancla: '#lista-finanzas' },
+                { valor: equiposConAdeudo, etiqueta: 'Equipos con adeudo', color: equiposConAdeudo > 0 ? '#b45309' : '#2e7d32', ancla: '#tabla-control-financiero' },
                 { valor: sinAsignar, etiqueta: 'Partidos sin árbitro/cancha', color: sinAsignar > 0 ? '#c62828' : '#2e7d32', ancla: '#form-add-partido' }
             ];
 
@@ -4482,7 +4527,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                     foto: jugadorBase64, goles: 0, amarillas: 0, rojas: 0, xiIdeal: [], folioNum: db.contadorFolioJugadores, fechaAlta: fechaMexico(Date.now())
                 });
                 const nombreEquipoNuevoJug = db.equipos.find(e => e.id === equipoIdSel)?.nombre || 'Agente Libre';
-                agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${nombreSel} se une al equipo ${nombreEquipoNuevoJug}.`, { jugadorId: nuevoJugadorId, imagen: jugadorBase64 || '' });
+                agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${escapeHtml(nombreSel)} se une al equipo ${escapeHtml(nombreEquipoNuevoJug)}.`, { jugadorId: nuevoJugadorId, imagen: jugadorBase64 || '' });
                 this.reset();
                 document.getElementById('admin-jug-foto-preview').style.display = 'none';
                 guardarDB(); alert("Jugador registrado.");
@@ -4726,7 +4771,8 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                 return;
             }
 
-            cont.innerHTML = db.solicitudes.map(s => {
+            cont.innerHTML = db.solicitudes.map(sRaw => {
+                const s = sanitizarSolicitudParaVista(sRaw);
                 const duplicado = nombreYaRegistrado(s.nombre);
                 const equipo = db.equipos.find(e => e.id === s.equipoId)?.nombre || 'Agente Libre';
                 const edad = calcularEdad(s.fechaNacimiento);
@@ -4758,6 +4804,28 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                     </div>
                 </div>
             `; }).join('');
+        }
+
+        const POSICIONES_VALIDAS = ['Portero', 'Defensa central', 'Defensa derecho', 'Defensa izquierdo', 'Medio central', 'Medio derecho', 'Medio izquierdo', 'Delantero'];
+        const RX_FOTO_SEGURA = /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+\/=]+$/i;
+        // Quita caracteres que permitirían inyectar HTML; se usa al aprobar una solicitud pública.
+        function limpiarTextoSolicitud(t) {
+            return String(t === undefined || t === null ? '' : t).replace(/[<>"'`]/g, '').replace(/\s+/g, ' ').trim();
+        }
+        function fotoSolicitudSegura(f) { return RX_FOTO_SEGURA.test(String(f || '')) ? f : ''; }
+        // Copia de la solicitud con todo escapado, solo para dibujarla con innerHTML.
+        function sanitizarSolicitudParaVista(s) {
+            return Object.assign({}, s, {
+                id: Number(s.id) || 0,
+                nombre: escapeHtml(s.nombre),
+                posicion: escapeHtml(s.posicion),
+                numero: escapeHtml(s.numero),
+                categoria: escapeHtml(s.categoria),
+                nacionalidad: escapeHtml(s.nacionalidad),
+                lugarNacimiento: escapeHtml(s.lugarNacimiento),
+                fechaNacimiento: escapeHtml(s.fechaNacimiento),
+                foto: fotoSolicitudSegura(s.foto)
+            });
         }
 
         function marcarSolicitudResueltaSinPublicar(id) {
@@ -4823,7 +4891,8 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             if ((db.jugadores || []).filter(j => j.equipoId === sol.equipoId).length >= 15) {
                 return alert("Ese equipo ya tiene 15 jugadores registrados (máximo por plantel). Rechaza la solicitud o reasigna al jugador a otro equipo antes de aprobarla.");
             }
-            const nombreSol = (sol.nombre || '').trim().toUpperCase();
+            const nombreSol = limpiarTextoSolicitud(sol.nombre).toUpperCase();
+            const fotoSolSegura = fotoSolicitudSegura(sol.foto);
             const duplicado = nombreYaRegistrado(nombreSol);
             if (duplicado) {
                 const equipoDup = db.equipos.find(e => e.id === duplicado.equipoId)?.nombre || 'Agente Libre';
@@ -4834,14 +4903,14 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             db.contadorFolioJugadores = (db.contadorFolioJugadores || 0) + 1;
             const nuevoJugadorIdSol = Date.now();
             db.jugadores.push({
-                id: nuevoJugadorIdSol, nombre: nombreSol, equipoId: sol.equipoId, posicion: sol.posicion,
-                numero: sol.numero || '', categoria: sol.categoria || 'Especial',
-                lugarNacimiento: (sol.lugarNacimiento || '').toUpperCase(), fechaNacimiento: sol.fechaNacimiento || '',
-                nacionalidad: (sol.nacionalidad || 'MEXICANA').toUpperCase(),
-                foto: sol.foto, goles: 0, amarillas: 0, rojas: 0, xiIdeal: [], folioNum: db.contadorFolioJugadores, fechaAlta: fechaMexico(Date.now())
+                id: nuevoJugadorIdSol, nombre: nombreSol, equipoId: Number(sol.equipoId), posicion: POSICIONES_VALIDAS.includes(sol.posicion) ? sol.posicion : 'Jugador',
+                numero: String(sol.numero || '').replace(/\D/g, '').slice(0, 2), categoria: 'Edad Libre',
+                lugarNacimiento: limpiarTextoSolicitud(sol.lugarNacimiento).toUpperCase(), fechaNacimiento: /^\d{4}-\d{2}-\d{2}$/.test(sol.fechaNacimiento || '') ? sol.fechaNacimiento : '',
+                nacionalidad: limpiarTextoSolicitud(sol.nacionalidad || 'MEXICANA').toUpperCase() || 'MEXICANA',
+                foto: fotoSolSegura, goles: 0, amarillas: 0, rojas: 0, xiIdeal: [], folioNum: db.contadorFolioJugadores, fechaAlta: fechaMexico(Date.now())
             });
             const nombreEquipoSol = db.equipos.find(e => e.id === sol.equipoId)?.nombre || 'Agente Libre';
-            agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${nombreSol} se une al equipo ${nombreEquipoSol}.`, { jugadorId: nuevoJugadorIdSol, imagen: sol.foto || '' });
+            agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${escapeHtml(nombreSol)} se une al equipo ${escapeHtml(nombreEquipoSol)}.`, { jugadorId: nuevoJugadorIdSol, imagen: fotoSolSegura });
             db.solicitudes = db.solicitudes.filter(s => s.id !== id);
             marcarSolicitudResueltaSinPublicar(id);
             cerrarDetalleSolicitud();
@@ -4902,7 +4971,8 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
         }
         function cpNuevoFolio() {
             const nums = Object.keys(db.comprobantes || {}).map(k => parseInt(String(k).replace(/\D/g, '')) || 0);
-            return 'PA-' + String((nums.length ? Math.max.apply(null, nums) : 0) + 1).padStart(5, '0');
+            nums.push(parseInt(db.cpUltimoFolio) || 0);   // el contador no baja aunque elimines comprobantes
+            return 'PA-' + String(Math.max.apply(null, nums) + 1).padStart(5, '0');
         }
         function cpNuevoCodigo() {
             const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -4947,18 +5017,25 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             const lista = Object.values(db.comprobantes || {}).sort((a, b) => String(b.creadoEn).localeCompare(String(a.creadoEn)));
             tbody.innerHTML = lista.map(c => {
                 let estado;
-                if (c.estado === 'usado') estado = `<span class="badge-status badge-ok">✅ Escaneado</span><div style="font-size:0.65rem; color:#888;">${escapeHtml(cpFechaTexto(c.usadoEn))}${c.usadoPor ? ' · ' + escapeHtml(c.usadoPor) : ''}</div>`;
-                else if (c.estado === 'anulado') estado = `<span class="badge-status badge-pending">⛔ Anulado</span>`;
-                else estado = `<span class="badge-status badge-pending">🕓 Sin escanear</span>`;
+                if (c.estado === 'usado') {
+                    estado = `<span class="badge-status badge-ok">✅ Ya lo escaneó el árbitro</span><div style="font-size:0.65rem; color:#888; margin-top:2px;">${escapeHtml(cpFechaTexto(c.usadoEn))}${c.usadoPor ? ' · ' + escapeHtml(c.usadoPor) : ''}</div>`;
+                } else if (c.estado === 'anulado') {
+                    estado = `<span class="badge-status badge-pending">⛔ Anulado</span>`;
+                } else {
+                    estado = `<span class="badge-status badge-pending">🕓 Aún no lo escanean</span>`;
+                    if (cpNube && cpNube.indexOf(c.folio) === -1) estado += `<div style="font-size:0.68rem; color:#b45309; font-weight:bold; margin-top:3px;">📤 Falta publicar para que el árbitro lo reconozca</div>`;
+                }
+                const f = escapeHtml(c.folio);
                 return `<tr style="border-bottom:1px solid #eee;">
-                    <td style="padding:8px; font-weight:bold; font-family:monospace;">${escapeHtml(c.folio)}</td>
+                    <td style="padding:8px; font-weight:bold; font-family:monospace;">${f}</td>
                     <td>${escapeHtml(c.equipoNombre)}</td>
                     <td style="font-size:0.78rem;">J${escapeHtml(String(c.jornada ?? '-'))} · ${escapeHtml(c.partidoTexto)}</td>
                     <td>$${escapeHtml(Number(c.monto || 0).toLocaleString('es-MX'))}</td>
                     <td>${estado}</td>
                     <td style="white-space:nowrap;">
-                        <button type="button" onclick="cpVer('${escapeHtml(c.folio)}')" style="padding:5px 8px; font-size:0.7rem;">👁️ Ver / Imprimir</button>
-                        ${c.estado === 'vigente' ? `<button type="button" onclick="cpAnular('${escapeHtml(c.folio)}')" style="padding:5px 8px; font-size:0.7rem; background:#b91c1c;">Anular</button>` : ''}
+                        <button type="button" onclick="cpVer('${f}')" style="padding:5px 8px; font-size:0.7rem;">👁️ Ver / Imprimir</button>
+                        ${c.estado === 'vigente' ? `<button type="button" onclick="cpAnular('${f}')" style="padding:5px 8px; font-size:0.7rem; background:#b45309;">Anular</button>` : ''}
+                        <button type="button" onclick="cpEliminar('${f}')" style="padding:5px 8px; font-size:0.7rem; background:#b91c1c;">🗑️ Eliminar</button>
                     </td>
                 </tr>`;
             }).join('') || '<tr><td colspan="6" style="color:gray; padding:12px;">Aún no has generado comprobantes.</td></tr>';
@@ -4998,6 +5075,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                 usadoEn: '',
                 usadoPor: ''
             };
+            db.cpUltimoFolio = parseInt(folio.replace(/\D/g, '')) || 0;
             guardarDB();
             cpVer(folio);
         }
@@ -5070,6 +5148,82 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             }
             btn.disabled = false; btn.textContent = txt;
         }
+
+        // --- Eliminar y seguimiento en vivo de comprobantes ---
+        let cpNube = null;          // folios que ya existen en la nube (null = aún no se sabe)
+        let cpEscuchando = false;
+
+        async function cpEliminar(folio) {
+            const c = (db.comprobantes || {})[folio];
+            if (!c) return;
+            const aviso = c.estado === 'usado'
+                ? ' OJO: el árbitro ya lo escaneó; al eliminarlo se pierde el registro de ese pago (el partido no se modifica).'
+                : '';
+            if (!(await confirmarAccion(`¿Eliminar el comprobante ${escapeHtml(folio)} de ${escapeHtml(c.equipoNombre)}?${aviso} Después presiona "📤 Publicar cambios" para que también se borre en la nube.`, { textoConfirmar: 'Eliminar' }))) return;
+            delete db.comprobantes[folio];
+            if (document.getElementById('modal-comprobante').style.display === 'flex') cpCerrar();
+            guardarDB();
+        }
+
+        function cpAviso(msg) {
+            let t = document.getElementById('cp-toast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'cp-toast';
+                t.style.cssText = 'position:fixed; bottom:18px; right:18px; background:#16a34a; color:#fff; padding:12px 16px; border-radius:10px; font-size:0.85rem; font-weight:bold; box-shadow:0 6px 18px rgba(0,0,0,0.3); z-index:100000; max-width:300px; opacity:0; transition:opacity .3s;';
+                document.body.appendChild(t);
+            }
+            t.textContent = msg;
+            t.style.opacity = '1';
+            clearTimeout(t._t);
+            t._t = setTimeout(function () { t.style.opacity = '0'; }, 7000);
+        }
+
+        // Copia a la base local SOLO el estado "usado" que el árbitro guardó en la nube; no toca nada más.
+        function cpAplicarNube(remotos) {
+            remotos = (remotos && typeof remotos === 'object') ? remotos : {};
+            cpNube = Object.keys(remotos);
+            const escaneados = [];
+            Object.keys(remotos).forEach(folio => {
+                const r = remotos[folio], l = (db.comprobantes || {})[folio];
+                if (!r || !l) return;                       // si lo eliminaste aquí, no se vuelve a agregar
+                if (r.estado === 'usado' && l.estado !== 'usado') {
+                    l.estado = 'usado';
+                    l.usadoEn = r.usadoEn || '';
+                    l.usadoPor = r.usadoPor || '';
+                    l.usadoPartidoId = r.usadoPartidoId;
+                    escaneados.push(l);
+                }
+            });
+            if (escaneados.length) {
+                try { localStorage.setItem('liga_premier_db', JSON.stringify(db)); } catch (e) { }
+                cpAviso('✅ ' + escaneados.map(c => c.folio + ' (' + c.equipoNombre + ')').join(', ') + ' ya fue escaneado por el árbitro.');
+            }
+            try { renderizarComprobantes(); } catch (e) { }
+            return escaneados.length;
+        }
+
+        function cpEscucharEscaneos() {
+            if (cpEscuchando || typeof firebaseDbRef === 'undefined') return;
+            cpEscuchando = true;
+            try {
+                firebaseDbRef.child('comprobantes').on('value', snap => cpAplicarNube(snap.val()),
+                    err => console.warn('No se pudo escuchar los comprobantes', err));
+            } catch (e) { cpEscuchando = false; console.warn(e); }
+        }
+
+        function cpRevisarEscaneos(btn) {
+            const txt = btn.textContent;
+            btn.disabled = true; btn.textContent = '⏳ Revisando...';
+            firebaseDbRef.child('comprobantes').once('value')
+                .then(snap => {
+                    const n = cpAplicarNube(snap.val());
+                    if (!n) cpAviso('Sin novedades: ningún comprobante nuevo escaneado.');
+                })
+                .catch(err => mostrarAlerta('No se pudo consultar la nube: ' + escapeHtml(err.message || err), { icono: '❌' }))
+                .then(() => { btn.disabled = false; btn.textContent = txt; });
+        }
+        window.addEventListener('load', cpEscucharEscaneos);
 
         async function cpAnular(folio) {
             const c = (db.comprobantes || {})[folio];
@@ -6769,7 +6923,7 @@ ${cuerpo}`;
                 const iconoTipo = { aviso: '📢', sancion: '⚠️', cronica: '📰', registro: '🆕', traspaso: '🔄' };
                 listaComunicados.innerHTML = (db.comunicados || []).length ? db.comunicados.map(c => {
                     const horasRestantes = Math.max(0, Math.ceil((DURACION_AVISO_MS - (Date.now() - momentoAviso(c))) / (60 * 60 * 1000)));
-                    const notaAuto = ` · <span style="color:#888;">se quita solo en ${horasRestantes} h</span>`;
+                    const notaAuto = (c.tipo === 'sancion' && c.jugadorId) ? ' · <span style="color:#888;">permanece hasta que el jugador quede habilitado</span>' : ` · <span style="color:#888;">se quita solo en ${horasRestantes} h</span>`;
                     const esEditable = c.tipo === 'aviso' || c.tipo === 'sancion';
                     return `
                     <div class="gestion-fila">
@@ -6852,7 +7006,7 @@ ${cuerpo}`;
                 document.getElementById('edit-nombre').value = j.nombre;
                 document.getElementById('edit-posicion').value = normalizarPosicionLiga(j.posicion);
                 document.getElementById('edit-numero').value = j.numero || '';
-                document.getElementById('edit-categoria').value = j.categoria || 'Especial';
+                document.getElementById('edit-categoria').value = 'Edad Libre';
                 document.getElementById('edit-lugar-nac').value = j.lugarNacimiento || '';
                 document.getElementById('edit-fecha-nac').value = j.fechaNacimiento || '';
                 document.getElementById('edit-nacionalidad').value = j.nacionalidad || 'MEXICANA';

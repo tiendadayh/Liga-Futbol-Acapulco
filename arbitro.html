@@ -624,7 +624,7 @@ html[data-theme="dark"] [style*="#fff3cd"]{background:rgba(240,180,41,.16)!impor
 html[data-theme="dark"] [style*="#fdecea"],html[data-theme="dark"] [style*="#fee2e2"],html[data-theme="dark"] [style*="#fde2e5"]{background:rgba(255,59,59,.16)!important;color:#ffc9c9!important}
 html[data-theme="dark"] [style*="color:#333"],html[data-theme="dark"] [style*="color: #333"],html[data-theme="dark"] [style*="color:#555"],html[data-theme="dark"] [style*="color:#444"],html[data-theme="dark"] [style*="color:#0b2f5c"],html[data-theme="dark"] [style*="color: #0b2f5c"],html[data-theme="dark"] [style*="color:#1a1a1a"]{color:#dbe4f5!important}
 html[data-theme="dark"] #liga-skel{background:#0d1424}
-</style></head>
+</style><style id="liga-fix-botones">#liga-theme-btn{right:150px!important}</style></head>
 
 <body><div id="liga-skel" aria-hidden="true"><div class="sk sk-h"></div><div class="sk-w"><div class="sk-row"><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div></div></div>
     <div id="pantalla-login" style="position:fixed; inset:0; background:linear-gradient(135deg,#0d2a4d,#1a3a6b); z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px;">
@@ -741,7 +741,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
 
                 <fieldset style="border:1px solid var(--border); border-radius:8px; padding:12px; margin-top:15px;">
                     <legend style="padding:0 6px; font-weight:700; color:var(--dark); font-size:0.9rem;">🧩 Alineación Titular</legend>
-                    <p style="font-size:0.75rem; color:#6b7280; margin-top:-4px;">Marca los 11 jugadores que iniciaron el partido en cada equipo. El resto del plantel queda como suplente automáticamente.</p>
+                    <p style="font-size:0.75rem; color:#6b7280; margin-top:-4px;">Marca los jugadores titulares que iniciaron el partido en cada equipo (el máximo lo define el Reglamento). El resto del plantel queda como suplente automáticamente.</p>
                     <button type="button" onclick="abrirEscanerQR('titular')" style="background:#0d2a4d; margin-bottom:10px;">📷 Escanear QR de credenciales (titulares)</button>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
                         <div>
@@ -1360,6 +1360,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             const n = parseInt(reg(dbRef || db, 'jornadasRegulares'));
             return (n >= 1 && n <= 60) ? n : 9;
         }
+        function maxTitulares() { const n = parseInt(reg(db, 'jugadoresTitulares')); return n >= 1 ? n : 11; }
         function reg(dbRef, campo) {
             const v = dbRef.reglamento && dbRef.reglamento[campo];
             return (v === undefined || v === null || v === '') ? REGLAMENTO_DEFAULTS[campo] : v;
@@ -2413,8 +2414,8 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             };
             pintar('ced-titulares-local', jugadoresLocal, titLocal);
             pintar('ced-titulares-visita', jugadoresVisita, titVisita);
-            document.getElementById('ced-titulares-contador-local').innerText = `${titLocal.length}/11`;
-            document.getElementById('ced-titulares-contador-visita').innerText = `${titVisita.length}/11`;
+            document.getElementById('ced-titulares-contador-local').innerText = `${titLocal.length}/${maxTitulares()}`;
+            document.getElementById('ced-titulares-contador-visita').innerText = `${titVisita.length}/${maxTitulares()}`;
             actualizarCapitanesCedula(partido);
         }
 
@@ -2478,8 +2479,8 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             if (!partido[clave]) partido[clave] = [];
 
             if (marcado) {
-                if (partido[clave].length >= 11) {
-                    alert('Ya seleccionaste 11 titulares para este equipo. Desmarca alguno antes de agregar otro.');
+                if (partido[clave].length >= maxTitulares()) {
+                    alert('Ya seleccionaste ' + maxTitulares() + ' titulares para este equipo. Desmarca alguno antes de agregar otro.');
                     desplegarCargaIncidencias(partidoId);
                     return;
                 }
@@ -2492,7 +2493,8 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             const nombreLocal = db.equipos.find(e => e.id === partido.localId)?.nombre || 'Local';
             const nombreVisita = db.equipos.find(e => e.id === partido.visitaId)?.nombre || 'Visita';
             void nombreLocal; void nombreVisita;
-            document.getElementById('ced-titulares-contador-local').innerText = `${(partido.titularesLocal || []).length}/11`;
+            document.getElementById('ced-titulares-contador-local').innerText = `${(partido.titularesLocal || []).length}/${maxTitulares()}`;
+            document.getElementById('ced-titulares-contador-visita').innerText = `${(partido.titularesVisita || []).length}/${maxTitulares()}`;
             guardarDB();
             refrescarTitularesEscaner(partido);
         }
@@ -2817,7 +2819,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                         const j = db.jugadores.find(x => x.id === id);
                         return j ? `<div class="qr-chip"><span>${j.numero ? '#' + escapeHtml(String(j.numero)) + ' ' : ''}${escapeHtml(j.nombre)}</span><button type="button" onclick="quitarTitularQR(${j.id})" title="Quitar">✕</button></div>` : '';
                     }).join('');
-                    return `<div><h5>${escapeHtml(nombre)} — Titulares ${ids.length}/11</h5>${chips || '<p class="qr-vacio">Sin escanear.</p>'}</div>`;
+                    return `<div><h5>${escapeHtml(nombre)} — Titulares ${ids.length}/${maxTitulares()}</h5>${chips || '<p class="qr-vacio">Sin escanear.</p>'}</div>`;
                 }
                 const set = idsEnCanchaEquipo(p, equipoId);
                 const chips = Array.from(set).map(id => {
@@ -2851,7 +2853,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             document.getElementById('qr-tipo').style.display = escanerModo === 'incidencia' ? '' : 'none';
             document.getElementById('qr-btn-reiniciar').style.display = escanerModo === 'cambio' ? '' : 'none';
             if (escanerModo === 'titular') {
-                inst.innerHTML = 'Escanea a cada jugador que <b>inicia</b> el partido. Máximo 11 por equipo.';
+                inst.innerHTML = 'Escanea a cada jugador que <b>inicia</b> el partido. Máximo ' + maxTitulares() + ' por equipo.';
                 ctrl.classList.add('hidden');
             } else if (escanerModo === 'cambio') {
                 ctrl.classList.remove('hidden');
@@ -3009,13 +3011,13 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             const nombreEq = db.equipos.find(e => e.id === j.equipoId)?.nombre || '';
             if (p[clave].includes(j.id))
                 return avisoEscaner('info', 'ℹ️ Ya estaba registrado como titular.', j);
-            if (p[clave].length >= 11)
-                return avisoEscaner('err', `❌ ${escapeHtml(nombreEq)} ya tiene 11 titulares. Quita alguno de la lista antes de agregar otro.`, j);
+            if (p[clave].length >= maxTitulares())
+                return avisoEscaner('err', `❌ ${escapeHtml(nombreEq)} ya tiene ${maxTitulares()} titulares. Quita alguno de la lista antes de agregar otro.`, j);
             p[clave].push(j.id);
             escanerUltimaAccion = { tipo: 'titular', jugadorId: j.id };
             guardarDB();
             refrescarTitularesEscaner(p);
-            avisoEscaner('ok', `✅ Titular de ${escapeHtml(nombreEq)} (${p[clave].length}/11)`, j);
+            avisoEscaner('ok', `✅ Titular de ${escapeHtml(nombreEq)} (${p[clave].length}/${maxTitulares()})`, j);
         }
 
         function registrarPasoCambioQR(p, j) {
