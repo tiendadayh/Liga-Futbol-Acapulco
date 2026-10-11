@@ -1040,7 +1040,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:14px;">
             <div><label>Duración por tiempo (min)</label><input type="number" id="reg-duracion-minutos" min="1"></div>
             <div><label>Número de tiempos</label><input type="number" id="reg-num-tiempos" min="1"></div>
-            <div><label>Jornadas de la fase regular</label><input type="number" id="reg-jornadas-regulares" min="0" max="60" oninput="actualizarCalculoJornadas()"></div>
+            <div><label>Jornadas de la fase regular</label><input type="number" id="reg-jornadas-regulares" min="1" max="60" oninput="actualizarCalculoJornadas()"></div>
             <div id="reg-calculo-jornadas" style="grid-column:1/-1; background:#eef4ff; border:1px solid #c8d8f5; border-radius:10px; padding:12px 14px; font-size:0.88rem; color:#0d2a4d;"></div>
             <div><label>Tolerancia de llegada (min)</label><input type="number" id="reg-tolerancia" min="0"></div>
             <div><label>Jugadores titulares</label><input type="number" id="reg-titulares" min="1"></div>
@@ -3193,7 +3193,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
         // Las jornadas 1..N son fase regular; de la 98 en adelante es Liguilla.
         function jornadasFaseRegular(dbRef) {
             const n = parseInt(reg(dbRef || db, 'jornadasRegulares'));
-            return (n >= 0 && n <= 60) ? n : 9;
+            return (n >= 1 && n <= 60) ? n : 9;
         }
         function reg(dbRef, campo) {
             const v = dbRef.reglamento && dbRef.reglamento[campo];
@@ -3608,7 +3608,120 @@ html[data-theme="dark"] #caja-resumen-hoy{
             el.style.color = esError ? '#c62828' : '#2e7d32';
         }
 
-        function publicarEnFirebase() {
+        // ===== Protección: no pisar lo que captura el árbitro =====
+        // El árbitro guarda sus partidos/jugadores directo en la nube mientras el admin tiene su propia
+        // copia abierta. Antes de publicar, se compara con lo último que el admin vio de la nube y se
+        // INCORPORAN los cambios del árbitro (partido por partido, jugador por jugador) en lugar de
+        // pisarlos. Solo se pregunta si el admin y el árbitro cambiaron exactamente el mismo dato.
+        const CAMPOS_ARBITRO = ['jugadores', 'equipos', 'partidos', 'arbitros', 'finanzas', 'comprobantes'];
+        let baseNubeArbitro = null;   // copia de esos campos tal como estaban en la nube la última vez que se vieron
+
+        function guardarBaseNube(obj) {
+            try {
+                const b = {};
+                CAMPOS_ARBITRO.forEach(k => { b[k] = (obj && obj[k] !== undefined) ? JSON.parse(JSON.stringify(obj[k])) : undefined; });
+                baseNubeArbitro = b;
+            } catch (e) { baseNubeArbitro = null; }
+        }
+
+        // Forma "como la guarda Firebase" (sin null ni vacíos, llaves ordenadas) solo para COMPARAR.
+        function fbNorm(v) {
+            if (v === null || v === undefined) return undefined;
+            if (Array.isArray(v)) {
+                const a = v.map(fbNorm).filter(x => x !== undefined);
+                return a.length ? a : undefined;
+            }
+            if (typeof v === 'object') {
+                const o = {};
+                Object.keys(v).sort().forEach(k => { const n = fbNorm(v[k]); if (n !== undefined) o[k] = n; });
+                return Object.keys(o).length ? o : undefined;
+            }
+            return v;
+        }
+        const huellaFb = v => JSON.stringify(fbNorm(v));
+        const esObjFb = x => !!x && typeof x === 'object' && !Array.isArray(x);
+        function comoListaFb(x) {   // arreglo, o el objeto 0,1,2… con que Firebase devuelve un arreglo con huecos
+            if (Array.isArray(x)) return x.filter(i => i !== null && i !== undefined);
+            if (esObjFb(x)) {
+                const k = Object.keys(x);
+                if (k.length && k.every(n => /^\d+$/.test(n))) return k.sort((a, b) => a - b).map(n => x[n]).filter(i => i !== null && i !== undefined);
+            }
+            return null;
+        }
+
+        // Fusión de 3 vías: b = lo último visto en la nube, l = mi copia, r = la nube ahora.
+        function fusionarValor(b, l, r, ctx, ruta) {
+            const hb = huellaFb(b), hl = huellaFb(l), hr = huellaFb(r);
+            if (hl === hr) return l;        // ya coinciden
+            if (hr === hb) return l;        // la nube no cambió: va lo mío
+            if (hl === hb) return r;        // yo no lo toqué: tomo lo de la nube
+            // Cambiaron los dos: se baja un nivel para fusionar lo que no se encima.
+            if (Array.isArray(l) || Array.isArray(r) || Array.isArray(b)) {
+                const lb = comoListaFb(b) || [], ll = comoListaFb(l), lr = comoListaFb(r);
+                if (ll && lr && ll.concat(lr, lb).every(i => i && typeof i === 'object' && i.id !== undefined)) {
+                    const mapa = a => new Map(a.map(i => [String(i.id), i]));
+                    const mb = mapa(lb), ml = mapa(ll), mr = mapa(lr);
+                    const ids = [...ml.keys(), ...[...mr.keys()].filter(id => !ml.has(id))];
+                    const salida = [];
+                    ids.forEach(id => {
+                        const v = fusionarValor(mb.get(id), ml.get(id), mr.get(id), ctx, ruta + '#' + id);
+                        if (v !== undefined && v !== null) salida.push(v);
+                    });
+                    return salida;
+                }
+            } else if (esObjFb(l) && esObjFb(r)) {
+                const base = esObjFb(b) ? b : {};
+                const salida = {};
+                new Set([...Object.keys(l), ...Object.keys(r)]).forEach(k => {
+                    const v = fusionarValor(base[k], l[k], r[k], ctx, ruta + '/' + k);
+                    if (v !== undefined && v !== null) salida[k] = v;
+                });
+                return salida;
+            }
+            ctx.conflictos.push(ruta);       // mismo dato cambiado por los dos: gana lo del árbitro (nube)
+            return r !== undefined ? r : l;
+        }
+
+        function refrescarPantallasTrasFusion() {
+            [cargarConfigFormulario, aplicarLogoSitio, actualizarFormularios, renderizarSolicitudes, renderizarFinanzas,
+             renderizarGestion, renderizarOnceIdeal, renderizarSuplantaciones, renderizarResumenDia,
+             renderizarCorreccionEstadisticas, renderizarEncuestasAdmin]
+                .forEach(f => { try { f(); } catch (e) { console.warn(e); } });
+        }
+
+        // Devuelve la lista de secciones donde se incorporó algo del árbitro, o 'cancelado'.
+        async function incorporarCambiosDelArbitro(datos) {
+            if (!baseNubeArbitro) return [];      // no se pudo ver la nube al abrir: se publica como antes
+            mostrarFirebaseStatus('⏳ Revisando si el árbitro capturó algo nuevo...', false);
+            const snap = await Promise.race([
+                firebaseDbRef.once('value'),
+                new Promise((_, rechazar) => setTimeout(() => rechazar(new Error('tiempo agotado')), 8000))
+            ]);
+            const remoto = snap.val() || {};
+            const ctx = { conflictos: [] };
+            const fusion = {}, cambiados = [];
+            CAMPOS_ARBITRO.forEach(k => {
+                // Si la nube está vacía en esta sección (la borraron o es la primera vez), NO se borra lo del admin: se vuelve a subir.
+                if (huellaFb(remoto[k]) === undefined) { fusion[k] = datos[k]; return; }
+                fusion[k] = fusionarValor(baseNubeArbitro[k], datos[k], remoto[k], ctx, k);
+                if (huellaFb(fusion[k]) !== huellaFb(datos[k])) cambiados.push(k);
+            });
+            if (ctx.conflictos.length) {
+                const lista = ctx.conflictos.slice(0, 5).map(r => r.replace('#', ' ').replace(/\//g, ' → ')).join(', ') + (ctx.conflictos.length > 5 ? '…' : '');
+                const seguir = await confirmarAccion(`El árbitro y tú cambiaron el mismo dato (${ctx.conflictos.length}): ${lista}. Si publicas, en esos datos se queda lo que capturó el árbitro. ¿Publicar así?`, { textoConfirmar: 'Publicar así' });
+                if (!seguir) return 'cancelado';
+            }
+            CAMPOS_ARBITRO.forEach(k => { if (fusion[k] === undefined) delete datos[k]; else datos[k] = fusion[k]; });
+            if (cambiados.length) {
+                cambiados.forEach(k => { if (datos[k] === undefined) delete db[k]; else db[k] = JSON.parse(JSON.stringify(datos[k])); });
+                normalizarDB(db);
+                localStorage.setItem('liga_premier_db', JSON.stringify(db));
+                refrescarPantallasTrasFusion();
+            }
+            return cambiados;
+        }
+
+        async function publicarEnFirebase() {
             mostrarFirebaseStatus('⏳ Publicando...', false);
 
             // Firebase rechaza cualquier campo "undefined" (lanza error al instante y la pantalla se quedaba en "Publicando...").
@@ -3626,6 +3739,17 @@ html[data-theme="dark"] #caja-resumen-hoy{
                 mostrarFirebaseStatus(`❌ La información pesa ${pesoMB.toFixed(1)} MB y Firebase no acepta más de ~16 MB por publicación. Usa "🗜️ Liberar espacio" en Respaldo de Datos o borra fotos que ya no necesites.`, true);
                 return;
             }
+
+            // Antes de subir: incorporar lo que el árbitro haya capturado desde que se abrió esta pantalla.
+            let incorporados = [];
+            try {
+                const res = await incorporarCambiosDelArbitro(datos);
+                if (res === 'cancelado') { mostrarFirebaseStatus('Publicación cancelada: no se subió nada.', true); return; }
+                incorporados = res || [];
+            } catch (err) {
+                console.warn('No se pudo revisar los cambios del árbitro antes de publicar', err);   // sin conexión: se publica como antes
+            }
+            mostrarFirebaseStatus('⏳ Publicando...', false);
 
             let terminado = false;
             const aviso = setTimeout(() => {
@@ -3651,7 +3775,8 @@ html[data-theme="dark"] #caja-resumen-hoy{
                 if (contadorEl) { contadorEl.textContent = '0'; contadorEl.style.color = '#2e7d32'; }
                 localStorage.setItem('liga_premier_ultima_publicacion', Date.now().toString());
                 actualizarUltimaPublicacionUI();
-                mostrarFirebaseStatus(`✅ Publicado (${new Date().toLocaleTimeString('es-MX')}). El sitio público y el árbitro ya lo ven.`, false);
+                guardarBaseNube(datos);
+                mostrarFirebaseStatus(`✅ Publicado (${new Date().toLocaleTimeString('es-MX')}). El sitio público y el árbitro ya lo ven.` + (incorporados.length ? ` Se incorporaron cambios del árbitro en: ${incorporados.join(', ')}.` : ''), false);
             }).catch(err => {
                 terminado = true; clearTimeout(aviso);
                 const sinPermiso = err && (err.code === 'PERMISSION_DENIED' || /permission/i.test(err.message || ''));
@@ -3670,6 +3795,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                     mostrarFirebaseStatus('⚠️ Todavía no hay nada publicado en la nube.', true);
                     return;
                 }
+                guardarBaseNube(datosNube);
                 db = datosNube;
                 normalizarDB(db);
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
@@ -3701,6 +3827,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
         firebaseDbRef.once('value').then(snapshot => {
             const datosNube = snapshot.val();
             if (datosNube) {
+                guardarBaseNube(datosNube);
                 db = datosNube;
                 normalizarDB(db);
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
@@ -4333,26 +4460,19 @@ html[data-theme="dark"] #caja-resumen-hoy{
         }
 
         // Lee el formulario del Reglamento, lo guarda en db.reglamento y publica los cambios.
-        // Lee un numero del formulario del Reglamento respetando el 0; solo usa el valor por defecto si el campo esta vacio o no es numero.
-        function numRegCampo(id, porDefecto) {
-            const el = document.getElementById(id);
-            const n = el ? parseInt(el.value) : NaN;
-            return isNaN(n) ? porDefecto : Math.max(0, n);
-        }
-
         function guardarReglamento() {
             db.reglamento = {
-                duracionMinutos: numRegCampo('reg-duracion-minutos', REGLAMENTO_DEFAULTS.duracionMinutos),
-                numTiempos: numRegCampo('reg-num-tiempos', REGLAMENTO_DEFAULTS.numTiempos),
+                duracionMinutos: parseInt(document.getElementById('reg-duracion-minutos').value) || REGLAMENTO_DEFAULTS.duracionMinutos,
+                numTiempos: parseInt(document.getElementById('reg-num-tiempos').value) || REGLAMENTO_DEFAULTS.numTiempos,
                 toleranciaMinutos: parseInt(document.getElementById('reg-tolerancia').value) || 0,
-                jugadoresTitulares: numRegCampo('reg-titulares', REGLAMENTO_DEFAULTS.jugadoresTitulares),
+                jugadoresTitulares: parseInt(document.getElementById('reg-titulares').value) || REGLAMENTO_DEFAULTS.jugadoresTitulares,
                 jugadoresSuplentes: parseInt(document.getElementById('reg-suplentes').value) || 0,
                 categoriaTexto: document.getElementById('reg-categoria').value.trim(),
                 balonOficial: document.getElementById('reg-balon').value.trim(),
                 cuotaArbitraje: parseInt(document.getElementById('reg-cuota-arbitraje').value) || 0,
                 cuotaInscripcionEquipo: parseInt(document.getElementById('reg-cuota-inscripcion-equipo').value) || 0,
                 cuotaInscripcionJugador: parseInt(document.getElementById('reg-cuota-inscripcion-jugador').value) || 0,
-                amarillasParaAcumulada: numRegCampo('reg-amarillas-para-acumulada', REGLAMENTO_DEFAULTS.amarillasParaAcumulada),
+                amarillasParaAcumulada: parseInt(document.getElementById('reg-amarillas-para-acumulada').value) || REGLAMENTO_DEFAULTS.amarillasParaAcumulada,
                 partidosAmarillasAcumuladas: parseInt(document.getElementById('reg-partidos-acumuladas').value) || 0,
                 multaAmarillasAcumuladas: parseInt(document.getElementById('reg-multa-acumuladas').value) || 0,
                 partidosDobleAmarilla: parseInt(document.getElementById('reg-partidos-doble-amarilla').value) || 0,
@@ -4360,7 +4480,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                 partidosRojaDirecta: parseInt(document.getElementById('reg-partidos-roja').value) || 0,
                 multaRojaDirecta: parseInt(document.getElementById('reg-multa-roja').value) || 0,
                 notasAdicionales: document.getElementById('reg-notas').value.trim(),
-                jornadasRegulares: Math.min(60, Math.max(0, numRegCampo('reg-jornadas-regulares', REGLAMENTO_DEFAULTS.jornadasRegulares)))
+                jornadasRegulares: Math.min(60, Math.max(1, parseInt((document.getElementById('reg-jornadas-regulares') || {}).value) || REGLAMENTO_DEFAULTS.jornadasRegulares))
             };
             poblarJornadasRegulares('admin-part-jornada');
             actualizarCalculoJornadas();

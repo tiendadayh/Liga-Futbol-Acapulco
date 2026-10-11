@@ -1108,7 +1108,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             firebaseDbRef = firebase.database().ref('liga_premier_db');
         } else {
             const sinFirebase = () => Promise.reject(new Error('Firebase no disponible (sin internet)'));
-            firebaseDbRef = { set: sinFirebase, once: sinFirebase, on: () => { } };
+            firebaseDbRef = { set: sinFirebase, update: sinFirebase, once: sinFirebase, on: () => { } };
         }
         let recibiendoDeFirebase = false; // evita que nuestro propio guardado se re-procese como si viniera de otro dispositivo
 
@@ -1358,7 +1358,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
         // Las jornadas 1..N son fase regular; de la 98 en adelante es Liguilla.
         function jornadasFaseRegular(dbRef) {
             const n = parseInt(reg(dbRef || db, 'jornadasRegulares'));
-            return (n >= 0 && n <= 60) ? n : 9;
+            return (n >= 1 && n <= 60) ? n : 9;
         }
         function maxTitulares() { const n = parseInt(reg(db, 'jugadoresTitulares')); return n >= 1 ? n : 11; }
         function reg(dbRef, campo) {
@@ -1394,6 +1394,17 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
         // (La sesión se restaura en DOMContentLoaded, cuando todo el script ya está definido.)
 
         let arbitroActual = '';
+
+        // ===== Qué puede guardar el árbitro =====
+        // El árbitro ya NO reemplaza toda la base (liga_premier_db). Solo sube las secciones de su
+        // trabajo; la configuración, solicitudes, encuestas, avisos, reglamento y patrocinadores
+        // se quedan como estén en la nube, así nunca se los pisa al guardar un partido.
+        const CAMPOS_ARBITRO = ['jugadores', 'equipos', 'partidos', 'arbitros', 'finanzas', 'comprobantes'];
+        function soloCamposArbitro(obj) {
+            const salida = {};
+            CAMPOS_ARBITRO.forEach(k => { if (obj && obj[k] !== undefined) salida[k] = JSON.parse(JSON.stringify(obj[k])); });
+            return salida;
+        }
 
         // ===== Modo sin internet =====
         // Todo lo que capture el árbitro se guarda primero en el teléfono. Si no hay señal, queda
@@ -1563,7 +1574,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
 
             recibiendoDeFirebase = true;
             const respaldo = setTimeout(() => { recibiendoDeFirebase = false; }, 10000);
-            let promSet; try { promSet = firebaseDbRef.set(db); } catch (e) { promSet = Promise.reject(e); }
+            let promSet; try { promSet = firebaseDbRef.update(soloCamposArbitro(db)); } catch (e) { promSet = Promise.reject(e); }
             conTiempoLimite(promSet, 10000).then(() => {
                 ultimoErrorSync = '';
                 guardarBase(db);
@@ -1585,7 +1596,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 const remoto = snap.val() || {};
                 const { merged, aplicados, conflictos } = fusionarConNube(db, remoto, leerBase());
                 recibiendoDeFirebase = true;
-                await conTiempoLimite(firebaseDbRef.set(merged), 15000);
+                await conTiempoLimite(firebaseDbRef.update(soloCamposArbitro(merged)), 15000);
                 db = normalizarDB(merged);
                 guardarLocal();
                 guardarBase(db);
