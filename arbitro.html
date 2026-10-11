@@ -725,6 +725,9 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                         <select id="time-jugador" style="flex:1; min-width:180px;">
                             <option value="">-- Selecciona Jugador --</option>
                         </select>
+                        <select id="time-asistente" title="Asistencia (opcional)" style="flex:1; min-width:180px;">
+                            <option value="">-- Asistencia (opcional) --</option>
+                        </select>
                         <select id="time-jugador-sale" class="hidden" style="flex:1; min-width:150px;">
                             <option value="">-- Sale --</option>
                         </select>
@@ -864,6 +867,8 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
 
                 <div id="bloque-pago-arbitraje" style="margin-top:15px; background:#e8f5e9; padding:12px; border-radius:8px; border:1px solid #a5d6a7;">
                     <label style="font-weight:bold; color:#2e7d32;">💰 Pago de Arbitraje del Partido</label>
+                    <button type="button" onclick="abrirEscanerPago()" style="background:#2e7d32; margin:8px 0 2px; width:100%;">📷 Escanear comprobante de pago (QR)</button>
+                    <div style="font-size:0.74rem; color:#4b5563;">Si el equipo trae su comprobante, escanéalo y se marca solo "Sí pagó". Si no lo trae, usa el selector como siempre.</div>
                     <div style="display:flex; gap:15px; flex-wrap:wrap; margin-top:8px;">
                         <div style="flex:1; min-width:180px;">
                             <label id="lbl-pago-local" style="font-size:0.8rem; font-weight:normal;">¿Local pagó arbitraje?</label>
@@ -880,6 +885,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                             </select>
                         </div>
                     </div>
+                    <div id="pago-comp-estado" style="font-size:0.78rem; margin-top:8px;"></div>
                 </div>
 
                 <fieldset style="border:1px solid var(--border); border-radius:8px; padding:12px; margin-top:15px;">
@@ -962,6 +968,30 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 <div id="qr-revisados" class="qr-revisados"></div>
                 <div id="qr-historial" style="margin-top:10px; font-size:0.76rem; color:#64748b; display:flex; flex-direction:column; gap:2px;"></div>
                 <button type="button" onclick="cerrarEscanerQR()" style="margin-top:14px; width:100%; background:var(--dark);">✔️ Listo / Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-escaner-pago" class="modal-firma-overlay hidden">
+        <div class="modal-firma-caja qr-caja">
+            <div class="qr-head">
+                <div>
+                    <h3>🧾 Escanear comprobante de pago</h3>
+                    <small id="qr-pago-partido"></small>
+                </div>
+            </div>
+            <div class="qr-body">
+                <p style="font-size:0.82rem; color:#334155; margin:0 0 10px;">Apunta la cámara al QR del comprobante que te entrega el equipo.</p>
+                <div id="qr-pago-reader" class="qr-visor"></div>
+                <div id="qr-pago-res" class="qr-ficha info">
+                    <div id="qr-pago-icono" class="qr-foto">📷</div>
+                    <div id="qr-pago-txt" class="qr-ficha-txt">Esperando lectura…</div>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:10px;">
+                    <input type="text" id="qr-pago-manual" placeholder="¿Sin cámara? Escribe: PA-00001 K7M2QX" style="flex:1;" autocapitalize="characters">
+                    <button type="button" onclick="validarPagoManual()" style="background:#0d2a4d; padding:8px 12px;">Validar</button>
+                </div>
+                <button type="button" onclick="cerrarEscanerPago()" style="margin-top:14px; width:100%; background:var(--dark);">✔️ Listo / Cerrar</button>
             </div>
         </div>
     </div>
@@ -1350,6 +1380,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             if (!obj.historialFichajes) obj.historialFichajes = [];
             if (!obj.solicitudes) obj.solicitudes = [];
             if (!obj.finanzas) obj.finanzas = {};
+            if (!obj.comprobantes) obj.comprobantes = {};
             if (!obj.votosMvp) obj.votosMvp = {};
             if (!obj.xiIdealAdmin) obj.xiIdealAdmin = {};
             if (obj.registrosCerrados === undefined) obj.registrosCerrados = false;
@@ -2186,7 +2217,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             texto(c.incidentes ? c.incidentes.replace(/\n/g, '  |  ') : 'Sin incidentes reportados.', { size: 9, gap: 8 });
 
             // Pago de arbitraje
-            texto(`Pago de arbitraje — ${loc}: ${p.arbitrajePagoLocal ? 'Pagado' : 'Pendiente'}    ${vis}: ${p.arbitrajePagoVisita ? 'Pagado' : 'Pendiente'}`, { size: 9, color: [110, 110, 110], gap: 9 });
+            texto(`Pago de arbitraje — ${loc}: ${p.arbitrajePagoLocal ? 'Pagado' : 'Pendiente'}${p.comprobantePagoLocal ? ' (comprobante ' + p.comprobantePagoLocal + ')' : ''}    ${vis}: ${p.arbitrajePagoVisita ? 'Pagado' : 'Pendiente'}${p.comprobantePagoVisita ? ' (comprobante ' + p.comprobantePagoVisita + ')' : ''}`, { size: 9, color: [110, 110, 110], gap: 9 });
 
             // Firmas
             saltoDePagina(55);
@@ -2273,6 +2304,8 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             const tipo = document.getElementById('time-tipo').value;
             const esCambio = tipo === 'cambio';
             document.getElementById('time-jugador').classList.toggle('hidden', esCambio);
+            const selAsis = document.getElementById('time-asistente');
+            if (selAsis) selAsis.classList.toggle('hidden', tipo !== 'gol');
             document.getElementById('time-jugador-sale').classList.toggle('hidden', !esCambio);
             document.getElementById('time-jugador-entra').classList.toggle('hidden', !esCambio);
         }
@@ -2310,7 +2343,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             cont.innerHTML = eventos.length ? eventos.map(ev => {
                 const texto = ev.tipo === 'cambio'
                     ? `Minuto ${ev.min}' - Cambio: Sale <b>${ev.saleNombre}</b>, Entra <b>${ev.entraNombre}</b>`
-                    : `Minuto ${ev.min}' - [${ev.tipo.toUpperCase()}] de ${ev.desc}`;
+                    : `Minuto ${ev.min}' - [${ev.tipo.toUpperCase()}] de ${ev.desc}${ev.asistencia ? ` <span style="color:#1f8fd6;">(🅰️ asist. ${ev.asistencia})</span>` : ''}`;
                 return `
                 <div style="background:#fff; padding:6px 8px; border:1px solid #eee; border-radius:4px; display:flex; align-items:center; justify-content:space-between; gap:8px;">
                     <span>${iconoEvento[ev.tipo] || '•'} ${texto}</span>
@@ -2532,11 +2565,17 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
 
             if (!partido.eventos) partido.eventos = [];
             const evento = { id: Date.now() + Math.floor(Math.random() * 1000), min: parseInt(min), tipo: tipo, desc: jugNombre };
+            if (tipo === 'gol') {
+                const asis = (document.getElementById('time-asistente') || {}).value || '';
+                if (asis && asis === jugNombre) return alert("Quien anota el gol no puede ser también quien da la asistencia.");
+                if (asis) evento.asistencia = asis;
+            }
             partido.eventos.push(evento);
             aplicarEfectoEvento(partido, evento, 1);
 
             renderListaEventos(partido);
             document.getElementById('time-minuto').value = '';
+            const selAsisLimpiar = document.getElementById('time-asistente'); if (selAsisLimpiar) selAsisLimpiar.value = '';
             guardarDB();
         }
 
@@ -2581,6 +2620,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 document.getElementById('time-jugador-entra').value = evento.entraNombre;
             } else {
                 document.getElementById('time-jugador').value = evento.desc;
+                const selAsisEd = document.getElementById('time-asistente'); if (selAsisEd) selAsisEd.value = evento.asistencia || '';
             }
             document.getElementById('time-minuto').focus();
 
@@ -2616,6 +2656,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             document.getElementById('lbl-pago-visita').innerText = `¿${nombreVisita} pagó arbitraje?`;
             document.getElementById('pago-arbitraje-local').value = 'si';
             document.getElementById('pago-arbitraje-visita').value = 'si';
+            actualizarEstadoComprobantesPago(p);
             document.getElementById('ced-lbl-local').innerText = nombreLocal;
             document.getElementById('ced-lbl-visita').innerText = nombreVisita;
 
@@ -2655,6 +2696,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             document.getElementById('seccion-timeline-dinamica').style.display = 'block';
 
             document.getElementById('time-jugador').innerHTML = '<option value="">-- Selecciona Jugador --</option>' + jugadoresHabilitados.map(j => `<option value="${escapeHtml(j.nombre)}">${escapeHtml(j.nombre)}</option>`).join('');
+            document.getElementById('time-asistente').innerHTML = optGrupos('-- Asistencia (opcional) --');
             document.getElementById('time-jugador-sale').innerHTML = optGrupos('-- Sale --');
             document.getElementById('time-jugador-entra').innerHTML = optGrupos('-- Entra --');
             document.getElementById('ced-cambio-sale-local').innerHTML = '<option value="">-- Sale --</option>' + jugadoresLocal.map(j => `<option value="${escapeHtml(j.nombre)}">${escapeHtml(j.nombre)}</option>`).join('');
@@ -3107,6 +3149,129 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             escanerCambioSale = null;
             escanerPendiente = null;
             document.getElementById('modal-escaner-qr').classList.add('hidden');
+        }
+
+        // ===== Escáner de comprobantes de pago de arbitraje =====
+        // El administrador genera el comprobante (QR) del equipo; al escanearlo aquí se marca "Sí pagó"
+        // para ese equipo en este partido y el comprobante queda usado (no sirve una segunda vez).
+        let escanerPago = null;
+        let pagoUltimo = { texto: '', t: 0 };
+        let pagoOkFolios = {};
+
+        function avisoPago(tipo, icono, html) {
+            const box = document.getElementById('qr-pago-res');
+            if (!box) return;
+            box.className = 'qr-ficha ' + tipo;
+            document.getElementById('qr-pago-icono').textContent = icono;
+            document.getElementById('qr-pago-txt').innerHTML = html;
+        }
+
+        function actualizarEstadoComprobantesPago(p) {
+            const el = document.getElementById('pago-comp-estado');
+            if (!el) return;
+            if (!p) { el.innerHTML = ''; return; }
+            const nombre = id => (db.equipos.find(e => e.id === id) || {}).nombre || 'Equipo';
+            const linea = (id, folio) => folio
+                ? `<div style="color:#15803d;">🧾 ${escapeHtml(nombre(id))}: comprobante <b>${escapeHtml(folio)}</b> verificado ✔</div>`
+                : `<div style="color:#6b7280;">${escapeHtml(nombre(id))}: sin comprobante escaneado</div>`;
+            el.innerHTML = linea(p.localId, p.comprobantePagoLocal) + linea(p.visitaId, p.comprobantePagoVisita);
+        }
+
+        function leerComprobantePago(txt) {
+            const t = String(txt || '').trim().toUpperCase();
+            let m = t.match(/^LFA-PAGO\|([A-Z0-9-]+)\|([A-Z0-9]+)$/);
+            if (m) return { folio: m[1], codigo: m[2] };
+            m = t.match(/(PA-\d{3,})\D+([A-Z0-9]{6})\b/);
+            if (m) return { folio: m[1], codigo: m[2] };
+            return null;
+        }
+
+        function procesarComprobantePago(txt) {
+            const p = partidoActualEscaner();
+            if (!p) return avisoPago('err', '⚠️', 'Selecciona primero el partido.');
+            const lec = leerComprobantePago(txt);
+            if (!lec) return avisoPago('err', '❌', 'Ese código no es un comprobante de pago de la liga.');
+            if (pagoOkFolios[lec.folio]) return;   // ya confirmado en esta apertura del escáner
+            const c = (db.comprobantes || {})[lec.folio];
+            if (!c || c.codigo !== lec.codigo) {
+                return avisoPago('err', '❌', '<b>Comprobante no válido</b><br>No se encontró en el sistema. Puede que el administrador aún no lo haya publicado, o que no sea auténtico. Si el equipo sí pagó, confírmalo manualmente en el selector de pago.');
+            }
+            if (c.estado === 'anulado') {
+                return avisoPago('err', '⛔', `<b>Comprobante anulado</b><br>El folio ${escapeHtml(c.folio)} fue cancelado por la administración.`);
+            }
+            if (c.partidoId !== p.id) {
+                return avisoPago('err', '❌', `<b>No corresponde a este partido</b><br>Es de <b>${escapeHtml(c.equipoNombre)}</b> en la jornada ${escapeHtml(String(c.jornada))} (${escapeHtml(c.partidoTexto)}). Selecciona el partido correcto o confirma el pago manualmente.`);
+            }
+            const lado = c.equipoId === p.localId ? 'local' : (c.equipoId === p.visitaId ? 'visita' : '');
+            if (!lado) return avisoPago('err', '❌', 'El equipo del comprobante no juega este partido.');
+
+            if (c.estado === 'usado') {
+                if (c.usadoPartidoId === p.id) {
+                    document.getElementById('pago-arbitraje-' + lado).value = 'si';
+                    if (lado === 'local') p.comprobantePagoLocal = c.folio; else p.comprobantePagoVisita = c.folio;
+                    actualizarEstadoComprobantesPago(p);
+                    pagoOkFolios[c.folio] = true;
+                    return avisoPago('info', 'ℹ️', `<b>Ya estaba registrado en este partido</b><br>${escapeHtml(c.equipoNombre)} · folio ${escapeHtml(c.folio)}`);
+                }
+                return avisoPago('err', '⚠️', `<b>Comprobante ya utilizado</b><br>El folio ${escapeHtml(c.folio)} se escaneó el ${escapeHtml(new Date(c.usadoEn).toLocaleString('es-MX'))}${c.usadoPor ? ' (' + escapeHtml(c.usadoPor) + ')' : ''}. No se registró de nuevo.`);
+            }
+
+            c.estado = 'usado';
+            c.usadoEn = new Date().toISOString();
+            c.usadoPor = arbitroActual || '';
+            c.usadoPartidoId = p.id;
+            if (lado === 'local') p.comprobantePagoLocal = c.folio; else p.comprobantePagoVisita = c.folio;
+            document.getElementById('pago-arbitraje-' + lado).value = 'si';
+            pagoOkFolios[c.folio] = true;
+            guardarDB();
+            actualizarEstadoComprobantesPago(p);
+            avisoPago('ok', '✅', `<b>Pago confirmado</b><br>${escapeHtml(c.equipoNombre)}<br>${escapeHtml(c.partidoTexto)} · $${escapeHtml(Number(c.monto || 0).toLocaleString('es-MX'))}<br><small>Se marcó "Sí pagó" · folio ${escapeHtml(c.folio)}</small>`);
+        }
+
+        function manejarLecturaPago(txt) {
+            const ahora = Date.now();
+            if (pagoUltimo.texto === txt && ahora - pagoUltimo.t < 4000) return;
+            pagoUltimo = { texto: txt, t: ahora };
+            procesarComprobantePago(txt);
+        }
+
+        function validarPagoManual() {
+            const v = document.getElementById('qr-pago-manual').value;
+            if (!v.trim()) return avisoPago('err', '⚠️', 'Escribe el folio y el código del comprobante (ej. PA-00001 K7M2QX).');
+            procesarComprobantePago(v);
+        }
+
+        async function abrirEscanerPago() {
+            const p = partidoActualEscaner();
+            if (!p) { alert('Selecciona un partido primero.'); return; }
+            pagoUltimo = { texto: '', t: 0 };
+            pagoOkFolios = {};
+            const nombre = id => (db.equipos.find(e => e.id === id) || {}).nombre || 'Equipo';
+            document.getElementById('qr-pago-partido').textContent = `${nombre(p.localId)} vs ${nombre(p.visitaId)}`;
+            document.getElementById('qr-pago-manual').value = '';
+            avisoPago('info', '📷', 'Apunta la cámara al QR del comprobante.');
+            document.getElementById('modal-escaner-pago').classList.remove('hidden');
+            if (typeof Html5Qrcode === 'undefined') {
+                return avisoPago('err', '❌', 'No se pudo cargar el escáner (revisa tu conexión a internet). Puedes escribir el folio y código abajo.');
+            }
+            try {
+                escanerPago = new Html5Qrcode('qr-pago-reader');
+                await escanerPago.start(
+                    { facingMode: 'environment' },
+                    { fps: 10, qrbox: (w, h) => { const s = Math.floor(Math.min(w, h) * 0.7); return { width: s, height: s }; } },
+                    txt => manejarLecturaPago(txt),
+                    () => { }
+                );
+            } catch (err) {
+                avisoPago('err', '❌', 'No se pudo abrir la cámara. Da permiso de cámara al navegador (la página debe abrirse con https://) o escribe el folio y código abajo.');
+            }
+        }
+
+        async function cerrarEscanerPago() {
+            try { if (escanerPago && escanerPago.isScanning) await escanerPago.stop(); } catch (e) { }
+            try { if (escanerPago) escanerPago.clear(); } catch (e) { }
+            escanerPago = null;
+            document.getElementById('modal-escaner-pago').classList.add('hidden');
         }
 
         // --- Firma de Conformidad de la Cédula (validación de ambos equipos antes de publicar) ---

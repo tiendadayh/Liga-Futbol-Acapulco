@@ -363,6 +363,32 @@
         .btn-ver-fila { background: var(--success) !important; }
         .btn-eliminar-fila { background: #b91c1c !important; }
 
+        /* ===== Comprobante de pago de arbitraje (QR) ===== */
+        .cp-ticket { width: 100%; max-width: 360px; margin: 0 auto; background: #fff; border-radius: 14px; overflow: hidden; border: 2px solid #f0b429; color: #12233f; font-family: system-ui, Segoe UI, Arial, sans-serif; }
+        .cp-head { background: linear-gradient(135deg, #0b2f5c, #7a0f14); color: #fff; padding: 14px 16px; text-align: center; }
+        .cp-head b { display: block; font-size: .95rem; letter-spacing: .06em; text-transform: uppercase; }
+        .cp-head span { font-size: .72rem; opacity: .85; }
+        .cp-sello { margin: 14px auto 4px; width: max-content; background: #dcfce7; color: #15803d; border: 2px solid #16a34a; border-radius: 999px; padding: 6px 18px; font-weight: 800; letter-spacing: .08em; font-size: .95rem; transform: rotate(-3deg); }
+        .cp-sello.anulado { background: #fee2e2; color: #b91c1c; border-color: #dc2626; }
+        .cp-monto { text-align: center; font-size: 2rem; font-weight: 800; color: #0b2f5c; margin: 2px 0 6px; }
+        .cp-monto small { display: block; font-size: .7rem; font-weight: 600; color: #6b7a90; letter-spacing: .06em; text-transform: uppercase; }
+        .cp-datos { padding: 4px 18px 8px; }
+        .cp-fila { display: flex; justify-content: space-between; gap: 10px; font-size: .82rem; padding: 6px 0; border-bottom: 1px dashed #d3dce8; }
+        .cp-fila span { color: #6b7a90; }
+        .cp-fila b { text-align: right; }
+        .cp-corte { border-top: 2px dashed #b8c4d6; margin: 8px 0; }
+        .cp-qr { padding: 8px 18px 16px; text-align: center; }
+        #cp-qr-box { display: inline-block; padding: 8px; background: #fff; border: 3px solid #0b2f5c; border-radius: 10px; }
+        .cp-qr p { margin: 8px 0 0; font-size: .72rem; color: #5b6b82; }
+        .cp-folio { font: 700 .85rem ui-monospace, Menlo, monospace; color: #0b2f5c; margin-top: 6px; letter-spacing: .08em; }
+        .cp-acciones { display: flex; gap: 8px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+        @media print {
+            body.imp-comp > *:not(#modal-comprobante) { display: none !important; }
+            body.imp-comp #modal-comprobante { position: static !important; background: #fff !important; padding: 0 !important; display: block !important; height: auto !important; }
+            body.imp-comp #modal-comprobante .modal-box { box-shadow: none !important; max-width: none !important; max-height: none !important; overflow: visible !important; padding: 0 !important; }
+            body.imp-comp .cp-no-print { display: none !important; }
+        }
+
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -898,6 +924,17 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                 <input type="checkbox" id="check-cierre-registros" onchange="alternarRegistros(this.checked)"> Cerrar
                 Registro de Jugadores
             </label>
+            <div style="border-top:1px solid #cfe6e3; padding-top:10px;">
+                <label style="font-size:0.9rem; font-weight:bold; cursor:pointer;">
+                    <input type="checkbox" id="periodo-altas-activo" onchange="guardarPeriodoAltas()"> Usar periodo de altas y bajas
+                </label>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin:6px 0;">
+                    <div><label style="font-size:0.75rem;">Abre:</label><input type="date" id="periodo-altas-inicio" onchange="guardarPeriodoAltas()"></div>
+                    <div><label style="font-size:0.75rem;">Cierra (inclusive):</label><input type="date" id="periodo-altas-fin" onchange="guardarPeriodoAltas()"></div>
+                </div>
+                <p id="periodo-altas-estado" style="font-size:0.8rem; font-weight:bold; margin:4px 0 0;"></p>
+                <p style="font-size:0.72rem; color:#666; margin:4px 0 0;">Fuera de estas fechas no se pueden dar de alta, baja ni traspasar jugadores, y la página pública no recibe solicitudes. Como administrador puedes saltarte el bloqueo confirmando.</p>
+            </div>
         </div>
     </div>
 
@@ -925,6 +962,32 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                     </tr>
                 </thead>
                 <tbody id="tabla-control-financiero"></tbody>
+            </table>
+        </div>
+
+        <!-- Comprobantes de pago de arbitraje con QR -->
+        <h4 style="color:#2e7d32; margin:24px 0 6px;">🧾 Comprobantes de pago de arbitraje (con QR)</h4>
+        <p style="font-size:0.82rem; color:#555; margin:0 0 10px;">Cuando un equipo pague el arbitraje de su partido, genera aquí su comprobante (imprímelo o descárgalo en PDF y entrégaselo). El árbitro lo escanea con la cámara en la cédula y el sistema marca solo "Sí pagó". Cada comprobante sirve <b>una sola vez</b> y únicamente para <b>su partido</b>. Después de generarlo presiona "📤 Publicar cambios" para que el árbitro lo reconozca.</p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:12px; margin-bottom:10px;">
+            <div><label>Partido</label><select id="cp-partido" onchange="cpActualizarEquipos()"></select></div>
+            <div><label>Equipo que paga</label><select id="cp-equipo"></select></div>
+            <div><label>Monto ($)</label><input type="number" id="cp-monto" min="0" oninput="this.dataset.tocado='1'"></div>
+            <div><label>Quién recibe el pago</label><input type="text" id="cp-recibio" placeholder="Nombre de quien cobra"></div>
+        </div>
+        <button type="button" onclick="generarComprobante()" style="background:#2e7d32;">🧾 Generar comprobante</button>
+        <div style="overflow-x:auto; margin-top:14px;">
+            <table style="width:100%; text-align:left; border-collapse:collapse; font-size:0.85rem;">
+                <thead>
+                    <tr style="background:#f4f4f4;">
+                        <th style="padding:8px;">Folio</th>
+                        <th>Equipo</th>
+                        <th>Partido</th>
+                        <th>Monto</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-comprobantes"></tbody>
             </table>
         </div>
     </div>
@@ -1054,6 +1117,24 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                 <input type="text" id="patro-link" placeholder="https://...">
                 <button type="submit" style="background:#ff9100;">Agregar Patrocinador</button>
             </form>
+        </div>
+
+        <!-- ESTADÍSTICAS DE PATROCINADORES -->
+        <div class="admin-box" style="border-top-color:#ff9100;">
+            <h3>📊 Resultados para Patrocinadores</h3>
+            <p style="font-size:0.78rem; color:#666; margin:-4px 0 10px;"><b>Vistas</b> = personas que vieron el banner en pantalla (se cuenta una por visita). <b>Clics</b> = veces que tocaron el logo para ir a su enlace. Los números empiezan a contarse desde que publiques esta versión de la página.</p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+                <select id="patro-stats-periodo" style="width:auto;" onchange="cargarStatsPatrocinadores()">
+                    <option value="7">Últimos 7 días</option>
+                    <option value="30" selected>Últimos 30 días</option>
+                    <option value="90">Últimos 90 días</option>
+                    <option value="0">Todo el tiempo</option>
+                </select>
+                <button type="button" id="btn-patro-stats" onclick="cargarStatsPatrocinadores()" style="background:#ff9100;">Actualizar</button>
+                <button type="button" onclick="descargarStatsPatrocinadoresCSV()" style="background:#64748b;">⬇️ Descargar CSV</button>
+                <button type="button" onclick="imprimirStatsPatrocinadores()" style="background:#0d2a4d;">🖨️ Imprimir / PDF</button>
+            </div>
+            <div id="patro-stats-resultado" style="overflow-x:auto; font-size:0.85rem;"></div>
         </div>
 
         <!-- LOGO DEL SITIO (ENCABEZADO) -->
@@ -1341,6 +1422,18 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             </table>
         </div>
         <p id="stats-correccion-vacio" class="hidden" style="color:gray; font-size:0.85rem; text-align:center; padding:10px;">No se encontró ningún jugador con ese nombre.</p>
+    </div>
+
+    <!-- MODAL: COMPROBANTE DE PAGO DE ARBITRAJE (QR) -->
+    <div id="modal-comprobante" class="modal-overlay" style="display:none;" onclick="if(event.target === this) cpCerrar()">
+        <div class="modal-box" style="max-width:420px;">
+            <div id="cp-modal-ticket"></div>
+            <div class="cp-acciones cp-no-print">
+                <button type="button" onclick="cpImprimir()">🖨️ Imprimir</button>
+                <button type="button" id="cp-btn-pdf" onclick="cpDescargarPDF(this)" style="background:#16a34a;">📄 Descargar PDF</button>
+                <button type="button" onclick="cpCerrar()" style="background:#64748b;">Cerrar</button>
+            </div>
+        </div>
     </div>
 
     <!-- MODAL: CONFIRMACIÓN (reemplaza los confirm() nativos del navegador) -->
@@ -2638,6 +2731,66 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             });
         }
 
+        // ----- Estadísticas de patrocinadores (patro_stats/<id>/<AAAA-MM-DD>/{v,c}) -----
+        let patroStatsFilas = [], patroStatsPeriodoTxt = '';
+        async function cargarStatsPatrocinadores() {
+            const cont = document.getElementById('patro-stats-resultado');
+            const btn = document.getElementById('btn-patro-stats');
+            if (!cont) return;
+            if (btn) { btn.disabled = true; btn.textContent = 'Cargando…'; }
+            let datos = {};
+            try {
+                datos = (await firebase.database().ref('patro_stats').once('value')).val() || {};
+            } catch (e) {
+                cont.innerHTML = '<p style="color:#c62828; font-weight:bold;">Firebase no dejó leer "patro_stats". Revisa las reglas de Realtime Database.</p>';
+                if (btn) { btn.disabled = false; btn.textContent = 'Actualizar'; }
+                return;
+            }
+            if (btn) { btn.disabled = false; btn.textContent = 'Actualizar'; }
+            const dias = parseInt(document.getElementById('patro-stats-periodo').value, 10) || 0;
+            const desde = dias ? fechaMexico(Date.now() - (dias - 1) * 86400000) : '0000-00-00';
+            patroStatsPeriodoTxt = dias ? 'Últimos ' + dias + ' días (desde ' + desde + ')' : 'Todo el tiempo';
+            patroStatsFilas = (db.patrocinadores || []).map(function (p) {
+                const porDia = datos[p.id] || {};
+                let v = 0, c = 0;
+                Object.keys(porDia).forEach(function (f) {
+                    if (f < desde) return;
+                    v += (porDia[f] && porDia[f].v) || 0;
+                    c += (porDia[f] && porDia[f].c) || 0;
+                });
+                return { nombre: p.nombre, vistas: v, clics: c, ctr: v ? (c / v * 100) : 0, tieneLink: !!p.link };
+            }).sort(function (a, b) { return b.vistas - a.vistas; });
+            cont.innerHTML = patroStatsFilas.length
+                ? '<table><thead><tr><th>Patrocinador</th><th>👁️ Vistas</th><th>👆 Clics</th><th>% Clics</th></tr></thead><tbody>' +
+                  patroStatsFilas.map(function (f) {
+                      return '<tr><td><b>' + escapeHtml(f.nombre) + '</b></td><td>' + f.vistas + '</td><td>' + (f.tieneLink ? f.clics : '<span style="color:#888;">sin enlace</span>') + '</td><td>' + (f.tieneLink ? f.ctr.toFixed(1) + '%' : '—') + '</td></tr>';
+                  }).join('') + '</tbody></table><p style="font-size:0.75rem; color:#888; margin-top:6px;">' + escapeHtml(patroStatsPeriodoTxt) + '</p>'
+                : '<p style="color:#888;">Aún no hay patrocinadores registrados.</p>';
+        }
+        function descargarStatsPatrocinadoresCSV() {
+            if (!patroStatsFilas.length) return alert('Primero pulsa "Actualizar" para cargar los datos.');
+            const esc = function (t) { return '"' + String(t).replace(/"/g, '""') + '"'; };
+            const lineas = ['Patrocinador,Vistas,Clics,% Clics,Periodo'].concat(patroStatsFilas.map(function (f) {
+                return [esc(f.nombre), f.vistas, f.clics, f.ctr.toFixed(1), esc(patroStatsPeriodoTxt)].join(',');
+            }));
+            const blob = new Blob(['\ufeff' + lineas.join('\n')], { type: 'text/csv;charset=utf-8' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'patrocinadores-resultados.csv';
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+        }
+        function imprimirStatsPatrocinadores() {
+            if (!patroStatsFilas.length) return alert('Primero pulsa "Actualizar" para cargar los datos.');
+            const w = window.open('', '_blank');
+            if (!w) return alert('Permite las ventanas emergentes para imprimir el reporte.');
+            const filas = patroStatsFilas.map(function (f) {
+                return '<tr><td>' + escapeHtml(f.nombre) + '</td><td>' + f.vistas + '</td><td>' + (f.tieneLink ? f.clics : '—') + '</td><td>' + (f.tieneLink ? f.ctr.toFixed(1) + '%' : '—') + '</td></tr>';
+            }).join('');
+            w.document.write('<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Resultados de patrocinadores</title><style>body{font-family:Arial,sans-serif;padding:30px;color:#111}table{border-collapse:collapse;width:100%;margin-top:16px}th,td{border:1px solid #ccc;padding:8px 10px;text-align:left}th{background:#f3f3f3}</style></head><body><h1>Resultados de patrocinadores</h1><p>' + escapeHtml(patroStatsPeriodoTxt) + ' · Generado el ' + new Date().toLocaleDateString('es-MX') + '</p><table><thead><tr><th>Patrocinador</th><th>Vistas del banner</th><th>Clics</th><th>% Clics</th></tr></thead><tbody>' + filas + '</tbody></table><script>window.onload=function(){window.print();}<\/script></body></html>');
+            w.document.close();
+        }
+
         // ----- Historial de visitas (últimos 30 días) -----
         // Lee sesiones/AAAA-MM-DD de cada día. "Visitas" = veces que alguien entró;
         // "Personas" = visitantes distintos. Las secciones salen del campo 'sec' que guarda index.html.
@@ -2896,8 +3049,26 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             const errEl = document.getElementById('login-error-msg');
             errEl.textContent = '';
             if (!email || !password) { errEl.textContent = 'Escribe tu correo y contraseña.'; return; }
+            if (typeof firebase === 'undefined') { errEl.textContent = 'No cargó Firebase. Revisa tu internet y recarga la página (Ctrl+F5).'; return; }
+            errEl.textContent = '⏳ Entrando...';
             firebase.auth().signInWithEmailAndPassword(email, password)
-                .catch(err => { errEl.textContent = 'Correo o contraseña incorrectos.'; });
+                .catch(err => {
+                    const c = (err && err.code) || '';
+                    const incorrecto = 'Correo o contraseña incorrectos.';
+                    const mensajes = {
+                        'auth/invalid-credential': incorrecto,
+                        'auth/wrong-password': incorrecto,
+                        'auth/user-not-found': incorrecto,
+                        'auth/invalid-email': 'El correo no es válido.',
+                        'auth/too-many-requests': 'Demasiados intentos fallidos. Espera unos minutos y vuelve a intentar.',
+                        'auth/user-disabled': 'Esta cuenta está deshabilitada en Firebase.',
+                        'auth/network-request-failed': 'Sin conexión con Firebase. Revisa tu internet.',
+                        'auth/operation-not-supported-in-this-environment': 'Abre la página desde su dirección https:// (no como archivo de tu computadora).',
+                        'auth/unauthorized-domain': 'Este dominio no está autorizado en Firebase (Authentication > Configuración > Dominios autorizados).',
+                        'auth/operation-not-allowed': 'El acceso con correo y contraseña está desactivado en Firebase.'
+                    };
+                    errEl.textContent = (mensajes[c] || 'No se pudo entrar.') + (c ? ' (' + c + ')' : '');
+                });
         }
 
         function cerrarSesionAdmin() {
@@ -2975,6 +3146,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             if (!obj.campos) obj.campos = [];
             if (!obj.solicitudes) obj.solicitudes = [];
             if (!obj.finanzas) obj.finanzas = {};
+            if (!obj.comprobantes) obj.comprobantes = {};
             if (!obj.votosMvp) obj.votosMvp = {};
             if (!obj.comunicados) obj.comunicados = [];
             if (!obj.patrocinadores) obj.patrocinadores = [];
@@ -2997,6 +3169,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             }
             if (!obj.encuestaVotos || typeof obj.encuestaVotos !== 'object') obj.encuestaVotos = {};
             if (obj.registrosCerrados === undefined) obj.registrosCerrados = false;
+            if (!obj.periodoAltas || typeof obj.periodoAltas !== 'object') obj.periodoAltas = { activo: false, inicio: '', fin: '' };
             if (obj.liguillaActiva === undefined) obj.liguillaActiva = false;
             if (!obj.config) obj.config = crearConfigCredencialDefault();
             if (obj.config.logoSitio === undefined) obj.config.logoSitio = '';
@@ -4133,6 +4306,40 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             alert('✅ Escudo quitado. Ya puedes subir uno nuevo cuando quieras.');
         }
 
+        // ----- Periodo de altas y bajas -----
+        // Devuelve { abierto, mensaje }. Si el periodo no está activado, siempre está abierto.
+        function estadoPeriodoAltas() {
+            const per = db.periodoAltas || {};
+            if (!per.activo || (!per.inicio && !per.fin)) return { abierto: true, mensaje: 'Sin periodo configurado: siempre abierto.' };
+            const hoy = fechaMexico(Date.now());
+            if (per.inicio && hoy < per.inicio) return { abierto: false, mensaje: '🔴 Cerrado: el periodo abre el ' + per.inicio + '.' };
+            if (per.fin && hoy > per.fin) return { abierto: false, mensaje: '🔴 Cerrado: el periodo terminó el ' + per.fin + '.' };
+            return { abierto: true, mensaje: '🟢 Periodo abierto' + (per.fin ? ' hasta el ' + per.fin : '') + '.' };
+        }
+        function guardarPeriodoAltas() {
+            const inicio = document.getElementById('periodo-altas-inicio').value;
+            const fin = document.getElementById('periodo-altas-fin').value;
+            const activo = document.getElementById('periodo-altas-activo').checked;
+            if (inicio && fin && fin < inicio) { alert('La fecha de cierre no puede ser anterior a la de apertura.'); document.getElementById('periodo-altas-fin').value = (db.periodoAltas || {}).fin || ''; return; }
+            if (activo && !inicio && !fin) { alert('Elige al menos una fecha (apertura o cierre) para activar el periodo.'); document.getElementById('periodo-altas-activo').checked = false; return; }
+            db.periodoAltas = { activo: activo, inicio: inicio, fin: fin };
+            guardarDB();
+            pintarPeriodoAltas();
+        }
+        function pintarPeriodoAltas() {
+            const per = db.periodoAltas || {};
+            const set = (id, v) => { const el = document.getElementById(id); if (el) el[typeof v === 'boolean' ? 'checked' : 'value'] = v; };
+            set('periodo-altas-activo', !!per.activo); set('periodo-altas-inicio', per.inicio || ''); set('periodo-altas-fin', per.fin || '');
+            const est = document.getElementById('periodo-altas-estado');
+            if (est) { const e = estadoPeriodoAltas(); est.textContent = e.mensaje; est.style.color = e.abierto ? '#2e7d32' : '#c62828'; }
+        }
+        // Fuera del periodo el admin puede continuar, pero tiene que confirmarlo.
+        async function permitirFueraDePeriodo(accion) {
+            const e = estadoPeriodoAltas();
+            if (e.abierto) return true;
+            return await confirmarAccion(`Estás fuera del periodo de altas y bajas. ${e.mensaje.replace(/^🔴 /, '')}<br>¿Quieres ${accion} de todos modos?`, { textoConfirmar: 'Continuar' });
+        }
+
         function alternarRegistros(valor) {
             db.registrosCerrados = valor;
             guardarDB();
@@ -4141,6 +4348,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
 
         function verificarEstadoFormularios() {
             document.getElementById('check-cierre-registros').checked = db.registrosCerrados || false;
+            pintarPeriodoAltas();
             const btnJugador = document.querySelector('#form-add-jugador button');
             const inputsJugador = document.querySelectorAll('#form-add-jugador input, #form-add-jugador select');
 
@@ -4239,6 +4447,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             document.getElementById('form-add-jugador').addEventListener('submit', async function (e) {
                 e.preventDefault();
                 if (db.registrosCerrados) return alert("Los registros están bloqueados administrativamente.");
+                if (!(await permitirFueraDePeriodo('dar de alta al jugador'))) return;
                 const equipoIdSel = parseInt(document.getElementById('admin-jug-equipo').value);
                 const numeroSel = document.getElementById('admin-jug-numero').value.trim();
                 if (!numeroSel) return alert("El número de playera es obligatorio.");
@@ -4463,8 +4672,9 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                 }
             });
 
-            document.getElementById('form-fichaje-rapido').addEventListener('submit', function (e) {
+            document.getElementById('form-fichaje-rapido').addEventListener('submit', async function (e) {
                 e.preventDefault();
+                if (!(await permitirFueraDePeriodo('ejecutar el traspaso'))) return;
                 const jId = parseInt(document.getElementById('fichaje-jugador').value);
                 const destino = document.getElementById('fichaje-destino').value;
                 const jugador = db.jugadores.find(j => j.id === jId);
@@ -4609,6 +4819,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
         async function aprobarSolicitud(id) {
             const sol = db.solicitudes.find(s => s.id === id);
             if (!sol) return;
+            if (!(await permitirFueraDePeriodo('aprobar esta solicitud'))) return;
             if ((db.jugadores || []).filter(j => j.equipoId === sol.equipoId).length >= 15) {
                 return alert("Ese equipo ya tiene 15 jugadores registrados (máximo por plantel). Rechaza la solicitud o reasigna al jugador a otro equipo antes de aprobarla.");
             }
@@ -4679,6 +4890,194 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
                     </tr>
                 `;
             }).join('') || '<tr><td colspan="4" style="color:gray; padding:12px;">No hay equipos registrados.</td></tr>';
+            try { renderizarComprobantes(); } catch (err) { console.warn('comprobantes', err); }
+        }
+
+        // ===== COMPROBANTES DE PAGO DE ARBITRAJE (con QR) =====
+        // El administrador genera un comprobante por equipo y partido. El árbitro lo escanea en la cédula
+        // y el sistema marca "Sí pagó" para ese equipo. Cada comprobante se usa una sola vez.
+        function cpFechaTexto(iso) {
+            try { return new Date(iso).toLocaleString('es-MX', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+            catch (e) { return String(iso || ''); }
+        }
+        function cpNuevoFolio() {
+            const nums = Object.keys(db.comprobantes || {}).map(k => parseInt(String(k).replace(/\D/g, '')) || 0);
+            return 'PA-' + String((nums.length ? Math.max.apply(null, nums) : 0) + 1).padStart(5, '0');
+        }
+        function cpNuevoCodigo() {
+            const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            const bytes = new Uint8Array(6);
+            (window.crypto || window.msCrypto).getRandomValues(bytes);
+            return Array.from(bytes).map(b => abc[b % abc.length]).join('');
+        }
+        function cpPayloadQR(c) { return 'LFA-PAGO|' + c.folio + '|' + c.codigo; }
+        function cpNombreEquipo(id) { const e = db.equipos.find(x => x.id === id); return e ? e.nombre : 'Equipo'; }
+
+        function cpActualizarEquipos(prevE) {
+            const selP = document.getElementById('cp-partido');
+            const selE = document.getElementById('cp-equipo');
+            if (!selP || !selE) return;
+            const p = db.partidos.find(x => String(x.id) === selP.value);
+            if (!p) { selE.innerHTML = '<option value="">-- Primero elige el partido --</option>'; return; }
+            const prev = (typeof prevE === 'string') ? prevE : selE.value;
+            const ids = [p.localId, p.visitaId];
+            selE.innerHTML = ids.map(id => `<option value="${id}">${escapeHtml(cpNombreEquipo(id))}</option>`).join('');
+            if (ids.some(id => String(id) === prev)) selE.value = prev;
+        }
+
+        function renderizarComprobantes() {
+            const selP = document.getElementById('cp-partido');
+            const tbody = document.getElementById('tabla-comprobantes');
+            if (!selP || !tbody) return;
+            const prevP = selP.value;
+            const prevE = document.getElementById('cp-equipo').value;
+            const pendientes = db.partidos
+                .filter(p => !p.jugado && !p.oculto && p.localId && p.visitaId)
+                .sort((a, b) => ((a.jornada || 0) - (b.jornada || 0)) || (a.id - b.id));
+            selP.innerHTML = '<option value="">-- Elige el partido --</option>' + pendientes.map(p =>
+                `<option value="${p.id}">J${escapeHtml(String(p.jornada ?? '-'))} · ${escapeHtml(cpNombreEquipo(p.localId))} vs ${escapeHtml(cpNombreEquipo(p.visitaId))}${p.fecha ? ' · ' + escapeHtml(p.fecha) : ''}</option>`).join('');
+            if (pendientes.some(p => String(p.id) === prevP)) selP.value = prevP;
+            cpActualizarEquipos(prevE);
+
+            const montoEl = document.getElementById('cp-monto');
+            if (montoEl && !montoEl.dataset.tocado) montoEl.value = reg(db, 'cuotaArbitraje');
+            const recEl = document.getElementById('cp-recibio');
+            if (recEl && !recEl.value) { try { recEl.value = localStorage.getItem('liga_cp_recibio') || ''; } catch (e) { } }
+
+            const lista = Object.values(db.comprobantes || {}).sort((a, b) => String(b.creadoEn).localeCompare(String(a.creadoEn)));
+            tbody.innerHTML = lista.map(c => {
+                let estado;
+                if (c.estado === 'usado') estado = `<span class="badge-status badge-ok">✅ Escaneado</span><div style="font-size:0.65rem; color:#888;">${escapeHtml(cpFechaTexto(c.usadoEn))}${c.usadoPor ? ' · ' + escapeHtml(c.usadoPor) : ''}</div>`;
+                else if (c.estado === 'anulado') estado = `<span class="badge-status badge-pending">⛔ Anulado</span>`;
+                else estado = `<span class="badge-status badge-pending">🕓 Sin escanear</span>`;
+                return `<tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:8px; font-weight:bold; font-family:monospace;">${escapeHtml(c.folio)}</td>
+                    <td>${escapeHtml(c.equipoNombre)}</td>
+                    <td style="font-size:0.78rem;">J${escapeHtml(String(c.jornada ?? '-'))} · ${escapeHtml(c.partidoTexto)}</td>
+                    <td>$${escapeHtml(Number(c.monto || 0).toLocaleString('es-MX'))}</td>
+                    <td>${estado}</td>
+                    <td style="white-space:nowrap;">
+                        <button type="button" onclick="cpVer('${escapeHtml(c.folio)}')" style="padding:5px 8px; font-size:0.7rem;">👁️ Ver / Imprimir</button>
+                        ${c.estado === 'vigente' ? `<button type="button" onclick="cpAnular('${escapeHtml(c.folio)}')" style="padding:5px 8px; font-size:0.7rem; background:#b91c1c;">Anular</button>` : ''}
+                    </td>
+                </tr>`;
+            }).join('') || '<tr><td colspan="6" style="color:gray; padding:12px;">Aún no has generado comprobantes.</td></tr>';
+        }
+
+        async function generarComprobante() {
+            const pId = parseInt(document.getElementById('cp-partido').value);
+            const eqId = parseInt(document.getElementById('cp-equipo').value);
+            const p = db.partidos.find(x => x.id === pId);
+            if (!p || !eqId) { mostrarAlerta('Elige primero el partido y el equipo que paga.', { icono: '⚠️' }); return; }
+            const monto = parseFloat(document.getElementById('cp-monto').value);
+            if (!(monto > 0)) { mostrarAlerta('Escribe el monto pagado (mayor a $0).', { icono: '⚠️' }); return; }
+            if (!db.comprobantes) db.comprobantes = {};
+            const previo = Object.values(db.comprobantes).find(c => c.partidoId === pId && c.equipoId === eqId && c.estado !== 'anulado');
+            if (previo) {
+                mostrarAlerta(`${escapeHtml(cpNombreEquipo(eqId))} ya tiene el comprobante ${escapeHtml(previo.folio)} para este partido (${previo.estado === 'usado' ? 'ya escaneado' : 'sin escanear'}). Si necesitas otro, primero anula ese.`, { icono: '⚠️' });
+                return;
+            }
+            const recibio = (document.getElementById('cp-recibio').value || '').trim() || 'ADMINISTRACIÓN LIGA';
+            try { localStorage.setItem('liga_cp_recibio', recibio); } catch (e) { }
+            const folio = cpNuevoFolio();
+            db.comprobantes[folio] = {
+                folio: folio,
+                codigo: cpNuevoCodigo(),
+                partidoId: pId,
+                equipoId: eqId,
+                equipoNombre: cpNombreEquipo(eqId),
+                partidoTexto: `${cpNombreEquipo(p.localId)} vs ${cpNombreEquipo(p.visitaId)}`,
+                jornada: p.jornada ?? '',
+                fecha: p.fecha ? (p.fecha + (p.hora ? ' · ' + p.hora : '')) : '',
+                campo: p.estadio || '',
+                arbitro: p.arbitro || '',
+                monto: monto,
+                recibio: recibio,
+                creadoEn: new Date().toISOString(),
+                estado: 'vigente',
+                usadoEn: '',
+                usadoPor: ''
+            };
+            guardarDB();
+            cpVer(folio);
+        }
+
+        function cpHtmlTicket(c) {
+            const liga = (db.config && db.config.nombreLiga) || 'LIGA DE FUTBOL ACAPULCO';
+            const anulado = c.estado === 'anulado';
+            const fila = (k, v) => `<div class="cp-fila"><span>${k}</span><b>${escapeHtml(String(v === undefined || v === null || v === '' ? '-' : v))}</b></div>`;
+            return `<div class="cp-ticket" id="cp-ticket">
+                <div class="cp-head"><b>${escapeHtml(liga)}</b><span>Comprobante de pago de arbitraje</span></div>
+                <div class="cp-sello ${anulado ? 'anulado' : ''}">${anulado ? '⛔ ANULADO' : '✔ PAGADO'}</div>
+                <div class="cp-monto"><small>Monto</small>$${escapeHtml(Number(c.monto || 0).toLocaleString('es-MX'))}</div>
+                <div class="cp-datos">
+                    ${fila('Equipo', c.equipoNombre)}
+                    ${fila('Partido', c.partidoTexto)}
+                    ${fila('Jornada', c.jornada)}
+                    ${fila('Fecha', c.fecha)}
+                    ${fila('Cancha', c.campo)}
+                    ${fila('Árbitro', c.arbitro || 'Por asignar')}
+                    ${fila('Pagó el', cpFechaTexto(c.creadoEn))}
+                    ${fila('Recibió', c.recibio)}
+                </div>
+                <div class="cp-corte"></div>
+                <div class="cp-qr">
+                    <div id="cp-qr-box"></div>
+                    <div class="cp-folio">FOLIO ${escapeHtml(c.folio)} · ${escapeHtml(c.codigo)}</div>
+                    <p>El árbitro escanea este código para confirmar el pago</p>
+                </div>
+            </div>`;
+        }
+
+        function cpVer(folio) {
+            const c = (db.comprobantes || {})[folio];
+            if (!c) return;
+            document.getElementById('cp-modal-ticket').innerHTML = cpHtmlTicket(c);
+            const box = document.getElementById('cp-qr-box');
+            if (window.QRCode) {
+                new QRCode(box, { text: cpPayloadQR(c), width: 170, height: 170, correctLevel: QRCode.CorrectLevel.M });
+            } else {
+                box.textContent = '(No se pudo cargar el generador de QR: revisa tu conexión a internet)';
+            }
+            document.getElementById('modal-comprobante').style.display = 'flex';
+        }
+
+        function cpCerrar() { document.getElementById('modal-comprobante').style.display = 'none'; }
+
+        function cpImprimir() {
+            document.body.classList.add('imp-comp');
+            const quitar = () => { document.body.classList.remove('imp-comp'); window.removeEventListener('afterprint', quitar); };
+            window.addEventListener('afterprint', quitar);
+            window.print();
+        }
+
+        async function cpDescargarPDF(btn) {
+            const ticket = document.getElementById('cp-ticket');
+            if (!ticket) return;
+            if (!window.jspdf || !window.html2canvas) { mostrarAlerta('No se pudo cargar el generador de PDF. Revisa tu conexión a internet.', { icono: '❌' }); return; }
+            const txt = btn.textContent;
+            btn.disabled = true; btn.textContent = '⏳ Generando...';
+            try {
+                const canvas = await html2canvas(ticket, { scale: 3, backgroundColor: '#ffffff', useCORS: true });
+                const anchoMm = 90, altoMm = anchoMm * canvas.height / canvas.width;
+                const doc = new window.jspdf.jsPDF({ unit: 'mm', format: [anchoMm + 10, altoMm + 10] });
+                doc.addImage(canvas.toDataURL('image/png'), 'PNG', 5, 5, anchoMm, altoMm);
+                const folio = (document.querySelector('#cp-ticket .cp-folio') || {}).textContent || 'comprobante';
+                const eq = ((document.querySelector('#cp-ticket .cp-fila b') || {}).textContent || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^\w]+/g, '_');
+                doc.save('Comprobante_' + folio.replace(/^FOLIO\s+/, '').split(' ')[0] + '_' + eq + '.pdf');
+            } catch (e) {
+                mostrarAlerta('No se pudo generar el PDF: ' + escapeHtml(e.message), { icono: '❌' });
+            }
+            btn.disabled = false; btn.textContent = txt;
+        }
+
+        async function cpAnular(folio) {
+            const c = (db.comprobantes || {})[folio];
+            if (!c || c.estado !== 'vigente') return;
+            if (!(await confirmarAccion(`¿Anular el comprobante ${folio} de ${escapeHtml(c.equipoNombre)}? Dejará de servir al escanearlo.`, { textoConfirmar: 'Anular comprobante' }))) return;
+            c.estado = 'anulado';
+            c.anuladoEn = new Date().toISOString();
+            guardarDB();
         }
 
         function toggleFinanza(eqId, campo) {
@@ -5772,7 +6171,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
             texto(c.incidentes ? c.incidentes.replace(/\n/g, '  |  ') : 'Sin incidentes reportados.', { size: 9, gap: 8 });
 
             // Pago de arbitraje
-            texto(`Pago de arbitraje — ${loc}: ${p.arbitrajePagoLocal ? 'Pagado' : 'Pendiente'}    ${vis}: ${p.arbitrajePagoVisita ? 'Pagado' : 'Pendiente'}`, { size: 9, color: [110, 110, 110], gap: 9 });
+            texto(`Pago de arbitraje — ${loc}: ${p.arbitrajePagoLocal ? 'Pagado' : 'Pendiente'}${p.comprobantePagoLocal ? ' (comprobante ' + p.comprobantePagoLocal + ')' : ''}    ${vis}: ${p.arbitrajePagoVisita ? 'Pagado' : 'Pendiente'}${p.comprobantePagoVisita ? ' (comprobante ' + p.comprobantePagoVisita + ')' : ''}`, { size: 9, color: [110, 110, 110], gap: 9 });
 
             // Firmas
             saltoDePagina(55);
@@ -6645,6 +7044,7 @@ ${cuerpo}`;
         async function eliminarJugador(id) {
             const j = db.jugadores.find(x => x.id === id);
             if (!j) return;
+            if (!(await permitirFueraDePeriodo('dar de baja al jugador'))) return;
             if (!(await confirmarAccion(`¿Eliminar al jugador "${escapeHtml(j.nombre)}"? Sus goles, tarjetas y MVPs históricos en partidos ya jugados se conservarán en el registro del partido, pero desaparecerá del plantel.`, { textoConfirmar: 'Eliminar' }))) return;
             db.jugadores = db.jugadores.filter(x => x.id !== id);
             guardarDB();
