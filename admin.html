@@ -806,6 +806,36 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
 .admin-box{scroll-margin-top:14px}
 @media print{#liga-burger,#liga-menu,#liga-menu-fondo{display:none!important}}
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style id="resumen-hoy-juvenil">
+/* ===== "Resumen de hoy": mismo diseño que la Liga Juvenil (solo afecta a este bloque) ===== */
+#caja-resumen-hoy{
+  --edge:#1B1464; --hard:#1B1464; --btn-b:#1B1464; --btn-s:#1B1464;
+  --primary:#D93A05; --primary-dark:#A82A00; --secondary:#2F5BFF; --dark:#1B1464;
+  --accent:#FFD23F; --border:#C9CEF5; --text-muted:#4F4F8A;
+  --font-display:'Lilita One','Arial Rounded MT Bold',system-ui,sans-serif;
+  --font-body:'Nunito',system-ui,sans-serif;
+  --gradient-primary:linear-gradient(135deg,#F2561C 0%,#D93A05 100%);
+  font-family:var(--font-body);
+  border:3px solid var(--edge); border-top:10px solid var(--accent);
+  border-radius:22px; box-shadow:5px 5px 0 var(--hard);
+}
+html[data-theme="dark"] #caja-resumen-hoy{
+  --edge:#5A63FF; --hard:#000; --btn-b:#5A63FF; --btn-s:#000;
+  --primary:#FF7A45; --primary-dark:#E5501A; --secondary:#7C97FF;
+  --border:#34308F; --text-muted:#B4B2E6;
+  --gradient-primary:linear-gradient(135deg,#FF8A4C 0%,#FF7A45 100%);
+}
+/* :where() = sin peso extra, para que los botones propios (como el de plegar ▲) conserven su estilo */
+:where(#caja-resumen-hoy) :is(h3,h4){font-family:var(--font-display);font-weight:400;letter-spacing:.4px}
+:where(#caja-resumen-hoy) button{font-family:var(--font-body);font-weight:800;border:2.5px solid var(--btn-b);border-radius:999px;box-shadow:2px 2px 0 var(--btn-s)}
+:where(#caja-resumen-hoy) button:hover{transform:translate(-1px,-2px);box-shadow:4px 4px 0 var(--btn-s)}
+:where(#caja-resumen-hoy) button:active{transform:translate(2px,2px);box-shadow:0 0 0 var(--btn-s)}
+@media (prefers-reduced-motion:reduce){:where(#caja-resumen-hoy) button:hover,:where(#caja-resumen-hoy) button:active{transform:none}}
+/* Las 4 tarjetas de arriba siempre ocupan todo el ancho (aunque haya partido hoy y salga la franja "Hoy: ... vs ...") */
+#resumen-dia-grid{grid-template-columns:repeat(4,minmax(0,1fr)) !important}
+@media (max-width:760px){#resumen-dia-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important}}
+</style>
 </head>
 
 <body><div id="liga-skel" aria-hidden="true"><div class="sk sk-h"></div><div class="sk-w"><div class="sk-row"><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div></div></div>
@@ -835,7 +865,7 @@ body.liga-menu-abierto #liga-menu-fondo{opacity:1;pointer-events:auto}
     <button type="button" id="btn-instalar-app" onclick="instalarAppPWA()" style="display:none; position:fixed; top:12px; left:12px; z-index:9998; background:#f0b429; color:#0d2a4d; border:none; padding:8px 14px; border-radius:20px; font-size:0.8rem; font-weight:bold; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.25);">📲 Instalar App</button>
 
     <!-- RESUMEN DEL DÍA -->
-    <div class="admin-box" style="border-top-color:#0d2a4d; background:#f4f7ff; margin-bottom:25px;">
+    <div class="admin-box" id="caja-resumen-hoy" style="border-top-color:#0d2a4d; background:#f4f7ff; margin-bottom:25px;">
         <h3>📋 Resumen de hoy</h3>
         <div id="resumen-dia-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:12px; margin-top:10px;"></div>
         <div id="resumen-visitas-grid" style="display:none; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:12px; margin-top:12px;"></div>
