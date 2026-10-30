@@ -531,7 +531,7 @@
         .pob-connector-simple { grid-row: 2; align-self: center; position: relative; height: 2px; }
         .pob-connector-simple::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--border); }
 
-        .cancha { background: linear-gradient(160deg, #2a9d8f 0%, #21847a 100%); border: 4px solid white; border-radius: var(--radius-lg); height: 500px; position: relative; margin-top: 20px; overflow: hidden; box-shadow: var(--shadow-md); transform: perspective(1300px) rotateX(10deg); transform-style: preserve-3d; transition: transform 0.3s ease; }
+        .cancha { background: linear-gradient(160deg, #2a9d8f 0%, #21847a 100%); border: 4px solid white; border-radius: var(--radius-lg); height: 540px; position: relative; margin-top: 20px; overflow: hidden; box-shadow: var(--shadow-md); transform: perspective(1300px) rotateX(10deg); transform-style: preserve-3d; transition: transform 0.3s ease; }
         .cancha:hover { transform: perspective(1300px) rotateX(6deg); }
         .linea-medio { position: absolute; top: 50%; left: 0; width: 100%; height: 2px; background: rgba(255,255,255,0.5); }
         .circulo-medio { position: absolute; top: 50%; left: 50%; width: 100px; height: 100px; border: 2px solid rgba(255,255,255,0.5); border-radius: 50%; transform: translate(-50%, -50%); }
@@ -542,6 +542,13 @@
         .xi-jugador { position: absolute; transform: translate(-50%, -50%); text-align: center; color: white; width: 80px; transition: transform 0.2s ease; transform-style: preserve-3d; }
         .xi-jugador:hover { transform: translate(-50%, -50%) translateZ(34px) scale(1.1); }
         .xi-jugador img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid var(--accent); object-fit: cover; background: white; box-shadow: var(--shadow-xs); }
+        .xi-jugador { width: 104px; }
+        .xi-jugador img, .xi-iniciales { width: 46px; height: 46px; margin: 0 auto; border-radius: 50%; border: 2px solid #fff; object-fit: cover; background: #c9d3e0; color: #0c447c; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; }
+        .xi-mvp img, .xi-mvp .xi-iniciales { border-color: #E8A33D; }
+        .xi-n1 { color: #fff; font-size: 12px; font-weight: 600; line-height: 1.2; margin-top: 5px; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+        .xi-n2 { color: #fff; font-size: 11px; font-weight: 400; line-height: 1.2; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
+        .xi-eq { display: inline-block; margin-top: 3px; font-size: 10px; font-weight: 600; color: #0C447C; background: #E6F1FB; border-radius: 8px; padding: 1px 7px; }
+        .xi-estrella { color: #FAC775; }
         @media (prefers-reduced-motion: reduce) { .cancha, .cancha:hover, .xi-jugador:hover { transform: none; } }
 
         .modal {
@@ -711,6 +718,8 @@
         .podio-nombre { font-weight: 700; font-size: 0.85rem; color: var(--text); line-height: 1.2; }
         .podio-equipo { font-size: 0.72rem; color: var(--text-muted); margin: 2px 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
         .podio-valor { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: var(--primary); }
+        .podio-extra { font-size: 0.64rem; color: var(--text-muted); margin-top: 4px; line-height: 1.3; }
+        .podio-extra b { color: var(--text); }
         .podio-valor small { display: block; font-size: 0.6rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
         @media (max-width: 480px) {
             .podio-wrap { gap: 6px; }
@@ -856,7 +865,12 @@
             .jugador-card, .equipo-card, .arbitro-card { padding: 10px; }
             .partido-escudo { width: 44px; height: 44px; }
             .partido-nombre-equipo { font-size: 0.75rem; }
-            .cancha { height: 340px; transform: perspective(900px) rotateX(6deg); }
+            .cancha { height: 580px; transform: perspective(900px) rotateX(6deg); }
+            .xi-jugador { width: 78px; }
+            .xi-jugador img, .xi-iniciales { width: 40px; height: 40px; font-size: 12px; }
+            .xi-n1 { font-size: 11px; }
+            .xi-n2 { font-size: 10px; }
+            .xi-eq { font-size: 9px; padding: 1px 6px; }
             .bracket-match { width: 100%; max-width: 320px; }
             .pob-grid { min-width: 880px; grid-template-rows: repeat(3, minmax(110px, auto)); }
             .pob-match { max-width: 200px; padding: 8px 10px; }
@@ -976,6 +990,7 @@
         .pos-cambio.pos-sube { color: var(--success); }
         .pos-cambio.pos-baja { color: var(--danger); }
         .pos-cambio.pos-igual { color: var(--text-muted); }
+        .pos-cambio.pos-nuevo { color: var(--secondary); font-size: 0.58rem; letter-spacing: 0.4px; }
 
         /* --- Zona de clasificación a Liguilla, sombreada en la Tabla de Posiciones --- */
         .tabla-equipos tbody tr.fila-clasifica { background: rgba(46, 196, 182, 0.08); border-left: 3px solid var(--success); }
@@ -1125,7 +1140,6 @@
             .cel-jugador { flex-direction: row !important; align-items: center; justify-content: flex-start; text-align: left !important; gap: 6px !important; }
             .cel-jugador .foto-tabla { width: 26px !important; height: 26px !important; flex-shrink: 0; }
             .cel-jugador .nombre-cel { max-width: none !important; word-break: normal !important; overflow-wrap: normal; font-size: 0.68rem !important; }
-            table:has(#tabla-posiciones-body) th:last-child, table:has(#tabla-posiciones-body) td:last-child { display: none; }
             .quiniela-op { font-size: 0.72rem; word-break: normal; overflow-wrap: anywhere; padding: 9px 4px; }
             .card-section > h2, .card-section > .header-section-flex { text-align: center; justify-content: center; }
         }
@@ -1498,7 +1512,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             <div style="overflow-x:auto;">
                 <table class="tabla-equipos">
                     <thead>
-                        <tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th><th>Forma</th></tr>
+                        <tr><th>Pos</th><th>Equipo</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DG</th><th>Pts</th></tr>
                     </thead>
                     <tbody id="tabla-posiciones-body"></tbody>
                 </table>
@@ -4036,7 +4050,6 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             if (leyendaVivo) leyendaVivo.classList.toggle('hidden', !hayVivo);
             const mostrarZona = db.equipos.length > numClasifican;
             const favoritoId = obtenerEquipoFavoritoId();
-            const iconoForma = { G: '🟢', E: '🟡', P: '🔴' };
             document.getElementById('tabla-posiciones-body').innerHTML = estadisticas.map((eq, idx) => {
                 const ahora = idx + 1;
                 let indicador = '';
@@ -4055,7 +4068,6 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
                     <td><b>${ahora}</b>${indicador}</td>
                     <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${escapeHtml(eq.nombre)}" loading="lazy"><span>${escapeHtml(eq.nombre)}</span>${esFavorito ? '<span class="estrella-favorito">⭐</span>' : ''}${eq.vivo ? `<span class="pos-vivo pos-vivo-${eq.vivo.res}" title="En juego vs ${escapeHtml(eq.vivo.rival)}"><i class="pos-vivo-dot"></i>${ETQ_VIVO[eq.vivo.estado] || 'En vivo'} ${eq.vivo.gf}-${eq.vivo.gc}</span>` : ''}</div></td>
                     <td>${eq.pj}</td><td>${eq.pg}</td><td>${eq.pe}</td><td>${eq.pp}</td><td>${eq.gf}</td><td>${eq.gc}</td><td>${eq.dg}</td><td><b>${eq.pts}</b>${eq.vivo ? `<span class="pts-vivo pts-vivo-${eq.vivo.res}">+${eq.ptsVivo}</span>` : ''}</td>
-                    <td style="letter-spacing:2px; white-space:nowrap;">${eq.racha.slice(-5).map(r => iconoForma[r]).join('') || '—'}</td>
                 </tr>
             `;
             }).join('');
@@ -4099,6 +4111,92 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             if (previo && Array.from(sel.options).some(o => o.value === previo)) sel.value = previo;
         }
 
+        // ===== Flechitas ▲▼ de movimiento en TODAS las tablas de ranking =====
+        // Cada tabla se compara contra cómo estaba ANTES de la última jornada jugada de su fase.
+        // Con un partido en juego, o si aún no hay una jornada previa, no se muestran flechitas.
+        function _enFase(p, fase) { return fase === 'liguilla' ? esPartidoLiguilla(p) : fase === 'regular' ? !esPartidoLiguilla(p) : true; }
+        function jornadaUltimaJugada(fase) {
+            const js = (db.partidos || []).filter(p => p.jugado && _enFase(p, fase)).map(p => p.jornada || 0);
+            return js.length ? Math.max(...js) : 0;
+        }
+        function hayBaseMovimiento(fase) {
+            if (hayPartidoEnVivo()) return false;
+            const ult = jornadaUltimaJugada(fase);
+            return ult > 0 && (db.partidos || []).some(p => p.jugado && _enFase(p, fase) && (p.jornada || 0) < ult);
+        }
+        // Goles/amarillas/rojas que cada jugador sumó en la última jornada jugada de la fase.
+        function statsUltimaJornadaPorJugador(fase) {
+            const ult = jornadaUltimaJugada(fase), m = {};
+            if (!ult) return m;
+            (db.partidos || []).filter(p => p.jugado && (p.jornada || 0) === ult && _enFase(p, fase)).forEach(p => {
+                (p.estadisticasJugadores || []).forEach(st => {
+                    const o = m[st.jugadorId] || (m[st.jugadorId] = { goles: 0, amarillas: 0, rojas: 0 });
+                    o.goles += st.goles || 0; o.amarillas += st.amarillas || 0; o.rojas += st.rojas || 0;
+                });
+            });
+            return m;
+        }
+        function mapaPosiciones(lista) { const m = {}; lista.forEach((it, i) => { m[it.id] = i + 1; }); return m; }
+        // invertir = true cuando subir en la lista es malo (tarjetas): la flecha sigue la posición, el color se invierte.
+        function flechaMov(id, ahora, mapa, invertir) {
+            if (!mapa) return '';
+            const antes = mapa[id];
+            if (antes === undefined) return '<span class="pos-cambio pos-nuevo" title="Nuevo en la tabla">NEW</span>';
+            if (ahora < antes) return `<span class="pos-cambio ${invertir ? 'pos-baja' : 'pos-sube'}">▲${antes - ahora}</span>`;
+            if (ahora > antes) return `<span class="pos-cambio ${invertir ? 'pos-sube' : 'pos-baja'}">▼${ahora - antes}</span>`;
+            return '<span class="pos-cambio pos-igual">–</span>';
+        }
+        function mapaPrevEquipos(ordenar) {
+            if (!hayBaseMovimiento('regular')) return null;
+            const prev = calcularTablaPosiciones(jornadaUltimaJugada('regular') - 1).filter(eq => eq.pj > 0).sort(ordenar);
+            return mapaPosiciones(prev);
+        }
+        function mapaPrevGoleo(fase, actuales) {
+            if (!hayBaseMovimiento(fase)) return null;
+            const u = statsUltimaJornadaPorJugador(fase);
+            const prev = actuales.map(j => ({ id: j.id, goles: j.goles - ((u[j.id] || {}).goles || 0) })).filter(j => j.goles > 0).sort((a, b) => b.goles - a.goles);
+            return mapaPosiciones(prev);
+        }
+        function mapaPrevAsistencias(actuales) {
+            if (!hayBaseMovimiento()) return null;
+            const ult = jornadaUltimaJugada();
+            const antes = asistenciasPorJugador(p => !(p.jugado && (p.jornada || 0) === ult));
+            const prev = actuales.map(j => ({ id: j.id, v: antes[j.id] || 0 })).filter(j => j.v > 0).sort((a, b) => b.v - a.v);
+            return mapaPosiciones(prev);
+        }
+        function mapaPrevDisciplina() {
+            if (!hayBaseMovimiento('regular')) return null;
+            const u = statsUltimaJornadaPorJugador('regular'), lig = statsLiguillaPorJugador();
+            const prev = db.jugadores.map(j => {
+                const l = lig[j.id] || {}, x = u[j.id] || {};
+                return { id: j.id, amarillas: Math.max(0, (j.amarillas || 0) - (l.amarillas || 0) - (x.amarillas || 0)), rojas: Math.max(0, (j.rojas || 0) - (l.rojas || 0) - (x.rojas || 0)) };
+            }).sort((a, b) => (b.rojas * 3 + b.amarillas) - (a.rojas * 3 + a.amarillas) || b.rojas - a.rojas).filter(j => j.amarillas > 0 || j.rojas > 0);
+            return mapaPosiciones(prev);
+        }
+        function mapaPrevFairPlay() {
+            if (!hayBaseMovimiento('regular')) return null;
+            const u = statsUltimaJornadaPorJugador('regular'), lig = statsLiguillaPorJugador();
+            const prev = calcularTablaPosiciones(jornadaUltimaJugada('regular') - 1).filter(eq => eq.pj > 0).map(eq => {
+                const js = db.jugadores.filter(j => j.equipoId === eq.id);
+                const am = js.reduce((s, j) => s + Math.max(0, (j.amarillas || 0) - ((lig[j.id] || {}).amarillas || 0) - ((u[j.id] || {}).amarillas || 0)), 0);
+                const ro = js.reduce((s, j) => s + Math.max(0, (j.rojas || 0) - ((lig[j.id] || {}).rojas || 0) - ((u[j.id] || {}).rojas || 0)), 0);
+                return { id: eq.id, rojas: ro, puntos: am + ro * 3 };
+            }).sort((a, b) => a.puntos - b.puntos || a.rojas - b.rojas);
+            return mapaPosiciones(prev);
+        }
+        function mapaPrevPorteros() {
+            if (!hayBaseMovimiento('regular')) return null;
+            const ult = jornadaUltimaJugada('regular');
+            const prev = db.jugadores.filter(j => /portero|arquero/i.test(j.posicion || '')).map(p => {
+                let gc = 0, pj = 0;
+                db.partidos.filter(part => part.jugado && !esPartidoLiguilla(part) && (part.jornada || 0) < ult && (part.localId === p.equipoId || part.visitaId === p.equipoId)).forEach(part => {
+                    pj++; gc += part.localId === p.equipoId ? part.golesVisita : part.golesLocal;
+                });
+                return { id: p.id, prom: pj > 0 ? (gc / pj).toFixed(2) : 0 };
+            }).sort((a, b) => a.prom - b.prom);
+            return mapaPosiciones(prev);
+        }
+
         function renderizarOfensivaDefensiva() {
             const estadisticas = calcularTablaPosiciones(jornadaMaxRegularStats(), true).filter(eq => eq.pj > 0);
             const etiquetaVivo = eq => eq.vivo ? `<span class="pos-vivo pos-vivo-${eq.vivo.res}"><i class="pos-vivo-dot"></i>En vivo</span>` : '';
@@ -4107,11 +4205,13 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             const ofensiva = [...estadisticas].sort((a, b) => b.gf - a.gf || a.gc - b.gc);
             const defensiva = [...estadisticas].sort((a, b) => a.gc - b.gc || b.gf - a.gf);
 
+            const movOf = mapaPrevEquipos((x, y) => y.gf - x.gf || x.gc - y.gc);
+            const movDef = mapaPrevEquipos((x, y) => x.gc - y.gc || y.gf - x.gf);
             verTodosBoton('of', ofensiva.length, 'Ver todos los equipos');
             verTodosBoton('def', defensiva.length, 'Ver todos los equipos');
             document.getElementById('tabla-ofensiva-body').innerHTML = ofensiva.length ? verTodosLista('of', ofensiva).map((eq, idx) => `
                 <tr>
-                    <td><b>${idx + 1}</b></td>
+                    <td><b>${idx + 1}</b>${flechaMov(eq.id, idx + 1, movOf)}</td>
                     <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${escapeHtml(eq.nombre)}" loading="lazy"><span>${escapeHtml(eq.nombre)}</span></div></td>
                     <td><b>${eq.gf}</b> ⚽ ${idx === 0 ? '🏆' : ''}${etiquetaVivo(eq)}</td>
                 </tr>
@@ -4119,7 +4219,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
 
             document.getElementById('tabla-defensiva-body').innerHTML = defensiva.length ? verTodosLista('def', defensiva).map((eq, idx) => `
                 <tr>
-                    <td><b>${idx + 1}</b></td>
+                    <td><b>${idx + 1}</b>${flechaMov(eq.id, idx + 1, movDef)}</td>
                     <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${escapeHtml(eq.nombre)}" loading="lazy"><span>${escapeHtml(eq.nombre)}</span></div></td>
                     <td><b>${eq.gc}</b> 🛡️ ${idx === 0 ? '🏆' : ''}${etiquetaVivo(eq)}</td>
                 </tr>
@@ -4138,22 +4238,24 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
                         else golesContra += part.golesLocal;
                     });
                 }
-                return { nombre: p.nombre, equipo: eq?.nombre || 'Libre', foto: p.foto, goles: golesContra, pj: partidos, prom: partidos > 0 ? (golesContra/partidos).toFixed(2) : 0 };
+                return { id: p.id, nombre: p.nombre, equipo: eq?.nombre || 'Libre', foto: p.foto, goles: golesContra, pj: partidos, prom: partidos > 0 ? (golesContra/partidos).toFixed(2) : 0 };
             }).sort((a,b) => a.prom - b.prom);
 
+            const movPt = mapaPrevPorteros();
             verTodosBoton('porteros', data.length, 'Ver todos los porteros');
             document.getElementById('tabla-porteros-body').innerHTML = verTodosLista('porteros', data).map((pt, idx) => `
                 <tr>
-                    <td><b>${idx+1}</b></td>
+                    <td><b>${idx+1}</b>${flechaMov(pt.id, idx+1, movPt)}</td>
                     <td><div class="cel-jugador"><img class="foto-tabla" src="${pt.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(pt.nombre)}</span><span class="equipo-cel">${escapeHtml(pt.equipo)}</span></div></td>
                     <td>${pt.goles} 🛡️</td>
-                    <td><b>${pt.prom}</b> goles/partido</td>
+                    <td><b>${pt.prom}</b> goles/partido <small>en ${pt.pj} PJ</small></td>
                 </tr>
             `).join('') || estadoVacioFila(4, '🧤', 'No hay porteros especificados en las plantillas.');
 
             renderPodio('podio-porteros', data.filter(pt => pt.pj > 0).map(pt => ({
                 foto: pt.foto, nombre: pt.nombre, sub: pt.equipo,
-                valor: pt.prom, unidad: 'Goles/Partido'
+                valor: pt.prom, unidad: 'Goles/Partido',
+                extra: '<b>' + pt.goles + '</b> goles recibidos<br><b>' + pt.pj + '</b> partidos jugados'
             })));
         }
 
@@ -4731,18 +4833,36 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             if (pista) pista.scrollBy({ left: dir * 480, behavior: 'smooth' });
         }
 
-        const coordsXI = [{ t: 88, l: 50 }, { t: 68, l: 20 }, { t: 72, l: 40 }, { t: 72, l: 60 }, { t: 68, l: 80 }, { t: 45, l: 25 }, { t: 50, l: 50 }, { t: 45, l: 75 }, { t: 20, l: 20 }, { t: 15, l: 50 }, { t: 20, l: 80 }];
+        const coordsXI = [{ t: 87, l: 50 }, { t: 62, l: 14 }, { t: 62, l: 38 }, { t: 62, l: 62 }, { t: 62, l: 86 }, { t: 37, l: 20 }, { t: 37, l: 50 }, { t: 37, l: 80 }, { t: 12, l: 18 }, { t: 12, l: 50 }, { t: 12, l: 82 }];
         function renderXI() {
             const cancha = document.getElementById('posiciones-cancha'); cancha.innerHTML = '';
-            const ordenXI = pos => { const p = String(pos || '').toLowerCase(); if (p.includes('portero')) return 0; if (p.includes('medio')) return 2; if (p.includes('lateral') || p.includes('defensa')) return 1; return 3; };
-            let elegidos = db.jugadores.filter(j => j.xiIdeal && j.xiIdeal.length > 0).sort((a, b) => ordenXI(a.posicion) - ordenXI(b.posicion));
+            const catDe = pos => { const p = String(pos || '').toLowerCase(); if (p.includes('portero') || p.includes('arquero')) return 'portero'; if (p.includes('medio') || p.includes('volante')) return 'medio'; if (p.includes('lateral') || p.includes('defensa')) return 'defensa'; if (p.includes('extremo') || p.includes('delantero')) return 'delantero'; return null; };
+            const slotsPorCat = { portero: [0], defensa: [1, 2, 3, 4], medio: [5, 6, 7], delantero: [8, 9, 10] };
+            const elegidos = db.jugadores.filter(j => j.xiIdeal && j.xiIdeal.length > 0);
             if (!elegidos.length) {
                 cancha.innerHTML = '<div class="xi-vacio"><span class="xi-vacio-icono">🏅</span><strong>Aún no hay Once Ideal esta semana</strong><span>Cuando la liga lo publique, aquí aparecerán los 11 mejores jugadores de la jornada.</span></div>';
                 return;
             }
+            const ocupados = {};
+            Object.keys(slotsPorCat).forEach(cat => {
+                const lista = elegidos.filter(j => catDe(j.posicion) === cat)
+                    .sort((a, b) => (b.xiMvp ? 1 : 0) - (a.xiMvp ? 1 : 0) || String(a.nombre).localeCompare(String(b.nombre)));
+                lista.slice(0, slotsPorCat[cat].length).forEach((jug, i) => { ocupados[slotsPorCat[cat][i]] = jug; });
+            });
             for (let i = 0; i < 11; i++) {
-                const pos = coordsXI[i]; const jug = elegidos[i];
-                cancha.innerHTML += jug ? `<div class="xi-jugador" style="top:${pos.t}%; left:${pos.l}%;"><img src="${jug.foto || 'https://placehold.co/50'}" alt="${escapeHtml(jug.nombre)}" loading="lazy"><p>${jug.xiMvp ? '⭐ ' : ''}${escapeHtml(jug.nombre.split(' ')[0])}</p></div>` : '';
+                const jug = ocupados[i];
+                if (!jug) continue;
+                const pos = coordsXI[i];
+                const partes = String(jug.nombre || '').trim().split(/\s+/);
+                const primero = partes[0] || '';
+                const apellidos = partes.slice(1).join(' ');
+                const eq = (db.equipos || []).find(e => e.id === jug.equipoId);
+                const equipo = eq ? eq.nombre : 'Libre';
+                const iniciales = partes.slice(0, 2).map(x => x.charAt(0)).join('').toUpperCase();
+                const avatar = jug.foto
+                    ? `<img src="${jug.foto}" alt="${escapeHtml(jug.nombre)}" loading="lazy">`
+                    : `<div class="xi-iniciales">${escapeHtml(iniciales)}</div>`;
+                cancha.innerHTML += `<div class="xi-jugador${jug.xiMvp ? ' xi-mvp' : ''}" style="top:${pos.t}%; left:${pos.l}%;">${avatar}<div class="xi-n1">${jug.xiMvp ? '<span class="xi-estrella">★</span> ' : ''}${escapeHtml(primero)}</div><div class="xi-n2">${escapeHtml(apellidos)}</div><span class="xi-eq">${escapeHtml(equipo)}</span></div>`;
             }
         }
 
@@ -4764,6 +4884,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
                     <span class="podio-nombre">${escapeHtml(it.nombre)}</span>
                     <span class="podio-equipo">${it.sub || ''}</span>
                     <span class="podio-valor">${it.valor}<small>${it.unidad || ''}</small></span>
+                    ${it.extra ? `<span class="podio-extra">${it.extra}</span>` : ''}
                 </div>
             `).join('');
         }
@@ -4810,9 +4931,10 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             const ligStats = statsLiguillaPorJugador();
             { const av = document.getElementById('aviso-vivo-goleo'); if (av) av.classList.toggle('hidden', !hayPartidoEnVivo()); }
             let goleadores = db.jugadores.map(j => { const gv = golesVivo[j.id] || 0; return Object.assign({}, j, { goles: Math.max(0, (j.goles || 0) - ((ligStats[j.id] || {}).goles || 0)) + gv, golesVivo: gv }); }).filter(j => j.goles > 0).sort((a,b) => b.goles - a.goles);
+            const movGol = mapaPrevGoleo('regular', goleadores);
             verTodosBoton('goleo', goleadores.length, 'Ver todos los goleadores');
             document.getElementById('tabla-goleo-body').innerHTML = goleadores.length
-                ? verTodosLista('goleo', goleadores).map((jug, idx) => `<tr><td><b>${idx + 1}</b></td><td><div class="cel-jugador"><img class="foto-tabla" src="${jug.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(jug.nombre)}</span></div></td><td>${db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre'}</td><td><b>${jug.goles} ⚽</b> ${idx === 0 ? '🏆' : ''}${jug.golesVivo ? `<span class="pts-vivo pts-vivo-G">+${jug.golesVivo} en vivo</span>` : ''}</td></tr>`).join('')
+                ? verTodosLista('goleo', goleadores).map((jug, idx) => `<tr><td><b>${idx + 1}</b>${flechaMov(jug.id, idx + 1, movGol)}</td><td><div class="cel-jugador"><img class="foto-tabla" src="${jug.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(jug.nombre)}</span></div></td><td>${db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre'}</td><td><b>${jug.goles} ⚽</b> ${idx === 0 ? '🏆' : ''}${jug.golesVivo ? `<span class="pts-vivo pts-vivo-G">+${jug.golesVivo} en vivo</span>` : ''}</td></tr>`).join('')
                 : estadoVacioFila(4, '⚽', 'Aún no hay goleadores; se llenará conforme se jueguen partidos.');
             renderPodio('podio-goleo', goleadores.map(jug => ({
                 foto: jug.foto, nombre: jug.nombre,
@@ -4823,9 +4945,9 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
 
         // Asistencias: se cuentan de las incidencias de gol que el árbitro marcó con "asistencia"
         // (incluye partidos jugados y en vivo). Devuelve {jugadorId: asistencias}.
-        function asistenciasPorJugador() {
+        function asistenciasPorJugador(filtroPartido) {
             const mapa = {};
-            (db.partidos || []).forEach(p => {
+            (db.partidos || []).filter(p => !filtroPartido || filtroPartido(p)).forEach(p => {
                 (p.eventos || []).filter(ev => ev && ev.tipo === 'gol' && ev.asistencia).forEach(ev => {
                     const candidatos = (db.jugadores || []).filter(j => j.nombre === ev.asistencia);
                     const j = candidatos.find(x => x.equipoId === p.localId || x.equipoId === p.visitaId) || candidatos[0];
@@ -4840,9 +4962,10 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             if (!cuerpo) return;
             const mapa = asistenciasPorJugador();
             const lista = db.jugadores.map(j => Object.assign({}, j, { asistencias: mapa[j.id] || 0 })).filter(j => j.asistencias > 0).sort((a, b) => b.asistencias - a.asistencias);
+            const movAs = mapaPrevAsistencias(lista);
             verTodosBoton('asistencias', lista.length, 'Ver todos los asistidores');
             cuerpo.innerHTML = lista.length
-                ? verTodosLista('asistencias', lista).map((jug, idx) => `<tr><td><b>${idx + 1}</b></td><td><div class="cel-jugador"><img class="foto-tabla" src="${jug.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(jug.nombre)}</span></div></td><td>${escapeHtml(db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre')}</td><td><b>${jug.asistencias} 🅰️</b> ${idx === 0 ? '🏆' : ''}</td></tr>`).join('')
+                ? verTodosLista('asistencias', lista).map((jug, idx) => `<tr><td><b>${idx + 1}</b>${flechaMov(jug.id, idx + 1, movAs)}</td><td><div class="cel-jugador"><img class="foto-tabla" src="${jug.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(jug.nombre)}</span></div></td><td>${escapeHtml(db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre')}</td><td><b>${jug.asistencias} 🅰️</b> ${idx === 0 ? '🏆' : ''}</td></tr>`).join('')
                 : estadoVacioFila(4, '🅰️', 'Aún no hay asistencias registradas; el árbitro las anota junto con cada gol.');
             renderPodio('podio-asistencias', lista.map(jug => ({
                 foto: jug.foto, nombre: jug.nombre,
@@ -4865,9 +4988,10 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             { const av = document.getElementById('aviso-vivo-goleo-liguilla'); if (av) av.classList.toggle('hidden', !Object.keys(golesVivo).length); }
             const goleadores = db.jugadores.map(j => { const gv = golesVivo[j.id] || 0; return Object.assign({}, j, { goles: ((ligStats[j.id] || {}).goles || 0) + gv, golesVivo: gv }); })
                 .filter(j => j.goles > 0).sort((a, b) => b.goles - a.goles);
+            const movGolL = mapaPrevGoleo('liguilla', goleadores);
             verTodosBoton('goleo-liguilla', goleadores.length, 'Ver todos los goleadores');
             document.getElementById('tabla-goleo-liguilla-body').innerHTML = goleadores.length
-                ? verTodosLista('goleo-liguilla', goleadores).map((jug, idx) => `<tr><td><b>${idx + 1}</b></td><td><div class="cel-jugador"><img class="foto-tabla" src="${jug.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(jug.nombre)}</span></div></td><td>${escapeHtml(db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre')}</td><td><b>${jug.goles} ⚽</b> ${idx === 0 ? '🏆' : ''}${jug.golesVivo ? `<span class="pts-vivo pts-vivo-G">+${jug.golesVivo} en vivo</span>` : ''}</td></tr>`).join('')
+                ? verTodosLista('goleo-liguilla', goleadores).map((jug, idx) => `<tr><td><b>${idx + 1}</b>${flechaMov(jug.id, idx + 1, movGolL)}</td><td><div class="cel-jugador"><img class="foto-tabla" src="${jug.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(jug.nombre)}</span></div></td><td>${escapeHtml(db.equipos.find(e => e.id === jug.equipoId)?.nombre || 'Libre')}</td><td><b>${jug.goles} ⚽</b> ${idx === 0 ? '🏆' : ''}${jug.golesVivo ? `<span class="pts-vivo pts-vivo-G">+${jug.golesVivo} en vivo</span>` : ''}</td></tr>`).join('')
                 : estadoVacioFila(4, '⚽', 'Aún no hay goles en la Liguilla; el goleo se llenará con los Cuartos de Final.');
             renderPodio('podio-goleo-liguilla', goleadores.map(jug => ({
                 foto: jug.foto, nombre: jug.nombre,
@@ -4941,8 +5065,9 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             const jugadoresOrdenados = [...jugadoresRegular].sort((a, b) => ((b.rojas || 0) * 3 + (b.amarillas || 0)) - ((a.rojas || 0) * 3 + (a.amarillas || 0)) || (b.rojas || 0) - (a.rojas || 0));
             const jugadoresConTarjetas = jugadoresOrdenados.filter(j => (j.amarillas || 0) > 0 || (j.rojas || 0) > 0);
             const visibles = verTodosLista('disc-jugadores', jugadoresConTarjetas);
+            const movDisc = mapaPrevDisciplina();
             document.getElementById('tabla-disciplina-body').innerHTML = visibles.length ? visibles.map((j, idx) => {
-                return `<tr><td>${idx + 1}</td><td><div class="cel-jugador"><img class="foto-tabla" src="${j.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(j.nombre)}</span></div></td><td>${escapeHtml(db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre')}</td><td>${j.amarillas || 0}</td><td>${j.rojas || 0}</td><td>${celdaMultaJugador(j)}</td><td>${celdaEstatusDisciplina(j)}</td></tr>`;
+                return `<tr><td>${idx + 1}${flechaMov(j.id, idx + 1, movDisc, true)}</td><td><div class="cel-jugador"><img class="foto-tabla" src="${j.foto || 'https://placehold.co/34'}" alt="" loading="lazy"><span class="nombre-cel">${escapeHtml(j.nombre)}</span></div></td><td>${escapeHtml(db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre')}</td><td>${j.amarillas || 0}</td><td>${j.rojas || 0}</td><td>${celdaMultaJugador(j)}</td><td>${celdaEstatusDisciplina(j)}</td></tr>`;
             }).join('') : estadoVacioFila(7, '🟨', 'Aún no hay tarjetas.');
             verTodosBoton('disc-jugadores', jugadoresConTarjetas.length, 'Ver todos los jugadores');
 
@@ -4977,10 +5102,11 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
                 return { ...eq, amarillas, rojas, puntos: amarillas + rojas * 3 };
             }).sort((a, b) => a.puntos - b.puntos || a.rojas - b.rojas);
             const fairPlayVisibles = verTodosLista('disc-equipos', fairPlay);
+            const movFP = mapaPrevFairPlay();
             verTodosBoton('disc-equipos', fairPlay.length, 'Ver todos los equipos');
             cont.innerHTML = fairPlay.length ? fairPlayVisibles.map((eq, idx) => `
                 <tr>
-                    <td><b>${idx + 1}</b></td>
+                    <td><b>${idx + 1}</b>${flechaMov(eq.id, idx + 1, movFP)}</td>
                     <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${escapeHtml(eq.nombre)}" loading="lazy"><span>${escapeHtml(eq.nombre)}</span></div></td>
                     <td>${eq.amarillas} 🟨</td>
                     <td>${eq.rojas} 🟥</td>
@@ -6231,9 +6357,9 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
 
         function exportarTablaCSV() {
             const estadisticas = calcularTablaPosiciones();
-            const encabezado = ['Pos', 'Equipo', 'PJ', 'G', 'E', 'P', 'GF', 'GC', 'DG', 'Pts', 'Forma (más reciente al final)'];
+            const encabezado = ['Pos', 'Equipo', 'PJ', 'G', 'E', 'P', 'GF', 'GC', 'DG', 'Pts'];
             const filas = estadisticas.map((eq, idx) => [
-                idx + 1, eq.nombre, eq.pj, eq.pg, eq.pe, eq.pp, eq.gf, eq.gc, eq.dg, eq.pts, eq.racha.slice(-5).join('-')
+                idx + 1, eq.nombre, eq.pj, eq.pg, eq.pe, eq.pp, eq.gf, eq.gc, eq.dg, eq.pts
             ]);
             const csv = [encabezado, ...filas].map(fila => fila.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
 

@@ -5606,6 +5606,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
             const jornada = parseInt(document.getElementById('xi-jornada').value, 10);
             if (!jornada || jornada < 1) { mostrarAlerta('Escribe el número de jornada.'); return; }
             if (!xiSel.ids.length) { mostrarAlerta('Elige al menos un jugador para el Once Ideal.'); return; }
+            if (xiSel.ids.length !== 11) { mostrarAlerta('El Once Ideal debe tener exactamente 11 jugadores (llevas ' + xiSel.ids.length + ').'); return; }
             if (xiSel.mvp && !xiSel.ids.includes(xiSel.mvp)) xiSel.mvp = '';
             db.xiIdealAdmin[jornada] = { jugadores: xiSel.ids.slice(), mvp: xiSel.mvp || '', fecha: Date.now() };
             sincronizarOnceConSitio();
