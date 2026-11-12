@@ -13,7 +13,7 @@
     <meta property="og:image" content="https://tiendadayh.github.io/Liga-Futbol-Acapulco/icon-512.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0b2f5c">
     <link rel="apple-touch-icon" href="icon-192.png">
@@ -34,7 +34,7 @@
             --border: #e2e8f0;
             --card-bg: #ffffff;
             --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
-            --font-display: 'Oswald', 'Segoe UI', sans-serif;
+            --font-display: 'Barlow Condensed', 'Oswald', 'Segoe UI', sans-serif;
             --font-body: 'Inter', system-ui, sans-serif;
             --radius-sm: 8px;
             --radius-md: 14px;
@@ -583,7 +583,15 @@
             #btn-cerrar-sesion { position: absolute !important; top: 18px !important; right: 18px !important; padding: 6px 10px !important; font-size: 0.72rem !important; }
             label { margin-bottom: 4px; display: inline-block; }
         }
-    </style>
+    
+/* === Tipografía deportiva === */
+html{scroll-behavior:smooth}
+h1,h2,h3,h4,th,.marcador,.mm-nombre,.mm-marcador{font-family:var(--font-display);letter-spacing:.4px}
+h2,h3{text-transform:uppercase;letter-spacing:.8px}
+th{text-transform:uppercase;font-size:.82em;letter-spacing:.7px}
+td,.marcador,.mm-marcador,.num{font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
@@ -1029,6 +1037,16 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                     <input type="checkbox" id="chk-acepto-visita" onchange="actualizarEstadoBotonConfirmar()">
                     Declaro que revisé la información de esta cédula y estoy de acuerdo con lo asentado.
                 </label>
+            </div>
+
+            <div class="bloque-firma-equipo" id="bloque-firma-arbitro">
+                <h4 style="color:#0d2a4d;">Árbitro Central</h4>
+                <input type="text" id="firma-nombre-arbitro" placeholder="Nombre del árbitro">
+                <canvas id="canvas-firma-arbitro" class="canvas-firma"></canvas>
+                <div class="fila-firma-acciones">
+                    <button type="button" onclick="limpiarFirma('arbitro')" style="background:#64748b;">🧹 Limpiar firma</button>
+                    <span id="estado-firma-arbitro" style="font-size:0.78rem; color:#b45309;">✏️ Falta firmar</span>
+                </div>
             </div>
 
             <div style="display:flex; gap:10px; margin-top:6px; flex-wrap:wrap;">
@@ -1958,13 +1976,32 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
 
             const reader = new FileReader();
             reader.onload = (ev) => {
-                const arb = db.arbitros.find(x => x.nombre === arbitroActual);
-                if (!arb) return;
-                arb.foto = ev.target.result;
-                guardarDB();
-                mostrarPerfilArbitro(arbitroActual);
+                const img = new Image();
+                img.onload = () => {
+                    let url = ev.target.result;
+                    try {
+                        const esc = Math.min(1, 700 / Math.max(img.width, img.height));
+                        const cv = document.createElement('canvas');
+                        cv.width = Math.round(img.width * esc); cv.height = Math.round(img.height * esc);
+                        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+                        url = cv.toDataURL('image/jpeg', 0.75);
+                    } catch (e) { }
+                    guardarFotoArbitro(url);
+                };
+                img.onerror = () => guardarFotoArbitro(ev.target.result);
+                img.src = ev.target.result;
             };
             reader.readAsDataURL(file);
+        }
+
+        function guardarFotoArbitro(url) {
+            {
+                const arb = db.arbitros.find(x => x.nombre === arbitroActual);
+                if (!arb) return;
+                arb.foto = url;
+                guardarDB();
+                mostrarPerfilArbitro(arbitroActual);
+            }
         }
 
         function cargarPartidosDelArbitro(nombreArbitro) {
@@ -2249,6 +2286,16 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 doc.text(f.firma?.nombre || 'Sin firma registrada', f.x, yFirmas + altoFirma + 9);
             });
             y = yFirmas + altoFirma + 16;
+            if (c.firmas?.arbitro) {
+                doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(30, 30, 30);
+                const xArb = (pageWidth - anchoFirma) / 2;
+                doc.text('Árbitro: ' + (c.arbitro || ''), xArb, y);
+                doc.setDrawColor(210); doc.rect(xArb, y + 3, anchoFirma, altoFirma);
+                if (c.firmas.arbitro.firma) { try { doc.addImage(c.firmas.arbitro.firma, xArb + 2, y + 5, anchoFirma - 4, altoFirma - 4); } catch (e) { } }
+                doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(90, 90, 90);
+                doc.text(c.firmas.arbitro.nombre || '', xArb, y + altoFirma + 9);
+                y = y + altoFirma + 16;
+            }
 
             texto(`Cédula cerrada el ${c.cerradaEn ? new Date(c.cerradaEn).toLocaleString('es-MX') : '-'}`, { size: 8, color: [160, 160, 160], gap: 6 });
 
@@ -3289,9 +3336,9 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
 
         // --- Firma de Conformidad de la Cédula (validación de ambos equipos antes de publicar) ---
         let cedulaPendientePartidoId = null;
-        let firmaCtx = { local: null, visita: null };
-        let firmaDibujando = { local: false, visita: false };
-        let firmaTrazada = { local: false, visita: false };
+        let firmaCtx = { local: null, visita: null, arbitro: null };
+        let firmaDibujando = { local: false, visita: false, arbitro: false };
+        let firmaTrazada = { local: false, visita: false, arbitro: false };
 
         function construirResumenCedula(partido, nombreLocal, nombreVisita) {
             const glocal = document.getElementById('admin-res-glocal').value || '0';
@@ -3407,7 +3454,8 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             const okVisita = firmaTrazada.visita && document.getElementById('chk-acepto-visita').checked;
             document.getElementById('bloque-firma-local').classList.toggle('firmado', okLocal);
             document.getElementById('bloque-firma-visita').classList.toggle('firmado', okVisita);
-            if (okLocal && okVisita) {
+            document.getElementById('bloque-firma-arbitro').classList.toggle('firmado', !!firmaTrazada.arbitro);
+            if (okLocal && okVisita && firmaTrazada.arbitro) {
                 btn.disabled = false;
                 btn.style.background = '#2e7d32';
             } else {
@@ -3445,6 +3493,8 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             document.getElementById('modal-firma-cedula').classList.remove('hidden');
             initCanvasFirma('local');
             initCanvasFirma('visita');
+            document.getElementById('firma-nombre-arbitro').value = arbitroActual || '';
+            initCanvasFirma('arbitro');
             actualizarEstadoBotonConfirmar();
         }
 
@@ -3456,8 +3506,8 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             if (!arbitroActual || partido.arbitro !== arbitroActual) {
                 return alert("Solo el árbitro asignado a este encuentro puede cerrar la cédula oficial.");
             }
-            if (!firmaTrazada.local || !firmaTrazada.visita || !document.getElementById('chk-acepto-local').checked || !document.getElementById('chk-acepto-visita').checked) {
-                return alert("Ambos equipos deben firmar y aceptar la cédula antes de publicarla.");
+            if (!firmaTrazada.arbitro || !firmaTrazada.local || !firmaTrazada.visita || !document.getElementById('chk-acepto-local').checked || !document.getElementById('chk-acepto-visita').checked) {
+                return alert("El árbitro y ambos equipos deben firmar (y los equipos aceptar) la cédula antes de publicarla.");
             }
 
             // Si esta cédula ya se había cerrado antes, primero revertimos sus efectos
@@ -3529,6 +3579,11 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                     visita: {
                         nombre: document.getElementById('firma-nombre-visita').value.trim(),
                         firma: document.getElementById('canvas-firma-visita').toDataURL('image/png'),
+                        aceptadoEn: new Date().toISOString()
+                    },
+                    arbitro: {
+                        nombre: document.getElementById('firma-nombre-arbitro').value.trim() || arbitroActual,
+                        firma: document.getElementById('canvas-firma-arbitro').toDataURL('image/png'),
                         aceptadoEn: new Date().toISOString()
                     }
                 }
