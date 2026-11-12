@@ -438,6 +438,47 @@
         .lc-flecha { background:none; border:none; color:#1f5fd6; font-size:1.7rem; cursor:pointer; padding:4px 6px; line-height:1; }
         .lc-flecha:hover { color:#0b3a99; }
         @media (max-width:600px) { .lc-flecha { display:none; } .lc-item { flex-basis:140px; } }
+        /* ===== Tarjeta de partido: estilo captura (borde rojo, caja naranja, escudos grandes) ===== */
+        .lc-item { flex:0 0 200px; gap:0; }
+        .lc-card { border:2px solid #e2e5ea; border-radius:6px; padding:14px 12px 10px; box-shadow:0 2px 8px rgba(0,0,0,.12); }
+        .lc-card.sel { border-color:#d1140f; box-shadow:0 0 0 1px #d1140f, 0 4px 12px rgba(209,20,15,.18); }
+        .lc-jornada { font-size:.95rem; font-weight:800; color:#444; }
+        .lc-fh { margin:10px 0 12px; gap:10px; justify-content:center; }
+        .lc-cal { width:62px; border-radius:9px; }
+        .lc-cal-sem { font-size:.7rem; padding:4px 0; }
+        .lc-cal-dia { font-size:1.7rem; padding:4px 0 2px; }
+        .lc-cal-mes { font-size:.72rem; padding-bottom:6px; }
+        .lc-cal.sin { height:62px; }
+        .lc-hora { gap:8px; }
+        .lc-hora-icono { display:inline-flex; color:#475569; }
+        .lc-hora-icono svg { width:24px; height:24px; }
+        .lc-hora-num { font-size:1.5rem; }
+        .lc-hora-ampm { font-size:.8rem; }
+        .lc-cuenta { border-radius:12px; min-height:54px; padding:8px; margin-bottom:14px; font-size:.78rem; }
+        .lc-cuenta.repro { background:#fdf0d5; border:1.5px solid #f1c36b; color:#8a5200; font-size:.9rem; font-weight:800; }
+        .lc-escudos { margin-top:2px; }
+        .lc-escudos img { width:68px; height:68px; }
+        .lc-vs { font-size:1rem; }
+        .lc-nombres { text-transform:uppercase; font-size:.72rem; margin-top:6px; }
+        .lc-trans { border-top:none; align-items:center; padding-top:10px; min-height:0; gap:2px; }
+        .lc-trans strong { font-size:.92rem; color:#333; letter-spacing:.2px; }
+        .lc-nd { font-size:.82rem; color:#555; }
+        .lc-info { display:none; }
+        .lc-ver { border-top:none; margin-top:4px; padding-top:4px; font-size:.82rem; color:#d1140f; }
+        @media (max-width:600px) { .lc-item { flex-basis:190px; } }
+        /* ===== Datos del partido: tarjetas con etiqueta (Árbitro / Campo / Fecha / Hora) ===== */
+        .partido-meta { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; border-top:none; padding-top:0; margin-top:14px; opacity:1; font-size:inherit; }
+        .meta-tile { display:flex; flex-direction:row; align-items:center; justify-content:center; gap:8px; padding:8px 10px; background:var(--card-bg,#fff); border:1px solid var(--border,#e2e5ea); border-left:4px solid #d1140f; border-radius:10px; box-shadow:0 2px 6px rgba(15,42,92,.08); text-align:center; min-width:0; }
+        .meta-tile.t-arbitro { border-left-color:#1f5fd6; } .meta-tile.t-campo { border-left-color:#16a34a; } .meta-tile.t-fecha { border-left-color:#d1140f; } .meta-tile.t-hora { border-left-color:#f0a020; }
+        .meta-tile-txt { flex:1; }
+        @media (max-width:720px) { .partido-meta { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+        .meta-tile.clicable { cursor:pointer; transition:transform .15s, box-shadow .15s; }
+        .meta-tile.clicable:hover { transform:translateY(-2px); box-shadow:0 6px 12px rgba(15,42,92,.16); }
+        .meta-tile-ico { flex:0 0 auto; width:34px; height:34px; border-radius:8px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; font-size:1.1rem; overflow:hidden; }
+        .meta-tile-ico .mini-cancha-thumb { width:34px; height:34px; border:none; border-radius:8px; }
+        .meta-tile-txt { display:flex; flex-direction:column; align-items:center; min-width:0; line-height:1.2; text-align:center; }
+        .meta-tile-lbl { font-size:.62rem; font-weight:800; letter-spacing:.8px; text-transform:uppercase; color:#64748b; }
+        .meta-tile-val { font-size:.86rem; font-weight:800; color:var(--text,#1e293b); overflow-wrap:anywhere; }
         .marcador { transform-style: preserve-3d; }
         .marcador.marcador-flip-final { animation: marcadorFlipFinal 0.6s ease; }
         @keyframes marcadorFlipFinal { 0% { transform: rotateX(0deg); } 45% { transform: rotateX(100deg); } 55% { transform: rotateX(100deg); } 100% { transform: rotateX(0deg); } }
@@ -2589,7 +2630,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
         // Las jornadas 1..N son fase regular; de la 98 en adelante es Liguilla.
         function jornadasFaseRegular(dbRef) {
             const n = parseInt(reg(dbRef || db, 'jornadasRegulares'));
-            return (n >= 0 && n <= 60) ? n : 9;
+            return (n >= 0 && n <= 60) ? Math.max(n, 9) : 9;
         }
         function reg(dbRef, campo) {
             const v = dbRef.reglamento && dbRef.reglamento[campo];
@@ -4669,14 +4710,21 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
                 }
 
                 const campoObj = p.campoId ? db.campos.find(c => c.id === p.campoId) : null;
-                const metaCancha = (campoObj && campoObj.foto)
-                    ? `<span class="meta-item-clicable" onclick="verCancha(${campoObj.id})"><img src="${campoObj.foto}" class="mini-cancha-thumb" alt="${escapeHtml(campoObj.nombre)}" loading="lazy">🏟️ ${p.estadio || campoObj.nombre}</span>`
-                    : `<span>🏟️ ${p.estadio || 'Campo por definir'}</span>`;
+                const metaTile = (clase, icono, etiqueta, valor, onclick) => `<div class="meta-tile ${clase}${onclick ? ' clicable' : ''}"${onclick ? ` onclick="${onclick}"` : ''}><div class="meta-tile-ico">${icono}</div><div class="meta-tile-txt"><span class="meta-tile-lbl">${etiqueta}</span><strong class="meta-tile-val">${valor}</strong></div></div>`;
+                const MESES_LARGOS_META = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+                const DIAS_LARGOS_META = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+                const fechaBonita = (() => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(p.fecha || ''); if (!m) return 'Por definir'; const d = new Date(+m[1], +m[2] - 1, +m[3]); return `${DIAS_LARGOS_META[d.getDay()]} ${+m[3]} ${MESES_LARGOS_META[+m[2] - 1]} ${m[1]}`; })();
+                const horaBonita = (() => { const m = /^(\d{1,2}):(\d{2})/.exec(p.hora || ''); if (!m) return 'Por definir'; const hh = +m[1]; return `${hh % 12 === 0 ? 12 : hh % 12}:${m[2]} ${hh >= 12 ? 'PM' : 'AM'}`; })();
+                const nombreCampoMeta = escapeHtml(p.estadio || (campoObj ? campoObj.nombre : '') || 'Por definir');
+                const metaCancha = metaTile('t-campo',
+                    (campoObj && campoObj.foto) ? `<img src="${campoObj.foto}" class="mini-cancha-thumb" alt="${escapeHtml(campoObj.nombre)}" loading="lazy">` : '🏟️',
+                    'Campo', nombreCampoMeta, (campoObj ? `verCancha(${campoObj.id})` : ''));
 
                 const arbitroRegistrado = p.arbitro ? db.arbitros.find(a => a.nombre === p.arbitro) : null;
-                const metaArbitro = arbitroRegistrado
-                    ? `<span class="meta-item-clicable" onclick="verArbitro('${p.arbitro.replace(/'/g, "\\'")}')">👨‍⚖️ ${p.arbitro}</span>`
-                    : `<span>👨‍⚖️ ${p.arbitro || 'Árbitro por definir'}</span>`;
+                const metaArbitro = metaTile('t-arbitro', '👨‍⚖️', 'Árbitro', escapeHtml(p.arbitro || 'Por definir'),
+                    arbitroRegistrado ? `verArbitro('${p.arbitro.replace(/'/g, "\\'")}')` : '');
+                const metaFecha = metaTile('t-fecha', '📅', 'Fecha', fechaBonita, '');
+                const metaHora = metaTile('t-hora', '🕐', 'Hora', horaBonita, '');
 
                 const enVivo = ESTADOS_PARTIDO_EN_VIVO.includes(p.estadoVivo) && !p.jugado;
                 let estadoBadge;
@@ -4721,8 +4769,8 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
                         <div class="partido-meta">
                             ${metaArbitro}
                             ${metaCancha}
-                            <span>📅 ${p.fecha || 'Fecha por definir'}</span>
-                            <span>🕐 ${p.hora || 'Hora por definir'}</span>
+                            ${metaFecha}
+                            ${metaHora}
                         </div>
                         ${eventosHtml}
                         ${facebookLiveHtml}
@@ -4762,7 +4810,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
                 }
                 const card = `
                     <div class="lc-item">
-                        <div class="lc-estado ${claseEtiqueta}">${etiqueta}</div>
+                        ${claseEtiqueta === 'vivo' ? `<div class="lc-estado vivo" style="margin-bottom:6px;">${etiqueta}</div>` : ''}
                         <div class="lc-card${esFavorito ? ' fav' : ''}" data-pid="${p.id}" onclick="seleccionarPartidoCarrusel(${p.id})">
                             <div class="lc-jornada">${jFiltro >= 98 ? escapeHtml(ETIQUETA_FASE_CARRUSEL(jFiltro)) : 'Jornada ' + jFiltro}</div>
                             ${bloqueFechaHoraCarrusel(p, enVivo)}
@@ -4772,7 +4820,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
                                 <img src="${escudoV}" alt="${escapeHtml(nameV)}" title="${escapeHtml(nameV)}" loading="lazy">
                             </div>
                             <div class="lc-nombres"><span>${escapeHtml(nameL)}</span><span>${escapeHtml(nameV)}</span></div>
-                            <div class="lc-marcador">${marcadorTarjeta}</div>
+                            ${hayMarcador ? `<div class="lc-marcador">${marcadorTarjeta}</div>` : ''}
                             ${mvpCard}
                             <div class="lc-trans"><strong>TRANSMISIÓN</strong>${transmision}</div>
                             <div class="lc-info">
@@ -4848,7 +4896,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             else if (ts === null) cuenta = '<div class="lc-cuenta fin">Fecha por definir</div>';
             else if (partidoVencidoSinJugar(p)) cuenta = '<div class="lc-cuenta repro">Nueva fecha por definir</div>';
             else cuenta = `<div class="lc-cuenta" data-ts="${ts}"></div>`;
-            return `<div class="lc-fh">${fechaHtml}<div class="lc-hora"><span class="lc-hora-icono">🕐</span><div class="lc-hora-txt">${horaHtml}</div></div></div>${cuenta}`;
+            return `<div class="lc-fh">${fechaHtml}<div class="lc-hora"><span class="lc-hora-icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2.5h5M12 2.5V5"/></svg></span><div class="lc-hora-txt">${horaHtml}</div></div></div>${cuenta}`;
         }
         function tickCuentaRegresivaLC() {
             const els = document.querySelectorAll('.lc-cuenta[data-ts]');

@@ -3191,7 +3191,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
         // Las jornadas 1..N son fase regular; de la 98 en adelante es Liguilla.
         function jornadasFaseRegular(dbRef) {
             const n = parseInt(reg(dbRef || db, 'jornadasRegulares'));
-            return (n >= 1 && n <= 60) ? n : 9;
+            return (n >= 1 && n <= 60) ? Math.max(n, 9) : 9;
         }
         function reg(dbRef, campo) {
             const v = dbRef.reglamento && dbRef.reglamento[campo];
