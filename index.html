@@ -479,6 +479,43 @@
         .meta-tile-txt { display:flex; flex-direction:column; align-items:center; min-width:0; line-height:1.2; text-align:center; }
         .meta-tile-lbl { font-size:.62rem; font-weight:800; letter-spacing:.8px; text-transform:uppercase; color:#64748b; }
         .meta-tile-val { font-size:.86rem; font-weight:800; color:var(--text,#1e293b); overflow-wrap:anywhere; }
+        /* ===== Previa del partido, qué necesita para clasificar, gráfica del jugador, ayuda para instalar ===== */
+        .previa-box { margin-top:14px; padding:12px 14px; border:1px solid var(--border); border-radius:14px; background:var(--light); text-align:center; }
+        .previa-box h4 { margin:0 0 8px; font-size:.9rem; }
+        .previa-grid { display:grid; grid-template-columns:1fr auto 1fr; gap:6px 10px; align-items:center; font-size:.82rem; }
+        .previa-eq { font-weight:800; font-size:.8rem; overflow-wrap:anywhere; }
+        .previa-lbl { font-size:.62rem; font-weight:800; letter-spacing:.8px; text-transform:uppercase; color:var(--text-muted); }
+        .previa-val { font-weight:700; overflow-wrap:anywhere; }
+        .previa-val small { display:block; font-weight:600; color:var(--text-muted); font-size:.72rem; }
+        .previa-racha { display:inline-flex; gap:3px; justify-content:center; }
+        .previa-racha i { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; font-style:normal; font-size:.65rem; font-weight:800; color:#fff; }
+        .previa-racha i.G { background:#2e7d32; } .previa-racha i.E { background:#8d97a6; } .previa-racha i.P { background:#c62828; }
+        .previa-h2h { margin-top:10px; padding-top:8px; border-top:1px dashed var(--border); font-size:.78rem; color:var(--text-muted); }
+        .previa-h2h b { color:var(--text); }
+        .nec-details { margin-top:14px; border:1px solid var(--border); border-radius:14px; background:var(--light); overflow:hidden; }
+        .nec-details > summary { cursor:pointer; padding:12px 14px; font-weight:800; font-size:.92rem; list-style:none; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+        .nec-details > summary::-webkit-details-marker { display:none; }
+        .nec-details > summary::after { content:"▾"; transition:transform .2s; }
+        .nec-details[open] > summary::after { transform:rotate(180deg); }
+        .nec-fila { display:flex; align-items:center; gap:10px; padding:9px 14px; border-top:1px solid var(--border); }
+        .nec-fila img { width:30px; height:30px; border-radius:50%; object-fit:cover; flex:0 0 auto; }
+        .nec-pos { width:22px; text-align:center; font-weight:800; flex:0 0 auto; }
+        .nec-txt { flex:1; min-width:0; }
+        .nec-txt strong { display:block; font-size:.86rem; }
+        .nec-txt span { display:block; font-size:.74rem; color:var(--text-muted); }
+        .nec-tag { flex:0 0 auto; padding:3px 10px; border-radius:999px; font-size:.66rem; font-weight:800; white-space:nowrap; }
+        .nec-tag.ok { background:rgba(46,125,50,.16); color:#2e7d32; } .nec-tag.no { background:rgba(198,40,40,.14); color:#c62828; } .nec-tag.vivo { background:rgba(21,101,192,.14); color:#1565c0; }
+        .nec-nota { padding:8px 14px 12px; font-size:.7rem; color:var(--text-muted); border-top:1px solid var(--border); }
+        .rend-box { margin-top:14px; padding:10px 8px 6px; border:1px solid var(--border); border-radius:12px; }
+        .rend-box h4 { margin:0 0 6px; text-align:center; }
+        .rend-box svg { width:100%; height:auto; display:block; color:var(--text-muted); }
+        .rend-leyenda { display:flex; justify-content:center; flex-wrap:wrap; gap:4px 12px; font-size:.7rem; margin-top:4px; color:var(--text-muted); }
+        .rend-leyenda i { display:inline-block; width:9px; height:9px; border-radius:2px; margin-right:4px; vertical-align:-1px; }
+        .rend-resumen { text-align:center; font-size:.74rem; color:var(--text-muted); margin:6px 0 2px; }
+        .ayuda-inst { position:fixed; inset:0; z-index:1300; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(6,12,26,.6); }
+        .ayuda-inst-card { width:100%; max-width:380px; background:var(--card-bg,#fff); color:var(--text); border-radius:18px; padding:20px 18px; text-align:center; box-shadow:0 24px 60px -16px rgba(0,0,0,.55); }
+        .ayuda-inst-card h3 { margin:0 0 8px; } .ayuda-inst-card p { margin:6px 0; font-size:.9rem; line-height:1.4; }
+        .ayuda-inst-card .nota { font-size:.76rem; color:var(--text-muted); }
         .marcador { transform-style: preserve-3d; }
         .marcador.marcador-flip-final { animation: marcadorFlipFinal 0.6s ease; }
         @keyframes marcadorFlipFinal { 0% { transform: rotateX(0deg); } 45% { transform: rotateX(100deg); } 55% { transform: rotateX(100deg); } 100% { transform: rotateX(0deg); } }
@@ -1649,6 +1686,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
                 </table>
             </div>
             <p id="leyenda-clasificacion" class="leyenda-clasificacion hidden"><span class="leyenda-punto"></span> Zona de clasificación a Liguilla</p>
+            <div id="necesita-clasificar" class="hidden"></div>
         </section>
 
         <!-- MEJOR OFENSIVA Y DEFENSIVA -->
@@ -2052,6 +2090,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
                             </table>
                             <p id="modal-historial-vacio" class="ficha-historial-vacio hidden">Este jugador aún no registra partidos jugados.</p>
                         </div>
+                        <div id="modal-grafica-rend"></div>
                     </div>
 
                     <div class="ficha-3d-botones">
@@ -2562,7 +2601,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             if (btn) btn.classList.remove('visible');
         });
         function instalarAppPWA() {
-            if (!eventoInstalacionPWA) return;
+            if (!eventoInstalacionPWA) { if (typeof mostrarAyudaInstalarApp === 'function') mostrarAyudaInstalarApp(); return; }
             eventoInstalacionPWA.prompt();
             eventoInstalacionPWA.userChoice.finally(() => {
                 eventoInstalacionPWA = null;
@@ -3382,6 +3421,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             document.getElementById('select-filtrar-equipo').innerHTML = '<option value="todos">Todos los Equipos</option>' + optsEq;
 
             actualizarTablaPosiciones();
+            try { renderizarNecesitaClasificar(); } catch (e) { console.warn('Necesita clasificar:', e); }
             renderizarOfensivaDefensiva();
             actualizarVisibilidadLiguilla();
             renderizarBracketLiguilla();
@@ -4772,6 +4812,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
                             ${metaFecha}
                             ${metaHora}
                         </div>
+                        ${(!p.jugado && !enVivo && typeof previaPartidoHtml === 'function') ? previaPartidoHtml(p) : ''}
                         ${eventosHtml}
                         ${facebookLiveHtml}
                         ${alineacionesHtml}
@@ -5479,6 +5520,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             } catch (e) { }
 
             const historial = historialPartidosJugador(j);
+            try { renderGraficaRendimiento(j); } catch (e) { console.warn('Gráfica de rendimiento:', e); }
             document.getElementById('modal-partidos-jugados').innerText = historial.length;
             const tbody = document.getElementById('modal-historial-body');
             const vacio = document.getElementById('modal-historial-vacio');
@@ -7175,6 +7217,143 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.bo
     if (typeof ob === 'function') window.renderizarBracketLiguilla = function () { var r = ob.apply(this, arguments); try { decorarBracket(); } catch (e) { } return r; };
     observarNumeros();
     try { renderDestacado(); } catch (e) { }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ini); else ini();
+})();
+</script>
+<script>
+/* Previa del partido, qué necesita cada equipo para clasificar, gráfica de rendimiento, ayuda para instalar */
+function previaPartidoHtml(p) {
+  try {
+    if (!db || !db.equipos || !db.partidos) return '';
+    var eqL = db.equipos.find(function (e) { return e.id === p.localId; }), eqV = db.equipos.find(function (e) { return e.id === p.visitaId; });
+    if (!eqL || !eqV) return '';
+    var tabla = calcularTablaPosiciones();
+    var h2h = db.partidos.filter(function (x) { return x.jugado && ((x.localId === p.localId && x.visitaId === p.visitaId) || (x.localId === p.visitaId && x.visitaId === p.localId)); })
+      .sort(function (a, b) { return (a.jornada || 0) - (b.jornada || 0); });
+    var hayJuego = tabla.some(function (t) { return t.pj > 0; });
+    if (!hayJuego && !h2h.length) return '';
+    var info = function (eq) {
+      var idx = tabla.findIndex(function (t) { return t.id === eq.id; }), t = tabla[idx] || {};
+      var gol = (db.jugadores || []).filter(function (j) { return j.equipoId === eq.id && (j.goles || 0) > 0; }).sort(function (a, b) { return (b.goles || 0) - (a.goles || 0); })[0];
+      return { pos: idx + 1, t: t, gol: gol };
+    };
+    var a = info(eqL), b = info(eqV);
+    var racha = function (t) { var r = (t.racha || []).slice(-5); return r.length ? '<span class="previa-racha">' + r.map(function (x) { return '<i class="' + x + '">' + (x === 'P' ? 'D' : x) + '</i>'; }).join('') + '</span>' : '—'; };
+    var posTxt = function (i) { return i.t.pj !== undefined ? '<span class="previa-val">' + i.pos + '° lugar<small>' + (i.t.pts || 0) + ' pts · ' + (i.t.pj || 0) + ' PJ</small></span>' : '—'; };
+    var golTxt = function (i) { return i.gol ? '<span class="previa-val">' + escapeHtml(i.gol.nombre) + '<small>' + i.gol.goles + ' goles</small></span>' : '<span class="previa-val">—</span>'; };
+    var gl = 0, ge = 0, gv = 0, ult = '';
+    h2h.forEach(function (x) {
+      if (x.golesLocal === x.golesVisita) ge++; else { var gan = x.golesLocal > x.golesVisita ? x.localId : x.visitaId; if (gan === p.localId) gl++; else gv++; }
+    });
+    if (h2h.length) {
+      var u = h2h[h2h.length - 1], nl = (db.equipos.find(function (e) { return e.id === u.localId; }) || {}).nombre || '', nv = (db.equipos.find(function (e) { return e.id === u.visitaId; }) || {}).nombre || '';
+      ult = '<br>Último: <b>' + escapeHtml(nl) + ' ' + (u.golesLocal || 0) + ' - ' + (u.golesVisita || 0) + ' ' + escapeHtml(nv) + '</b>';
+    }
+    var h2hTxt = h2h.length
+      ? 'Historial entre ambos: <b>' + escapeHtml(eqL.nombre) + ' ' + gl + '</b> · Empates <b>' + ge + '</b> · <b>' + escapeHtml(eqV.nombre) + ' ' + gv + '</b>' + ult
+      : 'Primer enfrentamiento entre ambos esta temporada.';
+    return '<div class="previa-box"><h4>📊 Previa del partido</h4><div class="previa-grid">' +
+      '<div class="previa-eq">' + escapeHtml(eqL.nombre) + '</div><div></div><div class="previa-eq">' + escapeHtml(eqV.nombre) + '</div>' +
+      '<div>' + posTxt(a) + '</div><div class="previa-lbl">Posición</div><div>' + posTxt(b) + '</div>' +
+      '<div>' + racha(a.t) + '</div><div class="previa-lbl">Últimos 5</div><div>' + racha(b.t) + '</div>' +
+      '<div>' + golTxt(a) + '</div><div class="previa-lbl">Goleador</div><div>' + golTxt(b) + '</div>' +
+      '</div><div class="previa-h2h">' + h2hTxt + '</div></div>';
+  } catch (e) { return ''; }
+}
+
+function renderizarNecesitaClasificar() {
+  var cont = document.getElementById('necesita-clasificar');
+  if (!cont) return;
+  var ocultar = function () { cont.classList.add('hidden'); cont.innerHTML = ''; };
+  if (!db || !db.equipos || !db.partidos || db.equipos.length < 3) return ocultar();
+  if (db.liguillaActiva || db.partidos.some(function (x) { return (x.jornada || 0) >= 98; })) return ocultar();
+  if (!db.partidos.some(function (x) { return x.jugado; })) return ocultar();
+  var N = calcularNumeroClasifican();
+  if (N >= db.equipos.length) return ocultar();
+  var J = (db.reglamento && Number(db.reglamento.jornadasRegulares)) || ((typeof REGLAMENTO_DEFAULTS !== 'undefined' && REGLAMENTO_DEFAULTS.jornadasRegulares) || 9);
+  var tabla = calcularTablaPosiciones();
+  var rem = function (t) { return Math.max(0, J - t.pj); };
+  var abierto = !!(cont.querySelector('details') && cont.querySelector('details').open);
+  var filas = tabla.map(function (t, i) {
+    var riv = tabla.filter(function (o) { return o.id !== t.id; });
+    var posibles = 3 * rem(t), maxP = t.pts + posibles;
+    var seguro = riv.filter(function (o) { return o.pts + 3 * rem(o) >= t.pts; }).length <= N - 1;
+    var elim = riv.filter(function (o) { return o.pts > maxP; }).length >= N;
+    var tag, txt;
+    if (seguro) { tag = '<span class="nec-tag ok">✅ Clasificado</span>'; txt = 'Ya tiene el pase asegurado a la Liguilla.'; }
+    else if (elim) { tag = '<span class="nec-tag no">❌ Eliminado</span>'; txt = 'Ya no le alcanzan los puntos para entrar a la zona.'; }
+    else {
+      var M = riv.map(function (o) { return o.pts + 3 * rem(o); }).sort(function (x, y) { return y - x; });
+      var aseg = M.length >= N ? M[N - 1] + 1 : 0, falta = Math.max(0, aseg - t.pts);
+      var dentro = i < N;
+      tag = '<span class="nec-tag vivo">' + (dentro ? 'Dentro de zona' : 'Fuera de zona') + '</span>';
+      if (posibles === 0) txt = 'Ya no le quedan partidos; depende de los demás.';
+      else if (falta <= posibles) txt = 'Con ' + falta + ' pts más (de ' + posibles + ' posibles) asegura el pase sin depender de nadie.';
+      else txt = 'Aunque gane todo (' + posibles + ' pts) necesita ayuda de otros resultados.';
+      if (!dentro && tabla[N - 1]) txt += ' Está a ' + Math.max(0, tabla[N - 1].pts - t.pts) + ' pts de la línea de corte.';
+    }
+    return '<div class="nec-fila"><span class="nec-pos">' + (i + 1) + '</span><img src="' + (t.escudo || '') + '" alt="" loading="lazy"><div class="nec-txt"><strong>' + escapeHtml(t.nombre) + '</strong><span>' + txt + '</span></div>' + tag + '</div>';
+  }).join('');
+  cont.classList.remove('hidden');
+  cont.innerHTML = '<details class="nec-details"' + (abierto ? ' open' : '') + '><summary>🎯 ¿Qué necesita cada equipo para clasificar?</summary>' + filas +
+    '<div class="nec-nota">Clasifican ' + N + ' equipos. Cálculo orientativo: asume ' + J + ' jornadas de fase regular y no considera desempates ni los choques directos entre rivales.</div></details>';
+}
+
+function renderGraficaRendimiento(j) {
+  var cont = document.getElementById('modal-grafica-rend');
+  if (!cont) return;
+  var partidos = (db.partidos || []).filter(function (p) { return p.jugado && (p.localId === j.equipoId || p.visitaId === j.equipoId); })
+    .sort(function (a, b) { return (a.jornada || 0) - (b.jornada || 0); });
+  var datos = partidos.map(function (p) {
+    var st = (p.estadisticasJugadores || []).find(function (x) { return x.jugadorId === j.id; }) || {};
+    var asist = (p.eventos || []).filter(function (ev) { return ev && ev.tipo === 'gol' && ev.asistencia === j.nombre; }).length;
+    return { jor: p.jornada, g: st.goles || 0, a: asist, t: (st.amarillas || 0) + (st.rojas || 0), mvp: p.mvpJugadorId === j.id };
+  });
+  if (!datos.length) { cont.innerHTML = ''; return; }
+  var tG = 0, tA = 0, tT = 0; datos.forEach(function (d) { tG += d.g; tA += d.a; tT += d.t; });
+  if (tG + tA + tT === 0) { cont.innerHTML = '<div class="rend-box"><h4>📈 Rendimiento por jornada</h4><p class="rend-resumen">Aún sin goles, asistencias ni tarjetas en ' + datos.length + ' partido(s).</p></div>'; return; }
+  var vis = datos.slice(-10), W = 320, H = 150, L = 24, B = 24, T = 14, R = 6;
+  var max = Math.max(1, Math.max.apply(null, vis.map(function (d) { return Math.max(d.g, d.a, d.t); })));
+  var gw = (W - L - R) / vis.length, bw = Math.min(11, (gw - 6) / 3), alto = H - B - T;
+  var cols = ['#2e7d32', '#1565c0', '#f9a825'];
+  var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Rendimiento por jornada">';
+  for (var k = 0; k <= max; k++) {
+    var y = T + alto - (alto * k / max);
+    svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '" stroke="currentColor" stroke-opacity=".18"/><text x="' + (L - 5) + '" y="' + (y + 3) + '" font-size="8" text-anchor="end" fill="currentColor">' + k + '</text>';
+  }
+  vis.forEach(function (d, i) {
+    var x0 = L + i * gw + (gw - bw * 3) / 2;
+    [d.g, d.a, d.t].forEach(function (v, c) {
+      var h = alto * v / max;
+      svg += '<rect x="' + (x0 + c * bw) + '" y="' + (T + alto - h) + '" width="' + (bw - 1) + '" height="' + Math.max(h, v ? 1 : 0) + '" rx="2" fill="' + cols[c] + '"><title>' + [ 'Goles', 'Asistencias', 'Tarjetas' ][c] + ': ' + v + '</title></rect>';
+    });
+    svg += '<text x="' + (L + i * gw + gw / 2) + '" y="' + (H - 9) + '" font-size="8.5" text-anchor="middle" fill="currentColor">' + (typeof etiquetaJornadaCorta === 'function' ? etiquetaJornadaCorta(d.jor) : 'J' + d.jor) + '</text>';
+    if (d.mvp) svg += '<text x="' + (L + i * gw + gw / 2) + '" y="' + (T - 3) + '" font-size="10" text-anchor="middle" fill="#d9a521">★</text>';
+  });
+  svg += '</svg>';
+  cont.innerHTML = '<div class="rend-box"><h4>📈 Rendimiento por jornada</h4>' + svg +
+    '<div class="rend-leyenda"><span><i style="background:#2e7d32"></i>Goles</span><span><i style="background:#1565c0"></i>Asistencias</span><span><i style="background:#f9a825"></i>Tarjetas</span><span style="color:#d9a521">★ MVP</span></div>' +
+    '<p class="rend-resumen">' + tG + ' goles · ' + tA + ' asistencias · ' + tT + ' tarjetas en ' + datos.length + ' partido(s)' + (datos.length > vis.length ? ' (se muestran los últimos ' + vis.length + ')' : '') + '</p></div>';
+}
+
+function mostrarAyudaInstalarApp() {
+  var ua = navigator.userAgent || '', ios = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1), android = /Android/i.test(ua);
+  var pasos = ios ? 'En <b>Safari</b> toca el botón <b>Compartir</b> (el cuadrito con la flecha hacia arriba) y elige <b>«Agregar a pantalla de inicio»</b>.'
+    : android ? 'Toca el menú <b>⋮</b> de tu navegador y elige <b>«Instalar app»</b> o <b>«Agregar a la pantalla principal»</b>.'
+    : 'Busca el icono de <b>instalar</b> al final de la barra de direcciones, o abre el menú <b>⋮</b> y elige <b>«Instalar…»</b>.';
+  var el = document.createElement('div');
+  el.className = 'ayuda-inst';
+  el.innerHTML = '<div class="ayuda-inst-card" role="dialog" aria-modal="true"><h3>📲 Instala la app de la liga</h3><p>' + pasos + '</p><p class="nota">Si abriste este enlace desde WhatsApp o Facebook, ábrelo primero en Chrome o Safari.</p><button type="button" class="btn btn-primary btn-pill" style="margin-top:8px;">Entendido</button></div>';
+  var cerrar = function () { if (el.parentNode) el.parentNode.removeChild(el); };
+  el.addEventListener('click', function (e) { if (e.target === el || e.target.tagName === 'BUTTON') cerrar(); });
+  document.body.appendChild(el);
+}
+(function () {
+  function ini() {
+    var btn = document.getElementById('btn-instalar-app');
+    var instalada = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone;
+    if (btn && !instalada) btn.classList.add('visible');
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ini); else ini();
 })();
