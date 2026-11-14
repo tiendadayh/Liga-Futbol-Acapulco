@@ -3252,8 +3252,11 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
         }
         function sumarStatPatro(id, campo) {
             try {
+                // ServerValue.increment suma en el servidor sin tener que leer antes (la lectura de
+                // patro_stats exige sesión, y esta página pública no la tiene). Cumple la regla +1.
                 firebase.database().ref('patro_stats/' + id + '/' + fechaStatsPatro() + '/' + campo)
-                    .transaction(function (v) { return (v || 0) + 1; })
+                    .set(firebase.database.ServerValue.increment(1))
+                    .then(function () { console.log('patro_stats ok:', id, campo); })
                     .catch(function (err) { console.warn('patro_stats no se pudo guardar:', err && err.message); });
             } catch (e) { /* sin conexión: no se cuenta, no pasa nada */ }
         }
