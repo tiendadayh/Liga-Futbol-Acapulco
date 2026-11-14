@@ -3254,7 +3254,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
             try {
                 firebase.database().ref('patro_stats/' + id + '/' + fechaStatsPatro() + '/' + campo)
                     .transaction(function (v) { return (v || 0) + 1; })
-                    .catch(function () {});
+                    .catch(function (err) { console.warn('patro_stats no se pudo guardar:', err && err.message); });
             } catch (e) { /* sin conexión: no se cuenta, no pasa nada */ }
         }
         function registrarVistasPatrocinadores() {
