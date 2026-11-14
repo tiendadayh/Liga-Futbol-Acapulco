@@ -2670,7 +2670,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
         // Las jornadas 1..N son fase regular; de la 98 en adelante es Liguilla.
         function jornadasFaseRegular(dbRef) {
             const n = parseInt(reg(dbRef || db, 'jornadasRegulares'));
-            return (n >= 0 && n <= 60) ? Math.max(n, 9) : 9;
+            return (n >= 1 && n <= 60) ? n : 9;
         }
         function reg(dbRef, campo) {
             const v = dbRef.reglamento && dbRef.reglamento[campo];

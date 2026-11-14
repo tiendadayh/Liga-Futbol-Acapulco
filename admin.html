@@ -1265,6 +1265,15 @@ html[data-theme="dark"] #caja-resumen-hoy{
         <!-- PROGRAMAR PARTIDO -->
         <div class="admin-box">
             <h3>Programar Encuentro</h3>
+            <div style="background:#f5f9fc; border:1px solid #d6e4ee; border-radius:8px; padding:10px; margin-bottom:12px;">
+                <label for="reg-jornadas-regulares" style="font-weight:700;">📆 Jornadas de la fase regular</label>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:6px;">
+                    <input type="number" id="reg-jornadas-regulares" min="1" max="60" placeholder="Ej. 9" style="max-width:110px;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="guardarJornadasRegulares()">Guardar</button>
+                </div>
+                <div id="reg-calculo-jornadas" style="font-size:0.8rem; color:#555; margin-top:8px;"></div>
+                <div style="font-size:0.75rem; color:#888; margin-top:6px;">Puedes cambiarlo cuando quieras; los partidos ya programados no se pierden. La Liguilla (cuartos, semifinal y final) va aparte.</div>
+            </div>
             <form id="form-add-partido">
                 <select id="admin-part-jornada" required>
                     <option value="1">Jornada 1</option>
@@ -3228,7 +3237,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
         // Las jornadas 1..N son fase regular; de la 98 en adelante es Liguilla.
         function jornadasFaseRegular(dbRef) {
             const n = parseInt(reg(dbRef || db, 'jornadasRegulares'));
-            return (n >= 1 && n <= 60) ? Math.max(n, 9) : 9;
+            return (n >= 1 && n <= 60) ? n : 9;
         }
         function reg(dbRef, campo) {
             const v = dbRef.reglamento && dbRef.reglamento[campo];
@@ -4408,10 +4417,23 @@ html[data-theme="dark"] #caja-resumen-hoy{
             activarBarrasScrollGestion();
         });
 
+        function guardarJornadasRegulares() {
+            const inp = document.getElementById('reg-jornadas-regulares');
+            const n = parseInt(inp.value);
+            if (!(n >= 1 && n <= 60)) { alert('Escribe un número de jornadas entre 1 y 60.'); return; }
+            if (!db.reglamento) db.reglamento = {};
+            db.reglamento.jornadasRegulares = n;
+            guardarDB();
+            poblarJornadasRegulares('admin-part-jornada');
+            actualizarCalculoJornadas();
+            alert('Listo: la fase regular tiene ' + n + ' jornadas. Pulsa "Publicar cambios" para que lo vean todos.');
+        }
+
         function cargarConfigFormulario() {
             if (!db.config) db.config = crearConfigCredencialDefault();
                 if (db.config.logoSitio === undefined) db.config.logoSitio = '';
             aplicarLogoSitio();
+            { const ij = document.getElementById('reg-jornadas-regulares'); if (ij && document.activeElement !== ij) ij.value = jornadasFaseRegular(db); poblarJornadasRegulares('admin-part-jornada'); actualizarCalculoJornadas(); }
             const c = db.config;
             const campo = document.getElementById('cfg-nombre-liga');
             if (!campo) { // el módulo de reglamento ya no está en el panel: se conservan los valores por defecto
