@@ -3,6 +3,7 @@
 
 <head><script>try{if(localStorage.getItem('liga_theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
     <meta charset="UTF-8">
+    <script src="config.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Liga de Futbol Acapulco - Panel Avanzado Pro</title>
     <meta name="description" content="Panel administrativo de la Liga de Futbol Acapulco: gestión de equipos, jugadores, partidos, credenciales y patrocinadores.">
@@ -2057,7 +2058,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
             });
         })();
 
-        const firebaseConfig = {
+        const firebaseConfig = (window.LIGA_CONFIG && window.LIGA_CONFIG.firebase) || {
             apiKey: "AIzaSyDG07c_D4qtCJXap9J1ppU8xLk3IdWYOXo",
             authDomain: "liga-premier-acapulco.firebaseapp.com",
             databaseURL: "https://liga-premier-acapulco-default-rtdb.firebaseio.com",
@@ -2991,10 +2992,10 @@ html[data-theme="dark"] #caja-resumen-hoy{
             });
         }
 
-        const NOMBRE_LIGA_DEFAULT = 'Liga de Futbol Acapulco';
+        const NOMBRE_LIGA_DEFAULT = (window.LIGA_CONFIG && window.LIGA_CONFIG.nombre) || 'Liga de Futbol Acapulco';
         function nombreLigaActual() {
             const n = (typeof db !== 'undefined' && db && db.config && db.config.nombreLiga) ? String(db.config.nombreLiga).trim() : '';
-            return (!n || /cosmar/i.test(n)) ? NOMBRE_LIGA_DEFAULT : n;
+            return n ? n : NOMBRE_LIGA_DEFAULT;
         }
 
         function aplicarNombreLiga() {
@@ -3161,7 +3162,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
 
         function crearConfigCredencialDefault() {
             return {
-                nombreLiga: 'LIGA DE FUTBOL ACAPULCO',
+                nombreLiga: '',
                 asociacion: '',
                 asociacion2: '',
                 temporada: '',
@@ -3246,7 +3247,8 @@ html[data-theme="dark"] #caja-resumen-hoy{
             if (obj.liguillaActiva === undefined) obj.liguillaActiva = false;
             if (!obj.config) obj.config = crearConfigCredencialDefault();
             if (obj.config.logoSitio === undefined) obj.config.logoSitio = '';
-            if (!obj.config.nombreLiga || /cosmar/i.test(obj.config.nombreLiga)) obj.config.nombreLiga = 'LIGA DE FUTBOL ACAPULCO';
+            if (obj.config.nombreLiga === undefined) obj.config.nombreLiga = '';
+            (obj.comunicados || []).forEach(c => { if (c && c.jugadorId && c.imagen) { const jj = (obj.jugadores || []).find(x => x.id === c.jugadorId); if (jj && jj.foto) c.imagen = ''; } });
             (obj.equipos || []).forEach(eq => { if (!eq.pin) eq.pin = String(Math.floor(100000 + Math.random() * 900000)); });
             (obj.arbitros || []).forEach(arb => { if (!arb.pin) arb.pin = String(Math.floor(100000 + Math.random() * 900000)); });
             // Folio secuencial del N° CAM (00001, 00002...): si es la primera vez que se
@@ -3941,15 +3943,15 @@ html[data-theme="dark"] #caja-resumen-hoy{
             mostrarBackupStatus('⏳ Achicando fotos, espera un momento...', false);
             const tamanoAntes = JSON.stringify(db).length;
 
-            for (const j of (db.jugadores || [])) { if (j.foto) j.foto = await recomprimirDataUrl(j.foto, 700, 0.75, true); }
+            for (const j of (db.jugadores || [])) { if (j.foto) j.foto = await recomprimirDataUrl(j.foto, 480, 0.72, true); }
             for (const eq of (db.equipos || [])) {
                 if (eq.escudo) eq.escudo = await recomprimirDataUrl(eq.escudo, 500, 0.85, false);
-                if (eq.fotoGrupal) eq.fotoGrupal = await recomprimirDataUrl(eq.fotoGrupal, 900, 0.75, true);
+                if (eq.fotoGrupal) eq.fotoGrupal = await recomprimirDataUrl(eq.fotoGrupal, 800, 0.75, true);
             }
-            for (const a of (db.arbitros || [])) { if (a.foto) a.foto = await recomprimirDataUrl(a.foto, 700, 0.75, true); }
-            for (const c of (db.campos || [])) { if (c.foto) c.foto = await recomprimirDataUrl(c.foto, 900, 0.75, true); }
+            for (const a of (db.arbitros || [])) { if (a.foto) a.foto = await recomprimirDataUrl(a.foto, 480, 0.72, true); }
+            for (const c of (db.campos || [])) { if (c.foto) c.foto = await recomprimirDataUrl(c.foto, 800, 0.75, true); }
             for (const p of (db.patrocinadores || [])) { if (p.logo) p.logo = await recomprimirDataUrl(p.logo, 500, 0.85, false); }
-            for (const c of (db.comunicados || [])) { if (c.imagen) c.imagen = await recomprimirDataUrl(c.imagen, 700, 0.75, true); }
+            for (const c of (db.comunicados || [])) { if (c.imagen) c.imagen = await recomprimirDataUrl(c.imagen, 600, 0.72, true); }
             if (db.config && db.config.escudoLiga) { db.config.escudoLiga = await recomprimirDataUrl(db.config.escudoLiga, 500, 0.85, false); }
 
             const tamanoDespues = JSON.stringify(db).length;
@@ -3960,7 +3962,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
             }
         }
 
-        function convertirImagenABase64(inputElement, maxDim = 1000) {
+        function convertirImagenABase64(inputElement, maxDim = 700, calidad = 0.75) {
             return new Promise((resolve) => {
                 if (!inputElement || !inputElement.files || !inputElement.files[0]) { resolve(""); return; }
                 const file = inputElement.files[0];
@@ -3994,7 +3996,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                             const ctx = canvas.getContext('2d');
                             ctx.drawImage(img, 0, 0, w, h);
                             const tipo = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-                            resolverUnaVez(canvas.toDataURL(tipo, 0.82));
+                            resolverUnaVez(canvas.toDataURL(tipo, calidad));
                         } catch (e) {
                             resolverUnaVez(reader.result); // si algo falla al comprimir, usar la imagen original
                         }
@@ -4173,13 +4175,13 @@ html[data-theme="dark"] #caja-resumen-hoy{
                     db.comunicados.unshift({
                         id: comunicadoId, titulo: `🚫 ${escapeHtml(j.nombre)} suspendido`, tipo: 'sancion',
                         contenido: `${escapeHtml(j.nombre)} (${equipo}) está suspendido: ${motivos.join(' y ')}. No podrá jugar hasta completar sus partidos de sanción y pagar la multa correspondiente.`,
-                        imagen: j.foto || '', fecha: new Date().toLocaleDateString('es-MX'), jugadorId: j.id
+                        imagen: '', fecha: new Date().toLocaleDateString('es-MX'), jugadorId: j.id
                     });
                     nuevoEstado[j.id] = { estado: 'bloqueado', comunicadoId };
                 } else if (!bloqueado && previo.estado === 'bloqueado') {
                     if (previo.comunicadoId) db.comunicados = db.comunicados.filter(c => c.id !== previo.comunicadoId);
                     agregarAvisoRegistro('habilitado', `✅ ${escapeHtml(j.nombre)} ya puede jugar`,
-                        `${escapeHtml(j.nombre)} (${equipo}) cumplió su sanción y ya pagó la multa. Queda habilitado para jugar en la siguiente jornada.`, { jugadorId: j.id, imagen: j.foto || '' });
+                        `${escapeHtml(j.nombre)} (${equipo}) cumplió su sanción y ya pagó la multa. Queda habilitado para jugar en la siguiente jornada.`, { jugadorId: j.id });
                     nuevoEstado[j.id] = { estado: 'libre' };
                 } else {
                     nuevoEstado[j.id] = bloqueado ? previo : { estado: 'libre' };
@@ -4381,7 +4383,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                 actualizarTextoReglasDisciplina();
                 return;
             }
-            campo.value = c.nombreLiga || '';
+            campo.value = c.nombreLiga || nombreLigaActual();
             document.getElementById('cfg-asociacion').value = c.asociacion || '';
             document.getElementById('cfg-asociacion2').value = c.asociacion2 || '';
             document.getElementById('cfg-temporada').value = c.temporada || '';
@@ -4574,8 +4576,8 @@ html[data-theme="dark"] #caja-resumen-hoy{
                 const textoOriginalBtn = btn ? btn.innerText : '';
                 if (btn) { btn.disabled = true; btn.innerText = 'Guardando...'; }
                 try {
-                    const escudoBase64 = await convertirImagenABase64(document.getElementById('admin-eq-escudo'));
-                    const fotoBase64 = await convertirImagenABase64(document.getElementById('admin-eq-foto'));
+                    const escudoBase64 = await convertirImagenABase64(document.getElementById('admin-eq-escudo'), 500);
+                    const fotoBase64 = await convertirImagenABase64(document.getElementById('admin-eq-foto'), 800);
                     const newId = Date.now();
                     const nombreNuevoEquipo = aMayusculasEquipo(document.getElementById('admin-eq-nombre').value);
                     const pinNuevoEquipo = generarPin6Digitos();
@@ -4593,7 +4595,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
 
             document.getElementById('form-add-patrocinador').addEventListener('submit', async function (e) {
                 e.preventDefault();
-                const logoBase64 = await convertirImagenABase64(document.getElementById('patro-logo'));
+                const logoBase64 = await convertirImagenABase64(document.getElementById('patro-logo'), 500);
                 if (!logoBase64) { alert("Sube el logo del patrocinador."); return; }
                 let link = document.getElementById('patro-link').value.trim();
                 if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
@@ -4652,7 +4654,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                         return;
                     }
                 }
-                const jugadorBase64 = await convertirImagenABase64(document.getElementById('admin-jug-foto'));
+                const jugadorBase64 = await convertirImagenABase64(document.getElementById('admin-jug-foto'), 480, 0.72);
                 db.contadorFolioJugadores = (db.contadorFolioJugadores || 0) + 1;
                 const nuevoJugadorId = Date.now();
                 db.jugadores.push({
@@ -4668,7 +4670,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                     foto: jugadorBase64, goles: 0, amarillas: 0, rojas: 0, xiIdeal: [], folioNum: db.contadorFolioJugadores, fechaAlta: fechaMexico(Date.now())
                 });
                 const nombreEquipoNuevoJug = db.equipos.find(e => e.id === equipoIdSel)?.nombre || 'Agente Libre';
-                agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${escapeHtml(nombreSel)} se une al equipo ${escapeHtml(nombreEquipoNuevoJug)}.`, { jugadorId: nuevoJugadorId, imagen: jugadorBase64 || '' });
+                agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${escapeHtml(nombreSel)} se une al equipo ${escapeHtml(nombreEquipoNuevoJug)}.`, { jugadorId: nuevoJugadorId });
                 this.reset();
                 document.getElementById('admin-jug-foto-preview').style.display = 'none';
                 guardarDB(); alert("Jugador registrado.");
@@ -4676,7 +4678,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
 
             document.getElementById('form-config-credencial').addEventListener('submit', async function (e) {
                 e.preventDefault();
-                const nuevoEscudoLiga = await convertirImagenABase64(document.getElementById('cfg-escudo-liga'));
+                const nuevoEscudoLiga = await convertirImagenABase64(document.getElementById('cfg-escudo-liga'), 500);
                 db.config.nombreLiga = document.getElementById('cfg-nombre-liga').value.trim() || db.config.nombreLiga;
                 db.config.asociacion = document.getElementById('cfg-asociacion').value.trim();
                 db.config.asociacion2 = document.getElementById('cfg-asociacion2').value.trim();
@@ -4730,7 +4732,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
 
             document.getElementById('form-add-arbitro').addEventListener('submit', async function (e) {
                 e.preventDefault();
-                const fotoB64 = await convertirImagenABase64(document.getElementById('admin-arb-foto'));
+                const fotoB64 = await convertirImagenABase64(document.getElementById('admin-arb-foto'), 480, 0.72);
                 const nombreNuevoArbitro = document.getElementById('admin-arb-nombre').value.trim();
                 const pinNuevoArbitro = generarPin6Digitos();
                 db.arbitros.push({ id: Date.now(), nombre: nombreNuevoArbitro, colegio: document.getElementById('admin-arb-colegio').value.trim() || 'Independiente', lugarNacimiento: document.getElementById('admin-arb-lugar-nac').value.trim(), fechaNacimiento: document.getElementById('admin-arb-fecha-nac').value, nacionalidad: document.getElementById('admin-arb-nacionalidad').value.trim() || 'MEXICANA', foto: fotoB64, pin: pinNuevoArbitro });
@@ -4741,7 +4743,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
 
             document.getElementById('form-add-cancha').addEventListener('submit', async function (e) {
                 e.preventDefault();
-                const fotoB64 = await convertirImagenABase64(document.getElementById('admin-cancha-foto'));
+                const fotoB64 = await convertirImagenABase64(document.getElementById('admin-cancha-foto'), 800, 0.75);
                 db.campos.push({ id: Date.now(), nombre: document.getElementById('admin-cancha-nombre').value.trim(), direccion: document.getElementById('admin-cancha-direccion').value.trim(), foto: fotoB64 });
                 this.reset(); guardarDB(); alert("Cancha registrada correctamente.");
             });
@@ -4793,7 +4795,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                     eq.auxiliar = aNombrePropio(document.getElementById('edit-auxiliar').value);
                     if (nuevaFoto) eq.escudo = nuevaFoto;
                     else if (quitarFoto) eq.escudo = '';
-                    const nuevaFotoPlantel = await convertirImagenABase64(document.getElementById('edit-foto-plantel'));
+                    const nuevaFotoPlantel = await convertirImagenABase64(document.getElementById('edit-foto-plantel'), 800);
                     const quitarFotoPlantel = document.getElementById('edit-quitar-foto-plantel').checked;
                     if (nuevaFotoPlantel) eq.fotoGrupal = nuevaFotoPlantel;
                     else if (quitarFotoPlantel) eq.fotoGrupal = '';
@@ -4874,7 +4876,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
 
                 db.historialFichajes.unshift({ id: Date.now(), jugador: jugador.nombre, origen: nombreOrigen, destino: nombreDestino, fecha: new Date().toLocaleDateString('es-MX') });
                 const tituloTraspaso = destino === 'libre' ? '🕊️ Jugador dejado en libertad' : '🔄 Traspaso de jugador';
-                agregarAvisoRegistro('traspaso', tituloTraspaso, `${escapeHtml(jugador.nombre)} pasa de ${nombreOrigen} a ${nombreDestino}.`, { jugadorId: jugador.id, imagen: jugador.foto || '' });
+                agregarAvisoRegistro('traspaso', tituloTraspaso, `${escapeHtml(jugador.nombre)} pasa de ${nombreOrigen} a ${nombreDestino}.`, { jugadorId: jugador.id });
                 this.reset(); guardarDB(); alert(`Transferencia ejecutada: ${escapeHtml(jugador.nombre)} -> ${nombreDestino}`);
             });
 
@@ -5051,7 +5053,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                 foto: fotoSolSegura, goles: 0, amarillas: 0, rojas: 0, xiIdeal: [], folioNum: db.contadorFolioJugadores, fechaAlta: fechaMexico(Date.now())
             });
             const nombreEquipoSol = db.equipos.find(e => e.id === sol.equipoId)?.nombre || 'Agente Libre';
-            agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${escapeHtml(nombreSol)} se une al equipo ${escapeHtml(nombreEquipoSol)}.`, { jugadorId: nuevoJugadorIdSol, imagen: fotoSolSegura });
+            agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${escapeHtml(nombreSol)} se une al equipo ${escapeHtml(nombreEquipoSol)}.`, { jugadorId: nuevoJugadorIdSol });
             db.solicitudes = db.solicitudes.filter(s => s.id !== id);
             marcarSolicitudResueltaSinPublicar(id);
             cerrarDetalleSolicitud();
@@ -5222,7 +5224,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
         }
 
         function cpHtmlTicket(c) {
-            const liga = (db.config && db.config.nombreLiga) || 'LIGA DE FUTBOL ACAPULCO';
+            const liga = nombreLigaActual();
             const anulado = c.estado === 'anulado';
             const fila = (k, v) => `<div class="cp-fila"><span>${k}</span><b>${escapeHtml(String(v === undefined || v === null || v === '' ? '-' : v))}</b></div>`;
             return `<div class="cp-ticket" id="cp-ticket">
@@ -5804,7 +5806,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                                 <p><strong>FECHA DE NACIMIENTO:</strong> ${formatearFechaCarnet(j.fechaNacimiento)}</p>
                                 <p><strong>FECHA DE EXPEDICIÓN:</strong> ${formatearFechaCarnet(c.fechaExpedicion)}</p>
                                 <p><strong>NACIONALIDAD:</strong> ${j.nacionalidad || 'MEXICANA'}</p>
-                                <p class="carnet-datos-liga">${c.nombreLiga || 'LIGA DE FUTBOL ACAPULCO'}</p>
+                                <p class="carnet-datos-liga">${escapeHtml(c.nombreLiga || nombreLigaActual())}</p>
                             </div>
                             <div class="carnet-pie">
                                 <div class="carnet-firmas">

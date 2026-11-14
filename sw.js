@@ -1,14 +1,15 @@
-// Service Worker - Liga Futbol de Acapulco
+// Service Worker - Liga de Futbol Acapulco
 // Cachea el "cascarón" del sitio y las librerías externas (Firebase, escáner, PDF)
 // para que las páginas abran aunque no haya señal en la cancha. Los datos en vivo
 // siguen viniendo de Firebase; la propia página guarda lo capturado y lo sube al volver el internet.
 
-const CACHE_NAME = 'liga-acapulco-v3';
+const CACHE_NAME = 'liga-acapulco-v4';
 const APP_SHELL = [
     './index.html',
     './admin.html',
     './arbitro.html',
     './manifest.json',
+    './config.js',
     './icon-192.png',
     './icon-512.png'
 ];

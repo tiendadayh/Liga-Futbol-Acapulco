@@ -3,6 +3,7 @@
 
 <head><script>try{if(localStorage.getItem('liga_theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
     <meta charset="UTF-8">
+    <script src="config.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Liga de Futbol Acapulco - Panel de Árbitros</title>
     <meta name="description" content="Panel de árbitros de la Liga de Futbol Acapulco: consulta y gestión de los partidos asignados a dirigir.">
@@ -1105,7 +1106,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             });
         })();
 
-        const firebaseConfig = {
+        const firebaseConfig = (window.LIGA_CONFIG && window.LIGA_CONFIG.firebase) || {
             apiKey: "AIzaSyDG07c_D4qtCJXap9J1ppU8xLk3IdWYOXo",
             authDomain: "liga-premier-acapulco.firebaseapp.com",
             databaseURL: "https://liga-premier-acapulco-default-rtdb.firebaseio.com",
@@ -1290,10 +1291,10 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             });
         }
 
-        const NOMBRE_LIGA_DEFAULT = 'Liga de Futbol Acapulco';
+        const NOMBRE_LIGA_DEFAULT = (window.LIGA_CONFIG && window.LIGA_CONFIG.nombre) || 'Liga de Futbol Acapulco';
         function nombreLigaActual() {
             const n = (typeof db !== 'undefined' && db && db.config && db.config.nombreLiga) ? String(db.config.nombreLiga).trim() : '';
-            return (!n || /cosmar/i.test(n)) ? NOMBRE_LIGA_DEFAULT : n;
+            return n ? n : NOMBRE_LIGA_DEFAULT;
         }
 
         function aplicarNombreLiga() {
