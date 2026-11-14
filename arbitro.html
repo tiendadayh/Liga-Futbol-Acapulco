@@ -595,6 +595,7 @@ td,.marcador,.mm-marcador,.num{font-variant-numeric:tabular-nums}
 </style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-analytics-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
@@ -1311,13 +1312,56 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             logo.src = (db.config && db.config.logoSitio) ? db.config.logoSitio : LOGO_LIGA_DEFAULT;
         }
 
-        function iniciarSesionArbitro() {
+        // ===== PIN validado por Firebase (opción seguridadPinArbitros en config.js) =====
+        // Con la opción activa, los PIN ya no están en la base pública: se consulta pin_arbitros/<PIN>
+        // y se registra la sesión en arbitros_ok/<uid>; las reglas de Firebase solo dejan escribir a
+        // quien tenga ese registro. La primera vez en cada teléfono necesita internet; después el
+        // teléfono recuerda el PIN y puede entrar sin señal.
+        const SEG_PIN_ARB = !!(window.LIGA_CONFIG && window.LIGA_CONFIG.seguridadPinArbitros);
+        const CLAVE_CACHE_PIN = 'arbitro_pin_cache';
+        function leerCachePinArbitro() { try { return JSON.parse(localStorage.getItem(CLAVE_CACHE_PIN) || 'null'); } catch (e) { return null; } }
+        function conTiempoPin(p, ms) { return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('tiempo agotado')), ms))]); }
+        async function validarPinArbitroSeguro(pin) {
+            if (!/^[0-9]{4,12}$/.test(pin)) return { ok: false, motivo: 'incorrecto' };
+            try {
+                const auth = firebase.auth();
+                if (!auth.currentUser) await conTiempoPin(auth.signInAnonymously(), 8000);
+                const info = (await conTiempoPin(firebase.database().ref('pin_arbitros/' + pin).once('value'), 8000)).val();
+                if (!info) return { ok: false, motivo: 'incorrecto' };
+                await conTiempoPin(firebase.database().ref('arbitros_ok/' + auth.currentUser.uid).set(String(pin)), 8000);
+                const dato = { pin: String(pin), id: info.id, nombre: info.nombre };
+                try { localStorage.setItem(CLAVE_CACHE_PIN, JSON.stringify(dato)); } catch (e) { }
+                return { ok: true, arb: dato };
+            } catch (err) {
+                const c = leerCachePinArbitro();
+                if (c && String(c.pin) === String(pin)) return { ok: true, arb: c };
+                const sinPermiso = err && (err.code === 'PERMISSION_DENIED' || /permission/i.test(err.message || ''));
+                return { ok: false, motivo: sinPermiso ? 'permiso' : 'red' };
+            }
+        }
+
+        async function iniciarSesionArbitro() {
             const pin = document.getElementById('login-pin').value.trim();
             const errEl = document.getElementById('login-error-msg');
             errEl.textContent = '';
             if (!pin) { errEl.textContent = 'Escribe tu PIN de acceso.'; return; }
-            const arb = (db.arbitros || []).find(a => a.pin && String(a.pin) === String(pin));
-            if (!arb) { errEl.textContent = 'PIN incorrecto. Verifica con la administración.'; return; }
+            let arb;
+            if (SEG_PIN_ARB) {
+                errEl.textContent = 'Validando PIN...';
+                const r = await validarPinArbitroSeguro(pin);
+                if (!r.ok) {
+                    errEl.textContent = r.motivo === 'incorrecto' ? 'PIN incorrecto. Verifica con la administración.'
+                        : r.motivo === 'permiso' ? 'No se pudo validar el PIN (sin permiso). Avisa a la administración.'
+                        : 'Sin conexión: la primera vez en este teléfono necesitas internet para entrar.';
+                    return;
+                }
+                errEl.textContent = '';
+                const porId = (db.arbitros || []).find(a => String(a.id) === String(r.arb.id));
+                arb = { nombre: porId ? porId.nombre : r.arb.nombre };
+            } else {
+                arb = (db.arbitros || []).find(a => a.pin && String(a.pin) === String(pin));
+                if (!arb) { errEl.textContent = 'PIN incorrecto. Verifica con la administración.'; return; }
+            }
             arbitroSesion = arb.nombre;
             try { sessionStorage.setItem('arbitro_pin_sesion', pin); } catch (err) { /* almacenamiento no disponible, no es crítico */ }
             document.getElementById('pantalla-login').style.display = 'none';
@@ -1352,7 +1396,14 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             let pinGuardado = null;
             try { pinGuardado = sessionStorage.getItem('arbitro_pin_sesion'); } catch (err) { return; }
             if (!pinGuardado) return;
-            const arb = (db.arbitros || []).find(a => a.pin && String(a.pin) === String(pinGuardado));
+            let arb;
+            if (SEG_PIN_ARB) {
+                const c = leerCachePinArbitro();
+                if (!c || String(c.pin) !== String(pinGuardado)) return;
+                arb = (db.arbitros || []).find(a => String(a.id) === String(c.id));
+            } else {
+                arb = (db.arbitros || []).find(a => a.pin && String(a.pin) === String(pinGuardado));
+            }
             if (!arb) return;
             arbitroSesion = arb.nombre;
             document.getElementById('pantalla-login').style.display = 'none';

@@ -2993,6 +2993,41 @@ html[data-theme="dark"] #caja-resumen-hoy{
         }
 
         const NOMBRE_LIGA_DEFAULT = (window.LIGA_CONFIG && window.LIGA_CONFIG.nombre) || 'Liga de Futbol Acapulco';
+        // ===== PIN de árbitros fuera de la base pública (activar con seguridadPinArbitros en config.js) =====
+        // Con la opción activa, los PIN se guardan en el nodo 'pin_arbitros' (solo el admin lo puede listar)
+        // y se quitan de liga_premier_db, que es de lectura pública. Si la opción está apagada, nada cambia.
+        const SEG_PIN_ARB = !!(window.LIGA_CONFIG && window.LIGA_CONFIG.seguridadPinArbitros);
+        let pinsArbitrosCargados = false;
+        function quitarPinsArbitros(datos) {
+            if (!SEG_PIN_ARB || !datos || !Array.isArray(datos.arbitros)) return datos;
+            const copia = Object.assign({}, datos);
+            copia.arbitros = datos.arbitros.map(a => { const c = Object.assign({}, a); delete c.pin; return c; });
+            return copia;
+        }
+        function publicarPinsArbitros(datos) {
+            if (!SEG_PIN_ARB) return Promise.resolve();
+            const mapa = {};
+            (datos.arbitros || []).forEach(a => { if (a && a.pin) mapa[String(a.pin)] = { id: a.id, nombre: a.nombre }; });
+            return firebase.database().ref('pin_arbitros').set(mapa);
+        }
+        function restaurarPinsArbitros(obj) {
+            if (!SEG_PIN_ARB || !obj || !Array.isArray(obj.arbitros)) return Promise.resolve(obj);
+            const locales = {};
+            try { (db && Array.isArray(db.arbitros) ? db.arbitros : []).forEach(a => { if (a && a.pin) locales[a.id] = a.pin; }); } catch (e) { }
+            return firebase.database().ref('pin_arbitros').once('value').then(snap => {
+                const m = snap.val() || {}, porId = {};
+                Object.keys(m).forEach(p => { if (m[p] && m[p].id !== undefined) porId[m[p].id] = p; });
+                obj.arbitros.forEach(a => { if (a && !a.pin) { const p = porId[a.id] !== undefined ? porId[a.id] : locales[a.id]; if (p) a.pin = p; } });
+                pinsArbitrosCargados = true;
+                return obj;
+            }).catch(() => {
+                obj.arbitros.forEach(a => { if (a && !a.pin && locales[a.id]) a.pin = locales[a.id]; });
+                return obj;
+            });
+        }
+        function leerDbNube() {
+            return firebaseDbRef.once('value').then(s => { const v = s.val(); return restaurarPinsArbitros(v).then(() => ({ val: () => v })); });
+        }
         function nombreLigaActual() {
             const n = (typeof db !== 'undefined' && db && db.config && db.config.nombreLiga) ? String(db.config.nombreLiga).trim() : '';
             return n ? n : NOMBRE_LIGA_DEFAULT;
@@ -3154,6 +3189,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
             if (user) {
                 pantalla.style.display = 'none';
                 iniciarEscuchaConectados();
+                if (SEG_PIN_ARB) restaurarPinsArbitros(db).then(() => { try { localStorage.setItem('liga_premier_db', JSON.stringify(db)); } catch (e) { } });
             } else {
                 pantalla.style.display = 'flex';
                 detenerEscuchaConectados();
@@ -3250,7 +3286,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
             if (obj.config.nombreLiga === undefined) obj.config.nombreLiga = '';
             (obj.comunicados || []).forEach(c => { if (c && c.jugadorId && c.imagen) { const jj = (obj.jugadores || []).find(x => x.id === c.jugadorId); if (jj && jj.foto) c.imagen = ''; } });
             (obj.equipos || []).forEach(eq => { if (!eq.pin) eq.pin = String(Math.floor(100000 + Math.random() * 900000)); });
-            (obj.arbitros || []).forEach(arb => { if (!arb.pin) arb.pin = String(Math.floor(100000 + Math.random() * 900000)); });
+            (obj.arbitros || []).forEach(arb => { if (!arb.pin && (!SEG_PIN_ARB || pinsArbitrosCargados)) arb.pin = String(Math.floor(100000 + Math.random() * 900000)); });
             // Folio secuencial del N° CAM (00001, 00002...): si es la primera vez que se
             // corre esto, se les asigna a los jugadores YA registrados un folio en el
             // orden en que fueron dados de alta (por su id, que es la fecha de registro),
@@ -3703,7 +3739,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
             if (!baseNubeArbitro) return [];      // no se pudo ver la nube al abrir: se publica como antes
             mostrarFirebaseStatus('⏳ Revisando si el árbitro capturó algo nuevo...', false);
             const snap = await Promise.race([
-                firebaseDbRef.once('value'),
+                leerDbNube(),
                 new Promise((_, rechazar) => setTimeout(() => rechazar(new Error('tiempo agotado')), 8000))
             ]);
             const remoto = snap.val() || {};
@@ -3767,7 +3803,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
 
             let promesa;
             try {
-                promesa = firebaseDbRef.set(datos);
+                promesa = publicarPinsArbitros(datos).then(() => firebaseDbRef.set(quitarPinsArbitros(datos)));
             } catch (err) {
                 terminado = true; clearTimeout(aviso);
                 mostrarFirebaseStatus('❌ No se pudo publicar: ' + err.message, true);
@@ -3798,7 +3834,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
         async function traerDeFirebase() {
             if (hayCambiosSinPublicar && !(await confirmarAccion('Tienes cambios sin publicar en esta pantalla; al traer la última versión publicada los perderás. ¿Continuar?'))) return;
             mostrarFirebaseStatus('⏳ Descargando última versión publicada...', false);
-            firebaseDbRef.once('value').then(snapshot => {
+            leerDbNube().then(snapshot => {
                 const datosNube = snapshot.val();
                 if (!datosNube) {
                     mostrarFirebaseStatus('⚠️ Todavía no hay nada publicado en la nube.', true);
@@ -3833,7 +3869,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
 
         // Al abrir admin.html, trae automáticamente la última versión publicada
         // (si no hay nada aún publicado, se queda con lo que ya tenías guardado localmente).
-        firebaseDbRef.once('value').then(snapshot => {
+        leerDbNube().then(snapshot => {
             const datosNube = snapshot.val();
             if (datosNube) {
                 guardarBaseNube(datosNube);
