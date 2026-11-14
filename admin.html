@@ -2617,7 +2617,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                 detalle.className = 'conectado-seccion';
                 const enLinea = !!(conectadosActuales && conectadosActuales[p.v] && conectadosVivos().some(par => par[0] === p.v));
                 let t = 'Entró a las ' + horaMexico(p.primera);
-                if (p.entradas > 1) t += ' · ' + p.entradas + ' entradas';
+                if (p.entradas > 1) t += ' · ' + p.entradas + ' entradas · Última entrada a las ' + horaMexico(p.ultima);
                 t += enLinea ? ' · 🟢 En línea ahora' : (p.salida ? ' · Salió a las ' + horaMexico(p.salida) : '');
                 detalle.textContent = t;
                 datos.appendChild(nombre);
