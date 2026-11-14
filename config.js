@@ -7,6 +7,10 @@
 window.LIGA_CONFIG = {
   nombre: 'Liga de Futbol Acapulco',
 
+  // PIN de árbitros validado por Firebase (los PIN dejan de ser públicos).
+  // Déjalo en false hasta aplicar las reglas del PASO A y probarlo; ver guía.
+  seguridadPinArbitros: false,
+
   // Contacto y datos legales (aviso de privacidad / pie de página)
   whatsapp: '744 241 1773',
   ciudad: 'Acapulco de Juárez, Guerrero',
