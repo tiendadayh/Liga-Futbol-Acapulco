@@ -14,6 +14,8 @@ window.LIGA_CONFIG = {
   // Contacto y datos legales (aviso de privacidad / pie de página)
   whatsapp: '744 241 1773',
   ciudad: 'Acapulco de Juárez, Guerrero',
+  // Página de Facebook de la liga (icono del pie de página). Déjalo '' para ocultarlo.
+  facebook: 'https://www.facebook.com/share/1BucKwSPMD/',
   correo: '',
   domicilio: '',
 

@@ -725,6 +725,7 @@
         .admin-box.vent > .vent-cuerpo { padding: 16px 0 22px; }
         .admin-box.vent.cerrada > .vent-cuerpo { display: none; }
         .admin-grid > .admin-box.vent:not(.cerrada) { grid-column: 1 / -1; }
+        .admin-grid > .admin-box.vent { margin: 0 !important; }
         .vent-barra { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; margin: 0 0 16px; position: relative; z-index: 1; }
         .vent-barra button { background: var(--dark); color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 600; cursor: pointer; }
         .vent-barra button.sec { background: #e8edf3; color: var(--dark); }
@@ -7870,6 +7871,26 @@ ${cuerpo}`;
             armar();
         })();
 
+    </script>
+    <script>
+        /* ===== Todos los apartados como tarjetas en una sola cuadrícula (cerrados por defecto) ===== */
+        (function () {
+            try {
+                var grid = document.querySelector('.admin-grid');
+                if (!grid) return;
+                var ref = grid.firstElementChild;
+                var padres = [];
+                Array.prototype.slice.call(document.querySelectorAll('.admin-box.vent')).forEach(function (b) {
+                    if (grid.contains(b)) return;
+                    if (padres.indexOf(b.parentNode) === -1) padres.push(b.parentNode);
+                    var antes = !!(grid.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_PRECEDING);
+                    if (antes) grid.insertBefore(b, ref); else grid.appendChild(b);
+                });
+                padres.forEach(function (p) {
+                    if (p !== grid && p !== document.body && !p.firstElementChild) p.style.display = 'none';
+                });
+            } catch (e) { console.warn('No se pudo ordenar las tarjetas del panel:', e); }
+        })();
     </script>
 
 <script id="liga-diseno-js">
