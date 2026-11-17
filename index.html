@@ -1533,16 +1533,26 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
 .ficha-carta-tipo.ct-oro{background:linear-gradient(135deg,#fff08a,#f2a900)!important;color:#3a2600!important;border-color:#8a5a00!important}
 .ficha-carta-tipo.ct-bloqueada b{font-size:1.1rem!important;letter-spacing:.02em;text-transform:none}
 .ficha-carta-tipo.ct-bloqueada small{font-size:.8rem!important;font-weight:600!important}
-</style></head>
+</style><style id="liga-header-acciones">
+#header-acciones{position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:3;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap}
+#header-acciones>button{position:static!important;margin:0!important;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:6px;top:auto!important;left:auto!important;right:auto!important}
+#header-acciones>.install-btn:not(.visible){display:none}
+.site-header-content .site-header-logo{order:2}
+@media (min-width:601px){header#site-header{padding-top:76px!important}}
+@media (max-width:600px){#header-acciones{position:static;transform:none;flex-wrap:wrap;margin:0 0 10px}#header-acciones>button{padding:7px 12px!important;font-size:.72rem!important}}
+</style>
+</head>
 <body><div id="liga-skel" aria-hidden="true"><div class="sk sk-h"></div><div class="sk-w"><div class="sk-row"><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div></div></div>
 
     <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 
     <header id="site-header">
-        <button class="theme-switch" onclick="toggleTheme(event)">🌓 Modo</button>
-        <button class="alerta-gol-switch" id="btn-alerta-gol" onclick="cambiarModoAlertaGol()" title="Alertas de gol">🔔 Goles</button>
-        <button class="alerta-gol-switch" id="btn-notif-sistema" style="top:64px;" onclick="alternarNotificaciones()" title="Avisos en el celular">📲 Avisos</button>
-        <button class="install-btn" id="btn-instalar-app" onclick="instalarAppPWA()">📲 Instalar App</button>
+        <div id="header-acciones">
+            <button class="theme-switch" onclick="toggleTheme(event)">🌓 Modo</button>
+            <button class="alerta-gol-switch" id="btn-alerta-gol" onclick="cambiarModoAlertaGol()" title="Alertas de gol">🔔 Goles</button>
+            <button class="alerta-gol-switch" id="btn-notif-sistema" onclick="alternarNotificaciones()" title="Avisos en el celular">📲 Avisos</button>
+            <button class="install-btn" id="btn-instalar-app" onclick="instalarAppPWA()">📲 Instalar App</button>
+        </div>
         <div class="header-shine" id="header-shine"></div>
         <div class="site-header-content">
             <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='white' stroke='%230b2f5c' stroke-width='4'/><polygon points='50,30 69,44 62,66 38,66 31,44' fill='%230b2f5c'/><path d='M50 30V6M69 44L92 36M62 66L77 86M38 66L23 86M31 44L8 36' stroke='%230b2f5c' stroke-width='4' fill='none'/></svg>"
@@ -6971,7 +6981,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.bo
     if (activas()) { localStorage.setItem(CLAVE, '0'); pintar(); return mostrarToast('Avisos del celular desactivados.', 'info', 2500); }
     var p = Notification.permission; if (p !== 'granted') p = await Notification.requestPermission();
     if (p !== 'granted') return mostrarToast('No diste permiso de notificaciones. Puedes activarlo en los ajustes del navegador.', 'info', 5000);
-    localStorage.setItem(CLAVE, '1'); pintar(); prev = null; foto();
+    localStorage.setItem(CLAVE, '1'); pintar(); prev = null; guardarVisto(Date.now());
     mostrar('🔔 Avisos activados', obtenerEquipoFavoritoId() ? 'Te avisaremos de los partidos de tu equipo y de los avisos de la liga.' : 'Elige "Mi equipo" para recibir los goles de tu equipo. Los avisos de la liga ya te llegarán.', 'bienvenida');
   };
   function foto() {
@@ -6980,8 +6990,29 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.bo
     (db.comunicados || []).forEach(function (c) { s.c[c.id] = 1; });
     return s;
   }
+  var CLAVE_TS = 'liga_notif_ultimo_aviso';
+  function ultimoVisto() { try { return parseInt(localStorage.getItem(CLAVE_TS), 10) || 0; } catch (e) { return 0; } }
+  function guardarVisto(t) { try { if (t > ultimoVisto()) localStorage.setItem(CLAVE_TS, String(t)); } catch (e) { } }
+  function tsAviso(c) { return c.ts || c.id || 0; }
+  function textoAviso(c) { return String(c.texto || c.mensaje || c.contenido || 'Hay un aviso nuevo en el tablón.').slice(0, 140); }
+  function avisarComunicados(lista) {
+    // Máximo 3 notificaciones sueltas; si hay más, una sola de resumen (para no llenar el celular).
+    if (lista.length > 3) { mostrar('📢 ' + lista.length + ' avisos nuevos de la liga', 'Entra al Tablón de Avisos para verlos.', 'resumen-avisos'); return; }
+    lista.forEach(function (c) { mostrar('📢 ' + (c.titulo || 'Aviso de la liga'), textoAviso(c), 'c' + c.id); });
+  }
   function revisar() {
-    var ahora = foto(); if (!prev) { prev = ahora; return; }
+    var ahora = foto();
+    var DIA = 24 * 60 * 60 * 1000, vistoAntes = ultimoVisto(), maxTs = vistoAntes;
+    (db.comunicados || []).forEach(function (c) { if (tsAviso(c) > maxTs) maxTs = tsAviso(c); });
+    if (!prev) {
+      // Primera lectura al abrir la app: avisar de lo que llegó mientras estaba cerrada (solo si hay un último visto y es de hoy).
+      if (vistoAntes) {
+        try {
+          avisarComunicados((db.comunicados || []).filter(function (c) { return tsAviso(c) > vistoAntes && (Date.now() - tsAviso(c)) <= DIA; }).sort(function (a, b) { return tsAviso(a) - tsAviso(b); }));
+        } catch (e) { }
+      }
+      guardarVisto(maxTs); prev = ahora; return;
+    }
     try {
       var fav = obtenerEquipoFavoritoId(), nom = function (id) { var e = db.equipos.find(function (x) { return x.id === id; }); return e ? e.nombre : '?'; };
       (db.partidos || []).forEach(function (p) {
@@ -6991,8 +7022,9 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.bo
         else if (!a.v && b.v && !b.j) mostrar('🟢 Empezó el partido', m, 'p' + p.id);
         else if (!a.j && b.j) mostrar('🏁 Final del partido', m, 'p' + p.id);
       });
-      (db.comunicados || []).forEach(function (c) { if (!prev.c[c.id]) mostrar('📢 ' + (c.titulo || 'Aviso de la liga'), String(c.texto || c.mensaje || c.contenido || 'Hay un aviso nuevo en el tablón.').slice(0, 140), 'c' + c.id); });
+      avisarComunicados((db.comunicados || []).filter(function (c) { return !prev.c[c.id] && tsAviso(c) > vistoAntes; }));
     } catch (e) { }
+    guardarVisto(maxTs);
     prev = ahora;
   }
   function ini() {
