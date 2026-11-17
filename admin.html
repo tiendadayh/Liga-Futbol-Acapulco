@@ -4660,7 +4660,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                     const pinNuevoEquipo = generarPin6Digitos();
                     db.equipos.push({ id: newId, nombre: nombreNuevoEquipo, escudo: escudoBase64, fotoGrupal: fotoBase64, pin: pinNuevoEquipo, entrenador: aNombrePropio(document.getElementById('admin-eq-entrenador').value), auxiliar: aNombrePropio(document.getElementById('admin-eq-auxiliar').value) });
                     db.finanzas[newId] = { adeudoArbitrajes: 0, multasLiquidadas: 0 };
-                    agregarAvisoRegistro('registro', '🆕 Nuevo equipo registrado', `El equipo "${nombreNuevoEquipo}" se ha registrado en la liga.`);
+                    agregarAvisoRegistro('registro', 'Nuevo equipo registrado', `El equipo "${nombreNuevoEquipo}" se ha registrado en la liga.`);
                     this.reset();
                     if (guardarDB() !== false) mostrarPinRegistroEquipo(newId, true);
                 } catch (err) {
@@ -4747,7 +4747,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                     foto: jugadorBase64, goles: 0, amarillas: 0, rojas: 0, xiIdeal: [], folioNum: db.contadorFolioJugadores, fechaAlta: fechaMexico(Date.now())
                 });
                 const nombreEquipoNuevoJug = db.equipos.find(e => e.id === equipoIdSel)?.nombre || 'Agente Libre';
-                agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${escapeHtml(nombreSel)} se une al equipo ${escapeHtml(nombreEquipoNuevoJug)}.`, { jugadorId: nuevoJugadorId });
+                agregarAvisoRegistro('registro', 'Nuevo jugador registrado', `${escapeHtml(nombreSel)} se une al equipo ${escapeHtml(nombreEquipoNuevoJug)}.`, { jugadorId: nuevoJugadorId });
                 this.reset();
                 document.getElementById('admin-jug-foto-preview').style.display = 'none';
                 guardarDB(); alert("Jugador registrado.");
@@ -4815,7 +4815,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                 const nombreNuevoArbitro = document.getElementById('admin-arb-nombre').value.trim();
                 const pinNuevoArbitro = generarPin6Digitos();
                 db.arbitros.push({ id: Date.now(), nombre: nombreNuevoArbitro, colegio: document.getElementById('admin-arb-colegio').value.trim() || 'Independiente', lugarNacimiento: document.getElementById('admin-arb-lugar-nac').value.trim(), fechaNacimiento: document.getElementById('admin-arb-fecha-nac').value, nacionalidad: document.getElementById('admin-arb-nacionalidad').value.trim() || 'MEXICANA', foto: fotoB64, pin: pinNuevoArbitro });
-                agregarAvisoRegistro('registro', '🆕 Nuevo árbitro registrado', `${nombreNuevoArbitro} se ha integrado al cuerpo arbitral de la liga.`, { imagen: fotoB64 || '' });
+                agregarAvisoRegistro('registro', 'Nuevo árbitro registrado', `${nombreNuevoArbitro} se ha integrado al cuerpo arbitral de la liga.`, { imagen: fotoB64 || '' });
                 this.reset();
                 if (guardarDB() !== false) mostrarPinArbitro(db.arbitros[db.arbitros.length - 1].id, true);
             });
@@ -5132,7 +5132,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                 foto: fotoSolSegura, goles: 0, amarillas: 0, rojas: 0, xiIdeal: [], folioNum: db.contadorFolioJugadores, fechaAlta: fechaMexico(Date.now())
             });
             const nombreEquipoSol = db.equipos.find(e => e.id === sol.equipoId)?.nombre || 'Agente Libre';
-            agregarAvisoRegistro('registro', '🆕 Nuevo jugador registrado', `${escapeHtml(nombreSol)} se une al equipo ${escapeHtml(nombreEquipoSol)}.`, { jugadorId: nuevoJugadorIdSol });
+            agregarAvisoRegistro('registro', 'Nuevo jugador registrado', `${escapeHtml(nombreSol)} se une al equipo ${escapeHtml(nombreEquipoSol)}.`, { jugadorId: nuevoJugadorIdSol });
             db.solicitudes = db.solicitudes.filter(s => s.id !== id);
             marcarSolicitudResueltaSinPublicar(id);
             cerrarDetalleSolicitud();
@@ -7157,7 +7157,7 @@ ${cuerpo}`;
 
             const listaComunicados = document.getElementById('gestion-lista-comunicados');
             if (listaComunicados) {
-                const iconoTipo = { aviso: '📢', sancion: '⚠️', cronica: '📰', registro: '🆕', traspaso: '🔄' };
+                const iconoTipo = { aviso: '📢', sancion: '⚠️', cronica: '📰', registro: '📋', traspaso: '🔄' };
                 listaComunicados.innerHTML = (db.comunicados || []).length ? db.comunicados.map(c => {
                     const horasRestantes = Math.max(0, Math.ceil((duracionAvisoMs(c) - (Date.now() - momentoAviso(c))) / (60 * 60 * 1000)));
                     const textoRestante = horasRestantes > 48 ? Math.ceil(horasRestantes / 24) + ' días' : horasRestantes + ' h';

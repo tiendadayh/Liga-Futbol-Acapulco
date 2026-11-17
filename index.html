@@ -1549,6 +1549,17 @@ header#site-header .site-header-content{padding:0 6px;min-height:0}
 }
 @media (min-width:601px){header#site-header{padding-top:76px!important}}
 </style>
+<style id="liga-tablon-carrusel">
+.tb-wrap{display:flex;align-items:center;gap:6px}
+.tb-pista{flex:1;min-width:0;display:flex;gap:14px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:6px 4px 14px;scrollbar-width:thin}
+.tb-pista>.tablon-card-3d{flex:0 0 min(310px,84%);min-width:0;scroll-snap-align:start;align-self:stretch}
+.tb-pista>.estado-vacio{flex:1 0 100%}
+.tb-pista .tablon-card-3d h4{font-size:.95rem;line-height:1.25;text-wrap:balance}
+.tb-pista .tablon-card-3d p{font-size:.85rem;line-height:1.4;text-wrap:pretty;overflow-wrap:break-word}
+.tb-flecha{flex:0 0 auto;background:none;border:none;color:#1f5fd6;font-size:1.7rem;cursor:pointer;padding:4px 6px;line-height:1}
+.tb-flecha:hover{color:#0b3a99}
+@media (max-width:600px){.tb-flecha{display:none}.tb-pista>.tablon-card-3d{flex-basis:86%}}
+</style>
 </head>
 <body><div id="liga-skel" aria-hidden="true"><div class="sk sk-h"></div><div class="sk-w"><div class="sk-row"><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div></div></div>
 
@@ -1654,7 +1665,12 @@ header#site-header .site-header-content{padding:0 6px;min-height:0}
         <!-- TABLÓN DE ANUNCIOS -->
         <section id="tablon-sec" class="card-section">
             <h2>📢 Tablón de Avisos y Crónicas</h2>
-            <div id="noticias-contenedor" class="grid"></div>
+            <div class="tb-wrap">
+                <button class="tb-flecha" type="button" aria-label="Anterior" onclick="moverTablon(-1)">&#10094;</button>
+                <div id="noticias-contenedor" class="tb-pista"></div>
+                <button class="tb-flecha" type="button" aria-label="Siguiente" onclick="moverTablon(1)">&#10095;</button>
+            </div>
+            <script>function moverTablon(d){var p=document.getElementById('noticias-contenedor');if(!p)return;var c=p.querySelector('.tablon-card-3d');var paso=c?c.getBoundingClientRect().width+14:300;p.scrollBy({left:d*paso,behavior:'smooth'});}</script>
         </section>
 
         <!-- ENCUESTAS RÁPIDAS PÚBLICAS -->
@@ -3343,7 +3359,7 @@ header#site-header .site-header-content{padding:0 6px;min-height:0}
                 sancion: { color: '#c62828', etiqueta: '⚠️ Sanción' },
                 habilitado: { color: '#2e7d32', etiqueta: '✅ Habilitado' },
                 cronica: { color: '#1f8fd6', etiqueta: '📰 Crónica' },
-                registro: { color: '#2e7d32', etiqueta: '🆕 Registro' },
+                registro: { color: '#2e7d32', etiqueta: 'Registro' },
                 traspaso: { color: '#6a1b9a', etiqueta: '🔄 Traspaso' },
                 cumple: { color: '#e91e63', etiqueta: '🎂 Cumpleaños' }
             };
@@ -3416,7 +3432,7 @@ header#site-header .site-header-content{padding:0 6px;min-height:0}
                                <img src="${fotoJugador || 'https://placehold.co/60'}" alt="${escapeHtml(jugadorAviso.nombre)}" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid ${et.color}; flex-shrink:0;" loading="lazy">
                                <div style="display:flex; flex-direction:column; gap:2px; min-width:0;">
                                    <span class="badge-tag" style="--tag-color:${et.color};">${et.etiqueta}</span>
-                                   <span style="font-size:0.78rem; font-weight:600; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(jugadorAviso.nombre)} · ${equipoAviso}</span>
+                                   <span style="font-size:0.78rem; font-weight:600; color:var(--text-muted); white-space:normal; line-height:1.25;">${escapeHtml(jugadorAviso.nombre)} · ${equipoAviso}</span>
                                </div>
                            </div>`
                         : (c.imagen ? `<img src="${c.imagen}" alt="${c.titulo}" style="width:100%; height:150px; object-fit:cover;" loading="lazy">` : '') + franjaEscudos
@@ -3426,7 +3442,7 @@ header#site-header .site-header-content{padding:0 6px;min-height:0}
                             ${jugadorAviso ? '' : `<span class="badge-tag" style="--tag-color:${et.color};">${et.etiqueta}</span>`}
                             ${c.fecha ? `<span style="font-size:0.75rem; color:var(--text-muted);">${c.fecha}</span>` : ''}
                         </div>
-                        <h4 style="margin:0 0 6px;">${c.titulo}</h4>
+                        <h4 style="margin:0 0 6px;">${String(c.titulo || '').replace(/🆕\s*/g, '')}</h4>
                         <p style="font-size:0.85rem; white-space:pre-line; margin:0;">${c.contenido}</p>
                         ${jugadorAviso ? `<p style="font-size:0.78rem; font-weight:600; color:${et.color}; margin:10px 0 0;">👁️ Ver ficha completa del jugador →</p>` : ''}
                     </div>
@@ -4085,7 +4101,7 @@ header#site-header .site-header-content{padding:0 6px;min-height:0}
         // Banner de bienvenida: muestra el aviso más reciente del Tablón al entrar al sitio.
         // Se guarda en este navegador cuál fue el último aviso visto, así que solo aparece
         // de nuevo cuando hay un aviso NUEVO (no en cada visita ni cada refresco).
-        const ICONOS_AVISO_BANNER = { aviso: '📢', sancion: '⚠️', habilitado: '✅', cronica: '📰', registro: '🆕', traspaso: '🔄' };
+        const ICONOS_AVISO_BANNER = { aviso: '📢', sancion: '⚠️', habilitado: '✅', cronica: '📰', registro: '📋', traspaso: '🔄' };
         function renderizarBannerAvisoEntrada(comunicadosVigentes) {
             const cont = document.getElementById('banner-aviso-entrada');
             if (!cont) return;
@@ -7006,7 +7022,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.bo
   function avisarComunicados(lista) {
     // Máximo 3 notificaciones sueltas; si hay más, una sola de resumen (para no llenar el celular).
     if (lista.length > 3) { mostrar('📢 ' + lista.length + ' avisos nuevos de la liga', 'Entra al Tablón de Avisos para verlos.', 'resumen-avisos'); return; }
-    lista.forEach(function (c) { mostrar('📢 ' + (c.titulo || 'Aviso de la liga'), textoAviso(c), 'c' + c.id); });
+    lista.forEach(function (c) { mostrar('📢 ' + String(c.titulo || 'Aviso de la liga').replace(/🆕\s*/g, ''), textoAviso(c), 'c' + c.id); });
   }
   function revisar() {
     var ahora = foto();
