@@ -7077,7 +7077,7 @@ ${cuerpo}`;
                 const partidosFiltrados = [...db.partidos]
                     .sort((a, b) => a.jornada - b.jornada || a.id - b.id)
                     .filter(p => {
-                        if (p.oculto && !mostrarOcultos) return false;
+                        if (p.oculto && !p.ocultoAuto && !mostrarOcultos) return false;
                         if (!filtroPartido) return true;
                         const loc = (db.equipos.find(e => e.id === p.localId)?.nombre || '').toLowerCase();
                         const vis = (db.equipos.find(e => e.id === p.visitaId)?.nombre || '').toLowerCase();
@@ -7092,7 +7092,7 @@ ${cuerpo}`;
 
                 listaPartidos.innerHTML = jornadasOrdenadas.length ? jornadasOrdenadas.map(j => {
                     const partidosJ = grupos[j];
-                    const ocultosCount = partidosJ.filter(p => p.oculto).length;
+                    const ocultosCount = partidosJ.filter(p => p.oculto && !p.ocultoAuto).length;
                     const filasJ = partidosJ.map(p => {
                         const loc = db.equipos.find(e => e.id === p.localId)?.nombre || 'Local';
                         const vis = db.equipos.find(e => e.id === p.visitaId)?.nombre || 'Visita';

@@ -1537,9 +1537,17 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
 #header-acciones{position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:3;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap}
 #header-acciones>button{position:static!important;margin:0!important;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:6px;top:auto!important;left:auto!important;right:auto!important}
 #header-acciones>.install-btn:not(.visible){display:none}
-.site-header-content .site-header-logo{order:2}
+header#site-header>.site-header-logo{position:absolute;top:14px;right:30px;width:112px;height:112px;z-index:3;margin:0}
+header#site-header .site-header-content{padding:0 150px;min-height:64px}
+@media (max-width:900px) and (min-width:601px){header#site-header>.site-header-logo{width:84px;height:84px;right:14px;top:14px}header#site-header .site-header-content{padding:0 110px}}
+@media (max-width:600px){
+header#site-header{padding:64px 10px 16px!important}
+header#site-header>.site-header-logo{position:absolute;top:6px;left:50%;width:56px;height:56px;margin:0 0 0 -28px;right:auto}
+header#site-header .site-header-content{padding:0 6px;min-height:0}
+#header-acciones{position:static;transform:none;display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:0 0 12px}
+#header-acciones>button{padding:6px 10px!important;font-size:.68rem!important;margin:0!important}
+}
 @media (min-width:601px){header#site-header{padding-top:76px!important}}
-@media (max-width:600px){#header-acciones{position:static;transform:none;flex-wrap:wrap;margin:0 0 10px}#header-acciones>button{padding:7px 12px!important;font-size:.72rem!important}}
 </style>
 </head>
 <body><div id="liga-skel" aria-hidden="true"><div class="sk sk-h"></div><div class="sk-w"><div class="sk-row"><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div></div></div>
@@ -1547,6 +1555,8 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
     <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 
     <header id="site-header">
+        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='white' stroke='%230b2f5c' stroke-width='4'/><polygon points='50,30 69,44 62,66 38,66 31,44' fill='%230b2f5c'/><path d='M50 30V6M69 44L92 36M62 66L77 86M38 66L23 86M31 44L8 36' stroke='%230b2f5c' stroke-width='4' fill='none'/></svg>"
+                alt="Escudo Liga de Futbol Acapulco" class="site-header-logo">
         <div id="header-acciones">
             <button class="theme-switch" onclick="toggleTheme(event)">🌓 Modo</button>
             <button class="alerta-gol-switch" id="btn-alerta-gol" onclick="cambiarModoAlertaGol()" title="Alertas de gol">🔔 Goles</button>
@@ -1555,8 +1565,6 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
         </div>
         <div class="header-shine" id="header-shine"></div>
         <div class="site-header-content">
-            <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='white' stroke='%230b2f5c' stroke-width='4'/><polygon points='50,30 69,44 62,66 38,66 31,44' fill='%230b2f5c'/><path d='M50 30V6M69 44L92 36M62 66L77 86M38 66L23 86M31 44L8 36' stroke='%230b2f5c' stroke-width='4' fill='none'/></svg>"
-                alt="Escudo Liga de Futbol Acapulco" class="site-header-logo">
             <div>
                 <h1 id="nombre-liga-h1">LIGA DE FUTBOL ACAPULCO</h1>
                 <p>Portal Oficial</p>
@@ -4693,7 +4701,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
         function actualizarVistaJornadas() {
             const jFiltro = parseInt(document.getElementById('select-jornada-filtro').value);
             const contenedor = document.getElementById('lista-partidos-jornada');
-            const partidos = db.partidos.filter(p => p.jornada === jFiltro && !p.oculto);
+            const partidos = db.partidos.filter(p => p.jornada === jFiltro && (!p.oculto || p.ocultoAuto));
             const favoritoId = obtenerEquipoFavoritoId();
 
             const filas = partidos.map(p => {
@@ -6196,7 +6204,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
         // seleccionada (escudos, marcador o VS, fecha/hora/cancha de cada uno), lista
         // para compartir en WhatsApp/redes. Devuelve null si esa jornada no tiene partidos.
         async function generarBlobCartelera(jornada) {
-            const partidos = (db.partidos || []).filter(p => p.jornada === jornada && !p.oculto);
+            const partidos = (db.partidos || []).filter(p => p.jornada === jornada && (!p.oculto || p.ocultoAuto));
             if (!partidos.length) return null;
 
             const cargarImagen = (src) => new Promise((resolve) => {
@@ -6497,7 +6505,7 @@ html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
 
         // Imagen "Resumen de la jornada": resultados, goleadores, MVP, tarjetas y top 5 de la tabla.
         async function generarBlobResumenJornada(jornada) {
-            const partidos = (db.partidos || []).filter(p => p.jornada === jornada && !p.oculto && p.jugado);
+            const partidos = (db.partidos || []).filter(p => p.jornada === jornada && (!p.oculto || p.ocultoAuto) && p.jugado);
             if (!partidos.length) return null;
             const cargar = src => new Promise(r => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => r(i); i.onerror = () => r(null); i.src = src || 'https://placehold.co/60'; });
             const filas = await Promise.all(partidos.map(async p => {
