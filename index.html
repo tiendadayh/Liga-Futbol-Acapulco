@@ -1552,13 +1552,17 @@ header#site-header .site-header-content{padding:0 6px;min-height:0}
 <style id="liga-tablon-carrusel">
 .tb-wrap{display:flex;align-items:center;gap:6px}
 .tb-pista{flex:1;min-width:0;display:flex;gap:14px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:6px 4px 14px;scrollbar-width:thin}
-.tb-pista>.tablon-card-3d{flex:0 0 min(310px,84%);min-width:0;scroll-snap-align:start;align-self:stretch}
+.tb-pista>.tablon-card-3d{flex:0 0 calc(50% - 7px);min-width:0;scroll-snap-align:start;align-self:stretch}
+@media (min-width:900px){.tb-pista>.tablon-card-3d{flex-basis:calc(33.333% - 10px)}}
 .tb-pista>.estado-vacio{flex:1 0 100%}
-.tb-pista .tablon-card-3d h4{font-size:.95rem;line-height:1.25;text-wrap:balance}
-.tb-pista .tablon-card-3d p{font-size:.85rem;line-height:1.4;text-wrap:pretty;overflow-wrap:break-word}
+.tb-pista .tablon-card-3d h4{font-size:.88rem;line-height:1.25;text-wrap:balance}
+.tb-pista .tablon-card-3d p{font-size:.8rem;line-height:1.4;text-wrap:pretty;overflow-wrap:break-word}
 .tb-flecha{flex:0 0 auto;background:none;border:none;color:#1f5fd6;font-size:1.7rem;cursor:pointer;padding:4px 6px;line-height:1}
 .tb-flecha:hover{color:#0b3a99}
-@media (max-width:600px){.tb-flecha{display:none}.tb-pista>.tablon-card-3d{flex-basis:86%}}
+@media (max-width:600px){.tb-flecha{display:none}.tb-pista{gap:10px}.tb-pista>.tablon-card-3d{flex-basis:calc(50% - 5px)}}
+.aviso-eq-foto{max-width:100%}
+.aviso-eq-foto img{width:68px;height:68px;object-fit:cover;border-radius:50%;padding:0}
+.aviso-eq small{font-size:.66rem;font-weight:700;line-height:1.15;text-transform:uppercase;letter-spacing:.03em;color:var(--text-muted,#5b6b82);overflow-wrap:anywhere}
 </style>
 </head>
 <body><div id="liga-skel" aria-hidden="true"><div class="sk sk-h"></div><div class="sk-w"><div class="sk-row"><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div></div></div>
@@ -3428,18 +3432,12 @@ header#site-header .site-header-content{padding:0 6px;min-height:0}
                 return `
                 <div ${abrirFicha} class="tablon-card-3d" style="background:var(--card-bg, var(--light)); border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06)); display:flex; flex-direction:column; ${jugadorAviso ? 'cursor:pointer; transition:transform .15s, box-shadow .15s;' : ''}" ${jugadorAviso ? `onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 18px -4px rgba(0,0,0,0.15)';" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06))';"` : ''}>
                     ${jugadorAviso
-                        ? `<div style="display:flex; align-items:center; gap:10px; padding:15px 15px 0;">
-                               <img src="${fotoJugador || 'https://placehold.co/60'}" alt="${escapeHtml(jugadorAviso.nombre)}" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid ${et.color}; flex-shrink:0;" loading="lazy">
-                               <div style="display:flex; flex-direction:column; gap:2px; min-width:0;">
-                                   <span class="badge-tag" style="--tag-color:${et.color};">${et.etiqueta}</span>
-                                   <span style="font-size:0.78rem; font-weight:600; color:var(--text-muted); white-space:normal; line-height:1.25;">${escapeHtml(jugadorAviso.nombre)} · ${equipoAviso}</span>
-                               </div>
-                           </div>`
+                        ? `<div class="aviso-escudos"><div class="aviso-eq aviso-eq-foto"><img src="${fotoJugador || 'https://placehold.co/60'}" alt="${escapeHtml(jugadorAviso.nombre)}" loading="lazy"><span>${escapeHtml(jugadorAviso.nombre)}</span><small>${escapeHtml(equipoAviso)}</small></div></div>`
                         : (c.imagen ? `<img src="${c.imagen}" alt="${c.titulo}" style="width:100%; height:150px; object-fit:cover;" loading="lazy">` : '') + franjaEscudos
                     }
                     <div style="padding:15px;">
-                        <div style="display:flex; justify-content:${jugadorAviso ? 'flex-end' : 'space-between'}; align-items:center; gap:8px; margin-bottom:6px;">
-                            ${jugadorAviso ? '' : `<span class="badge-tag" style="--tag-color:${et.color};">${et.etiqueta}</span>`}
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
+                            <span class="badge-tag" style="--tag-color:${et.color};">${et.etiqueta}</span>
                             ${c.fecha ? `<span style="font-size:0.75rem; color:var(--text-muted);">${c.fecha}</span>` : ''}
                         </div>
                         <h4 style="margin:0 0 6px;">${String(c.titulo || '').replace(/🆕\s*/g, '')}</h4>

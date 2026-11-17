@@ -7166,7 +7166,8 @@ ${cuerpo}`;
                     return `
                     <div class="gestion-fila">
                         <div class="gestion-info">
-                            <strong>${iconoTipo[c.tipo] || '📢'} ${c.titulo}</strong>
+                            <strong>${iconoTipo[c.tipo] || '📢'} ${String(c.titulo || '').replace(/🆕\s*/g, '')}</strong>
+                            <span style="display:block; color:var(--text, #12233f); font-size:0.78rem; white-space:pre-line;">${String(c.contenido || '').length > 150 ? String(c.contenido).slice(0, 150) + '…' : (c.contenido || '')}</span>
                             <span>${c.fecha || ''}${notaAuto}</span>
                         </div>
                         <div class="gestion-acciones">
