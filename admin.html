@@ -1425,6 +1425,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                 <label style="display:block; font-size:0.78rem; color:#555; margin-bottom:8px;">
                     <input type="checkbox" id="chk-mostrar-ocultos-partidos" onchange="renderizarGestion()"> Mostrar partidos ocultos
                 </label>
+                <button type="button" class="btn-editar-fila" style="margin-bottom:8px;" title="Borra los partidos (y sus cédulas) cuyo equipo local o visitante ya fue eliminado" onclick="limpiarPartidosHuerfanos()">🧹 Limpiar partidos de equipos eliminados</button>
                 <div id="gestion-lista-partidos" class="gestion-lista"></div>
             </div>
             <div>
@@ -3352,6 +3353,23 @@ html[data-theme="dark"] #caja-resumen-hoy{
             }, extra || {}));
         }
 
+        // Si programas varios partidos de la misma jornada seguidos, el Tablón muestra UN solo aviso
+        // ("N partidos programados") en vez de una tarjeta por cada partido.
+        function agregarAvisoPartidoProgramado(jornadaNum, jornadaTxt, linea, lineaCompleta) {
+            if (!db.comunicados) db.comunicados = [];
+            const previo = db.comunicados.find(c => c.autoGenerado && c.agrupaJornada === jornadaNum && Array.isArray(c.partidosLineas) && (Date.now() - momentoAviso(c)) <= duracionAvisoMs(c));
+            if (previo) {
+                previo.partidosLineas.push(linea);
+                previo.titulo = `📅 ${previo.partidosLineas.length} partidos programados · ${jornadaTxt}`;
+                previo.contenido = previo.partidosLineas.join('\n');
+                previo.sinEscudos = true;
+                previo.ts = Date.now();
+                previo.fecha = new Date().toLocaleDateString('es-MX');
+                return;
+            }
+            agregarAvisoRegistro('aviso', '📅 Nuevo partido programado', lineaCompleta, { agrupaJornada: jornadaNum, partidosLineas: [linea] });
+        }
+
         function limpiarAvisosExpirados() {
             if (!db.comunicados) return;
             db.comunicados = db.comunicados.filter(c => (c.tipo === 'sancion' && c.jugadorId) || (Date.now() - momentoAviso(c)) <= duracionAvisoMs(c));
@@ -4784,8 +4802,10 @@ html[data-theme="dark"] #caja-resumen-hoy{
                 const jornadaTxtPartido = etiquetaJornada(parseInt(document.getElementById('admin-part-jornada').value));
                 const fechaPartidoTxt = document.getElementById('admin-part-fecha').value;
                 const horaPartidoTxt = document.getElementById('admin-part-hora').value;
-                agregarAvisoRegistro('aviso', '📅 Nuevo partido programado',
-                    `${nombreLocPartido} vs ${nombreVisPartido} · ${jornadaTxtPartido}${fechaPartidoTxt ? ' · ' + fechaPartidoTxt : ''}${horaPartidoTxt ? ' ' + horaPartidoTxt : ''}${campoSeleccionado ? ' · ' + campoSeleccionado.nombre : ''}.`);
+                const detallePartidoTxt = `${fechaPartidoTxt ? ' · ' + fechaPartidoTxt : ''}${horaPartidoTxt ? ' ' + horaPartidoTxt : ''}${campoSeleccionado ? ' · ' + campoSeleccionado.nombre : ''}`;
+                agregarAvisoPartidoProgramado(parseInt(document.getElementById('admin-part-jornada').value), jornadaTxtPartido,
+                    `${nombreLocPartido} vs ${nombreVisPartido}${detallePartidoTxt}`,
+                    `${nombreLocPartido} vs ${nombreVisPartido} · ${jornadaTxtPartido}${detallePartidoTxt}.`);
                 this.reset(); document.getElementById('cancha-preview-partido').classList.add('hidden'); guardarDB(); alert("Partido Programado.");
             });
 
@@ -7096,7 +7116,8 @@ ${cuerpo}`;
                     const filasJ = partidosJ.map(p => {
                         const loc = db.equipos.find(e => e.id === p.localId)?.nombre || 'Local';
                         const vis = db.equipos.find(e => e.id === p.visitaId)?.nombre || 'Visita';
-                        const estado = p.cedula ? '📋 Cédula cerrada' : etiquetaEstadoVivoAdmin(p.estadoVivo);
+                        const huerfano = !db.equipos.some(e => e.id === p.localId) || !db.equipos.some(e => e.id === p.visitaId);
+                        const estado = (huerfano ? '⚠️ Equipo eliminado · ' : '') + (p.cedula ? '📋 Cédula cerrada' : etiquetaEstadoVivoAdmin(p.estadoVivo));
                         return `
                             <div class="gestion-fila" style="${p.oculto ? 'opacity:0.55;' : ''}">
                                 <div class="gestion-info">
@@ -7750,6 +7771,18 @@ ${cuerpo}`;
             cerrarCorreccionPartido();
             guardarDB();
             mostrarAlerta('Resultado anulado. El partido volvió a quedar como programado.', { icono: '↩️' });
+        }
+
+        async function limpiarPartidosHuerfanos() {
+            const existe = id => db.equipos.some(e => e.id === id);
+            const huerfanos = db.partidos.filter(p => !existe(p.localId) || !existe(p.visitaId));
+            if (!huerfanos.length) return alert('No hay partidos de equipos eliminados. Todo está en orden.');
+            const conCedula = huerfanos.filter(p => p.cedula).length;
+            if (!(await confirmarAccion(`Se encontraron ${huerfanos.length} partido(s) cuyo equipo ya no existe${conCedula ? ` (${conCedula} con cédula cerrada)` : ''}. ¿Eliminarlos junto con sus cédulas? Esto no se puede deshacer.`, { textoConfirmar: 'Eliminar' }))) return;
+            const ids = new Set(huerfanos.map(p => p.id));
+            db.partidos = db.partidos.filter(p => !ids.has(p.id));
+            guardarDB();
+            alert(huerfanos.length + ' partido(s) eliminado(s).');
         }
 
         async function eliminarPartido(id) {

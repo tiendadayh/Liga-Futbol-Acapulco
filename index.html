@@ -3405,7 +3405,7 @@ header#site-header .site-header-content{padding:0 6px;min-height:0}
                 const fotoJugador = jugadorAviso ? (jugadorAviso.foto || c.imagen) : null;
                 const equipoAviso = jugadorAviso ? (db.equipos.find(e => e.id === jugadorAviso.equipoId)?.nombre || 'Agente Libre') : '';
                 const abrirFicha = jugadorAviso ? `onclick="verFicha(${jugadorAviso.id})"` : '';
-                const avisoEq = jugadorAviso ? { eqs: [], vs: false } : equiposDeAviso(c);
+                const avisoEq = (jugadorAviso || c.sinEscudos) ? { eqs: [], vs: false } : equiposDeAviso(c);
                 const franjaEscudos = avisoEq.eqs.length
                     ? `<div class="aviso-escudos">${avisoEq.eqs.map(escudoAvisoHTML).join(avisoEq.vs ? '<span class="aviso-vs">VS</span>' : '')}</div>`
                     : '';
