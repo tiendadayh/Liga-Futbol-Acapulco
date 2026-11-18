@@ -2941,7 +2941,10 @@ html.modal-abierto .modal{overscroll-behavior:contain}
         }
         function reg(dbRef, campo) {
             const v = dbRef.reglamento && dbRef.reglamento[campo];
-            return (v === undefined || v === null || v === '') ? REGLAMENTO_DEFAULTS[campo] : v;
+            if (v === undefined || v === null || v === '') return REGLAMENTO_DEFAULTS[campo];
+            // Estos valores nunca pueden ser 0: con 0 la sanción nace "cumplida" y no suspende a nadie.
+            if (['amarillasParaAcumulada', 'partidosDobleAmarilla', 'partidosAmarillasAcumuladas', 'partidosRojaDirecta'].indexOf(campo) !== -1 && !(Number(v) >= 1)) return REGLAMENTO_DEFAULTS[campo];
+            return v;
         }
 
         let db = JSON.parse(localStorage.getItem('liga_premier_db')) || { 
