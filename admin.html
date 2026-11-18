@@ -863,6 +863,16 @@ html[data-theme="dark"] #caja-resumen-hoy{
 #dt-cartas button{margin:0;background:#1f4f8f;color:#fff}
 #dt-cartas button.dt-verde{background:#16a34a}
 #dt-estado{min-height:1.2em;margin:10px 0 0;font-size:.9rem;font-weight:600;color:#0d2a4d}
+#dt-previa{position:fixed;inset:0;z-index:100000;background:rgba(6,24,47,.82);display:none;align-items:center;justify-content:center;padding:16px}
+#dt-previa.abierta{display:flex}
+#dt-previa .dtp-caja{background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:94vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+#dt-previa .dtp-tit{margin:0;padding:14px 18px;font-size:1.05rem;color:#0d2a4d;border-bottom:1px solid #e2e8f0}
+#dt-previa .dtp-img{flex:1;overflow:auto;background:#e2e8f0;padding:12px;text-align:center}
+#dt-previa .dtp-img img{max-width:100%;height:auto;border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,.25)}
+#dt-previa .dtp-btns{display:flex;gap:10px;padding:14px 18px;border-top:1px solid #e2e8f0}
+#dt-previa .dtp-btns button{flex:1;margin:0;padding:12px;font-weight:bold;color:#fff;border:0;border-radius:10px;cursor:pointer}
+#dt-previa .dtp-ok{background:#16a34a}
+#dt-previa .dtp-no{background:#64748b}
 </style></head>
 
 <body><div id="liga-skel" aria-hidden="true"><div class="sk sk-h"></div><div class="sk-w"><div class="sk-row"><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div></div></div>
@@ -1906,27 +1916,6 @@ html[data-theme="dark"] #caja-resumen-hoy{
             <button type="button" onclick="vaciarColaCredenciales()" style="background:#64748b;">🗑️ Vaciar hoja</button>
         </div>
         <p style="font-size:0.78rem; color:#777; margin:8px 0 0;">Para fichas de varios equipos: elige un equipo, marca jugadores, "Agregar"; cambia de equipo y repite. Al final imprime. Con 1 ficha sale arriba a la izquierda, 2 van juntas, y así hasta 8 por hoja.</p>
-    </div>
-
-    <!-- MÓDULO: GENERADOR DE BANNERS REDES SOCIALES -->
-    <div class="admin-box" style="margin-top: 25px; border-top-color: #ff9800;">
-        <h3>🎨 Generador de Banners para Redes Sociales</h3>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:15px;">
-            <div>
-                <label>Seleccionar Partido Finalizado / En Vivo:</label>
-                <select id="banner-partido-select">
-                    <option value="">-- Selecciona Encuentro --</option>
-                </select>
-                <button type="button" onclick="generarBannerResultado()"
-                    style="margin-top:10px; background:#ff9800; width:100%;">📸 Crear Banner Marcador</button>
-            </div>
-            <div id="preview-banner-container"
-                style="display:none; text-align:center; background:#1a1a1a; padding:15px; border-radius:8px; color:white;">
-                <canvas id="canvas-banner" width="500" height="300" style="width:100%; border-radius:6px;"></canvas>
-                <p style="font-size:0.75rem; color:#aaa; margin-top:5px;">Haz clic derecho sobre la imagen o mantén
-                    presionada para guardar y subir a Instagram/FB.</p>
-            </div>
-        </div>
     </div>
 
     <!-- MÓDULO: EN VIVO POR FACEBOOK -->
@@ -6114,50 +6103,6 @@ html[data-theme="dark"] #caja-resumen-hoy{
             `;
         }
 
-        function generarBannerResultado() {
-            const pId = parseInt(document.getElementById('banner-partido-select').value);
-            const partido = db.partidos.find(p => p.id === pId);
-            if (!partido) return alert("Selecciona un encuentro valido.");
-
-            const loc = db.equipos.find(e => e.id === partido.localId)?.nombre || 'Local';
-            const vis = db.equipos.find(e => e.id === partido.visitaId)?.nombre || 'Visita';
-
-            const canvas = document.getElementById('canvas-banner');
-            const ctx = canvas.getContext('2d');
-
-            const grad = ctx.createLinearGradient(0, 0, 500, 300);
-            grad.addColorStop(0, '#0b2f5c');
-            grad.addColorStop(1, '#d1140f');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, 500, 300);
-
-            ctx.fillStyle = '#e0932e';
-            ctx.font = 'bold 18px Segoe UI';
-            ctx.textAlign = 'center';
-            ctx.fillText(nombreLigaActual().toUpperCase(), 250, 40);
-
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '14px Segoe UI';
-            ctx.fillText(`${etiquetaJornada(partido.jornada).toUpperCase()} - RESULTADO FINAL`, 250, 65);
-
-            ctx.font = 'bold 22px Segoe UI';
-            ctx.fillText(loc, 130, 140);
-            ctx.fillText(vis, 370, 140);
-
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(180, 160, 140, 60);
-
-            ctx.fillStyle = '#0b2f5c';
-            ctx.font = 'bold 36px Segoe UI';
-            ctx.fillText(`${partido.golesLocal} - ${partido.golesVisita}`, 250, 205);
-
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'italic 12px Segoe UI';
-            ctx.fillText((db.config && db.config.urlPublica) ? db.config.urlPublica.replace(/^https?:\/\//, '') : '', 250, 275);
-
-            document.getElementById('preview-banner-container').style.display = 'block';
-        }
-
         function renderCedulaHTML(p) {
             const loc = db.equipos.find(e => e.id === p.localId)?.nombre || 'Local';
             const vis = db.equipos.find(e => e.id === p.visitaId)?.nombre || 'Visita';
@@ -6854,7 +6799,6 @@ ${cuerpo}`;
             document.getElementById('fichaje-jugador').innerHTML = '<option value="">-- Selecciona Jugador --</option>' + db.jugadores.map(j => `<option value="${j.id}">${escapeHtml(j.nombre)} (${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'})</option>`).join('');
             document.getElementById('fichaje-destino').innerHTML = '<option value="libre">🕊️ Dejar Agente Libre</option>' + db.equipos.map(e => `<option value="${e.id}">⚽ Trasladar a: ${escapeHtml(e.nombre)}</option>`).join('');
             document.getElementById('admin-res-partido').innerHTML = '<option value="">-- Selecciona Partido --</option>' + db.partidos.map(p => `<option value="${p.id}">${etiquetaJornadaCorta(p.jornada)}: ${db.equipos.find(e => e.id === p.localId)?.nombre} vs ${db.equipos.find(e => e.id === p.visitaId)?.nombre} [${p.cedula ? '📋 Cédula cerrada' : etiquetaEstadoVivoAdmin(p.estadoVivo)}]</option>`).join('');
-            document.getElementById('banner-partido-select').innerHTML = '<option value="">-- Selecciona Partido --</option>' + db.partidos.filter(p => p.jugado).map(p => `<option value="${p.id}">${etiquetaJornadaCorta(p.jornada)}: ${db.equipos.find(e => e.id === p.localId)?.nombre} vs ${db.equipos.find(e => e.id === p.visitaId)?.nombre}</option>`).join('');
             const selFbLive = document.getElementById('fb-live-partido-select');
             if (selFbLive) {
                 selFbLive.innerHTML = '<option value="">-- Selecciona Partido --</option>' + db.partidos.map(p => `<option value="${p.id}">${p.jugado ? '✅' : '📅'} ${etiquetaJornadaCorta(p.jornada)}: ${db.equipos.find(e => e.id === p.localId)?.nombre} vs ${db.equipos.find(e => e.id === p.visitaId)?.nombre}${p.facebookEnVivo ? ' 🔴' : ''}</option>`).join('');
@@ -8348,6 +8292,25 @@ input::placeholder { text-transform: none; }
   function slug(s) { return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'x'; }
   function estado(t) { var e = el('dt-estado'); if (e) e.textContent = t || ''; }
   function bajar(b, nombre) { var u = URL.createObjectURL(b), a = document.createElement('a'); a.href = u; a.download = nombre; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(u); }, 4000); }
+  function previa(b, nombre, titulo) {
+    return new Promise(function (ok) {
+      var m = el('dt-previa');
+      if (!m) {
+        m = document.createElement('div'); m.id = 'dt-previa';
+        m.innerHTML = '<div class="dtp-caja"><h4 class="dtp-tit"></h4><div class="dtp-img"><img alt="Vista previa de la imagen"></div><div class="dtp-btns"><button type="button" class="dtp-no">Cancelar</button><button type="button" class="dtp-ok">⬇️ Descargar</button></div></div>';
+        document.body.appendChild(m);
+      }
+      var url = URL.createObjectURL(b), img = m.querySelector('img');
+      m.querySelector('.dtp-tit').textContent = '👁️ Vista previa' + (titulo ? ' · ' + titulo : '');
+      img.src = url; m.classList.add('abierta');
+      function cerrar(r) { m.classList.remove('abierta'); img.removeAttribute('src'); URL.revokeObjectURL(url); m.querySelector('.dtp-ok').onclick = m.querySelector('.dtp-no').onclick = m.onclick = null; document.removeEventListener('keydown', tecla); ok(r); }
+      function tecla(e) { if (e.key === 'Escape') cerrar(false); }
+      document.addEventListener('keydown', tecla);
+      m.querySelector('.dtp-ok').onclick = function () { bajar(b, nombre); cerrar(true); };
+      m.querySelector('.dtp-no').onclick = function () { cerrar(false); };
+      m.onclick = function (e) { if (e.target === m) cerrar(false); };
+    });
+  }
   function cargarJS(urls) { return new Promise(function (ok, no) { var i = 0; (function probar() { if (i >= urls.length) return no(new Error('sin conexión')); var sc = document.createElement('script'); sc.src = urls[i++]; sc.onload = ok; sc.onerror = function () { sc.remove(); probar(); }; document.head.appendChild(sc); })(); }); }
   function pausa(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   function llenar() {
@@ -8362,7 +8325,7 @@ input::placeholder { text-transform: none; }
     var it = ITEMS.filter(function (x) { return x.id === id; })[0], arg = it.sel ? el('dt-sel-' + id).value : undefined;
     if (it.sel && arg === '') return estado('Aún no hay datos para esta imagen.');
     btn.disabled = true; estado('Generando imagen…');
-    try { var b = await B[id](arg); if (!b) estado('Aún no hay datos para esta imagen.'); else { bajar(b, slug('liga-' + id + (arg !== undefined ? '-' + arg : '')) + '.png'); estado('✅ Imagen lista, revisa tus descargas.'); } }
+    try { var b = await B[id](arg); if (!b) estado('Aún no hay datos para esta imagen.'); else { estado('Revisa la vista previa…'); var okd = await previa(b, slug('liga-' + id + (arg !== undefined ? '-' + arg : '')) + '.png', it.t); estado(okd ? '✅ Imagen lista, revisa tus descargas.' : 'Descarga cancelada.'); } }
     catch (e) { console.error(e); estado('❌ No se pudo generar la imagen: ' + (e && e.message ? e.message : e)); }
     btn.disabled = false;
   }
@@ -8418,7 +8381,7 @@ input::placeholder { text-transform: none; }
   async function unaCarta(k, btn) {
     var c = CARTAS.filter(function (x) { return x.k === k; })[0], id = el('dt-' + k + '-sel').value; if (id === '') return estado('Aún no hay datos para esta carta.');
     var it = listaCartas(k).filter(function (x) { return String(x.id) === String(id); })[0]; btn.disabled = true; estado('Generando carta…');
-    try { var b = await B[c.b](id); if (!b) estado('No se encontró.'); else { bajar(b, 'carta-' + (it ? it.f : id) + '.png'); estado('✅ Carta lista, revisa tus descargas.'); } } catch (e) { console.error(e); estado('❌ No se pudo generar la carta: ' + (e && e.message ? e.message : e)); }
+    try { var b = await B[c.b](id); if (!b) estado('No se encontró.'); else { estado('Revisa la vista previa…'); var okc = await previa(b, 'carta-' + (it ? it.f : id) + '.png', it ? it.n : c.t); estado(okc ? '✅ Carta lista, revisa tus descargas.' : 'Descarga cancelada.'); } } catch (e) { console.error(e); estado('❌ No se pudo generar la carta: ' + (e && e.message ? e.message : e)); }
     btn.disabled = false;
   }
   function todasCartas(k, btn) {
@@ -8427,12 +8390,12 @@ input::placeholder { text-transform: none; }
   }
   function ini() {
     var grid = el('dt-grid'); if (!grid) return;
-    grid.innerHTML = ITEMS.map(function (it) { return '<div class="dt-item"><b>' + it.t + '</b>' + (it.sel ? '<select id="dt-sel-' + it.id + '"></select>' : '') + '<button type="button" data-dt="' + it.id + '">⬇️ Descargar imagen</button></div>'; }).join('');
+    grid.innerHTML = ITEMS.map(function (it) { return '<div class="dt-item"><b>' + it.t + '</b>' + (it.sel ? '<select id="dt-sel-' + it.id + '"></select>' : '') + '<button type="button" data-dt="' + it.id + '">👁️ Ver y descargar</button></div>'; }).join('');
     grid.addEventListener('click', function (e) { var b = e.target.closest && e.target.closest('button[data-dt]'); if (b) uno(b.getAttribute('data-dt'), b); });
     var cont = document.createElement('div'); cont.id = 'dt-cartas';
     cont.innerHTML = '<h4 class="dt-sub">🃏 Cartas para redes (por apartado)</h4><div class="dt-cartas-grid">' + CARTAS.map(function (c) {
       return '<div class="dt-item"><b>' + c.t + '</b>' + (c.k === 'cj' ? '<select id="dt-cj-eq"></select>' : '') + '<select id="dt-' + c.k + '-sel"></select>' +
-        '<button type="button" data-c1="' + c.k + '">⬇️ Descargar esta carta</button><button type="button" class="dt-verde" data-ct="' + c.k + '">📦 Descargar todos (ZIP)</button></div>'; }).join('') + '</div>';
+        '<button type="button" data-c1="' + c.k + '">👁️ Ver y descargar carta</button><button type="button" class="dt-verde" data-ct="' + c.k + '">📦 Descargar todos (ZIP)</button></div>'; }).join('') + '</div>';
     grid.parentNode.insertBefore(cont, el('dt-todo'));
     cont.addEventListener('click', function (e) { var t = e.target.closest && e.target.closest('button'); if (!t) return; if (t.getAttribute('data-c1')) unaCarta(t.getAttribute('data-c1'), t); else if (t.getAttribute('data-ct')) todasCartas(t.getAttribute('data-ct'), t); });
     cont.addEventListener('change', function (e) { if (e.target.id === 'dt-cj-eq') llenarCartas(); });
