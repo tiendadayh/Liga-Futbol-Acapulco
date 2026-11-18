@@ -1372,6 +1372,29 @@ body.cargando .container>section{display:none !important}
 .podio-puesto{box-shadow:6px 6px 0 -1px rgba(0,0,0,.14),12px 12px 0 -2px rgba(0,0,0,.08),0 22px 30px -12px rgba(0,0,0,.38)}
 .podio-puesto.oro{padding-top:38px;padding-bottom:32px;background:linear-gradient(160deg,rgba(240,180,41,.3),transparent 62%),var(--light);box-shadow:6px 6px 0 -1px rgba(160,110,0,.25),12px 12px 0 -2px rgba(160,110,0,.12),0 26px 36px -12px rgba(240,180,41,.55)}
 .podio-puesto.plata{padding-bottom:20px}
+/* Podio limpio (reemplaza el 3D): 2º - 1º - 3º en una fila, sin giros ni sombras apiladas */
+.podio-wrap{display:grid !important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px !important;align-items:end;transform:none !important;perspective:none;margin:22px 0 22px}
+.podio-wrap.n2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.podio-wrap.n2 .podio-puesto.oro{order:1}.podio-wrap.n2 .podio-puesto.plata{order:2}
+.podio-puesto{animation:podioFade .45s ease both !important;transform:none !important;box-shadow:0 4px 14px rgba(11,47,92,.12) !important;background:var(--card-bg,#fff) !important;border:1px solid var(--border,#ddd);border-top-width:4px;border-radius:16px;padding:30px 6px 12px !important;justify-content:flex-start}
+.podio-puesto.oro{border-top-color:#f0b429;background:linear-gradient(180deg,rgba(240,180,41,.18),transparent 55%),var(--card-bg,#fff) !important;padding-top:34px !important;padding-bottom:18px !important;box-shadow:0 8px 20px rgba(240,180,41,.28) !important}
+.podio-puesto.plata{border-top-color:#b9c2cf}.podio-puesto.bronce{border-top-color:#c17a3d}
+.podio-puesto:hover,.podio-puesto.oro:hover,.podio-puesto.plata:hover,.podio-puesto.bronce:hover{transform:translateY(-3px) !important}
+.podio-medalla{top:-17px !important;width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:1.25rem !important;background:var(--card-bg,#fff);border:2px solid var(--border,#ddd);border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.podio-puesto.oro .podio-medalla{border-color:#f0b429}
+.podio-foto{width:56px !important;height:56px !important}
+.podio-puesto.oro .podio-foto{width:70px !important;height:70px !important}
+.podio-nombre{font-size:.74rem !important;text-transform:capitalize;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;max-width:100%}
+.podio-equipo{font-size:.68rem !important;margin:3px 0 6px !important}
+.podio-valor{font-size:1.4rem !important;line-height:1}
+.podio-valor small{margin-top:2px}
+@keyframes podioFade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media (max-width:420px){.podio-wrap{gap:6px !important}.podio-foto{width:46px !important;height:46px !important}.podio-puesto.oro .podio-foto{width:58px !important;height:58px !important}.podio-nombre{font-size:.66rem !important}.podio-valor{font-size:1.2rem !important}}
+/* Tabla de posiciones: nombre arriba, tiempo y marcador del partido en juego debajo */
+.equipo-txt{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
+.equipo-nom-fila{display:flex;align-items:center;gap:4px}
+.equipo-txt .pos-vivo{margin-left:0;font-style:normal;font-size:.64rem;padding:2px 7px}
+.pos-vivo-marc{margin-left:4px;padding-left:6px;border-left:1px solid currentColor;font-weight:900}
 /* 4) Parallax */
 header .fx-orb{position:absolute;border-radius:50%;pointer-events:none;z-index:0;opacity:.5;transform:translate3d(calc(var(--px,0)*var(--d)*1px),calc(var(--py,0)*var(--d)*1px + var(--sy,0)*var(--d)*.02px),0);transition:transform .2s ease-out}
 header .site-header-logo{transform:perspective(500px) rotateY(calc(var(--px,0)*14deg)) rotateX(calc(var(--py,0)*-10deg));transition:transform .2s ease-out;filter:drop-shadow(0 10px 12px rgba(0,0,0,.4))}
@@ -1550,7 +1573,7 @@ section.card-section{scroll-margin-top:14px}
 .pts-vivo-G{background:#2e7d32;color:#fff}
 .pts-vivo-E{background:#e0932e;color:#fff}
 .pts-vivo-P{background:#c62828;color:#fff}
-.leyenda-posiciones-vivo{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding:8px 12px;border-radius:10px;font-size:.78rem;background:rgba(198,40,40,.08);border:1px solid rgba(198,40,40,.25);color:#c62828}
+.leyenda-posiciones-vivo{display:block;line-height:1.45;margin:0 0 10px;padding:8px 12px;border-radius:10px;font-size:.78rem;background:rgba(198,40,40,.08);border:1px solid rgba(198,40,40,.25);color:#c62828}
 .leyenda-posiciones-vivo.hidden{display:none}
 html[data-theme="dark"] .pos-vivo-G{color:#6fdc77}html[data-theme="dark"] .pos-vivo-E{color:#ffc266}html[data-theme="dark"] .pos-vivo-P{color:#ff8a80}
 html[data-theme="dark"] .leyenda-posiciones-vivo{color:#ff8a80}
@@ -4468,7 +4491,7 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                 return `
                 <tr${claseFila}>
                     <td><b>${ahora}</b>${indicador}</td>
-                    <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${escapeHtml(eq.nombre)}" loading="lazy"><span>${escapeHtml(eq.nombre)}</span>${esFavorito ? '<span class="estrella-favorito">⭐</span>' : ''}${eq.vivo ? `<span class="pos-vivo pos-vivo-${eq.vivo.res}" title="En juego vs ${escapeHtml(eq.vivo.rival)}"><i class="pos-vivo-dot"></i>${ETQ_VIVO[eq.vivo.estado] || 'En vivo'} ${eq.vivo.gf}-${eq.vivo.gc}</span>` : ''}</div></td>
+                    <td><div class="equipo-celda"><img class="escudo-tab escudo-3d" src="${eq.escudo}" alt="${escapeHtml(eq.nombre)}" loading="lazy"><div class="equipo-txt"><div class="equipo-nom-fila"><span>${escapeHtml(eq.nombre)}</span>${esFavorito ? '<span class="estrella-favorito">⭐</span>' : ''}</div>${eq.vivo ? `<em class="pos-vivo pos-vivo-${eq.vivo.res}" title="En juego vs ${escapeHtml(eq.vivo.rival)}"><i class="pos-vivo-dot"></i>${ETQ_VIVO[eq.vivo.estado] || 'En vivo'}<b class="pos-vivo-marc">${eq.vivo.gf} - ${eq.vivo.gc}</b></em>` : ''}</div></div></td>
                     <td>${eq.pj}</td><td>${eq.pg}</td><td>${eq.pe}</td><td>${eq.pp}</td><td>${eq.gf}</td><td>${eq.gc}</td><td>${eq.dg}</td><td><b>${eq.pts}</b>${eq.vivo ? `<span class="pts-vivo pts-vivo-${eq.vivo.res}">+${eq.ptsVivo}</span>` : ''}</td>
                 </tr>
             `;
@@ -5334,11 +5357,12 @@ html.modal-abierto .modal{overscroll-behavior:contain}
             const top3 = items.slice(0, 3);
             if (top3.length < 2) { cont.innerHTML = ''; cont.style.display = 'none'; return; }
             cont.style.display = '';
+            cont.classList.toggle('n2', top3.length === 2);
             cont.innerHTML = top3.map((it, idx) => `
                 <div class="podio-puesto ${CLASES_PODIO[idx]}">
                     <span class="podio-medalla">${MEDALLAS_PODIO[idx]}</span>
                     <img class="podio-foto" src="${it.foto || 'https://placehold.co/76'}" alt="${escapeHtml(it.nombre)}" loading="lazy">
-                    <span class="podio-nombre">${escapeHtml(it.nombre)}</span>
+                    <span class="podio-nombre">${escapeHtml(String(it.nombre || '').toLowerCase())}</span>
                     <span class="podio-equipo">${it.sub || ''}</span>
                     <span class="podio-valor">${it.valor}<small>${it.unidad || ''}</small></span>
                     ${it.extra ? `<span class="podio-extra">${it.extra}</span>` : ''}
