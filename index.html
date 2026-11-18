@@ -3406,7 +3406,17 @@ html.modal-abierto .modal{overscroll-behavior:contain}
             const DURACION_AVISO_MS = 24 * 60 * 60 * 1000;
             // Cada aviso puede durar los días que el admin eligió (c.duracionDias); si no trae, dura 1 día.
             const duracionAvisoMs = c => Math.max(1, parseInt(c && c.duracionDias, 10) || 1) * DURACION_AVISO_MS;
-            const comunicadosVigentes = (db.comunicados || []).filter(c => (c.tipo === 'sancion' && c.jugadorId) || (Date.now() - (c.ts || c.id || 0)) <= duracionAvisoMs(c));
+            const comunicadosVigentes = (db.comunicados || []).filter(c => (c.tipo === 'sancion' && c.jugadorId) || (Date.now() - (c.ts || c.id || 0)) <= duracionAvisoMs(c))
+                // Avisos viejos agrupados ("2 partidos programados"): se muestran separados, uno por partido.
+                .flatMap(c => {
+                    if (!Array.isArray(c.partidosLineas) || !c.partidosLineas.length) return [c];
+                    const jor = ((c.titulo || '').split('·')[1] || '').trim();
+                    return c.partidosLineas.map((l, i) => {
+                        const k = l.indexOf(' · ');
+                        const txt = (k > -1 && jor) ? `${l.slice(0, k)} · ${jor}${l.slice(k)}.` : `${l}.`;
+                        return { ...c, titulo: '📅 Nuevo partido programado', contenido: txt, sinEscudos: false, partidosLineas: null, agrupaJornada: null, id: (c.id || c.ts || 0) + i + 1 };
+                    });
+                });
             // Equipos que menciona un aviso: "A vs B · ..." (partido programado) o cualquier equipo nombrado en el texto.
             // Separa "ALEXIS BRAYAN CARLOS PONCE" en nombres ("ALEXIS BRAYAN") y apellidos ("CARLOS PONCE").
             const partirNombreJugador = (nombre) => {
@@ -3467,7 +3477,7 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                 const equipoAviso = jugadorAviso ? (db.equipos.find(e => e.id === jugadorAviso.equipoId)?.nombre || 'Agente Libre') : '';
                 const abrirFicha = jugadorAviso ? `onclick="verFicha(${jugadorAviso.id})"` : '';
                 // En los avisos de registro (jugador o equipo) el título va arriba de todo.
-                const tituloArriba = c.tipo === 'registro' || !!jugadorAviso;
+                const tituloArriba = c.tipo === 'registro' || !!jugadorAviso || /partido programado/i.test(c.titulo || '');
                 const tituloLimpio = String(c.titulo || '').replace(/🆕\s*/g, '');
                 const partesJug = jugadorAviso ? partirNombreJugador(jugadorAviso.nombre) : null;
                 const cuerpoAviso = (jugadorAviso && c.tipo === 'registro')
@@ -3477,6 +3487,30 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                 const franjaEscudos = avisoEq.eqs.length
                     ? `<div class="aviso-escudos">${avisoEq.eqs.map(escudoAvisoHTML).join(avisoEq.vs ? '<span class="aviso-vs">VS</span>' : '')}</div>`
                     : '';
+                // Aviso de partido programado: equipos arriba (escudos) y abajo, centrado: jornada, fecha/hora, campo y árbitro.
+                let cuerpoPartidoHTML = '';
+                if (avisoEq.vs && avisoEq.eqs.length === 2 && /partido programado/i.test(c.titulo || '')) {
+                    const [eqA, eqB] = avisoEq.eqs;
+                    const pp = (db.partidos || []).filter(x => x.localId === eqA.id && x.visitaId === eqB.id).sort((x, y) => (x.jugado ? 1 : 0) - (y.jugado ? 1 : 0) || (y.id || 0) - (x.id || 0))[0];
+                    const partes = String(c.contenido || '').replace(/\.\s*$/, '').split(' · ');
+                    const fecha0 = pp ? pp.fecha : '';
+                    const hora0 = pp ? pp.hora : '';
+                    const campo0 = pp ? pp.estadio : (partes.length > 3 ? partes[partes.length - 1] : '');
+                    const arb0 = pp ? pp.arbitro : '';
+                    const jorTxt = pp ? etiquetaJornada(pp.jornada) : (partes[1] || '');
+                    const dF = fecha0 ? new Date(fecha0 + 'T00:00:00') : null;
+                    const fechaTxt = dF && !isNaN(dF) ? dF.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }) : fecha0;
+                    const fila = (ic, t, st) => `<div style="display:flex; align-items:center; justify-content:center; gap:6px; ${st || ''}"><span>${ic}</span><span>${escapeHtml(t)}</span></div>`;
+                    cuerpoPartidoHTML = `<div style="text-align:center; margin-top:8px;">
+                        ${jorTxt ? `<div style="display:inline-block; font-size:0.72rem; font-weight:800; letter-spacing:.04em; text-transform:uppercase; padding:3px 12px; border-radius:999px; background:rgba(240,180,41,.18); color:var(--text,#12233f); margin-bottom:10px;">${escapeHtml(jorTxt)}</div>` : ''}
+                        <div style="display:flex; flex-direction:column; gap:5px; font-size:0.84rem; color:var(--text,#12233f);">
+                            ${fechaTxt ? fila('📅', fechaTxt.charAt(0).toUpperCase() + fechaTxt.slice(1), 'font-weight:700;') : ''}
+                            ${hora0 ? fila('🕒', hora0 + ' hrs', 'font-weight:700;') : ''}
+                            ${campo0 ? fila('📍', 'Campo: ' + campo0, 'border-top:1px solid var(--border); padding-top:6px; margin-top:3px;') : ''}
+                            ${arb0 ? fila('🧑‍⚖️', 'Árbitro: ' + arb0) : ''}
+                        </div>
+                    </div>`;
+                }
                 // Aviso de árbitro nuevo: mismo diseño que el de jugador (foto redonda, nombre y ficha).
                 const mArb = (!jugadorAviso && c.tipo === 'registro') ? String(c.contenido || '').match(/^(.+?)\s+se ha integrado al cuerpo arbitral/i) : null;
                 const esArbitro = !!mArb;
@@ -3502,7 +3536,7 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                             ${c.fecha ? `<span style="font-size:0.75rem; color:var(--text-muted);">${c.fecha}</span>` : ''}
                         </div>
                         ${tituloArriba ? '' : `<h4 style="margin:0 0 6px;">${tituloLimpio}</h4>`}
-                        <p style="font-size:0.85rem; white-space:pre-line; margin:0;">${esArbitro ? ('<span class="nom-fila">' + nombreArbHTML + '</span><span class="nom-unio">se ha integrado al cuerpo arbitral de la liga.</span>') : (equipoRegistro && /se ha registrado en la liga/i.test(c.contenido || '')) ? ('El equipo &quot;' + escapeHtml(equipoRegistro.nombre) + '&quot;\nse ha registrado en la liga.') : cuerpoAviso}</p>
+                        ${cuerpoPartidoHTML ? cuerpoPartidoHTML : `<p style="font-size:0.85rem; white-space:pre-line; margin:0;">${esArbitro ? ('<span class="nom-fila">' + nombreArbHTML + '</span><span class="nom-unio">se ha integrado al cuerpo arbitral de la liga.</span>') : (equipoRegistro && /se ha registrado en la liga/i.test(c.contenido || '')) ? ('El equipo &quot;' + escapeHtml(equipoRegistro.nombre) + '&quot;\nse ha registrado en la liga.') : cuerpoAviso}</p>`}
                         ${(jugadorAviso || arbitroAviso) ? `<p style="font-size:0.78rem; font-weight:600; text-align:center; color:${et.color}; margin:10px 0 0;">👁️ Ver ficha →</p>` : ''}
                         ${equipoRegistro ? `<p style="font-size:0.78rem; font-weight:600; text-align:center; color:${et.color}; margin:10px 0 0;">👁️ Ver equipo →</p>` : ''}
                     </div>
