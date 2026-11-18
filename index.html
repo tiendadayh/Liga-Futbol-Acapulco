@@ -3805,85 +3805,13 @@ html.modal-abierto .modal{overscroll-behavior:contain}
         let mmUltimoModo = null; // 'vivo' | 'cuenta', detecta el cambio de modo para animar la entrada 3D
 
         function renderizarMiniMarcadorHeader() {
+            // La barra de "en vivo" del header se quitó: el estado en vivo ya se ve en las tarjetas del calendario.
             const cont = document.getElementById('mini-marcador-header');
             if (!cont) return;
-            const favoritoId = obtenerEquipoFavoritoId();
-
-            const partidosVivo = (db.partidos || []).filter(p => ESTADOS_PARTIDO_EN_VIVO.includes(p.estadoVivo) && !p.jugado);
-
-            if (partidosVivo.length > 0) {
-                mmCuentaRegresivaTarget = null;
-                // Si el equipo favorito tiene un partido en vivo, se muestra ese primero.
-                const p = (favoritoId !== null && partidosVivo.find(x => x.localId === favoritoId || x.visitaId === favoritoId)) || partidosVivo[0];
-                const loc = db.equipos.find(e => e.id === p.localId);
-                const vis = db.equipos.find(e => e.id === p.visitaId);
-                const etiqueta = ETIQUETAS_ESTADO_PARTIDO[p.estadoVivo] || 'EN VIVO';
-                const extra = partidosVivo.length > 1 ? `<span class="mm-extra">+${partidosVivo.length - 1} en vivo</span>` : '';
-                const marcadorKey = `${p.id}:${p.golesLocal || 0}-${p.golesVisita || 0}`;
-                const marcadorCambio = mmUltimoModo === 'vivo' && mmUltimoMarcadorKey !== null && mmUltimoMarcadorKey !== marcadorKey;
-                const entradaNueva = mmUltimoModo !== 'vivo';
-                mmUltimoMarcadorKey = marcadorKey;
-                mmUltimoModo = 'vivo';
-                cont.classList.remove('hidden');
-                cont.innerHTML = `
-                    <div class="mini-marcador-inner${entradaNueva ? ' mm-entrada-3d' : ''}" onclick="document.getElementById('jornadas-sec').scrollIntoView({behavior:'smooth'}); document.getElementById('select-jornada-filtro').value='${p.jornada}'; document.getElementById('select-jornada-filtro').dispatchEvent(new Event('change'));">
-                        <span class="mm-etiqueta mm-vivo"><span class="mm-dot-vivo"></span>${etiqueta}</span>
-                        <div class="mm-equipos">
-                            <div class="mm-equipo"><img class="mm-escudo escudo-3d" src="${loc?.escudo || 'https://placehold.co/26'}" alt="" loading="lazy"><span class="mm-nombre">${loc ? loc.nombre : '-'}</span></div>
-                            <span class="mm-marcador${marcadorCambio ? ' mm-marcador-flip' : ''}">${p.golesLocal || 0} - ${p.golesVisita || 0}</span>
-                            <div class="mm-equipo"><span class="mm-nombre">${vis ? vis.nombre : '-'}</span><img class="mm-escudo escudo-3d" src="${vis?.escudo || 'https://placehold.co/26'}" alt="" loading="lazy"></div>
-                        </div>
-                        ${extra}
-                    </div>`;
-                return;
-            }
-
-            // Sin partidos en vivo: buscar el próximo partido programado (fecha/hora más próxima).
-            const ahora = Date.now();
-            const proximos = (db.partidos || [])
-                .filter(p => !p.jugado && p.fecha)
-                .map(p => ({ p, ts: new Date(p.fecha + 'T' + (p.hora || '00:00')).getTime() }))
-                .filter(x => !isNaN(x.ts) && x.ts >= ahora)   // si la hora ya pasó, el partido deja de mostrarse
-                .sort((a, b) => a.ts - b.ts);
-
-            // La cuenta regresiva solo se muestra a quien eligió su equipo favorito, y es la de SU próximo partido.
-            // Sin equipo favorito no aparece. Cuando el partido ya se jugó (o su hora pasó) se quita y sale el siguiente de ese equipo.
-            // La cuenta regresiva del header se quitó por completo (el usuario no la quiere): nunca se muestra.
-            const siguiente = null;
-
-            if (!siguiente) {
-                cont.classList.add('hidden');
-                cont.innerHTML = '';
-                mmCuentaRegresivaTarget = null;
-                mmUltimoModo = null;
-                return;
-            }
-
-            const p = siguiente.p;
-            const loc = db.equipos.find(e => e.id === p.localId);
-            const vis = db.equipos.find(e => e.id === p.visitaId);
-            mmCuentaRegresivaTarget = siguiente.ts;
-            const entradaNueva = mmUltimoModo !== 'cuenta';
-            mmUltimoModo = 'cuenta';
-
-            cont.classList.remove('hidden');
-            cont.innerHTML = `
-                <div class="mini-marcador-inner${entradaNueva ? ' mm-entrada-3d' : ''}" onclick="document.getElementById('jornadas-sec').scrollIntoView({behavior:'smooth'}); document.getElementById('select-jornada-filtro').value='${p.jornada}'; document.getElementById('select-jornada-filtro').dispatchEvent(new Event('change'));">
-                    <span class="mm-etiqueta">📅 Próximo · ${etiquetaJornadaCorta(p.jornada)}</span>
-                    <div class="mm-equipos">
-                        <div class="mm-equipo"><img class="mm-escudo escudo-3d" src="${loc?.escudo || 'https://placehold.co/26'}" alt="" loading="lazy"><span class="mm-nombre">${loc ? loc.nombre : '-'}</span></div>
-                        <span class="mm-marcador">VS</span>
-                        <div class="mm-equipo"><span class="mm-nombre">${vis ? vis.nombre : '-'}</span><img class="mm-escudo escudo-3d" src="${vis?.escudo || 'https://placehold.co/26'}" alt="" loading="lazy"></div>
-                    </div>
-                    <div class="mm-cuenta" id="mm-cuenta-regresiva">
-                        <div class="mm-cuenta-item"><span class="mm-cuenta-num" id="mm-dias">--</span><span class="mm-cuenta-lbl">Días</span></div>
-                        <div class="mm-cuenta-item"><span class="mm-cuenta-num" id="mm-horas">--</span><span class="mm-cuenta-lbl">Hrs</span></div>
-                        <div class="mm-cuenta-item"><span class="mm-cuenta-num" id="mm-mins">--</span><span class="mm-cuenta-lbl">Min</span></div>
-                        <div class="mm-cuenta-item"><span class="mm-cuenta-num" id="mm-secs">--</span><span class="mm-cuenta-lbl">Seg</span></div>
-                    </div>
-                </div>`;
-            actualizarCuentaRegresivaMiniMarcador();
-            iniciarIntervaloMiniMarcador();
+            cont.classList.add('hidden');
+            cont.innerHTML = '';
+            mmCuentaRegresivaTarget = null;
+            mmUltimoModo = null;
         }
 
         // Actualiza solo los números de la cuenta regresiva cada segundo, sin volver a
@@ -3965,12 +3893,6 @@ html.modal-abierto .modal{overscroll-behavior:contain}
             const el = document.getElementById('saludo-equipo');
             if (!el) return;
             if (!eq) { el.classList.add('hidden'); el.textContent = ''; el.classList.remove('en-vivo'); return; }
-            const jugandoVivo = db.partidos.some(p => ESTADOS_PARTIDO_EN_VIVO.includes(p.estadoVivo) && !p.jugado && (p.localId === eq.id || p.visitaId === eq.id));
-            if (jugandoVivo) {
-                el.textContent = '🔴 ¡' + eq.nombre + ' está jugando en vivo ahora!';
-                el.classList.add('en-vivo'); el.classList.remove('hidden');
-                return;
-            }
             el.classList.remove('en-vivo');
             const partes = [];
             const tabla = calcularTablaPosiciones();
