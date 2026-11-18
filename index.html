@@ -1542,7 +1542,7 @@ header#site-header .site-header-content{padding:0 150px;min-height:64px}
 @media (max-width:900px) and (min-width:601px){header#site-header>.site-header-logo{width:84px;height:84px;right:14px;top:14px}header#site-header .site-header-content{padding:0 110px}}
 @media (max-width:600px){
 header#site-header{padding:64px 10px 16px!important}
-header#site-header>.site-header-logo{position:absolute;top:6px;left:50%;width:56px;height:56px;margin:0 0 0 -28px;right:auto}
+header#site-header>.site-header-logo{position:absolute;top:6px;right:10px;left:auto;width:56px;height:56px;margin:0}
 header#site-header .site-header-content{padding:0 6px;min-height:0}
 #header-acciones{position:static;transform:none;display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:0 0 12px}
 #header-acciones>button{padding:6px 10px!important;font-size:.68rem!important;margin:0!important}
@@ -1550,6 +1550,26 @@ header#site-header .site-header-content{padding:0 6px;min-height:0}
 @media (min-width:601px){header#site-header{padding-top:76px!important}}
 </style>
 <style id="liga-tablon-carrusel">
+/* ===== Ficha del jugador más compacta: que quepa completa sin subir ni bajar ===== */
+#ficha-modal{padding:8px 0}
+#ficha-modal .ficha-tecnica-banner{padding-top:clamp(38px,6vh,54px)!important;padding-bottom:clamp(12px,2.4vh,20px)!important}
+#ficha-modal .ficha-foto-marco{width:clamp(96px,18vh,124px)!important;height:clamp(120px,22.5vh,156px)!important}
+@media (max-height:760px){
+#ficha-modal .ficha-tecnica-nombre{margin:10px 0 0!important;font-size:1.15rem!important}
+#ficha-modal .ficha-tecnica-posicion{margin:0!important;font-size:.78rem!important}
+#ficha-modal .ficha-carta-tipo{padding:8px 14px!important;margin-top:8px!important}
+#ficha-modal .ficha-tecnica-stats{margin:10px 20px 0!important;gap:8px!important}
+#ficha-modal .stat-box{padding:7px 4px!important}
+#ficha-modal .ficha-tecnica-content{padding-bottom:12px!important}
+#ficha-modal .ficha-3d-botones{margin-top:10px!important}
+#ficha-modal .ficha-tecnica-datos{margin-top:10px!important}
+#ficha-modal .ficha-tecnica-historial{margin-top:10px!important}
+#ficha-modal [style*="max-height:220px"]{max-height:16vh!important}
+}
+*{scrollbar-width:none!important;-ms-overflow-style:none!important}
+html.modal-abierto,html.modal-abierto body{overflow:hidden!important;overscroll-behavior:none}
+html.modal-abierto .modal{overscroll-behavior:contain}
+*::-webkit-scrollbar{width:0!important;height:0!important;display:none!important}
 .tb-wrap{display:flex;align-items:center;gap:6px}
 .tb-pista{flex:1;min-width:0;display:flex;gap:14px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;padding:6px 4px 14px;scrollbar-width:thin}
 .tb-pista>.tablon-card-3d{flex:0 0 calc(50% - 7px);min-width:0;scroll-snap-align:start;align-self:stretch}
@@ -1562,6 +1582,10 @@ header#site-header .site-header-content{padding:0 6px;min-height:0}
 @media (max-width:600px){.tb-flecha{display:none}.tb-pista{gap:10px}.tb-pista>.tablon-card-3d{flex-basis:calc(50% - 5px)}}
 .aviso-titulo-top{margin:0;padding:14px 12px 0;text-align:center;font-size:.9rem;line-height:1.25;text-wrap:balance}
 .tb-pista .tablon-card-3d h4.aviso-titulo-top{font-size:.9rem}
+.nom-fila,.nom-unio,.nom-l{display:block}
+.eq-junto{display:inline-block;max-width:100%}
+.aviso-eq small .eq-junto{white-space:nowrap}
+@media (min-width:640px){.nom-l{display:inline}}
 .aviso-eq-foto{max-width:100%}
 .aviso-eq-foto img{width:68px;height:68px;object-fit:cover;border-radius:50%;padding:0}
 .aviso-eq small{font-size:.66rem;font-weight:700;line-height:1.15;text-transform:uppercase;letter-spacing:.03em;color:var(--text-muted,#5b6b82);overflow-wrap:anywhere}
@@ -3439,7 +3463,7 @@ header#site-header .site-header-content{padding:0 6px;min-height:0}
                 const tituloLimpio = String(c.titulo || '').replace(/🆕\s*/g, '');
                 const partesJug = jugadorAviso ? partirNombreJugador(jugadorAviso.nombre) : null;
                 const cuerpoAviso = (jugadorAviso && c.tipo === 'registro')
-                    ? escapeHtml(partesJug.nombres) + (partesJug.apellidos ? '\n' + escapeHtml(partesJug.apellidos) : '') + '\nse unió al equipo ' + escapeHtml(equipoAviso) + '.'
+                    ? '<span class="nom-fila"><span class="nom-l">' + escapeHtml(partesJug.nombres) + '</span>' + (partesJug.apellidos ? ' <span class="nom-l">' + escapeHtml(partesJug.apellidos) + '</span>' : '') + '</span><span class="nom-unio">se unió al equipo <span class="eq-junto">' + escapeHtml(equipoAviso) + '</span>.</span>'
                     : c.contenido;
                 const avisoEq = (jugadorAviso || c.sinEscudos) ? { eqs: [], vs: false } : equiposDeAviso(c);
                 const franjaEscudos = avisoEq.eqs.length
@@ -3449,7 +3473,7 @@ header#site-header .site-header-content{padding:0 6px;min-height:0}
                 <div ${abrirFicha} class="tablon-card-3d" style="background:var(--card-bg, var(--light)); border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06)); display:flex; flex-direction:column; ${jugadorAviso ? 'cursor:pointer; transition:transform .15s, box-shadow .15s;' : ''}" ${jugadorAviso ? `onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 18px -4px rgba(0,0,0,0.15)';" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06))';"` : ''}>
                     ${tituloArriba ? `<h4 class="aviso-titulo-top">${tituloLimpio}</h4>` : ''}
                     ${jugadorAviso
-                        ? `<div class="aviso-escudos"><div class="aviso-eq aviso-eq-foto"><img src="${fotoJugador || 'https://placehold.co/60'}" alt="${escapeHtml(jugadorAviso.nombre)}" loading="lazy"><span>${escapeHtml(partesJug.nombres)}${partesJug.apellidos ? '<br>' + escapeHtml(partesJug.apellidos) : ''}</span><small>${escapeHtml(equipoAviso)}</small></div></div>`
+                        ? `<div class="aviso-escudos"><div class="aviso-eq aviso-eq-foto"><img src="${fotoJugador || 'https://placehold.co/60'}" alt="${escapeHtml(jugadorAviso.nombre)}" loading="lazy"><span><span class="nom-l">${escapeHtml(partesJug.nombres)}</span>${partesJug.apellidos ? ' <span class="nom-l">' + escapeHtml(partesJug.apellidos) + '</span>' : ''}</span><small><span class="eq-junto">${escapeHtml(equipoAviso)}</span></small></div></div>`
                         : (c.imagen ? `<img src="${c.imagen}" alt="${c.titulo}" style="width:100%; height:150px; object-fit:cover;" loading="lazy">` : '') + franjaEscudos
                     }
                     <div style="padding:15px;">
@@ -3459,7 +3483,7 @@ header#site-header .site-header-content{padding:0 6px;min-height:0}
                         </div>
                         ${tituloArriba ? '' : `<h4 style="margin:0 0 6px;">${tituloLimpio}</h4>`}
                         <p style="font-size:0.85rem; white-space:pre-line; margin:0;">${cuerpoAviso}</p>
-                        ${jugadorAviso ? `<p style="font-size:0.78rem; font-weight:600; color:${et.color}; margin:10px 0 0;">👁️ Ver ficha →</p>` : ''}
+                        ${jugadorAviso ? `<p style="font-size:0.78rem; font-weight:600; text-align:center; color:${et.color}; margin:10px 0 0;">👁️ Ver ficha →</p>` : ''}
                     </div>
                 </div>`;
             }).join('') || estadoVacio('📭', 'No hay avisos recientes.');
@@ -7431,6 +7455,23 @@ function mostrarAyudaInstalarApp() {
     if (btn && !instalada) btn.classList.add('visible');
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ini); else ini();
+})();
+</script>
+<script>
+/* Fondo fijo: mientras haya una ventana (ficha, equipo, árbitro, etc.) abierta, la página de atrás no se mueve. */
+(function () {
+    var root = document.documentElement;
+    function revisar() {
+        var abierta = !!document.querySelector('.modal:not(.hidden)');
+        root.classList.toggle('modal-abierto', abierta);
+    }
+    function vigilar() {
+        var ms = document.querySelectorAll('.modal');
+        var ob = new MutationObserver(revisar);
+        for (var i = 0; i < ms.length; i++) ob.observe(ms[i], { attributes: true, attributeFilter: ['class'] });
+        revisar();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', vigilar); else vigilar();
 })();
 </script>
 </body>
