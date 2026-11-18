@@ -1446,6 +1446,8 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
         function maxTitulares() { const n = parseInt(reg(db, 'jugadoresTitulares')); return n >= 1 ? n : 11; }
         function reg(dbRef, campo) {
             const v = dbRef.reglamento && dbRef.reglamento[campo];
+            // Las reglas de disciplina son fijas (ya no hay formulario de Reglamento): siempre los valores por defecto.
+            if (['amarillasParaAcumulada', 'partidosDobleAmarilla', 'multaDobleAmarilla', 'partidosAmarillasAcumuladas', 'multaAmarillasAcumuladas', 'partidosRojaDirecta', 'multaRojaDirecta'].indexOf(campo) !== -1) return REGLAMENTO_DEFAULTS[campo];
             if (v === undefined || v === null || v === '') return REGLAMENTO_DEFAULTS[campo];
             // Estos valores nunca pueden ser 0: con 0 la sanción nace "cumplida" y no suspende a nadie.
             if (['amarillasParaAcumulada', 'partidosDobleAmarilla', 'partidosAmarillasAcumuladas', 'partidosRojaDirecta'].indexOf(campo) !== -1 && !(Number(v) >= 1)) return REGLAMENTO_DEFAULTS[campo];
@@ -1882,7 +1884,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
 
                 if (ev.dobleAmarilla) {
                     sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'doble_amarilla', partidosCastigo: reg(dbRef, 'partidosDobleAmarilla'), expulsionDefinitiva: false, multaMonto: reg(dbRef, 'multaDobleAmarilla') });
-                    contador = 0;
+                    // la doble amarilla es roja: se castiga aparte y NO suma ni borra la cuenta de amarillas
                 } else {
                     for (let i = 0; i < ev.amarillas; i++) {
                         contador++;
@@ -1900,7 +1902,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                         expulsionDefinitiva: !!ov?.expulsionDefinitiva,
                         multaMonto: reg(dbRef, 'multaRojaDirecta')
                     });
-                    contador = 0;
+                    // la roja directa tampoco borra la cuenta de amarillas
                 }
             });
             return sanciones;
@@ -1913,19 +1915,24 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 .filter(j => j.equipoId === equipoId)
                 .reduce((sum, j) => sum + calcularSancionesJugador(j.id, dbRef).reduce((s2, s) => s2 + (s.multaMonto || 0), 0), 0);
         }
+        // ===== Multas por jugador (cada multa se paga por separado; se registra en db.multasPagadas) =====
+        function claveMultaSancion(s, jugadorId) { return s.partidoId + '_' + jugadorId + '_' + s.tipo; }
+        function multasDebeJugador(jugadorId, dbRef) {
+            const pag = (dbRef && dbRef.multasPagadas) || {};
+            return calcularSancionesJugador(jugadorId, dbRef).filter(s => (s.multaMonto || 0) > 0 && !pag[claveMultaSancion(s, jugadorId)]);
+        }
+        function montoDebeJugador(jugadorId, dbRef) { return multasDebeJugador(jugadorId, dbRef).reduce((t, s) => t + (s.multaMonto || 0), 0); }
         function multaPendienteEquipo(equipoId, dbRef) {
-            const total = totalMultasCalculadas(equipoId, dbRef);
-            const liquidado = (dbRef.finanzas && dbRef.finanzas[equipoId] && dbRef.finanzas[equipoId].multasLiquidadas) || 0;
-            return Math.max(0, total - liquidado);
+            return (dbRef.jugadores || []).filter(j => j.equipoId === equipoId).reduce((t, j) => t + montoDebeJugador(j.id, dbRef), 0);
         }
 
         // Un jugador queda bloqueado para jugar si aún le faltan partidos de sanción POR CUMPLIR
         // o si su equipo todavía debe la multa por tarjetas (aunque ya haya cumplido los partidos).
         function jugadorBloqueadoPorDisciplina(jugador, dbRef, jornadaActual) {
             const estado = estadoSuspensionJugador(jugador, dbRef, jornadaActual);
-            const tieneSanciones = calcularSancionesJugador(jugador.id, dbRef).length > 0;
-            const multaPendiente = tieneSanciones && multaPendienteEquipo(jugador.equipoId, dbRef) > 0;
-            return { ...estado, multaPendiente, bloqueado: estado.suspendido || multaPendiente };
+            // Si no paga la multa no juega: queda bloqueado aunque ya haya cumplido sus partidos de suspensión.
+            const multaMonto = montoDebeJugador(jugador.id, dbRef);
+            return { ...estado, multaPendiente: multaMonto > 0, multaMonto, bloqueado: estado.suspendido || multaMonto > 0 };
         }
 
         function estadoSuspensionJugador(jugador, dbRef, jornadaActual) {
@@ -2523,14 +2530,14 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 cont.innerHTML = jugadores.length ? jugadores.map(j => {
                     const estado = jugadorBloqueadoPorDisciplina(j, db, partido.jornada);
                     const castigado = estado.bloqueado;
-                    const motivo = estado.suspendido ? 'SUSPENDIDO' : 'MULTA PENDIENTE';
+                    const motivo = estado.suspendido ? 'SUSPENDIDO' : 'NO PAGÓ SU MULTA $' + estado.multaMonto;
                     const esTitular = titulares.includes(j.id);
                     const esCapitan = (partido.capitanLocalId === j.id) || (partido.capitanVisitaId === j.id);
                     return `
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
                     <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; font-weight:400; cursor:${castigado ? 'not-allowed' : 'pointer'}; ${castigado ? 'color:#b91c1c;' : ''}">
                         <input type="checkbox" style="width:auto;" ${esTitular ? 'checked' : ''} ${castigado ? 'disabled' : ''} onchange="alternarTitular(${partido.id}, ${j.id}, this.checked)">
-                        ${escapeHtml(j.nombre)}${j.numero ? ` (#${j.numero})` : ''}${castigado ? ` ❌ ${motivo}` : ''}
+                        ${escapeHtml(j.nombre)}${j.numero ? ` (#${j.numero})` : ''}${castigado ? ` ❌ ${motivo}` : ''}${(!castigado && estado.multaPendiente) ? ` <b style="color:#b45309;">⚠️ DEBE MULTA $${estado.multaMonto}</b>` : ''}
                     </label>
                     <label title="${esTitular ? 'Marcar como capitán' : 'Primero márcalo como titular'}" style="display:flex; align-items:center; gap:3px; font-size:0.72rem; font-weight:700; color:${esCapitan ? '#b45309' : '#94a3b8'}; margin:0; cursor:${esTitular ? 'pointer' : 'not-allowed'}; white-space:nowrap;">
                         <input type="radio" name="capitan-${contId}" style="width:auto;" ${esCapitan ? 'checked' : ''} ${esTitular ? '' : 'disabled'} onchange="elegirCapitan(${partido.id}, ${j.id})"> C
@@ -2600,6 +2607,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             if (!partido) return;
             const jugador = db.jugadores.find(j => j.id === jugadorId);
             if (!jugador) return;
+            if (marcado && montoDebeJugador(jugador.id, db) > 0) alert(`⚠️ AVISO DE MULTA\n\n${jugador.nombre} DEBE UNA MULTA de $${montoDebeJugador(jugador.id, db)}.\nPuede jugar, pero tiene que pagarla en la liga.`);
             const esLocal = jugador.equipoId === partido.localId;
             const clave = esLocal ? 'titularesLocal' : 'titularesVisita';
             if (!partido[clave]) partido[clave] = [];
@@ -2840,7 +2848,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 const castigado = estadoSusp.bloqueado;
                 const etiquetaSusp = estadoSusp.expulsionDefinitiva
                     ? '❌ <b>(EXPULSIÓN DEFINITIVA)</b>'
-                    : (estadoSusp.suspendido ? `❌ <b>(SUSPENDIDO, le falta${estadoSusp.partidosPendientes > 1 ? 'n' : ''} ${estadoSusp.partidosPendientes})</b>` : (estadoSusp.multaPendiente ? '❌ <b>(MULTA PENDIENTE)</b>' : ''));
+                    : (estadoSusp.suspendido ? `❌ <b>(SUSPENDIDO, le falta${estadoSusp.partidosPendientes > 1 ? 'n' : ''} ${estadoSusp.partidosPendientes})</b>` : (estadoSusp.multaPendiente ? '❌ <b>(NO JUEGA: DEBE MULTA $' + estadoSusp.multaMonto + ')</b>' : ''));
                 const golesEvento = (p.eventos || []).filter(ev => ev.tipo === 'gol' && ev.desc === j.nombre).length;
                 const amarillasEvento = (p.eventos || []).filter(ev => ev.tipo === 'amarilla' && ev.desc === j.nombre).length;
                 const rojasEvento = (p.eventos || []).filter(ev => ev.tipo === 'roja' && ev.desc === j.nombre).length;
@@ -3024,7 +3032,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 return avisoEscaner('err', '❌ Es de otro equipo; no juega este partido.', j);
             const est = jugadorBloqueadoPorDisciplina(j, db, p.jornada);
             if (est.bloqueado)
-                return avisoEscaner('err', `❌ No puede jugar: ${est.suspendido ? 'SUSPENDIDO' : 'MULTA PENDIENTE'}.`, j);
+                return avisoEscaner('err', est.suspendido ? '❌ No puede jugar: SUSPENDIDO.' : `❌ No puede jugar: DEBE MULTA de $${est.multaMonto}. Debe pagarla en la liga.`, j);
 
             const modo = escanerModo;
             // El minuto se revisa ANTES de pedir la verificación de credencial: así no queda

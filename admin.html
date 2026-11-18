@@ -3211,6 +3211,8 @@ html[data-theme="dark"] #caja-resumen-hoy{
         }
         function reg(dbRef, campo) {
             const v = dbRef.reglamento && dbRef.reglamento[campo];
+            // Las reglas de disciplina son fijas (ya no hay formulario de Reglamento): siempre los valores por defecto.
+            if (['amarillasParaAcumulada', 'partidosDobleAmarilla', 'multaDobleAmarilla', 'partidosAmarillasAcumuladas', 'multaAmarillasAcumuladas', 'partidosRojaDirecta', 'multaRojaDirecta'].indexOf(campo) !== -1) return REGLAMENTO_DEFAULTS[campo];
             if (v === undefined || v === null || v === '') return REGLAMENTO_DEFAULTS[campo];
             // Estos valores nunca pueden ser 0: con 0 la sanción nace "cumplida" y no suspende a nadie.
             if (['amarillasParaAcumulada', 'partidosDobleAmarilla', 'partidosAmarillasAcumuladas', 'partidosRojaDirecta'].indexOf(campo) !== -1 && !(Number(v) >= 1)) return REGLAMENTO_DEFAULTS[campo];
@@ -4105,7 +4107,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
 
                 if (ev.dobleAmarilla) {
                     sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'doble_amarilla', partidosCastigo: reg(dbRef, 'partidosDobleAmarilla'), expulsionDefinitiva: false, motivo: 'Doble amarilla (expulsión)', multaMonto: reg(dbRef, 'multaDobleAmarilla') });
-                    contador = 0;
+                    // la doble amarilla es roja: se castiga aparte y NO suma ni borra la cuenta de amarillas
                 } else {
                     for (let i = 0; i < ev.amarillas; i++) {
                         contador++;
@@ -4124,7 +4126,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                         motivo: ov?.motivo || `Falta táctica (${reg(dbRef, 'partidosRojaDirecta')} partido(s) por defecto)`,
                         multaMonto: reg(dbRef, 'multaRojaDirecta')
                     });
-                    contador = 0;
+                    // la roja directa tampoco borra la cuenta de amarillas
                 }
             });
             return sanciones;
@@ -4168,10 +4170,15 @@ html[data-theme="dark"] #caja-resumen-hoy{
         }
 
         // Lo que el equipo debe pagar ahora mismo (lo calculado menos lo que ya se liquidó antes).
+        // ===== Multas por jugador (cada multa se paga por separado; se registra en db.multasPagadas) =====
+        function claveMultaSancion(s, jugadorId) { return s.partidoId + '_' + jugadorId + '_' + s.tipo; }
+        function multasDebeJugador(jugadorId, dbRef) {
+            const pag = (dbRef && dbRef.multasPagadas) || {};
+            return calcularSancionesJugador(jugadorId, dbRef).filter(s => (s.multaMonto || 0) > 0 && !pag[claveMultaSancion(s, jugadorId)]);
+        }
+        function montoDebeJugador(jugadorId, dbRef) { return multasDebeJugador(jugadorId, dbRef).reduce((t, s) => t + (s.multaMonto || 0), 0); }
         function multaPendienteEquipo(equipoId, dbRef) {
-            const total = totalMultasCalculadas(equipoId, dbRef);
-            const liquidado = (dbRef.finanzas[equipoId]?.multasLiquidadas) || 0;
-            return Math.max(0, total - liquidado);
+            return (dbRef.jugadores || []).filter(j => j.equipoId === equipoId).reduce((t, j) => t + montoDebeJugador(j.id, dbRef), 0);
         }
 
         // ===== AVISOS AUTOMÁTICOS DE SUSPENSIÓN (Tablón de Avisos) =====
@@ -4192,7 +4199,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                 if (!sanciones.length) return; // nunca ha sido sancionado: no aplica aviso
 
                 const estadoPartidos = estadoSuspensionJugador(j, db, jornadaRef);
-                const multaPendiente = multaPendienteEquipo(j.equipoId, db) > 0;
+                const multaPendiente = montoDebeJugador(j.id, db) > 0;
                 const bloqueado = estadoPartidos.suspendido || multaPendiente;
                 const previo = estadoPrevio[j.id] || {};
                 const equipo = db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Agente Libre';
@@ -4265,7 +4272,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
             const estadoEl = document.getElementById('ficha-adm-estado');
             const jornadaRefFicha = Math.max(0, ...db.partidos.filter(p => p.jugado).map(p => p.jornada)) + 1;
             const estadoSusp = estadoSuspensionJugador(j, db, jornadaRefFicha);
-            const multaPendienteFicha = multaPendienteEquipo(j.equipoId, db) > 0 && calcularSancionesJugador(j.id, db).length > 0;
+            const multaPendienteFicha = montoDebeJugador(j.id, db) > 0;
             if (estadoSusp.suspendido || multaPendienteFicha) {
                 const partesEstado = [];
                 if (estadoSusp.expulsionDefinitiva) partesEstado.push('expulsión definitiva del torneo');
@@ -5437,12 +5444,43 @@ html[data-theme="dark"] #caja-resumen-hoy{
         // Registra el pago de TODAS las multas por tarjetas pendientes del equipo hasta hoy
         // (si después se le suman nuevas tarjetas, se vuelve a generar un nuevo pendiente).
         function saldarMultas(eqId) {
-            const f = asegurarFinanzas(eqId);
-            const total = totalMultasCalculadas(eqId, db);
-            if (total <= (f.multasLiquidadas || 0)) return;
-            f.multasLiquidadas = total;
+            if (!db.multasPagadas) db.multasPagadas = {};
+            let n = 0;
+            (db.jugadores || []).filter(j => j.equipoId === eqId).forEach(j => multasDebeJugador(j.id, db).forEach(sn => { db.multasPagadas[claveMultaSancion(sn, j.id)] = { ts: Date.now(), monto: sn.multaMonto }; n++; }));
+            if (!n) return;
             guardarDB();
             alert("Pago de multas por tarjetas registrado.");
+        }
+
+        // ===== QR de pago de una multa =====
+        function qrMulta(partidoId, jugadorId, tipo) {
+            const j = db.jugadores.find(x => x.id === jugadorId); if (!j) return;
+            const sn = calcularSancionesJugador(jugadorId, db).find(x => x.partidoId === partidoId && x.tipo === tipo); if (!sn) return;
+            const key = claveMultaSancion(sn, jugadorId);
+            const pagada = !!(db.multasPagadas || {})[key];
+            let m = document.getElementById('modal-qr-multa');
+            if (!m) { m = document.createElement('div'); m.id = 'modal-qr-multa'; m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:99999;padding:16px;'; document.body.appendChild(m); }
+            m.innerHTML = `<div style="background:#fff;border-radius:14px;padding:20px;max-width:340px;width:100%;text-align:center;">
+                <h3 style="margin:0 0 4px;">💳 Pago de multa</h3>
+                <div style="font-weight:700;">${escapeHtml(j.nombre)}</div>
+                <div style="font-size:.8rem;color:#666;">${ETIQUETA_TIPO_SANCION[sn.tipo] || sn.tipo} · ${etiquetaJornadaCorta(sn.jornada)}</div>
+                <div style="font-size:1.6rem;font-weight:800;margin:8px 0;">$${sn.multaMonto}</div>
+                <div id="qr-multa-box" style="display:flex;justify-content:center;margin:8px 0;"></div>
+                <div style="font-size:.72rem;color:#888;margin-bottom:10px;">Referencia: ${key}</div>
+                <div style="font-weight:700;margin-bottom:10px;color:${pagada ? '#15803d' : '#b91c1c'};">${pagada ? '✅ Pagada' : '💰 Pendiente de pago'}</div>
+                ${pagada ? `<button class="btn btn-secondary" onclick="marcarMultaPagada('${key}', false)">↩️ Quitar pago</button>` : `<button class="btn btn-primary" onclick="marcarMultaPagada('${key}', true)">✅ Marcar como pagada</button>`}
+                <button class="btn btn-secondary" style="margin-left:6px;" onclick="document.getElementById('modal-qr-multa').remove()">Cerrar</button>
+            </div>`;
+            const box = document.getElementById('qr-multa-box');
+            if (window.QRCode) new QRCode(box, { text: 'LFA-MULTA|' + key + '|' + sn.multaMonto, width: 190, height: 190, correctLevel: QRCode.CorrectLevel.M });
+            else box.textContent = '(No se pudo cargar el generador de QR: revisa tu conexión a internet)';
+        }
+        function marcarMultaPagada(key, pagada) {
+            if (!db.multasPagadas) db.multasPagadas = {};
+            if (pagada) db.multasPagadas[key] = { ts: Date.now() }; else delete db.multasPagadas[key];
+            guardarDB();
+            const m = document.getElementById('modal-qr-multa'); if (m) m.remove();
+            try { renderizarDisciplina(); } catch (e) { }
         }
 
         const ETIQUETA_TIPO_SANCION = {
@@ -5680,7 +5718,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                         <td style="padding:6px;">${motivoCelda}</td>
                         <td style="padding:6px;">${selectorPartidos}</td>
                         <td style="padding:6px;">${estadoTxt}</td>
-                        <td style="padding:6px;">$${s.multaMonto}</td>
+                        <td style="padding:6px;">${s.multaMonto > 0 ? `<b>$${s.multaMonto}</b> ${(db.multasPagadas || {})[claveMultaSancion(s, j.id)] ? '<span style="color:#15803d;">✅ Pagada</span>' : '<span style="color:#b91c1c;">💰 Debe</span>'}<br><button type="button" class="btn btn-secondary btn-sm" onclick="qrMulta(${s.partidoId}, ${j.id}, '${s.tipo}')">📱 QR de pago</button>` : '—'}</td>
                     </tr>`;
             }).join('');
         }

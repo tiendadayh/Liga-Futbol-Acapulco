@@ -2941,6 +2941,8 @@ html.modal-abierto .modal{overscroll-behavior:contain}
         }
         function reg(dbRef, campo) {
             const v = dbRef.reglamento && dbRef.reglamento[campo];
+            // Las reglas de disciplina son fijas (ya no hay formulario de Reglamento): siempre los valores por defecto.
+            if (['amarillasParaAcumulada', 'partidosDobleAmarilla', 'multaDobleAmarilla', 'partidosAmarillasAcumuladas', 'multaAmarillasAcumuladas', 'partidosRojaDirecta', 'multaRojaDirecta'].indexOf(campo) !== -1) return REGLAMENTO_DEFAULTS[campo];
             if (v === undefined || v === null || v === '') return REGLAMENTO_DEFAULTS[campo];
             // Estos valores nunca pueden ser 0: con 0 la sanción nace "cumplida" y no suspende a nadie.
             if (['amarillasParaAcumulada', 'partidosDobleAmarilla', 'partidosAmarillasAcumuladas', 'partidosRojaDirecta'].indexOf(campo) !== -1 && !(Number(v) >= 1)) return REGLAMENTO_DEFAULTS[campo];
@@ -5553,14 +5555,14 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                 const fase = ev.jornada <= jornadasFaseRegular(dbRef) ? 'regular' : 'liguilla';
                 if (faseAnterior === 'regular' && fase === 'liguilla') contador = 0;
                 faseAnterior = fase;
-                if (ev.dobleAmarilla) { contador = 0; }
+                if (ev.dobleAmarilla) { /* no suma ni borra la cuenta */ }
                 else {
                     for (let i = 0; i < ev.amarillas; i++) {
                         contador++;
                         if (contador >= reg(dbRef, 'amarillasParaAcumulada')) contador = 0;
                     }
                 }
-                if (ev.rojaDirecta) contador = 0;
+                
             });
             return contador;
         }
@@ -5581,17 +5583,21 @@ html.modal-abierto .modal{overscroll-behavior:contain}
             const montos = { doble_amarilla: 'multaDobleAmarilla', amarillas_acumuladas: 'multaAmarillasAcumuladas', roja_directa: 'multaRojaDirecta' };
             return calcularSancionesJugador(jugadorId, db).reduce((sum, s) => sum + (reg(db, montos[s.tipo]) || 0), 0);
         }
-
+        // Lo que el jugador todavía debe (cada multa se paga por separado en la liga).
+        function multaDebeJugador(jugadorId) {
+            const montos = { doble_amarilla: 'multaDobleAmarilla', amarillas_acumuladas: 'multaAmarillasAcumuladas', roja_directa: 'multaRojaDirecta' };
+            const pag = db.multasPagadas || {};
+            return calcularSancionesJugador(jugadorId, db).reduce((sum, s) => pag[s.partidoId + '_' + jugadorId + '_' + s.tipo] ? sum : sum + (reg(db, montos[s.tipo]) || 0), 0);
+        }
         function multaPendienteDelEquipoPublica(equipoId) {
-            const total = (db.jugadores || []).filter(j => j.equipoId === equipoId).reduce((sum, j) => sum + multaTotalJugador(j.id), 0);
-            const liquidado = (db.finanzas && db.finanzas[equipoId] && db.finanzas[equipoId].multasLiquidadas) || 0;
-            return Math.max(0, total - liquidado);
+            return (db.jugadores || []).filter(j => j.equipoId === equipoId).reduce((sum, j) => sum + multaDebeJugador(j.id), 0);
         }
 
         function celdaMultaJugador(j) {
-            const monto = multaTotalJugador(j.id);
-            if (!monto) return '<span style="color:var(--text-muted);">Sin multa</span>';
-            if (multaPendienteDelEquipoPublica(j.equipoId) > 0) return '<b style="color:var(--danger);">$' + monto + '</b>';
+            const total = multaTotalJugador(j.id);
+            if (!total) return '<span style="color:var(--text-muted);">Sin multa</span>';
+            const debe = multaDebeJugador(j.id);
+            if (debe > 0) return '<b style="color:var(--danger);">Debe $' + debe + '</b>';
             return '<span style="color:var(--success);">Pagada</span>';
         }
 
@@ -5765,7 +5771,7 @@ html.modal-abierto .modal{overscroll-behavior:contain}
 
                 if (ev.dobleAmarilla) {
                     sanciones.push({ partidoId: ev.partidoId, jornada: ev.jornada, tipo: 'doble_amarilla', partidosCastigo: reg(dbRef, 'partidosDobleAmarilla'), expulsionDefinitiva: false });
-                    contador = 0;
+                    // la doble amarilla es roja: se castiga aparte y NO suma ni borra la cuenta de amarillas
                 } else {
                     for (let i = 0; i < ev.amarillas; i++) {
                         contador++;
@@ -5783,7 +5789,7 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                         expulsionDefinitiva: !!ov?.expulsionDefinitiva,
                         motivo: ov?.motivo || ''
                     });
-                    contador = 0;
+                    // la roja directa tampoco borra la cuenta de amarillas
                 }
             });
             return sanciones;
@@ -5829,7 +5835,7 @@ html.modal-abierto .modal{overscroll-behavior:contain}
         function textoEstadoSuspensionJugador(jugador) {
             const jornadaRef = Math.max(0, ...db.partidos.filter(p => p.jugado).map(p => p.jornada)) + 1;
             const estado = estadoSuspensionJugador(jugador, db, jornadaRef);
-            if (!estado.suspendido) return '🟢 Habilitado';
+            if (!estado.suspendido) { const debe = multaDebeJugador(jugador.id); return debe > 0 ? `❌ No puede jugar: debe multa de $${debe}` : '🟢 Habilitado'; }
             if (estado.expulsionDefinitiva) return '⛔ Expulsión definitiva';
             return `❌ Suspendido (le falta${estado.partidosPendientes > 1 ? 'n' : ''} ${estado.partidosPendientes} partido${estado.partidosPendientes > 1 ? 's' : ''})`;
         }
