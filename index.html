@@ -1737,6 +1737,25 @@ html.modal-abierto .modal{overscroll-behavior:contain}
 #podio-goleo .podio-puesto.plata .podio-foto,#podio-asistencias .podio-puesto.plata .podio-foto,#podio-goleo-liguilla .podio-puesto.plata .podio-foto{border-color:#fff !important}
 #podio-goleo .podio-puesto.bronce .podio-foto,#podio-asistencias .podio-puesto.bronce .podio-foto,#podio-goleo-liguilla .podio-puesto.bronce .podio-foto{border-color:#f7dcc0 !important}
 </style>
+<style id="ficha-leyenda-css">
+.ficha-leyenda-puntos{margin:12px 14px 0;padding:10px 12px;border:1px dashed var(--border,#cbd5e1);border-radius:14px;background:rgba(127,127,127,.06);text-align:center}
+.ficha-leyenda-puntos h4{margin:0 0 8px;font-size:.9rem}
+.flp-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left}
+.flp-col{display:flex;flex-direction:column;gap:3px;font-size:.76rem;padding:8px;border-radius:10px}
+.flp-col b{font-size:.78rem;margin-bottom:2px}
+.flp-col em{font-style:normal;font-weight:800;float:right;margin-left:6px}
+.flp-col small{font-size:.62rem;opacity:.7;display:block}
+.flp-suma{background:rgba(34,170,100,.12)}.flp-suma em{color:#15985a}
+.flp-resta{background:rgba(220,50,60,.12)}.flp-resta em{color:#d42f3c}
+.flp-niveles{display:flex;gap:6px;margin:10px 0 6px}
+.flp-n{flex:1;padding:6px 4px;border-radius:10px;font-size:.72rem;line-height:1.25;color:#241a08}
+.flp-n b{font-size:1rem}
+.flp-n.bronce{background:linear-gradient(145deg,#f4c9a0,#c4803f)}
+.flp-n.plata{background:linear-gradient(145deg,#fff,#aeb7c4)}
+.flp-n.oro{background:linear-gradient(145deg,#fff3b0,#e0a312)}
+.flp-meta{margin:6px 0 2px;font-size:.8rem;font-weight:700}
+.flp-nota{margin:2px 0 0;font-size:.68rem;opacity:.75}
+</style>
 </head>
 <body><div id="liga-skel" aria-hidden="true"><div class="sk sk-h"></div><div class="sk-w"><div class="sk-row"><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div></div></div>
 
@@ -2310,6 +2329,29 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                             <p id="modal-historial-vacio" class="ficha-historial-vacio hidden">Este jugador aún no registra partidos jugados.</p>
                         </div>
                         <div id="modal-grafica-rend"></div>
+                    </div>
+
+                    <div class="ficha-leyenda-puntos">
+                        <h4>🃏 ¿Cómo se ganan los puntos de la carta?</h4>
+                        <div class="flp-grid">
+                            <div class="flp-col flp-suma"><b>⬆️ Suben</b>
+                                <span>⚽ Gol <em>+4</em></span>
+                                <span>🅰️ Asistencia <em>+3</em></span>
+                                <span>⭐ MVP <em>+8</em></span>
+                                <span>👟 Partido jugado <em>+2</em> <small>(máx. 15 partidos)</small></span>
+                            </div>
+                            <div class="flp-col flp-resta"><b>⬇️ Bajan</b>
+                                <span>🟨 Amarilla <em>−3</em></span>
+                                <span>🟥 Roja <em>−5</em></span>
+                            </div>
+                        </div>
+                        <div class="flp-niveles">
+                            <span class="flp-n bronce">🥉 Bronce<br><b>50</b> pts</span>
+                            <span class="flp-n plata">🥈 Plata<br><b>70</b> pts</span>
+                            <span class="flp-n oro">🥇 Oro<br><b>90</b> pts</span>
+                        </div>
+                        <p id="modal-leyenda-meta" class="flp-meta"></p>
+                        <p class="flp-nota">Mínimo 0 y máximo 99 puntos. Si recibes tarjetas puedes perder tu carta y bajar de nivel.</p>
                     </div>
 
                     <div class="ficha-3d-botones">
@@ -5918,6 +5960,15 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                     ctEl.className = 'ficha-carta-tipo ' + cls;
                     if (cp.tier) ctEl.innerHTML = '<b>' + ({ ORO: '🥇', PLATA: '🥈', BRONCE: '🥉' }[cp.tier]) + ' CARTA ' + cp.tier + '</b><small>' + cp.pts + ' puntos</small>';
                     else ctEl.innerHTML = '<b>🔒 Sin carta todavía</b><small>' + cp.pts + ' puntos · faltan ' + (50 - cp.pts) + ' para la carta Bronce</small>';
+                }
+            } catch (e) { }
+            try {
+                const lm = document.getElementById('modal-leyenda-meta');
+                if (lm && window.puntosCartaJugador) {
+                    const cp2 = window.puntosCartaJugador(j);
+                    const sig = cp2.pts >= 90 ? null : (cp2.pts >= 70 ? ['Oro', 90] : (cp2.pts >= 50 ? ['Plata', 70] : ['Bronce', 50]));
+                    lm.innerHTML = 'Llevas <b>' + cp2.pts + '</b> puntos' + (sig ? ' · te faltan <b>' + (sig[1] - cp2.pts) + '</b> para la carta ' + sig[0] : ' · ¡tienes la carta Oro! 🥇') + '.' +
+                        (cp2.tier ? ' Si bajas de ' + ({ ORO: 90, PLATA: 70, BRONCE: 50 }[cp2.tier]) + ' puntos pierdes la carta ' + cp2.tier.charAt(0) + cp2.tier.slice(1).toLowerCase() + '.' : '');
                 }
             } catch (e) { }
 
