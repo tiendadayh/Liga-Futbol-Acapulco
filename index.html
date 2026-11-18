@@ -1551,6 +1551,17 @@ header#site-header .site-header-content{padding:0 6px;min-height:0}
 }
 @media (min-width:601px){header#site-header{padding-top:76px!important}}
 @media (min-width:901px){header#site-header>.site-header-logo{top:12px;right:30px;width:128px;height:128px}header#site-header .site-header-content{padding:0 170px}}
+/* Botón "Instalar App": solo existe en el navegador (en la app instalada no aparece). Va en su propia fila para no chocar con el logo */
+@media (max-width:600px){
+#header-acciones:has(>.install-btn.visible)::after{content:"";order:1;flex:0 0 100%;height:0}
+#header-acciones>.install-btn.visible{order:2}
+}
+@media (max-width:900px) and (min-width:601px){
+#header-acciones:has(>.install-btn.visible){flex-wrap:wrap;max-width:calc(100% - 220px)}
+#header-acciones:has(>.install-btn.visible)::after{content:"";order:1;flex:0 0 100%;height:0}
+#header-acciones>.install-btn.visible{order:2}
+header#site-header:has(#btn-instalar-app.visible){padding-top:116px!important}
+}
 /* Tablón de avisos: textos de las tarjetas centrados (compu y celular) */
 .tb-pista .tablon-card-3d p,.tablon-card-3d p{text-align:center}
 /* Tablón: el bloque de etiqueta, fecha y texto se queda abajo de la tarjeta */
