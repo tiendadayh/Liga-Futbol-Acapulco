@@ -1616,7 +1616,7 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                 alt="Escudo Liga de Futbol Acapulco" class="site-header-logo">
         <div id="header-acciones">
             <button class="theme-switch" onclick="toggleTheme(event)">🌓 Modo</button>
-            <button class="alerta-gol-switch" id="btn-alerta-gol" onclick="cambiarModoAlertaGol()" title="Alertas de gol">🔔 Goles</button>
+            <button class="alerta-gol-switch" id="btn-alerta-gol" onclick="cambiarModoAlertaGol()" title="Alertas del partido">🔔 Alertas</button>
             <button class="alerta-gol-switch" id="btn-notif-sistema" onclick="alternarNotificaciones()" title="Avisos en el celular">📲 Avisos</button>
             <button class="install-btn" id="btn-instalar-app" onclick="instalarAppPWA()">📲 Instalar App</button>
         </div>
@@ -2857,8 +2857,8 @@ html.modal-abierto .modal{overscroll-behavior:contain}
             const btn = document.getElementById('btn-alerta-gol');
             if (!btn) return;
             const m = modoAlertaGol();
-            btn.textContent = m === 'sonido' ? '🔊 Goles' : (m === 'off' ? '🔕 Goles' : '🔔 Goles');
-            btn.title = m === 'sonido' ? 'Alertas de gol: con sonido y vibración (toca para cambiar)'
+            btn.textContent = m === 'sonido' ? '🔊 Alertas' : (m === 'off' ? '🔕 Alertas' : '🔔 Alertas');
+            btn.title = m === 'sonido' ? 'Alertas del partido: con sonido y vibración (toca para cambiar)'
                 : (m === 'off' ? 'Alertas de gol: apagadas (toca para cambiar)' : 'Alertas de gol: solo aviso en pantalla (toca para cambiar)');
         }
 
@@ -2892,13 +2892,110 @@ html.modal-abierto .modal{overscroll-behavior:contain}
             } catch (e) { /* si el audio falla, el aviso visual ya salió */ }
         }
 
+        // ----- Sonidos por tipo de evento (solo en modo 🔊): cada uno suena distinto para reconocerlo sin mirar -----
+        //  ⚽ gol: melodía alegre ascendente   · ❌ autogol: notas descendentes
+        //  🟨 amarilla: dos pitidos cortos     · 🟥 roja: zumbido grave
+        //  🔁 cambio: campanita suave          · 🔔 pitido de árbitro: 1 = inicio / 2do tiempo, 2 = medio tiempo, 3 = final
+        function tonoSuave(freq, inicio, dur, tipo, vol) {
+            const t0 = audioCtxGol.currentTime + inicio;
+            const osc = audioCtxGol.createOscillator();
+            const gain = audioCtxGol.createGain();
+            osc.type = tipo;
+            osc.frequency.setValueAtTime(freq, t0);
+            gain.gain.setValueAtTime(0.0001, t0);
+            gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+            osc.connect(gain).connect(audioCtxGol.destination);
+            osc.start(t0);
+            osc.stop(t0 + dur + 0.05);
+        }
+
+        function pitidoArbitro(inicio, dur) {
+            const t0 = audioCtxGol.currentTime + inicio;
+            const osc = audioCtxGol.createOscillator();
+            const vib = audioCtxGol.createOscillator();
+            const vibGain = audioCtxGol.createGain();
+            const gain = audioCtxGol.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(2900, t0);
+            vib.frequency.setValueAtTime(42, t0);      // el "trino" de un silbato
+            vibGain.gain.setValueAtTime(140, t0);
+            vib.connect(vibGain).connect(osc.frequency);
+            gain.gain.setValueAtTime(0.0001, t0);
+            gain.gain.exponentialRampToValueAtTime(0.22, t0 + 0.02);
+            gain.gain.setValueAtTime(0.22, t0 + dur - 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+            osc.connect(gain).connect(audioCtxGol.destination);
+            osc.start(t0); vib.start(t0);
+            osc.stop(t0 + dur + 0.05); vib.stop(t0 + dur + 0.05);
+        }
+
+        function sonidoEvento(tipo) {
+            try {
+                if (!audioCtxGol) return;
+                if (tipo === 'gol') return sonidoGol();
+                if (tipo === 'autogol') { [[523.25, 0], [440, 0.18], [349.23, 0.36], [261.63, 0.54]].forEach(function (n) { tonoSuave(n[0], n[1], 0.3, 'triangle', 0.26); }); return; }
+                if (tipo === 'amarilla') { tonoSuave(880, 0, 0.14, 'square', 0.12); tonoSuave(880, 0.2, 0.14, 'square', 0.12); return; }
+                if (tipo === 'roja') { tonoSuave(160, 0, 0.8, 'sawtooth', 0.2); tonoSuave(120, 0.05, 0.75, 'sawtooth', 0.14); return; }
+                if (tipo === 'cambio') { tonoSuave(784, 0, 0.25, 'sine', 0.2); tonoSuave(1046.5, 0.18, 0.4, 'sine', 0.2); return; }
+                if (tipo === 'inicio') { pitidoArbitro(0, 0.7); return; }
+                if (tipo === 'medio') { pitidoArbitro(0, 0.35); pitidoArbitro(0.5, 0.35); return; }
+                if (tipo === 'fin') { pitidoArbitro(0, 0.3); pitidoArbitro(0.45, 0.3); pitidoArbitro(0.9, 0.8); return; }
+            } catch (e) { /* si el audio falla no pasa nada */ }
+        }
+
+        let eventosConocidos = null;   // tarjetas y cambios ya vistos; null = aún no llega la primera lectura (no sonar)
+        let estadosConocidos = null;   // estado de cada partido en la lectura anterior
+
+        function detectarEventosNuevos(dbNueva) {
+            const evVistos = new Set();
+            const estVistos = {};
+            const avisos = [];
+            const nombreEq = function (id) { const e = (dbNueva.equipos || []).find(function (x) { return x.id === id; }); return e ? e.nombre : '-'; };
+            (dbNueva.partidos || []).forEach(function (p) {
+                const vivoAhora = ESTADOS_PARTIDO_EN_VIVO.indexOf(p.estadoVivo) >= 0 && !p.jugado;
+                estVistos[p.id] = vivoAhora ? p.estadoVivo : (p.jugado ? 'fin' : 'prog');
+                const vs = nombreEq(p.localId) + ' vs ' + nombreEq(p.visitaId);
+                if (estadosConocidos !== null) {
+                    const antes = estadosConocidos[p.id], ahora = estVistos[p.id];
+                    const antesVivo = ESTADOS_PARTIDO_EN_VIVO.indexOf(antes) >= 0;
+                    if (antes !== undefined && antes !== ahora) {
+                        if (ahora === 'primer_tiempo' || ahora === 'en_curso') avisos.push({ s: 'inicio', t: '⏱️ ¡Arrancó el partido! ' + escapeHtml(vs) });
+                        else if (ahora === 'medio_tiempo') avisos.push({ s: 'medio', t: '⏸️ Medio tiempo: ' + escapeHtml(vs) });
+                        else if (ahora === 'segundo_tiempo') avisos.push({ s: 'inicio', t: '▶️ Arranca el segundo tiempo: ' + escapeHtml(vs) });
+                        else if (ahora === 'fin' && antesVivo) avisos.push({ s: 'fin', t: '🏁 Final del partido: ' + escapeHtml(vs) });
+                    }
+                }
+                (p.eventos || []).forEach(function (ev) {
+                    if (!ev || ['amarilla', 'roja', 'cambio'].indexOf(ev.tipo) < 0) return;
+                    const clave = p.id + ':' + (ev.id !== undefined ? ev.id : ev.tipo + '-' + ev.min + '-' + ev.desc);
+                    evVistos.add(clave);
+                    if (eventosConocidos !== null && !eventosConocidos.has(clave) && vivoAhora) {
+                        const min = ev.min !== undefined && ev.min !== '' ? " · min " + escapeHtml(String(ev.min)) + "'" : '';
+                        const etiqueta = ev.tipo === 'amarilla' ? '🟨 Amarilla: ' : (ev.tipo === 'roja' ? '🟥 Roja: ' : '🔁 Cambio: ');
+                        avisos.push({ s: ev.tipo, t: etiqueta + escapeHtml(String(ev.desc || '')) + min });
+                    }
+                });
+            });
+            eventosConocidos = evVistos;
+            estadosConocidos = estVistos;
+            if (modoAlertaGol() !== 'sonido') return;   // los sonidos solo suenan si la persona activó 🔊
+            avisos.forEach(function (a, i) {
+                setTimeout(function () {
+                    sonidoEvento(a.s);
+                    mostrarToast(a.t, 'info', 4500);
+                    try { if (navigator.vibrate) navigator.vibrate(a.s === 'roja' ? [400] : (a.s === 'amarilla' ? [100, 60, 100] : [80])); } catch (e) { /* sin vibración */ }
+                }, i * 1300);
+            });
+        }
+
         function cambiarModoAlertaGol() {
             const sig = MODOS_ALERTA_GOL[(MODOS_ALERTA_GOL.indexOf(modoAlertaGol()) + 1) % MODOS_ALERTA_GOL.length];
             try { localStorage.setItem(CLAVE_ALERTA_GOL, sig); } catch (e) { /* sin almacenamiento */ }
             pintarBotonAlertaGol();
             const textos = {
                 aviso: '🔔 Alertas de gol: aviso en pantalla.',
-                sonido: '🔊 Alertas de gol: con sonido y vibración.',
+                sonido: '🔊 Alertas con sonido: gol, tarjetas, cambios y pitidos del partido.',
                 off: '🔕 Alertas de gol apagadas.'
             };
             mostrarToast(textos[sig], 'info', 2500);
@@ -3006,7 +3103,7 @@ html.modal-abierto .modal{overscroll-behavior:contain}
             timerAlertaGol = setTimeout(ocultarAlertaGol, 8000);
 
             if (sonido) {
-                sonidoGol();
+                sonidoEvento(ev.tipo === 'autogol' ? 'autogol' : 'gol');
                 try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) { /* no todos los navegadores vibran */ }
             }
             // Si la pestaña está oculta, el título avisa para que se note en la barra del navegador.
@@ -3043,6 +3140,7 @@ html.modal-abierto .modal{overscroll-behavior:contain}
             db = datosNube;
             normalizarDB(db);
             try { detectarGolesNuevos(db); } catch (err) { console.warn('Alerta de gol no disponible:', err); }   // nunca debe romper la actualización
+            try { detectarEventosNuevos(db); } catch (err) { console.warn('Sonidos de eventos no disponibles:', err); }
             try { localStorage.setItem('liga_premier_db', jsonNube); } catch (err) { /* sin espacio o sin almacenamiento: no es crítico */ }
             clearTimeout(renderNubePendiente);
             renderNubePendiente = setTimeout(function () {
