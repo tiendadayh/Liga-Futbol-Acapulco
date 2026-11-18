@@ -592,6 +592,14 @@ h2,h3{text-transform:uppercase;letter-spacing:.8px}
 th{text-transform:uppercase;font-size:.82em;letter-spacing:.7px}
 td,.marcador,.mm-marcador,.num{font-variant-numeric:tabular-nums}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+.sancion-fila{background:#fff;border:1px solid #fecaca;border-left:4px solid #c62828;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:.85rem}
+.sancion-tipo{display:inline-block;margin-left:6px;font-size:.72rem;font-weight:800;color:#b91c1c;background:rgba(198,40,40,.1);border-radius:999px;padding:1px 8px}
+.sancion-campos{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.sancion-campos select{flex:0 0 auto;width:auto}
+.sancion-campos input{flex:1;min-width:180px}
+.sancion-info{margin-top:4px;color:#475569;font-size:.8rem}
+.sanciones-resumen{margin-top:8px;padding:8px 10px;border:1px solid #fecaca;background:rgba(198,40,40,.06);border-radius:8px;font-size:.82rem}
+.sanciones-resumen ul{margin:4px 0 0 18px;padding:0}
 </style>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
@@ -801,6 +809,11 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                         <div>Jugador</div><div>⚽ Gls</div><div>🟨 Am.</div><div>🟥 Rj.</div>
                     </div>
                     <div id="lista-inputs-jugadores"></div>
+                    <fieldset id="fs-sanciones-cedula" style="display:none; border:1px solid #c62828; border-radius:8px; padding:12px; margin-top:15px; background:rgba(198,40,40,.04);">
+                        <legend style="padding:0 6px; font-weight:700; color:#b91c1c; font-size:0.9rem;">🚫 Sanciones disciplinarias (los equipos las validan al firmar)</legend>
+                        <p style="font-size:0.75rem; color:#6b7280; margin:0 0 8px;">Roja directa o doble amarilla = no juega la siguiente jornada. Al completar las amarillas acumuladas del reglamento también se suspende. En la roja directa indica cuántos partidos se va y el porqué.</p>
+                        <div id="lista-sanciones-cedula"></div>
+                    </fieldset>
 
                     <div style="margin-top:15px;">
                         <label style="color: #b61225;">⭐ Designar Jugador MVP Oficial del Partido:</label>
@@ -1023,7 +1036,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 </div>
                 <label class="chk-acepto-cedula">
                     <input type="checkbox" id="chk-acepto-local" onchange="actualizarEstadoBotonConfirmar()">
-                    Declaro que revisé la información de esta cédula y estoy de acuerdo con lo asentado.
+                    Declaro que revisé la información de esta cédula y estoy de acuerdo con lo asentado, incluidas las sanciones disciplinarias.
                 </label>
             </div>
 
@@ -1037,7 +1050,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 </div>
                 <label class="chk-acepto-cedula">
                     <input type="checkbox" id="chk-acepto-visita" onchange="actualizarEstadoBotonConfirmar()">
-                    Declaro que revisé la información de esta cédula y estoy de acuerdo con lo asentado.
+                    Declaro que revisé la información de esta cédula y estoy de acuerdo con lo asentado, incluidas las sanciones disciplinarias.
                 </label>
             </div>
 
@@ -1418,7 +1431,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
             jugadoresTitulares: 11, jugadoresSuplentes: 5,
             cuotaArbitraje: 300, cuotaInscripcionEquipo: 0, cuotaInscripcionJugador: 0,
             balonOficial: '', categoriaTexto: 'Libre',
-            amarillasParaAcumulada: 3,
+            amarillasParaAcumulada: 5,
             partidosDobleAmarilla: 1, multaDobleAmarilla: 100,
             partidosAmarillasAcumuladas: 1, multaAmarillasAcumuladas: 100,
             partidosRojaDirecta: 1, multaRojaDirecta: 150,
@@ -3392,6 +3405,97 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
         let firmaDibujando = { local: false, visita: false, arbitro: false };
         let firmaTrazada = { local: false, visita: false, arbitro: false };
 
+        // ===== Sanciones disciplinarias de la cédula: partidos de castigo + motivo, validados por los equipos al firmar =====
+        let _sancionesFirma = '';
+        const TIPO_SANCION_CEDULA = { roja_directa: '🟥 Roja directa', doble_amarilla: '🟨🟨 Doble amarilla (expulsión)', amarillas_acumuladas: '🟨 Amarillas acumuladas' };
+        function partidoDeLaCedula() {
+            const id = parseInt(document.getElementById('admin-res-partido').value);
+            return db.partidos.find(p => p.id === id) || null;
+        }
+        function sancionesBorrador(partido) { if (!partido.sancionesBorrador) partido.sancionesBorrador = {}; return partido.sancionesBorrador; }
+        function tarjetasDelFormulario() {
+            const r = [];
+            document.querySelectorAll('.fila-datos-jugador').forEach(row => {
+                const jId = parseInt(row.dataset.jugadorid);
+                const a = parseInt(row.querySelector('.in-amr')?.value) || 0;
+                const rj = parseInt(row.querySelector('.in-rjs')?.value) || 0;
+                if (a || rj) r.push({ jId: jId, a: a, r: rj });
+            });
+            return r;
+        }
+        function textoPartidosSancion(s) {
+            return s.expulsionDefinitiva ? 'Expulsión definitiva' : `${s.partidosCastigo} partido${s.partidosCastigo > 1 ? 's' : ''} de suspensión`;
+        }
+        // Simula el cierre de esta cédula con las tarjetas capturadas y devuelve las sanciones que genera.
+        function calcularSancionesCedula(partido) {
+            const filas = tarjetasDelFormulario();
+            const borr = sancionesBorrador(partido);
+            const sim = Object.assign({}, partido, { jugado: true, tarjetasDetalle: [] });
+            const overrides = Object.assign({}, db.disciplinaOverrides || {});
+            filas.forEach(f => {
+                for (let i = 0; i < f.a; i++) sim.tarjetasDetalle.push({ jugadorId: f.jId, tipo: 'amarilla' });
+                for (let i = 0; i < f.r; i++) sim.tarjetasDetalle.push({ jugadorId: f.jId, tipo: 'roja' });
+                if (f.a === 2) sim.tarjetasDetalle.push({ jugadorId: f.jId, tipo: 'roja_doble' });
+                const b = borr[f.jId];
+                if (b && b.partidos) overrides[`${partido.id}_${f.jId}`] = { partidosCastigo: b.partidos === 'definitiva' ? 1 : (parseInt(b.partidos) || 1), expulsionDefinitiva: b.partidos === 'definitiva', motivo: b.motivo || '' };
+            });
+            const tmp = { partidos: db.partidos.filter(p => p.id !== partido.id).concat([sim]), jugadores: db.jugadores, reglamento: db.reglamento, disciplinaOverrides: overrides, finanzas: db.finanzas };
+            const out = [];
+            filas.forEach(f => {
+                const jug = db.jugadores.find(j => j.id === f.jId);
+                if (!jug) return;
+                calcularSancionesJugador(f.jId, tmp).filter(s => s.partidoId === partido.id).forEach(s => {
+                    const b = borr[f.jId] || {};
+                    let motivo = '';
+                    if (s.tipo === 'roja_directa') motivo = String(b.motivo || '').trim();
+                    else if (s.tipo === 'doble_amarilla') motivo = 'Segunda amarilla en el mismo partido';
+                    else motivo = `Completó ${reg(db, 'amarillasParaAcumulada')} amarillas acumuladas`;
+                    out.push({ jugador: jug, sancion: s, motivo: motivo });
+                });
+            });
+            return out;
+        }
+        function cambiarSancionCedula(jId, campo, valor, guardar) {
+            const partido = partidoDeLaCedula();
+            if (!partido) return;
+            const borr = sancionesBorrador(partido);
+            if (!borr[jId]) borr[jId] = {};
+            borr[jId][campo] = valor;
+            if (guardar) { try { guardarDB(); } catch (e) {} }
+        }
+        function renderSancionesCedula() {
+            const fs = document.getElementById('fs-sanciones-cedula');
+            const cont = document.getElementById('lista-sanciones-cedula');
+            if (!fs || !cont) return;
+            const visible = document.getElementById('contenedor-incidencias').style.display !== 'none';
+            const partido = visible ? partidoDeLaCedula() : null;
+            if (!partido) { fs.style.display = 'none'; _sancionesFirma = ''; return; }
+            const firma = partido.id + '|' + tarjetasDelFormulario().map(f => `${f.jId}:${f.a}:${f.r}`).join(',');
+            if (firma === _sancionesFirma) return;
+            _sancionesFirma = firma;
+            const lista = calcularSancionesCedula(partido);
+            if (!lista.length) { fs.style.display = 'none'; cont.innerHTML = ''; return; }
+            fs.style.display = '';
+            const borr = sancionesBorrador(partido);
+            cont.innerHTML = lista.map(x => {
+                const j = x.jugador, s = x.sancion;
+                const eq = (db.equipos.find(e => e.id === j.equipoId) || {}).nombre || '';
+                const cab = `<div><b>${escapeHtml(j.nombre)}</b> <span style="color:#6b7280;">· ${escapeHtml(eq)}</span> <span class="sancion-tipo">${TIPO_SANCION_CEDULA[s.tipo] || s.tipo}</span></div>`;
+                if (s.tipo === 'roja_directa') {
+                    const b = borr[j.id] || {};
+                    const sel = b.partidos || String(reg(db, 'partidosRojaDirecta'));
+                    const opts = ['1', '2', '3', '4'].map(n => `<option value="${n}" ${sel === n ? 'selected' : ''}>${n} partido${n === '1' ? '' : 's'}</option>`).join('') + `<option value="definitiva" ${sel === 'definitiva' ? 'selected' : ''}>Expulsión definitiva</option>`;
+                    return `<div class="sancion-fila">${cab}
+                        <div class="sancion-campos">
+                            <select onchange="cambiarSancionCedula(${j.id}, 'partidos', this.value, true)">${opts}</select>
+                            <input type="text" value="${escapeHtml(b.motivo || '')}" placeholder="¿Por qué fue expulsado? (obligatorio)" oninput="cambiarSancionCedula(${j.id}, 'motivo', this.value, false)" onchange="cambiarSancionCedula(${j.id}, 'motivo', this.value, true)">
+                        </div></div>`;
+                }
+                return `<div class="sancion-fila">${cab}<div class="sancion-info">${textoPartidosSancion(s)} · ${escapeHtml(x.motivo)} · Multa: $${s.multaMonto || 0}</div></div>`;
+            }).join('');
+        }
+        setInterval(renderSancionesCedula, 1000);
+
         function construirResumenCedula(partido, nombreLocal, nombreVisita) {
             const glocal = document.getElementById('admin-res-glocal').value || '0';
             const gvisita = document.getElementById('admin-res-gvisita').value || '0';
@@ -3417,6 +3521,8 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 }
             });
 
+            const sancsResumen = calcularSancionesCedula(partido);
+            const sancionesHtml = sancsResumen.length ? `<div class="sanciones-resumen"><p><strong>🚫 Sanciones disciplinarias (al firmar, el equipo las acepta):</strong></p><ul>${sancsResumen.map(x => `<li><b>${escapeHtml(x.jugador.nombre)}</b> (${escapeHtml((db.equipos.find(e => e.id === x.jugador.equipoId) || {}).nombre || '')}) — ${TIPO_SANCION_CEDULA[x.sancion.tipo] || x.sancion.tipo} — <b>${textoPartidosSancion(x.sancion)}</b>${x.motivo ? ' — Motivo: ' + escapeHtml(x.motivo) : ''}</li>`).join('')}</ul></div>` : '';
             const cambiosTexto = textoCambiosPorEquipo(partido, partido.localId) + (textoCambiosPorEquipo(partido, partido.localId) && textoCambiosPorEquipo(partido, partido.visitaId) ? '\n' : '') + textoCambiosPorEquipo(partido, partido.visitaId);
 
             return `
@@ -3426,6 +3532,7 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 ${statsJugadores.length ? `<p>📝 Goles/Tarjetas: ${statsJugadores.join(' · ')}</p>` : ''}
                 ${cambiosTexto ? `<p>🔁 Cambios: ${cambiosTexto.replace(/\n/g, ' · ')}</p>` : ''}
                 ${incidentes ? `<p>🚨 Incidentes: ${incidentes.replace(/\n/g, ' · ')}</p>` : ''}
+                ${sancionesHtml}
                 ${(partido.verificaciones || []).length ? `<p>🪪 Credenciales revisadas: ${new Set(partido.verificaciones.filter(v => v.resultado !== 'no_coincide').map(v => v.jugadorId)).size} ✔${partido.verificaciones.filter(v => v.resultado === 'no_coincide').length ? ` · <b style="color:#b91c1c;">${partido.verificaciones.filter(v => v.resultado === 'no_coincide').length} ✖ NO COINCIDE</b>` : ''}</p>` : ''}
                 <p style="color:#94a3b8; margin-top:6px;">Revisa con detalle en el formulario antes de firmar. Si algo está mal, usa "Volver a Editar".</p>
             `;
@@ -3530,6 +3637,15 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                 return alert("Solo el árbitro asignado a este encuentro puede cerrar la cédula oficial.");
             }
 
+            const sancsVal = calcularSancionesCedula(partido);
+            const sinMotivo = sancsVal.find(x => x.sancion.tipo === 'roja_directa' && !x.motivo);
+            if (sinMotivo) {
+                _sancionesFirma = '';
+                renderSancionesCedula();
+                const fsS = document.getElementById('fs-sanciones-cedula');
+                if (fsS) fsS.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return alert(`Falta el motivo de la roja de ${sinMotivo.jugador.nombre}. Anótalo en "Sanciones disciplinarias" para que los equipos lo validen al firmar.`);
+            }
             cedulaPendientePartidoId = pId;
             const nombreLocal = db.equipos.find(eq => eq.id === partido.localId)?.nombre || 'Local';
             const nombreVisita = db.equipos.find(eq => eq.id === partido.visitaId)?.nombre || 'Visitante';
@@ -3676,6 +3792,17 @@ html[data-theme="dark"] #liga-skel{background:#0d1424}
                     if (g || a || r) partido.estadisticasJugadores.push({ jugadorId: jId, goles: g, amarillas: a, rojas: r });
                 }
             });
+
+            // Sanciones validadas por los equipos al firmar: quedan en la cédula y alimentan suspensión y multa.
+            try {
+                const sancsFin = calcularSancionesCedula(partido);
+                if (!db.disciplinaOverrides) db.disciplinaOverrides = {};
+                partido.sancionesCedula = sancsFin.map(x => ({ jugadorId: x.jugador.id, jugador: x.jugador.nombre, equipoId: x.jugador.equipoId, tipo: x.sancion.tipo, partidosCastigo: x.sancion.expulsionDefinitiva ? 'definitiva' : x.sancion.partidosCastigo, motivo: x.motivo }));
+                sancsFin.filter(x => x.sancion.tipo === 'roja_directa').forEach(x => {
+                    db.disciplinaOverrides[`${partido.id}_${x.jugador.id}`] = { partidosCastigo: x.sancion.expulsionDefinitiva ? 1 : x.sancion.partidosCastigo, expulsionDefinitiva: !!x.sancion.expulsionDefinitiva, motivo: x.motivo };
+                });
+                delete partido.sancionesBorrador;
+            } catch (e) { console.error('sanciones de la cédula', e); }
 
             document.getElementById('contenedor-incidencias').style.display = 'none';
             guardarDB();
