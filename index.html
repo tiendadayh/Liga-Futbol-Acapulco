@@ -1548,6 +1548,11 @@ header#site-header .site-header-content{padding:0 6px;min-height:0}
 #header-acciones>button{padding:6px 10px!important;font-size:.68rem!important;margin:0!important}
 }
 @media (min-width:601px){header#site-header{padding-top:76px!important}}
+@media (min-width:901px){header#site-header>.site-header-logo{top:12px;right:30px;width:128px;height:128px}header#site-header .site-header-content{padding:0 170px}}
+/* Tablón de avisos: textos de las tarjetas centrados (compu y celular) */
+.tb-pista .tablon-card-3d p,.tablon-card-3d p{text-align:center}
+/* Tablón: el bloque de etiqueta, fecha y texto se queda abajo de la tarjeta */
+.tb-pista .tablon-card-3d>div:last-child,.tablon-card-3d>div:last-child{margin-top:auto!important}
 @media (max-width:600px){#liga-burger{position:absolute;top:18px;left:10px;width:40px;height:40px}#liga-burger.liga-burger-flota{position:fixed;top:10px;left:10px}}
 </style>
 <style id="liga-tablon-carrusel">
@@ -3470,8 +3475,10 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                 const franjaEscudos = avisoEq.eqs.length
                     ? `<div class="aviso-escudos">${avisoEq.eqs.map(escudoAvisoHTML).join(avisoEq.vs ? '<span class="aviso-vs">VS</span>' : '')}</div>`
                     : '';
+                const equipoRegistro = (!jugadorAviso && c.tipo === 'registro' && avisoEq.eqs.length === 1) ? avisoEq.eqs[0] : null;
+                const abrirEquipo = equipoRegistro ? `onclick="verEquipo(${JSON.stringify(equipoRegistro.id).replace(/"/g, '&quot;')})"` : '';
                 return `
-                <div ${abrirFicha} class="tablon-card-3d" style="background:var(--card-bg, var(--light)); border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06)); display:flex; flex-direction:column; ${jugadorAviso ? 'cursor:pointer; transition:transform .15s, box-shadow .15s;' : ''}" ${jugadorAviso ? `onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 18px -4px rgba(0,0,0,0.15)';" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06))';"` : ''}>
+                <div ${abrirFicha || abrirEquipo} class="tablon-card-3d" style="background:var(--card-bg, var(--light)); border:1px solid var(--border); border-radius:12px; overflow:hidden; box-shadow:var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06)); display:flex; flex-direction:column; ${equipoRegistro ? 'cursor:pointer;' : ''}${jugadorAviso ? 'cursor:pointer; transition:transform .15s, box-shadow .15s;' : ''}" ${jugadorAviso ? `onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 18px -4px rgba(0,0,0,0.15)';" onmouseout="this.style.transform='none'; this.style.boxShadow='var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.06))';"` : ''}>
                     ${tituloArriba ? `<h4 class="aviso-titulo-top">${tituloLimpio}</h4>` : ''}
                     ${jugadorAviso
                         ? `<div class="aviso-escudos"><div class="aviso-eq aviso-eq-foto"><img src="${fotoJugador || 'https://placehold.co/60'}" alt="${escapeHtml(jugadorAviso.nombre)}" loading="lazy"><span><span class="nom-l">${escapeHtml(partesJug.nombres)}</span>${partesJug.apellidos ? ' <span class="nom-l">' + escapeHtml(partesJug.apellidos) + '</span>' : ''}</span><small><span class="eq-junto">${escapeHtml(equipoAviso)}</span></small></div></div>`
@@ -3483,8 +3490,9 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                             ${c.fecha ? `<span style="font-size:0.75rem; color:var(--text-muted);">${c.fecha}</span>` : ''}
                         </div>
                         ${tituloArriba ? '' : `<h4 style="margin:0 0 6px;">${tituloLimpio}</h4>`}
-                        <p style="font-size:0.85rem; white-space:pre-line; margin:0;">${cuerpoAviso}</p>
+                        <p style="font-size:0.85rem; white-space:pre-line; margin:0;">${(equipoRegistro && /se ha registrado en la liga/i.test(c.contenido || '')) ? ('El equipo &quot;' + escapeHtml(equipoRegistro.nombre) + '&quot;\nse ha registrado en la liga.') : cuerpoAviso}</p>
                         ${jugadorAviso ? `<p style="font-size:0.78rem; font-weight:600; text-align:center; color:${et.color}; margin:10px 0 0;">👁️ Ver ficha →</p>` : ''}
+                        ${equipoRegistro ? `<p style="font-size:0.78rem; font-weight:600; text-align:center; color:${et.color}; margin:10px 0 0;">👁️ Ver equipo →</p>` : ''}
                     </div>
                 </div>`;
             }).join('') || estadoVacio('📭', 'No hay avisos recientes.');
