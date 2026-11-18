@@ -1245,6 +1245,8 @@ img{transition:opacity .4s ease}
 .dst-eq img{width:88px;height:88px;object-fit:contain;background:#fff;border-radius:50%;padding:6px;box-shadow:0 0 0 3px rgba(255,255,255,.25),0 8px 18px rgba(0,0,0,.35);animation:flota 4s ease-in-out infinite}
 .dst-eq:last-child img{animation-delay:-2s}
 .dst-eq b{font:700 1.15rem var(--font-display);letter-spacing:.5px;text-transform:uppercase;line-height:1.1;overflow-wrap:anywhere}
+.dst-eq .dst-pos{margin-top:-2px;font:600 .74rem var(--font-body,Inter,sans-serif);letter-spacing:.3px;color:rgba(255,255,255,.78);background:rgba(255,255,255,.12);padding:3px 10px;border-radius:999px;white-space:nowrap}
+.dst-eq .dst-pos strong{color:#f0b429;font-weight:800}
 .dst-mar{font:800 3.1rem var(--font-display);color:var(--accent,#f0b429);text-shadow:0 3px 12px rgba(0,0,0,.4);font-variant-numeric:tabular-nums;white-space:nowrap}
 .dst-mar.vs{font-size:2.2rem;opacity:.9}
 .dst-cuenta{display:flex;justify-content:center;gap:8px;margin:10px 0 4px}
@@ -3802,8 +3804,10 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                 .filter(x => !isNaN(x.ts) && x.ts >= ahora)   // si la hora ya pasó, el partido deja de mostrarse
                 .sort((a, b) => a.ts - b.ts);
 
-            const siguiente = (favoritoId !== null && proximos.find(x => x.p.localId === favoritoId || x.p.visitaId === favoritoId))
-                || proximos[0];
+            // La cuenta regresiva solo se muestra a quien eligió su equipo favorito, y es la de SU próximo partido.
+            // Sin equipo favorito no aparece. Cuando el partido ya se jugó (o su hora pasó) se quita y sale el siguiente de ese equipo.
+            // La cuenta regresiva del header se quitó por completo (el usuario no la quiere): nunca se muestra.
+            const siguiente = null;
 
             if (!siguiente) {
                 cont.classList.add('hidden');
@@ -3930,25 +3934,7 @@ html.modal-abierto .modal{overscroll-behavior:contain}
             const tabla = calcularTablaPosiciones();
             const pos = tabla.findIndex(t => t.id === eq.id);
             if (pos >= 0 && tabla[pos].pj > 0) partes.push('⭐ ' + eq.nombre + ' va en el lugar ' + (pos + 1) + ' con ' + tabla[pos].pts + ' pts');
-            const inicioHoy = new Date(); inicioHoy.setHours(0, 0, 0, 0);
-            const pendientes = db.partidos
-                .filter(p => !p.jugado && (p.localId === eq.id || p.visitaId === eq.id))
-                .map(p => ({ p: p, f: fechaHoraPartido(p) }))
-                .filter(x => !x.f || x.f >= inicioHoy)
-                .sort((a, b) => (a.f ? a.f.getTime() : Infinity) - (b.f ? b.f.getTime() : Infinity) || (a.p.jornada || 0) - (b.p.jornada || 0));
-            if (pendientes.length) {
-                const x = pendientes[0];
-                const rivalId = x.p.localId === eq.id ? x.p.visitaId : x.p.localId;
-                const rival = db.equipos.find(e => e.id === rivalId);
-                let cuando = x.p.jornada ? 'Jornada ' + x.p.jornada : 'por definir';
-                if (x.f) {
-                    const manana = new Date(inicioHoy); manana.setDate(manana.getDate() + 1);
-                    const dia = x.f.toDateString() === new Date().toDateString() ? 'hoy'
-                        : (x.f.toDateString() === manana.toDateString() ? 'mañana' : x.f.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' }));
-                    cuando = dia + (x.p.hora ? ' ' + x.f.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' }) : '');
-                }
-                partes.push('Próximo partido: vs ' + (rival ? rival.nombre : 'por definir') + ' · ' + cuando);
-            }
+            // (Se quitó la parte de "Próximo partido: vs …": aquí solo queda la posición del equipo.)
             el.textContent = partes.join('  ·  ');
             el.classList.toggle('hidden', partes.length === 0);
         }
@@ -7168,7 +7154,15 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.bo
     var d = elegir();
     if (!d) { sec.classList.add('hidden'); sec.innerHTML = ''; destTs = null; return; }
     var p = d.p, L = eqPor(p.localId), V = eqPor(p.visitaId);
-    var firma = [d.modo, p.id, p.golesLocal, p.golesVisita, p.estadoVivo, p.hora, p.fecha, p.jugado].join('|');
+    // Posición de cada equipo en la tabla (se muestra debajo de su nombre).
+    var tablaPos = []; try { tablaPos = calcularTablaPosiciones() || []; } catch (e) { }
+    function posEq(e) {
+      if (!e) return '';
+      var i = tablaPos.findIndex(function (t) { return t.id === e.id; });
+      return i < 0 ? '' : '<span class="dst-pos">Lugar <strong>' + (i + 1) + '</strong> · ' + tablaPos[i].pts + ' pts</span>';
+    }
+    var posL = posEq(L), posV = posEq(V);
+    var firma = [d.modo, p.id, p.golesLocal, p.golesVisita, p.estadoVivo, p.hora, p.fecha, p.jugado, posL, posV].join('|');
     if (sec.getAttribute('data-f') === firma && !sec.classList.contains('hidden')) { destTs = d.ts || null; tick(); return; }
     sec.setAttribute('data-f', firma);
     destTs = d.ts || null;
@@ -7182,7 +7176,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.bo
     if (!isNaN(dt)) fecha = dt.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' }) + (p.hora ? ' · ' + esc(p.hora) : '');
     var meta = '';
     if (fecha) meta += '<span>' + fecha + '</span>';
-    meta += '<span>' + esc(p.estadio || (campo && campo.nombre) || 'Campo por definir') + '</span>';
+    meta += '<span>Campo: ' + esc(p.estadio || (campo && campo.nombre) || 'por definir') + '</span>';
     if (p.arbitro) meta += '<span>Árbitro: ' + esc(p.arbitro) + '</span>';
     var fb = '';
     if (p.facebookEnVivo && p.facebookPagina && d.modo !== 'fin') {
@@ -7191,8 +7185,8 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.bo
     }
     var jor = typeof etiquetaJornada === 'function' && p.jornada != null ? etiquetaJornada(p.jornada) : '';
     sec.innerHTML = '<span class="dst-et ' + cl + '"><i></i>' + esc(et) + '</span>' + (jor ? '<div class="dst-jor">' + esc(jor) + '</div>' : '') +
-      '<div class="dst-cuerpo"><div class="dst-eq"><img src="' + esc((L && L.escudo) || 'https://placehold.co/90') + '" alt=""><b>' + esc(L ? L.nombre : 'Local') + '</b></div>' + centro +
-      '<div class="dst-eq"><img src="' + esc((V && V.escudo) || 'https://placehold.co/90') + '" alt=""><b>' + esc(V ? V.nombre : 'Visita') + '</b></div></div>' +
+      '<div class="dst-cuerpo"><div class="dst-eq"><img src="' + esc((L && L.escudo) || 'https://placehold.co/90') + '" alt=""><b>' + esc(L ? L.nombre : 'Local') + '</b>' + posL + '</div>' + centro +
+      '<div class="dst-eq"><img src="' + esc((V && V.escudo) || 'https://placehold.co/90') + '" alt=""><b>' + esc(V ? V.nombre : 'Visita') + '</b>' + posV + '</div></div>' +
       (d.modo === 'prox' ? '<div class="dst-cuenta" id="dest-cuenta"></div>' : '') +
       '<div class="dst-meta">' + meta + '</div>' + fb;
     sec.classList.remove('hidden');

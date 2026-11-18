@@ -4804,8 +4804,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                 const fechaPartidoTxt = document.getElementById('admin-part-fecha').value;
                 const horaPartidoTxt = document.getElementById('admin-part-hora').value;
                 const detallePartidoTxt = `${fechaPartidoTxt ? ' · ' + fechaPartidoTxt : ''}${horaPartidoTxt ? ' ' + horaPartidoTxt : ''}${campoSeleccionado ? ' · ' + campoSeleccionado.nombre : ''}`;
-                agregarAvisoPartidoProgramado(parseInt(document.getElementById('admin-part-jornada').value), jornadaTxtPartido,
-                    `${nombreLocPartido} vs ${nombreVisPartido}${detallePartidoTxt}`,
+                agregarAvisoRegistro('aviso', '📅 Nuevo partido programado',
                     `${nombreLocPartido} vs ${nombreVisPartido} · ${jornadaTxtPartido}${detallePartidoTxt}.`);
                 this.reset(); document.getElementById('cancha-preview-partido').classList.add('hidden'); guardarDB(); alert("Partido Programado.");
             });
