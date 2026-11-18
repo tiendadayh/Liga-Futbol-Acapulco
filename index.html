@@ -1562,6 +1562,39 @@ header#site-header .site-header-content{padding:0 6px;min-height:0}
 #header-acciones>.install-btn.visible{order:2}
 header#site-header:has(#btn-instalar-app.visible){padding-top:116px!important}
 }
+/* Avisos (toasts): todos arriba. Si hay alerta de gol a la vista, bajan para no taparla */
+.toast-container{top:calc(env(safe-area-inset-top,0px) + 12px)!important;bottom:auto!important;flex-direction:column!important;z-index:1400}
+.toast{animation-name:toast-entra-arriba}
+.toast.toast-saliendo{animation-name:toast-sale-arriba}
+@keyframes toast-entra-arriba{from{opacity:0;transform:translateY(-14px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes toast-sale-arriba{to{opacity:0;transform:translateY(-8px) scale(.97)}}
+body:has(#alerta-gol.visible) .toast-container{top:calc(env(safe-area-inset-top,0px) + 190px)!important}
+/* Alerta de gol: la única "pro" */
+#alerta-gol{flex-direction:column!important;align-items:stretch!important;gap:8px!important;padding:14px 16px 12px!important;overflow:hidden;border:2px solid #f0b429!important;border-radius:18px!important;
+ background:linear-gradient(135deg,#0b2f5c,#123a66 55%,#7a0f14)!important;box-shadow:0 18px 50px rgba(0,0,0,.55),0 0 0 4px rgba(240,180,41,.18),0 0 38px rgba(240,180,41,.35)!important}
+#alerta-gol.mi-equipo{background:linear-gradient(135deg,#0b3d2e,#0f5a3f 55%,#0b2f5c)!important;border-color:#2ec4b6!important}
+#alerta-gol::before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.24) 50%,transparent 70%);transform:translateX(-120%);pointer-events:none}
+#alerta-gol.visible::before{animation:ag-brillo 1.5s .25s ease-out 1}
+@keyframes ag-brillo{to{transform:translateX(120%)}}
+#alerta-gol .ag-top{display:flex;align-items:center;gap:10px}
+#alerta-gol .ag-balon{font-size:1.9rem;line-height:1;display:inline-block}
+#alerta-gol.visible .ag-balon{animation:ag-rebote .7s ease-in-out 3}
+@keyframes ag-rebote{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-9px) rotate(180deg)}}
+#alerta-gol .ag-titulo{flex:1;font-family:"Barlow Condensed","Oswald","Arial Narrow",Arial,sans-serif;font-weight:900;font-size:2.2rem;letter-spacing:.06em;line-height:1;color:#f0b429;text-shadow:0 2px 0 rgba(0,0,0,.4),0 0 18px rgba(240,180,41,.55)}
+#alerta-gol .ag-titulo.largo{font-size:1.6rem}
+#alerta-gol.visible .ag-titulo{animation:ag-pulso .6s ease-out 1}
+@keyframes ag-pulso{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+#alerta-gol .ag-main{display:flex;align-items:center;gap:12px}
+#alerta-gol .ag-escudo{width:58px;height:58px;border-radius:50%;object-fit:contain;background:#fff;border:3px solid #f0b429;flex-shrink:0;box-shadow:0 0 16px rgba(240,180,41,.5)}
+#alerta-gol .ag-jugador{font-weight:800;font-size:1.15rem;line-height:1.15;word-break:break-word}
+#alerta-gol .ag-detalle{font-size:.85rem;opacity:.9;margin-top:2px;white-space:normal}
+#alerta-gol .ag-marcador{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:0;padding:8px 10px;background:rgba(0,0,0,.3);border-radius:12px;font-weight:800}
+#alerta-gol .ag-eq{flex:1;text-align:center;font-size:.8rem;text-transform:uppercase;letter-spacing:.03em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#alerta-gol .ag-eq.anota{color:#f0b429}
+#alerta-gol .ag-num{font-family:"Barlow Condensed","Oswald","Arial Narrow",Arial,sans-serif;font-size:2rem;line-height:1;min-width:22px;text-align:center}
+#alerta-gol .ag-num.anota{color:#f0b429;text-shadow:0 0 14px rgba(240,180,41,.7)}
+#alerta-gol .ag-sep{opacity:.6}
+@media (prefers-reduced-motion:reduce){#alerta-gol::before,#alerta-gol .ag-balon,#alerta-gol .ag-titulo{animation:none!important}}
 /* Tablón de avisos: textos de las tarjetas centrados (compu y celular) */
 .tb-pista .tablon-card-3d p,.tablon-card-3d p{text-align:center}
 /* Tablón: el bloque de etiqueta, fecha y texto se queda abajo de la tarjeta */
@@ -2461,6 +2494,9 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                 const visitasTotales = contarVisitaDelDia();
                 const TS = firebase.database.ServerValue.TIMESTAMP;
                 const dispositivo = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'movil' : 'pc';
+                // ¿Entró desde la app instalada (PWA) o desde el navegador? Se manda al admin como 'modo'.
+                let modoAcceso = 'web';
+                try { if ((window.matchMedia && (window.matchMedia('(display-mode: standalone)').matches || window.matchMedia('(display-mode: fullscreen)').matches || window.matchMedia('(display-mode: minimal-ui)').matches)) || window.navigator.standalone === true) modoAcceso = 'app'; } catch (e) { /* se queda en 'web' */ }
 
                 // Las sesiones se agrupan por día en hora de Ciudad de México (igual que el admin),
                 // usando la hora del servidor para que un celular con la hora mal no las descuadre.
@@ -2536,16 +2572,20 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                     // Primero se le pide a Firebase que borre la entrada si esta conexión se cae
                     // (cerrar pestaña, perder internet) y después se escribe.
                     ref.onDisconnect().remove()
-                        .then(() => ref.set({
-                            tipo: 'visitante',
-                            nombre: nombreVisitante(),
-                            visitas: visitasTotales,
-                            seccion: seccion,
-                            equipo: nombreEquipoFavorito(),
-                            dispositivo: dispositivo,
-                            inicio: TS,
-                            ultimaActividad: TS
-                        }))
+                        .then(() => {
+                            const datos = {
+                                tipo: 'visitante',
+                                nombre: nombreVisitante(),
+                                visitas: visitasTotales,
+                                seccion: seccion,
+                                equipo: nombreEquipoFavorito(),
+                                dispositivo: dispositivo,
+                                inicio: TS,
+                                ultimaActividad: TS
+                            };
+                            // Si las reglas de Firebase no aceptan el campo nuevo 'modo', se reintenta sin él para no perder el conteo.
+                            return ref.set(Object.assign({ modo: modoAcceso }, datos)).catch(() => ref.set(datos));
+                        })
                         .then(() => {
                             enCurso = false;
                             if (deseado) { listo = true; ultimaEscritura = Date.now(); abrirSesion(); }
@@ -2941,11 +2981,27 @@ html.modal-abierto .modal{overscroll-behavior:contain}
             osc.stop(t0 + dur + 0.05); vib.stop(t0 + dur + 0.05);
         }
 
+        // Voz que dice "¡Goooool!" (la del propio celular/computadora; si no tiene voz en español, queda solo la melodía).
+        function hablarGol(texto) {
+            try {
+                if (!('speechSynthesis' in window)) return;
+                const ss = window.speechSynthesis;
+                ss.cancel();
+                const u = new SpeechSynthesisUtterance(texto);
+                const voces = ss.getVoices() || [];
+                const v = voces.find(function (x) { return /^es[-_]MX/i.test(x.lang); }) || voces.find(function (x) { return /^es[-_]US/i.test(x.lang); }) || voces.find(function (x) { return /^es/i.test(x.lang); });
+                if (v) u.voice = v;
+                u.lang = v ? v.lang : 'es-MX';
+                u.rate = 0.7; u.pitch = 1.2; u.volume = 1;
+                ss.speak(u);
+            } catch (e) { /* sin voz: queda la melodía */ }
+        }
+
         function sonidoEvento(tipo) {
             try {
                 if (!audioCtxGol) return;
-                if (tipo === 'gol') return sonidoGol();
-                if (tipo === 'autogol') { [[523.25, 0], [440, 0.18], [349.23, 0.36], [261.63, 0.54]].forEach(function (n) { tonoSuave(n[0], n[1], 0.3, 'triangle', 0.26); }); return; }
+                if (tipo === 'gol') { hablarGol('¡Gooooool!'); return sonidoGol(); }
+                if (tipo === 'autogol') { hablarGol('¡Autogol!'); [[523.25, 0], [440, 0.18], [349.23, 0.36], [261.63, 0.54]].forEach(function (n) { tonoSuave(n[0], n[1], 0.3, 'triangle', 0.26); }); return; }
                 if (tipo === 'amarilla') { tonoSuave(880, 0, 0.14, 'square', 0.12); tonoSuave(880, 0.2, 0.14, 'square', 0.12); return; }
                 if (tipo === 'roja') { tonoSuave(160, 0, 0.8, 'sawtooth', 0.2); tonoSuave(120, 0.05, 0.75, 'sawtooth', 0.14); return; }
                 if (tipo === 'cambio') { tonoSuave(784, 0, 0.25, 'sine', 0.2); tonoSuave(1046.5, 0.18, 0.4, 'sine', 0.2); return; }
@@ -3010,7 +3066,7 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                 off: '🔕 Alertas de gol apagadas.'
             };
             mostrarToast(textos[sig], 'info', 2500);
-            if (sig === 'sonido') { prepararAudioGol(); sonidoGol(); }   // el toque sirve de prueba de sonido
+            if (sig === 'sonido') { prepararAudioGol(); sonidoEvento('gol'); }   // el toque sirve de prueba de sonido
         }
 
         // Busca al jugador del evento por nombre (así lo guarda el panel del árbitro), prefiriendo
@@ -3064,41 +3120,37 @@ html.modal-abierto .modal{overscroll-behavior:contain}
             el.textContent = '';
             el.classList.toggle('mi-equipo', esMiEquipo);
 
-            const escudo = document.createElement('img');
-            escudo.className = 'ag-escudo';
+            const mk = function (tag, cls, txt) { const n = document.createElement(tag); if (cls) n.className = cls; if (txt !== undefined) n.textContent = txt; return n; };
+            // Fila de arriba: balón + "¡GOOOOOL!" + cerrar
+            const fTop = mk('div', 'ag-top');
+            fTop.appendChild(mk('span', 'ag-balon', ev.tipo === 'autogol' ? '❌' : '⚽'));
+            const titulo = mk('div', 'ag-titulo' + (esMiEquipo && ev.tipo !== 'autogol' ? ' largo' : ''), ev.tipo === 'autogol' ? '¡AUTOGOL!' : (esMiEquipo ? '¡GOOOOOL DE TU EQUIPO!' : '¡GOOOOOL!'));
+            fTop.appendChild(titulo);
+            const cerrar = mk('button', 'ag-cerrar', '✕');
+            cerrar.type = 'button';
+            cerrar.setAttribute('aria-label', 'Cerrar alerta');
+            cerrar.addEventListener('click', function (e) { e.stopPropagation(); ocultarAlertaGol(); });
+            fTop.appendChild(cerrar);
+            // Fila del medio: escudo + goleador + minuto
+            const fMain = mk('div', 'ag-main');
+            const escudo = mk('img', 'ag-escudo');
             escudo.alt = '';
             escudo.src = (anota && anota.escudo) || 'https://placehold.co/52';
-            const cuerpo = document.createElement('div');
-            cuerpo.className = 'ag-cuerpo';
-            const titulo = document.createElement('div');
-            titulo.className = 'ag-titulo';
-            titulo.textContent = ev.tipo === 'autogol' ? '❌ ¡AUTOGOL!' : (esMiEquipo ? '🎉 ¡GOOOL de tu equipo!' : '⚽ ¡GOOOL!');
-            const detalle = document.createElement('div');
-            detalle.className = 'ag-detalle';
-            detalle.textContent = (ev.desc || 'Jugador') + (anota ? ' · ' + anota.nombre : '') + (ev.min !== undefined && ev.min !== '' ? " · min " + ev.min + "'" : '');
-            const marcador = document.createElement('div');
-            marcador.className = 'ag-marcador';
-            const spanL = document.createElement('span');
-            spanL.textContent = (loc ? loc.nombre : 'Local') + ' ' + (p.golesLocal || 0);
-            const spanV = document.createElement('span');
-            spanV.textContent = (p.golesVisita || 0) + ' ' + (vis ? vis.nombre : 'Visita');
-            if (anotaId === p.localId) spanL.className = 'anota';
-            if (anotaId === p.visitaId) spanV.className = 'anota';
-            marcador.appendChild(spanL);
-            marcador.appendChild(document.createTextNode(' – '));
-            marcador.appendChild(spanV);
-            cuerpo.appendChild(titulo);
-            cuerpo.appendChild(detalle);
-            cuerpo.appendChild(marcador);
-            const cerrar = document.createElement('button');
-            cerrar.type = 'button';
-            cerrar.className = 'ag-cerrar';
-            cerrar.setAttribute('aria-label', 'Cerrar alerta');
-            cerrar.textContent = '✕';
-            cerrar.addEventListener('click', function (e) { e.stopPropagation(); ocultarAlertaGol(); });
-            el.appendChild(escudo);
-            el.appendChild(cuerpo);
-            el.appendChild(cerrar);
+            const cuerpo = mk('div', 'ag-cuerpo');
+            cuerpo.appendChild(mk('div', 'ag-jugador', ev.desc || 'Jugador'));
+            cuerpo.appendChild(mk('div', 'ag-detalle', (anota ? anota.nombre : '') + (ev.min !== undefined && ev.min !== '' ? (anota ? ' · ' : '') + "min " + ev.min + "'" : '')));
+            fMain.appendChild(escudo);
+            fMain.appendChild(cuerpo);
+            // Marcador grande
+            const marcador = mk('div', 'ag-marcador');
+            marcador.appendChild(mk('span', 'ag-eq' + (anotaId === p.localId ? ' anota' : ''), loc ? loc.nombre : 'Local'));
+            marcador.appendChild(mk('span', 'ag-num' + (anotaId === p.localId ? ' anota' : ''), String(p.golesLocal || 0)));
+            marcador.appendChild(mk('span', 'ag-sep', '–'));
+            marcador.appendChild(mk('span', 'ag-num' + (anotaId === p.visitaId ? ' anota' : ''), String(p.golesVisita || 0)));
+            marcador.appendChild(mk('span', 'ag-eq' + (anotaId === p.visitaId ? ' anota' : ''), vis ? vis.nombre : 'Visita'));
+            el.appendChild(fTop);
+            el.appendChild(fMain);
+            el.appendChild(marcador);
             // Al tocar la alerta se va al partido en el calendario (igual que el banner "EN VIVO").
             el.onclick = function () {
                 ocultarAlertaGol();

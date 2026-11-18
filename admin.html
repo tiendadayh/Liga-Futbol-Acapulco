@@ -1217,33 +1217,6 @@ html[data-theme="dark"] #caja-resumen-hoy{
         <p id="disciplina-vacio" style="color:gray; font-size:0.85rem; display:none; margin-top:10px;">No hay tarjetas rojas ni suspensiones registradas todavía.</p>
     </div>
 
-    <!-- CORRECCIÓN DE ESTADÍSTICAS: GOLEO Y TARJETAS -->
-    <div class="admin-box" style="margin-top: 25px; border-top-color: #2e7d32;">
-        <h3>⚽🟨🟥 Corrección de Goleo y Tarjetas</h3>
-        <p style="font-size:0.85rem; color:#555;">
-            Los goles y las tarjetas se suman solos cuando el árbitro cierra la cédula. Si algún jugador quedó
-            mal contado por un error de captura, corrígelo aquí a mano. El cambio se ve reflejado en el sitio
-            público en cuanto lo publiques en Firebase.
-        </p>
-        <input type="text" id="stats-buscar-jugador" placeholder="🔍 Buscar jugador o equipo..."
-            oninput="renderizarCorreccionEstadisticas()" style="margin:10px 0;">
-        <div style="overflow-x:auto;">
-            <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
-                <thead>
-                    <tr style="background:#f0f4f8; text-align:left;">
-                        <th style="padding:8px;">Jugador</th>
-                        <th style="padding:8px;">Equipo</th>
-                        <th style="padding:8px; text-align:center;">⚽ Goles</th>
-                        <th style="padding:8px; text-align:center;">🟨 Amarillas</th>
-                        <th style="padding:8px; text-align:center;">🟥 Rojas</th>
-                    </tr>
-                </thead>
-                <tbody id="stats-correccion-tbody"></tbody>
-            </table>
-        </div>
-        <p id="stats-correccion-vacio" class="hidden" style="color:gray; font-size:0.85rem; text-align:center; padding:10px;">No se encontró ningún jugador con ese nombre.</p>
-    </div>
-
     <!-- ONCE IDEAL DE LA SEMANA -->
     <div class="admin-box" style="margin-top: 25px; border-top-color: #e0932e;">
         <h3>🌟 Once mvp de la Semana</h3>
@@ -2415,6 +2388,9 @@ html[data-theme="dark"] #caja-resumen-hoy{
             const a = arbitrosVivos().length;
             dot.className = 'pc-dot pc-verde';
             txt.textContent = (n === 1 ? '1 persona en el sitio' : n + ' personas en el sitio') + (a ? ' · 🎙️ ' + a : '') + (avisosConectadosActivos() ? '' : ' 🔕');
+            const vv = visitantesVivos().map(par => par[1]);
+            const c = (d, m) => vv.filter(x => x.dispositivo === d && x.modo === m).length;
+            pill.title = 'Celular: ' + c('movil', 'web') + ' en navegador · ' + c('movil', 'app') + ' en app\nComputadora: ' + c('pc', 'web') + ' en navegador · ' + c('pc', 'app') + ' en app\n(toca para ver quién está)';
         }
 
         function tiempoRelativoConectado(ms) {
@@ -2447,9 +2423,11 @@ html[data-theme="dark"] #caja-resumen-hoy{
             const porActividad = (a, b) => (b[1].ultimaActividad || 0) - (a[1].ultimaActividad || 0);
             const arbitros = arbitrosVivos().sort(porActividad);
             const visitantes = visitantesVivos().sort(porActividad);
+            const cuenta = (disp, modo) => visitantes.filter(par => par[1].dispositivo === disp && par[1].modo === modo).length;
             const moviles = visitantes.filter(par => par[1].dispositivo === 'movil').length;
+            const sinDato = visitantes.filter(par => par[1].modo !== 'web' && par[1].modo !== 'app').length;
             let textoResumen = visitantes.length
-                ? visitantes.length + (visitantes.length === 1 ? ' persona' : ' personas') + ' · 📱 ' + moviles + ' en celular · 💻 ' + (visitantes.length - moviles) + ' en computadora'
+                ? visitantes.length + (visitantes.length === 1 ? ' persona' : ' personas') + ' · 📱 ' + moviles + ' en celular (' + cuenta('movil', 'web') + ' en navegador · ' + cuenta('movil', 'app') + ' en app) · 💻 ' + (visitantes.length - moviles) + ' en computadora (' + cuenta('pc', 'web') + ' en navegador · ' + cuenta('pc', 'app') + ' en app)' + (sinDato ? ' · ❔ ' + sinDato + ' sin dato (versión vieja del sitio)' : '')
                 : 'Se actualiza solo, en tiempo real.';
             if (arbitros.length) textoResumen += ' · 🎙️ ' + arbitros.length + (arbitros.length === 1 ? ' árbitro en línea' : ' árbitros en línea');
             resumen.textContent = textoResumen;
@@ -2484,7 +2462,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                     nombre.textContent = info.nombre
                         ? info.nombre
                         : (info.equipo ? 'Visitante · ⭐ ' + info.equipo : 'Visitante anónimo');
-                    donde.textContent = (enRegistro ? '📝 ' : '') + (info.visitas > 1 ? '🔁 Visita #' + info.visitas + ' · ' : '') + (info.nombre && info.equipo ? '⭐ ' + info.equipo + ' · ' : '') + 'Viendo: ' + (info.seccion || 'Inicio');
+                    donde.textContent = (enRegistro ? '📝 ' : '') + (info.visitas > 1 ? '🔁 Visita #' + info.visitas + ' · ' : '') + (info.nombre && info.equipo ? '⭐ ' + info.equipo + ' · ' : '') + (info.modo === 'app' ? '📲 App' : (info.modo === 'web' ? '🌐 Navegador' : '')) + (info.modo === 'app' || info.modo === 'web' ? (info.dispositivo === 'movil' ? ' celular' : ' computadora') + ' · ' : '') + 'Viendo: ' + (info.seccion || 'Inicio');
                 }
                 datos.appendChild(nombre);
                 datos.appendChild(donde);
@@ -3434,7 +3412,6 @@ html[data-theme="dark"] #caja-resumen-hoy{
             renderizarOnceIdeal();
             renderizarSuplantaciones();
             renderizarResumenDia();
-            renderizarCorreccionEstadisticas();
             actualizarVisibilidadLiguillaAdmin();
             intentarAutoBackup();
             marcarCambiosSinPublicar();
@@ -3593,7 +3570,6 @@ html[data-theme="dark"] #caja-resumen-hoy{
                     renderizarOnceIdeal();
                     renderizarSuplantaciones();
             renderizarResumenDia();
-            renderizarCorreccionEstadisticas();
                     mostrarAvisoAutoguardado('🔄 Datos actualizados desde otra pestaña.');
                 } catch (err) { /* valor corrupto, se ignora */ }
             }
@@ -3748,7 +3724,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
         function refrescarPantallasTrasFusion() {
             [cargarConfigFormulario, aplicarLogoSitio, actualizarFormularios, renderizarSolicitudes, renderizarFinanzas,
              renderizarGestion, renderizarOnceIdeal, renderizarSuplantaciones, renderizarResumenDia,
-             renderizarCorreccionEstadisticas, renderizarEncuestasAdmin]
+             renderizarEncuestasAdmin]
                 .forEach(f => { try { f(); } catch (e) { console.warn(e); } });
         }
 
@@ -3877,7 +3853,6 @@ html[data-theme="dark"] #caja-resumen-hoy{
                 renderizarOnceIdeal();
                 renderizarSuplantaciones();
             renderizarResumenDia();
-            renderizarCorreccionEstadisticas();
                 renderizarEncuestasAdmin();
                 mostrarFirebaseStatus('✅ Datos actualizados desde la nube.', false);
             }).catch(err => {
@@ -3903,7 +3878,6 @@ html[data-theme="dark"] #caja-resumen-hoy{
                 renderizarOnceIdeal();
                 renderizarSuplantaciones();
             renderizarResumenDia();
-            renderizarCorreccionEstadisticas();
                 renderizarEncuestasAdmin();
             }
         }).catch(() => { /* si falla, seguimos con lo que había en localStorage */ });
@@ -4418,7 +4392,6 @@ html[data-theme="dark"] #caja-resumen-hoy{
             renderizarOnceIdeal();
             renderizarSuplantaciones();
             renderizarResumenDia();
-            renderizarCorreccionEstadisticas();
             actualizarVisibilidadLiguillaAdmin();
             cargarConfigFormulario();
             cargarReglamentoFormulario();
@@ -6812,63 +6785,6 @@ ${cuerpo}`;
         // ===================== GESTIÓN: EDITAR Y ELIMINAR =====================
 
         // --- Corrección manual de goleo y tarjetas (en una sola tabla) ---
-        function renderizarCorreccionEstadisticas() {
-            const tbody = document.getElementById('stats-correccion-tbody');
-            const vacio = document.getElementById('stats-correccion-vacio');
-            if (!tbody) return;
-
-            const filtro = (document.getElementById('stats-buscar-jugador')?.value || '').trim().toLowerCase();
-
-            let jugadores = [...db.jugadores];
-            if (filtro) {
-                jugadores = jugadores.filter(j => {
-                    const eqNombre = db.equipos.find(e => e.id === j.equipoId)?.nombre || '';
-                    return j.nombre.toLowerCase().includes(filtro) || eqNombre.toLowerCase().includes(filtro);
-                });
-            }
-            jugadores.sort((a, b) => a.nombre.localeCompare(b.nombre));
-
-            if (jugadores.length === 0) {
-                tbody.innerHTML = '';
-                vacio.classList.remove('hidden');
-                return;
-            }
-            vacio.classList.add('hidden');
-
-            const control = (j, campo, colorMenos, colorMas) => `
-                <div style="display:inline-flex; flex-wrap:nowrap; white-space:nowrap; align-items:center; gap:4px;">
-                    <button type="button" onclick="ajustarStatJugador(${j.id}, '${campo}', -1)" style="padding:4px 0; width:30px; flex-shrink:0; background:${colorMenos};">−</button>
-                    <input type="number" min="0" value="${j[campo] || 0}" style="width:40px; flex-shrink:0; text-align:center; padding:4px;"
-                        onchange="fijarStatJugador(${j.id}, '${campo}', this.value)">
-                    <button type="button" onclick="ajustarStatJugador(${j.id}, '${campo}', 1)" style="padding:4px 0; width:30px; flex-shrink:0; background:${colorMas};">+</button>
-                </div>`;
-
-            tbody.innerHTML = jugadores.map(j => `
-                <tr style="border-bottom:1px solid #eee;">
-                    <td style="padding:6px;">${escapeHtml(j.nombre)}</td>
-                    <td style="padding:6px; color:#666;">${db.equipos.find(e => e.id === j.equipoId)?.nombre || 'Libre'}</td>
-                    <td style="padding:6px; text-align:center;">${control(j, 'goles', '#c62828', '#2e7d32')}</td>
-                    <td style="padding:6px; text-align:center;">${control(j, 'amarillas', '#c62828', '#2e7d32')}</td>
-                    <td style="padding:6px; text-align:center;">${control(j, 'rojas', '#c62828', '#2e7d32')}</td>
-                </tr>
-            `).join('');
-        }
-
-        function ajustarStatJugador(id, campo, delta) {
-            const j = db.jugadores.find(x => x.id === id);
-            if (!j) return;
-            j[campo] = Math.max(0, (j[campo] || 0) + delta);
-            guardarDB();
-        }
-
-        function fijarStatJugador(id, campo, valor) {
-            const j = db.jugadores.find(x => x.id === id);
-            if (!j) return;
-            const n = parseInt(valor);
-            j[campo] = isNaN(n) || n < 0 ? 0 : n;
-            guardarDB();
-        }
-
         /* ===== Barra de scroll visible y arrastrable (para listas largas y modales de designación) =====
            Funciona con mouse (arrastrar) y con el dedo en celular (touch), y se actualiza sola
            cuando el contenido cambia (nuevas filas, jornadas que se abren/cierran, etc).
