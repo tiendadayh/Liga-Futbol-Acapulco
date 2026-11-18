@@ -1542,12 +1542,13 @@ header#site-header .site-header-content{padding:0 150px;min-height:64px}
 @media (max-width:900px) and (min-width:601px){header#site-header>.site-header-logo{width:84px;height:84px;right:14px;top:14px}header#site-header .site-header-content{padding:0 110px}}
 @media (max-width:600px){
 header#site-header{padding:64px 10px 16px!important}
-header#site-header>.site-header-logo{position:absolute;top:6px;right:10px;left:auto;width:56px;height:56px;margin:0}
+header#site-header>.site-header-logo{position:absolute;top:66px;right:10px;left:auto;width:56px;height:56px;margin:0}
 header#site-header .site-header-content{padding:0 6px;min-height:0}
 #header-acciones{position:static;transform:none;display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:0 0 12px}
 #header-acciones>button{padding:6px 10px!important;font-size:.68rem!important;margin:0!important}
 }
 @media (min-width:601px){header#site-header{padding-top:76px!important}}
+@media (max-width:600px){#liga-burger{position:absolute;top:73px;left:10px}#liga-burger.liga-burger-flota{position:fixed;top:10px;left:10px}}
 </style>
 <style id="liga-tablon-carrusel">
 /* ===== Ficha del jugador más compacta: que quepa completa sin subir ni bajar ===== */
@@ -6928,7 +6929,7 @@ if(PAGE==='index'){
   });
 }
 })();
-</script><button id="liga-burger" type="button" aria-label="Abrir menú de secciones"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+</script><button id="liga-burger" type="button" aria-label="Abrir menú de secciones"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><script>(function(){var b=document.getElementById("liga-burger");function f(){var y=window.pageYOffset||document.documentElement.scrollTop||0;if(document.body.style.position==="fixed")return;b.classList.toggle("liga-burger-flota",y>60);}window.addEventListener("scroll",f,{passive:true});f();})();</script>
 <div id="liga-menu-fondo"></div>
 <aside id="liga-menu" aria-label="Menú de secciones"><header><b>Ir a…</b><button type="button" id="liga-menu-cerrar" aria-label="Cerrar">×</button></header><input id="liga-menu-buscar" type="search" placeholder="Buscar sección…" autocomplete="off"><ul id="liga-menu-lista"></ul></aside>
 <script id="liga-menu-js">
