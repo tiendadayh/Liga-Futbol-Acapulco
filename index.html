@@ -1587,6 +1587,14 @@ html.modal-abierto .modal{overscroll-behavior:contain}
 .tb-pista .tablon-card-3d p{font-size:.8rem;line-height:1.4;text-wrap:pretty;overflow-wrap:break-word}
 .tb-flecha{flex:0 0 auto;background:none;border:none;color:#1f5fd6;font-size:1.7rem;cursor:pointer;padding:4px 6px;line-height:1}
 .tb-flecha:hover{color:#0b3a99}
+/* Calendario & Resultados: mismo diseño que el Tablón */
+.lc-pista{gap:14px!important;scroll-snap-type:x mandatory!important;min-width:0}
+.lc-item{flex:0 0 calc(50% - 7px)!important;min-width:0!important;box-sizing:border-box}
+.lc-card{box-sizing:border-box;min-width:0;overflow:hidden}
+.lc-card img{max-width:100%}
+@media (min-width:900px){.lc-item{flex-basis:calc(33.333% - 10px)!important}}
+@media (max-width:600px){.lc-pista{gap:10px!important}.lc-item{flex-basis:calc(50% - 5px)!important}.lc-card{padding:10px 6px 8px!important}}
+
 @media (max-width:600px){.tb-flecha{display:none}.tb-pista{gap:10px}.tb-pista>.tablon-card-3d{flex-basis:calc(50% - 5px)}}
 .aviso-titulo-top{margin:0;padding:14px 12px 0;text-align:center;font-size:.9rem;line-height:1.25;text-wrap:balance}
 .tb-pista .tablon-card-3d h4.aviso-titulo-top{font-size:.9rem}
@@ -7162,7 +7170,9 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.bo
 
   /* ---------- Partido destacado ---------- */
   function elegir() {
-    var ps = (db.partidos || []);
+    var fav0 = obtenerEquipoFavoritoId();
+    if (fav0 == null) return null; // sin equipo favorito no se muestra el destacado
+    var ps = (db.partidos || []).filter(function (p) { return p.localId === fav0 || p.visitaId === fav0; });
     var vivo = ps.find(function (p) { return !p.oculto && !p.jugado && ESTADOS_PARTIDO_EN_VIVO.indexOf(p.estadoVivo) >= 0; });
     if (vivo) return { p: vivo, modo: 'vivo' };
     var ahora = Date.now(), fav = obtenerEquipoFavoritoId();
