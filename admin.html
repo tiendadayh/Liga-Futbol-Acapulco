@@ -862,6 +862,19 @@ html[data-theme="dark"] #caja-resumen-hoy{
 #dt-cartas select{width:100%;padding:8px;border-radius:8px;border:1px solid #cbd5e1;font-size:.85rem}
 #dt-cartas button{margin:0;background:#1f4f8f;color:#fff}
 #dt-cartas button.dt-verde{background:#16a34a}
+#dt-medallas{margin-top:18px}
+#dt-medallas .dt-sub{margin:0 0 6px;font-size:1.05rem;color:#0d2a4d}
+#dt-medallas .dt-nota{margin:0 0 10px;font-size:.85rem;color:#475569}
+#dt-medallas .dt-med-barra{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#dt-medallas select{flex:1;min-width:200px;padding:8px;border-radius:8px;border:1px solid #cbd5e1;font-size:.85rem}
+#dt-medallas button{margin:0;background:#1f4f8f;color:#fff}
+#dt-medallas button.dt-verde{background:#16a34a}
+#dt-medallas .dt-gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:12px}
+#dt-medallas .dt-med{display:flex;flex-direction:column;gap:6px;padding:8px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;text-align:center}
+#dt-medallas .dt-med img{width:100%;aspect-ratio:720/1000;object-fit:cover;border-radius:12px;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+#dt-medallas .dt-med b{font-size:.82rem;color:#0d2a4d;line-height:1.15}
+#dt-medallas .dt-med small{font-size:.72rem;color:#64748b}
+#dt-medallas .dt-med button{padding:8px;font-size:.8rem;border-radius:8px}
 #dt-estado{min-height:1.2em;margin:10px 0 0;font-size:.9rem;font-weight:600;color:#0d2a4d}
 #dt-previa{position:fixed;inset:0;z-index:100000;background:rgba(6,24,47,.82);display:none;align-items:center;justify-content:center;padding:16px}
 #dt-previa.abierta{display:flex}
@@ -8181,7 +8194,7 @@ input::placeholder { text-transform: none; }
     var bd = c.createLinearGradient(0, 0, W2, H2); bd.addColorStop(0, pal[0]); bd.addColorStop(.5, pal[1]); bd.addColorStop(1, pal[2]);
     rr(c, 0, 0, W2, H2, 44); c.fillStyle = bd; c.fill();
     rr(c, 20, 20, W2 - 40, H2 - 40, 30); c.save(); c.clip();
-    var bg = c.createLinearGradient(0, 0, 0, H2); bg.addColorStop(0, '#1f4f8f'); bg.addColorStop(.62, '#0b2f5c'); bg.addColorStop(1, '#06182f'); c.fillStyle = bg; c.fillRect(0, 0, W2, H2);
+    var bg = c.createLinearGradient(0, 0, 0, H2); bg.addColorStop(0, o.color || '#1f4f8f'); bg.addColorStop(.62, '#0b2f5c'); bg.addColorStop(1, '#06182f'); c.fillStyle = bg; c.fillRect(0, 0, W2, H2);
     c.globalAlpha = .08; c.fillStyle = '#fff';
     for (var k = -H2; k < W2; k += 46) { c.beginPath(); c.moveTo(k, 0); c.lineTo(k + 22, 0); c.lineTo(k + 22 + H2, H2); c.lineTo(k + H2, H2); c.closePath(); c.fill(); }
     if (o.fondo !== undefined && o.fondo !== null && o.fondo !== '') { c.globalAlpha = .13; c.font = 'bold 470px ' + F; c.textAlign = 'center'; c.fillText(String(o.fondo), W2 / 2 + 40, 560); }
@@ -8191,14 +8204,14 @@ input::placeholder { text-transform: none; }
     if (im[0]) { var pad = o.contain ? 30 : 0, s = (o.contain ? Math.min : Math.max)((2 * r - pad * 2) / im[0].width, (2 * r - pad * 2) / im[0].height); c.drawImage(im[0], cx - im[0].width * s / 2, cy - im[0].height * s / 2, im[0].width * s, im[0].height * s); }
     else { c.fillStyle = 'rgba(255,255,255,.35)'; c.beginPath(); c.arc(cx, cy - 40, 70, 0, 7); c.fill(); c.beginPath(); c.ellipse(cx, cy + 150, 120, 100, 0, 0, 7); c.fill(); }
     c.restore(); c.lineWidth = 8; c.strokeStyle = pal[1]; c.beginPath(); c.arc(cx, cy, r, 0, Math.PI * 2); c.stroke();
-    c.textAlign = 'left'; c.fillStyle = pal[0]; c.font = 'bold 128px ' + F; c.fillText(String(o.ovr), 52, 168);
-    c.fillStyle = '#fff'; c.fillText(ajusta(c, String(o.etiqueta || '').toUpperCase(), 330, 30, 18), 56, 212);
-    if (im[1]) { c.save(); c.beginPath(); c.arc(W2 - 96, 100, 52, 0, 7); c.closePath(); c.fillStyle = '#fff'; c.fill(); c.clip(); var e = im[1], se = Math.min(88 / e.width, 88 / e.height); c.drawImage(e, W2 - 96 - e.width * se / 2, 100 - e.height * se / 2, e.width * se, e.height * se); c.restore(); }
+    c.textAlign = 'left'; c.fillStyle = pal[0]; var fo = 128; c.font = 'bold ' + fo + 'px ' + F; while (c.measureText(String(o.ovr)).width > 150 && fo > 60) { fo -= 4; c.font = 'bold ' + fo + 'px ' + F; } c.fillText(String(o.ovr), 52, 168);
+    c.fillStyle = '#fff'; if (o.posCentro) { c.textAlign = 'center'; c.fillText(ajusta(c, String(o.etiqueta || '').toUpperCase(), 330, 30, 18), W2 / 2, 176); c.textAlign = 'left'; } else c.fillText(ajusta(c, String(o.etiqueta || '').toUpperCase(), 330, 30, 18), 56, 212);
+    if (im[1]) { c.save(); c.beginPath(); c.arc(W2 - 106, 104, 68, 0, 7); c.closePath(); c.fillStyle = '#fff'; c.fill(); c.clip(); var e = im[1], se = Math.min(116 / e.width, 116 / e.height); c.drawImage(e, W2 - 106 - e.width * se / 2, 104 - e.height * se / 2, e.width * se, e.height * se); c.restore(); }
     var gb = c.createLinearGradient(0, 44, 0, 136); gb.addColorStop(0, pal[0]); gb.addColorStop(1, pal[1]);
     rr(c, W2 / 2 - 150, 44, 300, 92, 24); c.fillStyle = gb; c.fill(); c.lineWidth = 5; c.strokeStyle = '#fff'; c.stroke();
     c.textAlign = 'center'; c.fillStyle = o.pal.t; var fs = 74; c.font = 'bold ' + fs + 'px ' + F;
     while (c.measureText(o.banner).width > 262 && fs > 30) { fs -= 2; c.font = 'bold ' + fs + 'px ' + F; } c.fillText(o.banner, W2 / 2, 44 + 46 + fs * 0.35);
-    c.fillStyle = '#fff'; c.textAlign = 'center'; c.fillText(ajusta(c, String(o.nombre || '').toUpperCase(), 600, 66, 34), W2 / 2, 708);
+    c.fillStyle = '#fff'; c.textAlign = 'center'; c.fillText(ajusta(c, String(o.nombre || '').toUpperCase(), 600, 66, 24), W2 / 2, 708);
     c.fillStyle = pal[0]; c.fillRect(W2 / 2 - 150, 728, 300, 4);
     c.fillStyle = '#cbd5e1'; c.font = '28px ' + F; c.fillText(corta(c, String(o.sub || '').toUpperCase(), 620), W2 / 2, 772);
     var st = o.stats || [], n = st.length;
@@ -8213,14 +8226,43 @@ input::placeholder { text-transform: none; }
     return m;
   }
   function porId(arr, id) { return (arr || []).find(function (x) { return String(x.id) === String(id); }); }
-  B.cartaJugador = function (id) {
-    var j = porId(db.jugadores, id); if (!j) return null;
+  // Puntos de la carta (igual que en index.html): sin tope. Bronce 55, Plata 75, Oro 95.
+  var CFG = { bronce: 55, plata: 75, oro: 95, pj: 2, gol: 3, ast: 2, mvp: 6, amarilla: 3, roja: 5 };
+  function golesVivoMapa() {
+    var m = {}; (db.partidos || []).filter(function (p) { return ['primer_tiempo', 'medio_tiempo', 'segundo_tiempo', 'en_curso'].indexOf(p.estadoVivo) >= 0 && !p.jugado; }).forEach(function (p) {
+      (p.eventos || []).filter(function (ev) { return ev && ev.tipo === 'gol'; }).forEach(function (ev) {
+        var cand = (db.jugadores || []).filter(function (x) { return x.nombre === ev.desc; });
+        var j = cand.find(function (x) { return x.equipoId === p.localId || x.equipoId === p.visitaId; }) || cand[0]; if (j) m[j.id] = (m[j.id] || 0) + 1; }); });
+    return m;
+  }
+  function puntosCarta(j, am, gv) {
     var pj = (db.partidos || []).filter(function (p) { return p.jugado && (p.localId === j.equipoId || p.visitaId === j.equipoId); }).length;
-    var goles = j.goles || 0, ast = mapaAsist()[j.id] || 0, mvp = (db.partidos || []).filter(function (p) { return p.mvpJugadorId === j.id; }).length;
-    var pts = Math.max(0, Math.min(99, Math.min(pj, 15) * 2 + goles * 4 + ast * 3 + mvp * 8 - (j.amarillas || 0) * 3 - (j.rojas || 0) * 5));
-    var tier = pts >= 90 ? 'ORO' : pts >= 70 ? 'PLATA' : pts >= 50 ? 'BRONCE' : null, e = E(j.equipoId);
-    return carta({ pal: PAL[tier || 'BASE'], banner: tier || 'JUGADOR', ovr: pts, etiqueta: j.posicion || '', fondo: j.numero, foto: j.foto, escudo: e && e.escudo, nombre: j.nombre, sub: e ? e.nombre : 'Agente libre',
-      stats: [['PJ', pj], ['GOL', goles], ['AST', ast], ['MVP', mvp]], pie: liga() + (tier ? ' · CARTA ' + tier : ' · JUGADOR') });
+    var goles = (j.goles || 0) + ((gv || golesVivoMapa())[j.id] || 0), ast = (am || mapaAsist())[j.id] || 0;
+    var mvp = (db.partidos || []).filter(function (p) { return p.mvpJugadorId === j.id; }).length;
+    var pts = Math.max(0, pj * CFG.pj + goles * CFG.gol + ast * CFG.ast + mvp * CFG.mvp - (j.amarillas || 0) * CFG.amarilla - (j.rojas || 0) * CFG.roja);
+    var tier = pts >= CFG.oro ? 'ORO' : pts >= CFG.plata ? 'PLATA' : pts >= CFG.bronce ? 'BRONCE' : null;
+    return { pts: pts, tier: tier, pj: pj, goles: goles, ast: ast, mvp: mvp };
+  }
+  var cacheColor = {};
+  function colorDe(src) {
+    if (!src) return Promise.resolve(null); if (cacheColor[src]) return cacheColor[src];
+    return cacheColor[src] = new Promise(function (res) {
+      var im = new Image(); im.crossOrigin = 'anonymous';
+      im.onload = function () { try {
+        var c = document.createElement('canvas'); c.width = c.height = 24; var x = c.getContext('2d'); x.drawImage(im, 0, 0, 24, 24);
+        var d = x.getImageData(0, 0, 24, 24).data, r = 0, g = 0, b = 0, w = 0;
+        for (var i = 0; i < d.length; i += 4) { if (d[i + 3] < 128) continue; var R = d[i], G = d[i + 1], B2 = d[i + 2], mx = Math.max(R, G, B2), mn = Math.min(R, G, B2); if (mx < 35 || mn > 225) continue; var sat = (mx - mn) / mx; if (sat < .28) continue; r += R * sat; g += G * sat; b += B2 * sat; w += sat; }
+        res(w > 0 ? 'rgb(' + Math.round(r / w) + ',' + Math.round(g / w) + ',' + Math.round(b / w) + ')' : null);
+      } catch (e) { res(null); } };
+      im.onerror = function () { res(null); }; im.src = src;
+    });
+  }
+  B.cartaJugador = async function (id) {
+    var j = porId(db.jugadores, id); if (!j) return null;
+    var cp = puntosCarta(j), tier = cp.tier, e = E(j.equipoId), color = null;
+    try { color = e && e.escudo ? await colorDe(e.escudo) : null; } catch (x) { }
+    return carta({ pal: PAL[tier || 'BASE'], banner: tier || 'JUGADOR', ovr: cp.pts, etiqueta: typeof etiquetaPos === 'function' ? etiquetaPos(j.posicion) : (j.posicion || ''), posCentro: true, color: color || '#1f4f8f', fondo: j.numero, foto: j.foto, escudo: e && e.escudo, nombre: j.nombre, sub: e ? e.nombre : 'Agente libre',
+      stats: [['PJ', cp.pj], ['GOL', cp.goles], ['AST', cp.ast], ['MVP', cp.mvp]], pie: liga() + (tier ? ' · CARTA ' + tier : ' · JUGADOR') });
   };
   B.cartaEquipo = function (id) {
     var e = porId(db.equipos, id); if (!e) return null;
@@ -8345,6 +8387,51 @@ input::placeholder { text-transform: none; }
     var c = CARTAS.filter(function (x) { return x.k === k; })[0], l = listaCartas(k);
     generar(l.map(function (x) { return { n: c.carp + '/' + x.f + '.png', f: function () { return B[c.b](x.id); } }; }), 'liga-cartas-' + c.carp + '-' + fechaISO() + '.zip', btn);
   }
+  /* ---------- Galería de cartas Bronce / Plata / Oro ---------- */
+  var medBlobs = {}, medUrls = [], medLista = [];
+  function nombreCarta(x) { return slug(x.cp.tier) + '/' + slug(nomE(x.j.equipoId, 'libre')) + '-' + slug((x.j.numero !== undefined && x.j.numero !== '' ? x.j.numero + '-' : '') + x.j.nombre) + '.png'; }
+  function conCarta(filtro) {
+    var am = mapaAsist(), gv = golesVivoMapa();
+    return (db.jugadores || []).map(function (j) { return { j: j, cp: puntosCarta(j, am, gv) }; }).filter(function (x) { return x.cp.tier && (!filtro || x.cp.tier === filtro); }).sort(function (a, b) { return b.cp.pts - a.cp.pts; });
+  }
+  async function verCartasMed(btn) {
+    var gal = el('dt-med-gal'), filtro = el('dt-med-tier').value; if (!gal) return;
+    medUrls.forEach(function (u) { URL.revokeObjectURL(u); }); medUrls = []; medBlobs = {}; gal.innerHTML = '';
+    medLista = conCarta(filtro);
+    if (!medLista.length) { estado('Todavía ningún jugador llega a la carta' + (filtro ? ' ' + filtro : ' Bronce (55 puntos)') + '.'); return; }
+    if (btn) btn.disabled = true;
+    for (var i = 0; i < medLista.length; i++) {
+      var x = medLista[i]; estado('Generando carta ' + (i + 1) + ' de ' + medLista.length + '…');
+      try {
+        var b = await B.cartaJugador(x.j.id); if (!b) continue; medBlobs[x.j.id] = b; var u = URL.createObjectURL(b); medUrls.push(u);
+        var d = document.createElement('div'); d.className = 'dt-med';
+        d.innerHTML = '<img src="' + u + '" alt="Carta de ' + esc(x.j.nombre) + '" data-ver="' + x.j.id + '"><b>' + esc(x.j.nombre) + '</b><small>' + esc(nomE(x.j.equipoId, 'Libre')) + ' · ' + x.cp.tier + ' · ' + x.cp.pts + ' pts</small><button type="button" data-bajar="' + x.j.id + '">⬇️ Descargar</button>';
+        gal.appendChild(d);
+      } catch (e) { console.warn(e); }
+    }
+    estado('✅ ' + gal.children.length + ' cartas listas. Toca una para verla grande o usa Descargar.');
+    if (btn) btn.disabled = false;
+  }
+  function armarMedallas(cont) {
+    var m = document.createElement('div'); m.id = 'dt-medallas';
+    m.innerHTML = '<h4 class="dt-sub">🏅 Cartas Bronce, Plata y Oro (jugadores que ya llegaron)</h4><p class="dt-nota">Aquí salen las cartas de todos los jugadores que ya subieron a Bronce (55 pts), Plata (75) u Oro (95). Los visitantes del sitio no pueden descargarlas; solo tú desde aquí.</p>'
+      + '<div class="dt-med-barra"><select id="dt-med-tier"><option value="">Todas (Bronce, Plata y Oro)</option><option value="ORO">🥇 Solo Oro</option><option value="PLATA">🥈 Solo Plata</option><option value="BRONCE">🥉 Solo Bronce</option></select>'
+      + '<button type="button" id="dt-med-ver">🖼️ Ver cartas</button><button type="button" id="dt-med-zip" class="dt-verde">📦 Descargar todas (ZIP)</button></div><div id="dt-med-gal" class="dt-gal"></div>';
+    cont.parentNode.insertBefore(m, cont.nextSibling);
+    el('dt-med-ver').onclick = function () { verCartasMed(this); };
+    el('dt-med-zip').onclick = async function () {
+      var btn = this; if (!medLista.length || !el('dt-med-gal').children.length) await verCartasMed(null);
+      var res = medLista.filter(function (x) { return medBlobs[x.j.id]; }).map(function (x) { return { n: nombreCarta(x), b: medBlobs[x.j.id] }; });
+      if (!res.length) return; btn.disabled = true; await empaquetar(res, 'liga-cartas-bronce-plata-oro-' + fechaISO() + '.zip'); btn.disabled = false;
+    };
+    el('dt-med-tier').onchange = function () { el('dt-med-gal').innerHTML = ''; medLista = []; estado(''); };
+    m.addEventListener('click', function (e) {
+      var t = e.target, id = t.getAttribute && (t.getAttribute('data-ver') || t.getAttribute('data-bajar')); if (!id) return;
+      var x = medLista.filter(function (y) { return String(y.j.id) === String(id); })[0], b = medBlobs[id]; if (!x || !b) return;
+      var arch = nombreCarta(x).split('/').pop();
+      if (t.getAttribute('data-bajar')) bajar(b, arch); else previa(b, arch, x.j.nombre + ' · ' + x.cp.tier);
+    });
+  }
   function ini() {
     var grid = el('dt-grid'); if (!grid) return;
     grid.innerHTML = ITEMS.map(function (it) { return '<div class="dt-item"><b>' + it.t + '</b>' + (it.sel ? '<select id="dt-sel-' + it.id + '"></select>' : '') + '<button type="button" data-dt="' + it.id + '">👁️ Ver y descargar</button></div>'; }).join('');
@@ -8353,7 +8440,7 @@ input::placeholder { text-transform: none; }
     cont.innerHTML = '<h4 class="dt-sub">🃏 Cartas para redes (por apartado)</h4><div class="dt-cartas-grid">' + CARTAS.map(function (c) {
       return '<div class="dt-item"><b>' + c.t + '</b>' + (c.k === 'cj' ? '<select id="dt-cj-eq"></select>' : '') + '<select id="dt-' + c.k + '-sel"></select>' +
         '<button type="button" data-c1="' + c.k + '">👁️ Ver y descargar carta</button><button type="button" class="dt-verde" data-ct="' + c.k + '">📦 Descargar todos (ZIP)</button></div>'; }).join('') + '</div>';
-    grid.parentNode.insertBefore(cont, el('dt-todo'));
+    grid.parentNode.insertBefore(cont, el('dt-todo')); armarMedallas(cont);
     cont.addEventListener('click', function (e) { var t = e.target.closest && e.target.closest('button'); if (!t) return; if (t.getAttribute('data-c1')) unaCarta(t.getAttribute('data-c1'), t); else if (t.getAttribute('data-ct')) todasCartas(t.getAttribute('data-ct'), t); });
     cont.addEventListener('change', function (e) { if (e.target.id === 'dt-cj-eq') llenarCartas(); });
     function llenarTodo() { llenar(); llenarCartas(); }

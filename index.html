@@ -807,7 +807,63 @@
         .h2h-barra-3d::after { content: ''; position: absolute; top: 0; right: -7px; width: 7px; height: 100%; background: var(--h2h-color-osc); transform-origin: top left; transform: skewY(45deg); border-radius: 0 3px 3px 0; }
         @keyframes h2hCrecer { from { width: 0; } to { width: var(--pct); } }
         .h2h-barra-valor { font-size: 0.85rem; font-weight: 700; text-align: left; color: var(--text); }
-        @media (prefers-reduced-motion: reduce) { .h2h-barra-3d { animation: none; width: var(--pct); } }
+        @media (prefers-reduced-motion: reduce) { .h2h-barra-3d { animation: none; width: var(--pct); } .h2h-vs-bar i { animation:none; width:var(--w); } .h2h-duelo { animation:none; } }
+        /* --- Comparador Cara a Cara: versión "duelo" --- */
+        .h2h-selectores { display:grid; grid-template-columns:1fr auto 1fr; gap:10px 12px; align-items:end; max-width:760px; margin:6px auto 0; }
+        .h2h-sel { display:flex; flex-direction:column; gap:4px; min-width:0; }
+        .h2h-sel label { font-size:.7rem; font-weight:800; letter-spacing:.8px; text-transform:uppercase; color:var(--text-muted); }
+        .h2h-sel select { width:100%; }
+        .h2h-vs-mid { align-self:end; width:38px; height:38px; margin-bottom:5px; border-radius:50%; background:#0b2f5c; color:#f0b429; font-weight:800; font-size:.8rem; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 8px rgba(11,47,92,.35); }
+        .h2h-btn { grid-column:1 / -1; width:100%; margin:0 !important; }
+        #h2h-resultado-box { max-width:760px; margin:18px auto 0; }
+        .h2h-duelo { --ca:#1f5fd6; --cb:#d1140f; border-radius:18px; overflow:hidden; background:#fff; box-shadow:0 8px 28px rgba(11,47,92,.16); border:1px solid #e2e8f0; animation:h2hEntra .5s ease both; }
+        @keyframes h2hEntra { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+        .h2h-top { position:relative; padding:20px 14px 16px; color:#fff; background:linear-gradient(135deg,#0b2f5c,#06182f); }
+        .h2h-top::before { content:""; position:absolute; left:0; top:0; right:0; height:5px; background:linear-gradient(90deg,var(--ca) 50%,var(--cb) 50%); }
+        .h2h-equipos { display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:center; text-align:center; }
+        .h2h-eq { display:flex; flex-direction:column; align-items:center; gap:8px; min-width:0; }
+        .h2h-eq img { width:76px; height:76px; object-fit:contain; background:#fff; border-radius:50%; padding:6px; box-shadow:0 0 0 3px rgba(255,255,255,.25); }
+        .h2h-eq.a img { box-shadow:0 0 0 3px var(--ca); } .h2h-eq.b img { box-shadow:0 0 0 3px var(--cb); }
+        .h2h-eq b { font-size:.82rem; text-transform:uppercase; letter-spacing:.3px; line-height:1.15; overflow-wrap:anywhere; }
+        .h2h-centro { display:flex; flex-direction:column; align-items:center; gap:2px; }
+        .h2h-centro .vs { font-size:1.5rem; font-weight:800; color:#f0b429; letter-spacing:1px; }
+        .h2h-centro small { font-size:.66rem; color:#cbd5e1; text-transform:uppercase; letter-spacing:.6px; }
+        .h2h-resumen { display:grid; grid-template-columns:1fr 1fr 1fr; margin-top:16px; border-radius:14px; background:rgba(255,255,255,.08); overflow:hidden; }
+        .h2h-resumen > div { padding:10px 4px; text-align:center; }
+        .h2h-resumen > div + div { border-left:1px solid rgba(255,255,255,.14); }
+        .h2h-resumen strong { display:block; font-size:2rem; line-height:1; font-weight:800; }
+        .h2h-resumen .ra strong { color:var(--ca); filter:brightness(1.5) saturate(1.1); } .h2h-resumen .rb strong { color:var(--cb); filter:brightness(1.5) saturate(1.1); } .h2h-resumen .re strong { color:#e2e8f0; }
+        .h2h-resumen span { display:block; margin-top:4px; font-size:.64rem; letter-spacing:.7px; text-transform:uppercase; color:#cbd5e1; }
+        .h2h-stats { padding:6px 14px 4px; }
+        .h2h-vs-fila { display:grid; grid-template-columns:54px 1fr 54px; gap:10px; align-items:center; padding:9px 0; border-bottom:1px solid #eef2f7; }
+        .h2h-vs-fila:last-child { border-bottom:0; }
+        .h2h-vs-val { font-size:1.05rem; font-weight:800; color:#1e293b; }
+        .h2h-vs-val.a { text-align:left; } .h2h-vs-val.b { text-align:right; }
+        .h2h-vs-val.gana { color:var(--cc); }
+        .h2h-vs-lab { display:block; text-align:center; font-size:.68rem; font-weight:700; letter-spacing:.7px; text-transform:uppercase; color:var(--text-muted); margin-bottom:5px; }
+        .h2h-vs-bar { display:flex; height:10px; border-radius:99px; overflow:hidden; background:#e5e9f0; gap:2px; }
+        .h2h-vs-bar i { display:block; height:100%; width:0; animation:h2hSeg .9s .1s cubic-bezier(.2,.8,.2,1) forwards; }
+        .h2h-vs-bar i.a { background:linear-gradient(180deg,var(--ca),var(--ca)); border-radius:99px 0 0 99px; }
+        .h2h-vs-bar i.b { background:linear-gradient(180deg,var(--cb),var(--cb)); border-radius:0 99px 99px 0; }
+        @keyframes h2hSeg { from { width:0; } to { width:var(--w); } }
+        .h2h-ult { padding:6px 14px 16px; }
+        .h2h-ult h4 { margin:8px 0 8px; font-size:.74rem; letter-spacing:.8px; text-transform:uppercase; color:var(--text-muted); text-align:center; }
+        .h2h-par { display:grid; grid-template-columns:auto 1fr auto 1fr; gap:8px; align-items:center; padding:9px 10px; margin-bottom:6px; border-radius:12px; background:#f6f8fb; border-left:4px solid #94a3b8; font-size:.78rem; }
+        .h2h-par.v { border-left-color:var(--ca); } .h2h-par.d { border-left-color:var(--cb); }
+        .h2h-par .j { font-size:.62rem; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--text-muted); }
+        .h2h-par .n { font-weight:700; text-transform:uppercase; font-size:.72rem; line-height:1.15; overflow-wrap:anywhere; }
+        .h2h-par .n.l { text-align:right; } .h2h-par .n.r { text-align:left; }
+        .h2h-par .m { font-weight:800; font-size:1rem; padding:3px 10px; border-radius:8px; background:#0b2f5c; color:#fff; white-space:nowrap; }
+        .h2h-vacio { padding:26px 18px 30px; text-align:center; color:var(--text-muted); font-size:.9rem; }
+        .h2h-vacio b { display:block; color:var(--text); font-size:1rem; margin-bottom:4px; }
+        @media (max-width:560px) {
+            .h2h-selectores { grid-template-columns:1fr; }
+            .h2h-vs-mid { justify-self:center; margin:0; align-self:center; }
+            .h2h-eq img { width:60px; height:60px; }
+            .h2h-resumen strong { font-size:1.6rem; }
+            .h2h-par { grid-template-columns:1fr auto 1fr; } .h2h-par .j { grid-column:1 / -1; }
+            .h2h-vs-fila { grid-template-columns:44px 1fr 44px; gap:8px; }
+        }
 
         /* --- Encuestas: botón de voto tipo "ficha" que se voltea al elegir --- */
         .encuesta-boton-voto { transform-style: preserve-3d; }
@@ -2068,12 +2124,13 @@ html.modal-abierto .modal{overscroll-behavior:contain}
         <!-- COMPARADOR HEAD TO HEAD -->
         <section id="headtohead-sec" class="card-section" style="border-top-color: #3f51b5;">
             <h2>⚔️ Comparador Cara a Cara</h2>
-            <div class="filter-container">
-                <select id="h2h-equipo1"><option value="">-- Selecciona Club A --</option></select>
-                <select id="h2h-equipo2"><option value="">-- Selecciona Club B --</option></select>
-                <button onclick="compararHeadToHead()" class="btn btn-secondary">Comparar Histórico</button>
+            <div class="h2h-selectores">
+                <div class="h2h-sel"><label for="h2h-equipo1">Club A</label><select id="h2h-equipo1" onchange="h2hAuto()"><option value="">-- Selecciona Club A --</option></select></div>
+                <div class="h2h-vs-mid">VS</div>
+                <div class="h2h-sel"><label for="h2h-equipo2">Club B</label><select id="h2h-equipo2" onchange="h2hAuto()"><option value="">-- Selecciona Club B --</option></select></div>
+                <button onclick="compararHeadToHead()" class="btn btn-secondary h2h-btn">Comparar</button>
             </div>
-            <div id="h2h-resultado-box" style="margin-top:15px; display:none; background:var(--light); padding:15px; border-radius:8px;"></div>
+            <div id="h2h-resultado-box" style="display:none;"></div>
         </section>
 
         <!-- XI IDEAL -->
@@ -2313,7 +2370,6 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                     <div class="ficha-3d-botones">
                         <button type="button" class="btn btn-secondary btn-sm btn-pill" onclick="compartirPerfilJugadorActual()">🔗 Compartir</button>
                         <button type="button" class="btn btn-primary btn-sm btn-pill" onclick="voltearFichaJugador()">🔄 Ver datos y partidos</button>
-                        <button type="button" class="btn btn-warning btn-sm btn-pill" onclick="descargarTarjetaJugador()">🃏 Descargar carta (imagen)</button>
                     </div>
                 </div>
 
@@ -2348,10 +2404,10 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                         <h4>🃏 ¿Cómo se ganan los puntos de la carta?</h4>
                         <div class="flp-grid">
                             <div class="flp-col flp-suma"><b>⬆️ Suben</b>
-                                <span>⚽ Gol <em>+4</em></span>
-                                <span>🅰️ Asistencia <em>+3</em></span>
-                                <span>⭐ MVP <em>+8</em></span>
-                                <span>👟 Partido jugado <em>+2</em> <small>(máx. 15 partidos)</small></span>
+                                <span>⚽ Gol <em>+3</em></span>
+                                <span>🅰️ Asistencia <em>+2</em></span>
+                                <span>⭐ MVP <em>+6</em></span>
+                                <span>👟 Partido jugado <em>+2</em></span>
                             </div>
                             <div class="flp-col flp-resta"><b>⬇️ Bajan</b>
                                 <span>🟨 Amarilla <em>−3</em></span>
@@ -2359,12 +2415,12 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                             </div>
                         </div>
                         <div class="flp-niveles">
-                            <span class="flp-n bronce">🥉 Bronce<br><b>50</b> pts</span>
-                            <span class="flp-n plata">🥈 Plata<br><b>70</b> pts</span>
-                            <span class="flp-n oro">🥇 Oro<br><b>90</b> pts</span>
+                            <span class="flp-n bronce">🥉 Bronce<br><b>55</b> pts</span>
+                            <span class="flp-n plata">🥈 Plata<br><b>75</b> pts</span>
+                            <span class="flp-n oro">🥇 Oro<br><b>95</b> pts</span>
                         </div>
                         <p id="modal-leyenda-meta" class="flp-meta"></p>
-                        <p class="flp-nota">Mínimo 0 y máximo 99 puntos. Si recibes tarjetas puedes perder tu carta y bajar de nivel.</p>
+                        <p class="flp-nota">Mínimo 0 puntos y sin tope: cada jugador suma hasta donde llegue durante el torneo (puede pasar de 100, 125, 130…). Si recibes tarjetas puedes perder tu carta y bajar de nivel.</p>
                     </div>
 
                     <div class="ficha-3d-botones">
@@ -4974,55 +5030,100 @@ html.modal-abierto .modal{overscroll-behavior:contain}
             bracket.innerHTML = html;
         }
 
-        function compararHeadToHead() {
+        function h2hAuto() {
+            const a = parseInt(document.getElementById('h2h-equipo1').value), b = parseInt(document.getElementById('h2h-equipo2').value);
+            if (a && b && a !== b) compararHeadToHead(true);
+        }
+
+        let h2hToken = 0;
+        async function compararHeadToHead(silencioso) {
             const id1 = parseInt(document.getElementById('h2h-equipo1').value);
             const id2 = parseInt(document.getElementById('h2h-equipo2').value);
-            if(!id1 || !id2 || id1 === id2) return mostrarToast("Selecciona dos equipos diferentes.", "error");
+            if (!id1 || !id2 || id1 === id2) { if (!silencioso) mostrarToast("Selecciona dos equipos diferentes.", "error"); return; }
 
             const e1 = db.equipos.find(e => e.id === id1);
             const e2 = db.equipos.find(e => e.id === id2);
+            if (!e1 || !e2) return;
+            const mi = ++h2hToken;
 
             let g1 = 0, g2 = 0, emp = 0, gf1 = 0, gf2 = 0;
-            let jugados = db.partidos.filter(p => p.jugado && ((p.localId === id1 && p.visitaId === id2) || (p.localId === id2 && p.visitaId === id1)));
+            const jugados = db.partidos.filter(p => p.jugado && ((p.localId === id1 && p.visitaId === id2) || (p.localId === id2 && p.visitaId === id1)))
+                .sort((x, y) => (x.jornada || 0) - (y.jornada || 0) || String(x.fecha || '').localeCompare(String(y.fecha || '')));
 
             jugados.forEach(p => {
-                let gl = p.localId === id1 ? p.golesLocal : p.golesVisita;
-                let gv = p.localId === id1 ? p.golesVisita : p.golesLocal;
-                gf1 += gl || 0; gf2 += gv || 0;
-                if(gl > gv) g1++; else if(gv > gl) g2++; else emp++;
+                const gl = (p.localId === id1 ? p.golesLocal : p.golesVisita) || 0;
+                const gv = (p.localId === id1 ? p.golesVisita : p.golesLocal) || 0;
+                gf1 += gl; gf2 += gv;
+                if (gl > gv) g1++; else if (gv > gl) g2++; else emp++;
             });
+            const pj = jugados.length;
 
-            const barraFila = (label, valorA, valorB, colorA, colorB) => {
-                const maxVal = Math.max(valorA, valorB, 1);
-                const pctA = Math.round((valorA / maxVal) * 100);
-                const pctB = Math.round((valorB / maxVal) * 100);
-                return `
-                    <div class="h2h-barra-fila">
-                        <span class="h2h-barra-label">${label} · ${escapeHtml(e1.nombre)}</span>
-                        <div class="h2h-barra-track"><div class="h2h-barra-3d" style="--pct:${pctA}%; --h2h-color:${colorA}; --h2h-color-claro:${colorA}cc; --h2h-color-osc:${colorA}88;"></div></div>
-                        <span class="h2h-barra-valor">${valorA}</span>
+            // Colores de cada club a partir de su escudo (con respaldo azul / rojo)
+            const rgb = c => { const m = /rgb\((\d+),(\d+),(\d+)\)/.exec(c || ''); return m ? [+m[1], +m[2], +m[3]] : null; };
+            const colorDe = async (e, def) => { try { return (window.colorDeEscudo && e.escudo) ? ((await window.colorDeEscudo(e.escudo)) || def) : def; } catch (x) { return def; } };
+            let ca = await colorDe(e1, '#1f5fd6'), cb = await colorDe(e2, '#d1140f');
+            const ra = rgb(ca), rb = rgb(cb);
+            if (ra && rb && Math.hypot(ra[0] - rb[0], ra[1] - rb[1], ra[2] - rb[2]) < 110) { ca = '#1f5fd6'; cb = '#d1140f'; }
+            if (mi !== h2hToken) return;
+
+            const img = e => `<img src="${e.escudo || 'https://placehold.co/90'}" alt="${escapeHtml(e.nombre)}">`;
+            const cabecera = `
+                <div class="h2h-top">
+                    <div class="h2h-equipos">
+                        <div class="h2h-eq a">${img(e1)}<b>${escapeHtml(e1.nombre)}</b></div>
+                        <div class="h2h-centro"><span class="vs">VS</span><small>${pj} ${pj === 1 ? 'partido' : 'partidos'}</small></div>
+                        <div class="h2h-eq b">${img(e2)}<b>${escapeHtml(e2.nombre)}</b></div>
                     </div>
-                    <div class="h2h-barra-fila">
-                        <span class="h2h-barra-label">${label} · ${escapeHtml(e2.nombre)}</span>
-                        <div class="h2h-barra-track"><div class="h2h-barra-3d" style="--pct:${pctB}%; --h2h-color:${colorB}; --h2h-color-claro:${colorB}cc; --h2h-color-osc:${colorB}88;"></div></div>
-                        <span class="h2h-barra-valor">${valorB}</span>
-                    </div>`;
-            };
+                    ${pj ? `<div class="h2h-resumen">
+                        <div class="ra"><strong>${g1}</strong><span>Victorias</span></div>
+                        <div class="re"><strong>${emp}</strong><span>Empates</span></div>
+                        <div class="rb"><strong>${g2}</strong><span>Victorias</span></div>
+                    </div>` : ''}
+                </div>`;
 
             const box = document.getElementById('h2h-resultado-box');
             box.style.display = 'block';
+            if (!pj) {
+                box.innerHTML = `<div class="h2h-duelo" style="--ca:${ca}; --cb:${cb};">${cabecera}<div class="h2h-vacio"><b>Todavía no se han enfrentado</b>Cuando jueguen entre sí, aquí aparecerá su historial completo.</div></div>`;
+                return;
+            }
+
+            const fila = (label, vA, vB, fmt) => {
+                const tot = vA + vB, pa = tot ? (vA / tot) * 100 : 0, pb = tot ? (vB / tot) * 100 : 0;
+                const f = fmt || (v => v);
+                return `
+                    <div class="h2h-vs-fila">
+                        <span class="h2h-vs-val a ${vA > vB ? 'gana' : ''}" style="--cc:${ca};">${f(vA)}</span>
+                        <div><span class="h2h-vs-lab">${label}</span><div class="h2h-vs-bar"><i class="a" style="--w:${pa}%"></i><i class="b" style="--w:${pb}%"></i></div></div>
+                        <span class="h2h-vs-val b ${vB > vA ? 'gana' : ''}" style="--cc:${cb};">${f(vB)}</span>
+                    </div>`;
+            };
+            const prom = v => (Math.round(v * 10) / 10).toFixed(1);
+            const efA = Math.round((g1 / pj) * 100), efB = Math.round((g2 / pj) * 100);
+
+            const etiquetaJ = p => {
+                if ((p.jornada || 0) >= 98 && typeof ETIQUETA_FASE_CARRUSEL === 'function') return ETIQUETA_FASE_CARRUSEL(p.jornada);
+                return p.jornada ? 'Jornada ' + p.jornada : 'Partido';
+            };
+            const ultimos = jugados.slice(-5).reverse().map(p => {
+                const l = db.equipos.find(e => e.id === p.localId), v = db.equipos.find(e => e.id === p.visitaId);
+                const gl = p.golesLocal || 0, gv = p.golesVisita || 0;
+                const g1p = p.localId === id1 ? gl : gv, g2p = p.localId === id1 ? gv : gl;
+                const cls = g1p > g2p ? 'v' : (g2p > g1p ? 'd' : '');
+                return `<div class="h2h-par ${cls}"><span class="j">${escapeHtml(etiquetaJ(p))}</span><span class="n l">${escapeHtml(l ? l.nombre : '')}</span><span class="m">${gl} - ${gv}</span><span class="n r">${escapeHtml(v ? v.nombre : '')}</span></div>`;
+            }).join('');
+
             box.innerHTML = `
-                <h3 style="text-align:center; margin-top:0;">📊 Resultados: ${escapeHtml(e1.nombre)} vs ${escapeHtml(e2.nombre)}</h3>
-                <div style="display:flex; justify-content:space-around; text-align:center; margin-bottom:6px;">
-                    <div><h4>${escapeHtml(e1.nombre)}</h4><p style="font-size:1.5rem; font-weight:bold; color:var(--primary);">${g1} victorias</p></div>
-                    <div><h4>Empates</h4><p style="font-size:1.5rem; font-weight:bold; color:var(--text-muted);">${emp}</p></div>
-                    <div><h4>${escapeHtml(e2.nombre)}</h4><p style="font-size:1.5rem; font-weight:bold; color:var(--primary);">${g2} victorias</p></div>
-                </div>
-                <div style="margin-top:10px;">
-                    ${barraFila('Victorias', g1, g2, '#1f5fd6', '#d1140f')}
-                    ${barraFila('Goles anotados', gf1, gf2, '#1f5fd6', '#d1140f')}
-                </div>
-            `;
+                <div class="h2h-duelo" style="--ca:${ca}; --cb:${cb};">
+                    ${cabecera}
+                    <div class="h2h-stats">
+                        ${fila('Victorias', g1, g2)}
+                        ${fila('Goles anotados', gf1, gf2)}
+                        ${fila('Goles por partido', gf1 / pj, gf2 / pj, prom)}
+                        ${fila('% de victorias', efA, efB, v => v + '%')}
+                    </div>
+                    <div class="h2h-ult"><h4>Últimos enfrentamientos</h4>${ultimos}</div>
+                </div>`;
         }
 
         function renderizarFranjaEscudos() {
@@ -5978,31 +6079,32 @@ html.modal-abierto .modal{overscroll-behavior:contain}
                     const cls = { ORO: 'ct-oro', PLATA: 'ct-plata', BRONCE: 'ct-bronce' }[cp.tier] || 'ct-bloqueada';
                     ctEl.className = 'ficha-carta-tipo ' + cls;
                     if (cp.tier) ctEl.innerHTML = '<b>' + ({ ORO: '🥇', PLATA: '🥈', BRONCE: '🥉' }[cp.tier]) + ' CARTA ' + cp.tier + '</b><small>' + cp.pts + ' puntos</small>';
-                    else ctEl.innerHTML = '<b>🔒 Sin carta todavía</b><small>' + cp.pts + ' puntos · faltan ' + (50 - cp.pts) + ' para la carta Bronce</small>';
+                    else ctEl.innerHTML = '<b>🔒 Sin carta todavía</b><small>' + cp.pts + ' puntos · faltan ' + (window.CARTA_CFG.bronce - cp.pts) + ' para la carta Bronce</small>';
                 }
             } catch (e) { }
             try {
                 const lm = document.getElementById('modal-leyenda-meta');
                 if (lm && window.puntosCartaJugador) {
                     const cp2 = window.puntosCartaJugador(j);
-                    const sig = cp2.pts >= 90 ? null : (cp2.pts >= 70 ? ['Oro', 90] : (cp2.pts >= 50 ? ['Plata', 70] : ['Bronce', 50]));
+                    const CF = window.CARTA_CFG;
+                    const sig = cp2.pts >= CF.oro ? null : (cp2.pts >= CF.plata ? ['Oro', CF.oro] : (cp2.pts >= CF.bronce ? ['Plata', CF.plata] : ['Bronce', CF.bronce]));
                     const n2 = { ORO: 'Oro', PLATA: 'Plata', BRONCE: 'Bronce' };
-                    const piso = { ORO: 90, PLATA: 70, BRONCE: 50 };
+                    const piso = { ORO: CF.oro, PLATA: CF.plata, BRONCE: CF.bronce };
                     const prev = { ORO: 'Plata', PLATA: 'Bronce', BRONCE: 'sin carta' };
-                    const ej = (f) => '<b>' + Math.ceil(f / 4) + '</b> goles, <b>' + Math.ceil(f / 3) + '</b> asistencias o <b>' + Math.ceil(f / 8) + '</b> MVP';
+                    const ej = (f) => '<b>' + Math.ceil(f / CF.gol) + '</b> goles, <b>' + Math.ceil(f / CF.ast) + '</b> asistencias o <b>' + Math.ceil(f / CF.mvp) + '</b> MVP';
                     let h = '<b>Tus puntos: ' + cp2.pts + '</b>';
                     if (sig) {
                         const f = sig[1] - cp2.pts;
                         h += '<br>⬆️ <b>Cómo subir a ' + sig[0] + ':</b> te faltan <b>' + f + '</b> puntos (sirven ' + ej(f) + ', o mezclando).';
-                        if (sig[0] !== 'Oro') h += '<br>🥇 <b>Para llegar al Oro</b> necesitas <b>90</b> puntos (faltan ' + (90 - cp2.pts) + ').';
+                        if (sig[0] !== 'Oro') h += '<br>🥇 <b>Para llegar al Oro</b> necesitas <b>' + CF.oro + '</b> puntos (faltan ' + (CF.oro - cp2.pts) + ').';
                     } else {
-                        h += '<br>🥇 ¡Ya tienes la carta Oro! Mantén 90 puntos o más.';
+                        h += '<br>🥇 ¡Ya tienes la carta Oro! Mantén ' + CF.oro + ' puntos o más.';
                     }
                     if (cp2.tier) {
                         const m = cp2.pts - piso[cp2.tier] + 1;
-                        h += '<br>⬇️ <b>Cómo podrías bajar:</b> si caes a menos de ' + piso[cp2.tier] + ' puntos pierdes la carta ' + n2[cp2.tier] + ' y regresas a ' + prev[cp2.tier] + '. Te sobran <b>' + (cp2.pts - piso[cp2.tier]) + '</b> puntos: ' + (Math.floor((cp2.pts - piso[cp2.tier]) / 3) + 1) + ' amarillas (−3 c/u) o ' + (Math.floor((cp2.pts - piso[cp2.tier]) / 5) + 1) + ' rojas (−5 c/u) te bajarían.';
+                        h += '<br>⬇️ <b>Cómo podrías bajar:</b> si caes a menos de ' + piso[cp2.tier] + ' puntos pierdes la carta ' + n2[cp2.tier] + ' y regresas a ' + prev[cp2.tier] + '. Te sobran <b>' + (cp2.pts - piso[cp2.tier]) + '</b> puntos: ' + (Math.floor((cp2.pts - piso[cp2.tier]) / CF.amarilla) + 1) + ' amarillas (−' + CF.amarilla + ' c/u) o ' + (Math.floor((cp2.pts - piso[cp2.tier]) / CF.roja) + 1) + ' rojas (−' + CF.roja + ' c/u) te bajarían.';
                     } else {
-                        h += '<br>⚠️ Las tarjetas (🟨 −3, 🟥 −5) te alejan de la carta; evítalas.';
+                        h += '<br>⚠️ Las tarjetas (🟨 −' + CF.amarilla + ', 🟥 −' + CF.roja + ') te alejan de la carta; evítalas.';
                     }
                     lm.innerHTML = h;
                 }
@@ -7670,21 +7772,24 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.bo
   /* ---------- Tarjeta coleccionable ---------- */
   function cargarImg(src) { return new Promise(function (r) { if (!src) return r(null); var i = new Image(); i.crossOrigin = 'anonymous'; i.onload = function () { r(i); }; i.onerror = function () { r(null); }; i.src = src; }); }
   function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
-  // Puntos: 2 por partido (máx. 15), 4 por gol, 3 por asistencia, 8 por MVP; -3 por amarilla y -5 por roja. Mín. 0, máx. 99.
+  // Puntos de la carta (sin tope): 2 por partido jugado, 3 por gol, 2 por asistencia, 6 por MVP; -3 por amarilla y -5 por roja. Mínimo 0.
+  // Niveles: Bronce 55, Plata 75, Oro 95. Se puede seguir sumando hasta que termine el torneo.
+  window.CARTA_CFG = { bronce: 55, plata: 75, oro: 95, pj: 2, gol: 3, ast: 2, mvp: 6, amarilla: 3, roja: 5 };
   window.puntosCartaJugador = function (j) {
+    var CF = window.CARTA_CFG;
     var pj = historialPartidosJugador(j).length;
     var goles = (j.goles || 0) + ((golesEnVivoPorJugador() || {})[j.id] || 0);
     var ast = (asistenciasPorJugador() || {})[j.id] || 0;
     var mvp = (db.partidos || []).filter(function (p) { return p.mvpJugadorId === j.id; }).length;
-    var pts = Math.max(0, Math.min(99, Math.min(pj, 15) * 2 + goles * 4 + ast * 3 + mvp * 8 - (j.amarillas || 0) * 3 - (j.rojas || 0) * 5));
-    var tier = pts >= 90 ? 'ORO' : pts >= 70 ? 'PLATA' : pts >= 50 ? 'BRONCE' : null;
+    var pts = Math.max(0, pj * CF.pj + goles * CF.gol + ast * CF.ast + mvp * CF.mvp - (j.amarillas || 0) * CF.amarilla - (j.rojas || 0) * CF.roja);
+    var tier = pts >= CF.oro ? 'ORO' : pts >= CF.plata ? 'PLATA' : pts >= CF.bronce ? 'BRONCE' : null;
     return { pts: pts, tier: tier, pj: pj, goles: goles, ast: ast, mvp: mvp };
   };
   window.descargarTarjetaJugador = async function () {
     var j = (db.jugadores || []).find(function (x) { return x.id === fichaActualJugadorId; });
     if (!j) return;
     var cp = window.puntosCartaJugador(j);
-    if (!cp.tier) return mostrarToast('Aún no tiene carta: lleva ' + cp.pts + ' puntos y necesita 50 para la Bronce.', 'info', 3500);
+    if (!cp.tier) return mostrarToast('Aún no tiene carta: lleva ' + cp.pts + ' puntos y necesita ' + window.CARTA_CFG.bronce + ' para la Bronce.', 'info', 3500);
     mostrarToast('Preparando tarjeta…', 'info', 1800);
     var eq = eqPor(j.equipoId);
     var goles = cp.goles, ast = cp.ast, pj = cp.pj, mvp = cp.mvp, ovr = cp.pts, tier = cp.tier;
@@ -7713,7 +7818,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.bo
     c.restore();
     c.lineWidth = 8; c.strokeStyle = pal[1]; c.beginPath(); c.arc(cx, cy, r, 0, Math.PI * 2); c.stroke();
     // valoración y posición
-    c.textAlign = 'left'; c.fillStyle = pal[0]; c.font = 'bold 128px "Barlow Condensed", Arial Narrow, Arial'; c.fillText(String(ovr), 52, 168);
+    c.textAlign = 'left'; c.fillStyle = pal[0]; var fo = 128; c.font = 'bold ' + fo + 'px "Barlow Condensed", Arial Narrow, Arial'; while (c.measureText(String(ovr)).width > 150 && fo > 60) { fo -= 4; c.font = 'bold ' + fo + 'px "Barlow Condensed", Arial Narrow, Arial'; } c.fillText(String(ovr), 52, 168);
     c.font = 'bold 30px "Barlow Condensed", Arial'; c.fillStyle = '#fff';
     var pos = (typeof etiquetaPos === 'function' ? etiquetaPos(j.posicion) : j.posicion) || '';
     c.textAlign = 'center'; c.fillText(String(pos).toUpperCase(), W / 2, 176); c.textAlign = 'left';
