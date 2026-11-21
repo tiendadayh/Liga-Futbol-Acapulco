@@ -1157,6 +1157,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                     <input type="checkbox" id="chk-mostrar-ocultos-partidos" onchange="renderizarGestion()"> Mostrar partidos ocultos
                 </label>
                 <button type="button" class="btn-editar-fila" style="margin-bottom:8px;" title="Borra los partidos (y sus cédulas) cuyo equipo local o visitante ya fue eliminado" onclick="limpiarPartidosHuerfanos()">🧹 Limpiar partidos de equipos eliminados</button>
+                <button type="button" class="btn-editar-fila" style="margin-bottom:8px;" title="Si aún salen goles o tarjetas de partidos que ya borraste, esto los vuelve a calcular" onclick="recalcularEstadisticasJugadores()">🔄 Recalcular goles y tarjetas</button>
                 <div id="gestion-lista-partidos" class="gestion-lista"></div>
             </div>
             <div>
@@ -6694,7 +6695,7 @@ ${cuerpo}`;
                 });
 
                 // Se relanzan los Cuartos: se limpia cualquier Cuartos/Semifinal/Final previa.
-                db.partidos = db.partidos.filter(p => p.jornada < 90);
+                eliminarPartidosRevirtiendo(p => !(p.jornada < 90));
                 const base = Date.now();
                 llaves.forEach((ll, idx) => {
                     const dl = datosLlaves[idx];
@@ -6784,7 +6785,7 @@ ${cuerpo}`;
                 });
 
                 // Se relanza la Semifinal: se limpia una Semifinal/Final previa, se conservan los Cuartos ya jugados.
-                db.partidos = db.partidos.filter(p => p.jornada < 90 || p.jornada === 98 || p.jornada === 99);
+                eliminarPartidosRevirtiendo(p => !(p.jornada < 90 || p.jornada === 98 || p.jornada === 99));
                 const base = Date.now();
                 parejas.forEach((pp, idx) => {
                     const dp = datosParejas[idx];
@@ -7489,7 +7490,7 @@ ${cuerpo}`;
             });
             if (idsAEliminar.length === 0) { alert('No se encontraron partidos duplicados en la Liguilla. Todo está en orden.'); return; }
             if (!(await confirmarAccion(`Se encontraron ${idsAEliminar.length} partido(s) duplicado(s) en la Liguilla (mismo cruce repetido dentro de la misma ronda). Se dejará solo el más completo de cada uno y se borrarán los demás. ¿Continuar?`, { textoConfirmar: 'Continuar' }))) return;
-            db.partidos = db.partidos.filter(p => !idsAEliminar.includes(p.id));
+            eliminarPartidosRevirtiendo(p => idsAEliminar.includes(p.id));
             guardarDB();
             renderizarGestion();
             renderizarOnceIdeal();
@@ -7513,6 +7514,39 @@ ${cuerpo}`;
                 j.amarillas = Math.max(0, (j.amarillas || 0) - (prev.amarillas || 0));
                 j.rojas = Math.max(0, (j.rojas || 0) - (prev.rojas || 0));
             });
+        }
+
+        // Elimina partidos DEVOLVIÉNDOLES a jugadores y equipos lo que habían sumado
+        // (goles, tarjetas y adeudo de arbitraje). Antes solo se quitaba el partido y los
+        // acumulados de cada jugador se quedaban, por eso seguían saliendo goles y tarjetas.
+        function eliminarPartidosRevirtiendo(esEliminable) {
+            const quitar = db.partidos.filter(esEliminable);
+            quitar.forEach(p => {
+                if (p.jugado || p.cedula || (p.estadisticasJugadores || []).length) {
+                    revertirEstadisticasPartido(p);
+                    revertirPagoArbitraje(p.localId, p.arbitrajePagoLocal);
+                    revertirPagoArbitraje(p.visitaId, p.arbitrajePagoVisita);
+                }
+            });
+            db.partidos = db.partidos.filter(p => !esEliminable(p));
+            return quitar.length;
+        }
+
+        // Repara datos viejos: pone en 0 y vuelve a sumar goles/amarillas/rojas de cada jugador
+        // usando solo los partidos que existen hoy.
+        async function recalcularEstadisticasJugadores() {
+            if (!(await confirmarAccion('Se van a recalcular los goles, amarillas y rojas de TODOS los jugadores usando solo los partidos que existen ahora. Lo que venía de partidos ya borrados desaparece. ¿Continuar?', { textoConfirmar: 'Recalcular' }))) return;
+            const acum = {};
+            (db.partidos || []).forEach(p => (p.estadisticasJugadores || []).forEach(st => {
+                const a = acum[st.jugadorId] = acum[st.jugadorId] || { g: 0, a: 0, r: 0 };
+                a.g += st.goles || 0; a.a += st.amarillas || 0; a.r += st.rojas || 0;
+            }));
+            (db.jugadores || []).forEach(j => {
+                const a = acum[j.id] || { g: 0, a: 0, r: 0 };
+                j.goles = a.g; j.amarillas = a.a; j.rojas = a.r;
+            });
+            guardarDB();
+            mostrarAlerta('Estadísticas recalculadas. Ahora coinciden con los partidos que existen. Presiona "Publicar" para subirlas al sitio.', { icono: '🔄' });
         }
 
         function abrirCorreccionPartido(id) {
@@ -7707,7 +7741,7 @@ ${cuerpo}`;
             const conCedula = huerfanos.filter(p => p.cedula).length;
             if (!(await confirmarAccion(`Se encontraron ${huerfanos.length} partido(s) cuyo equipo ya no existe${conCedula ? ` (${conCedula} con cédula cerrada)` : ''}. ¿Eliminarlos junto con sus cédulas? Esto no se puede deshacer.`, { textoConfirmar: 'Eliminar' }))) return;
             const ids = new Set(huerfanos.map(p => p.id));
-            db.partidos = db.partidos.filter(p => !ids.has(p.id));
+            eliminarPartidosRevirtiendo(p => ids.has(p.id));
             guardarDB();
             alert(huerfanos.length + ' partido(s) eliminado(s).');
         }
@@ -7720,7 +7754,7 @@ ${cuerpo}`;
             let msg = `¿Eliminar el partido "${loc} vs ${vis}" (${etiquetaJornada(p.jornada)})?`;
             if (p.jugado || p.cedula) msg += `\n\n⚠️ Este partido ya tiene resultado y/o cédula oficial cerrada. Si lo eliminas, esos datos se perderán permanentemente.`;
             if (!(await confirmarAccion(msg, { textoConfirmar: 'Eliminar' }))) return;
-            db.partidos = db.partidos.filter(x => x.id !== id);
+            eliminarPartidosRevirtiendo(x => x.id === id);
             guardarDB();
             alert("Partido eliminado.");
         }
