@@ -4252,6 +4252,11 @@ html[data-theme="dark"] #caja-resumen-hoy{
             });
 
             db.avisosDisciplinaEstado = nuevoEstado;
+
+            // Los avisos "suspendido" no se autoborran, así que si el jugador ya no está bloqueado
+            // (se borró el partido que lo sancionó, o se eliminó al jugador) el aviso se retira aquí;
+            // si no, se quedaba en el Tablón para siempre.
+            db.comunicados = (db.comunicados || []).filter(c => !(c.tipo === 'sancion' && c.jugadorId && !(nuevoEstado[c.jugadorId] && nuevoEstado[c.jugadorId].estado === 'bloqueado')));
         }
 
         // Calcula la edad a partir de una fecha de nacimiento (YYYY-MM-DD).
@@ -7374,7 +7379,9 @@ ${cuerpo}`;
         async function eliminarArbitro(id) {
             const a = db.arbitros.find(x => x.id === id);
             if (!a) return;
-            if (!(await confirmarAccion(`¿Eliminar al árbitro "${escapeHtml(a.nombre)}"?`, { textoConfirmar: 'Eliminar' }))) return;
+            const pendientesArb = db.partidos.filter(p => p.arbitro === a.nombre && !p.jugado).length;
+            const avisoArb = pendientesArb ? `\n\n⚠️ Tiene ${pendientesArb} partido(s) sin jugar asignado(s). Seguirán con su nombre; reasígnalos a otro árbitro.` : '';
+            if (!(await confirmarAccion(`¿Eliminar al árbitro "${escapeHtml(a.nombre)}"?` + avisoArb, { textoConfirmar: 'Eliminar' }))) return;
             db.arbitros = db.arbitros.filter(x => x.id !== id);
             guardarDB();
             alert("Árbitro eliminado.");

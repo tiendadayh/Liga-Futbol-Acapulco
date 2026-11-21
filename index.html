@@ -1485,6 +1485,11 @@ html[data-theme="dark"]{--sk1:#1a2744;--sk2:#26385e}
 .sk{background:linear-gradient(90deg,var(--sk1) 25%,var(--sk2) 40%,var(--sk1) 60%);background-size:300% 100%;animation:ligaSk 1.4s ease-in-out infinite;border-radius:12px}
 #liga-skel{position:fixed;inset:0;z-index:8000;background:var(--light,#f3f8fb);overflow:hidden;transition:opacity .4s ease;pointer-events:none}
 #liga-skel.off{opacity:0}
+/* Balón girando al centro de la pantalla de carga (antes quedaba escondido detrás de este velo) */
+#liga-skel .ls-bola{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:14px;padding:26px 34px;border-radius:22px;background:var(--card-bg,#fff);box-shadow:0 12px 40px rgba(11,47,92,.22);z-index:2}
+#liga-skel .ls-bola svg{width:72px;height:72px;animation:giro 1s linear infinite;filter:drop-shadow(0 4px 6px rgba(11,47,92,.3))}
+#liga-skel .ls-bola span{font:700 .95rem var(--font-display,inherit);letter-spacing:.9px;text-transform:uppercase;color:var(--primary,#0b2f5c)}
+@media (prefers-reduced-motion:reduce){#liga-skel .ls-bola svg{animation-duration:3s}}
 #liga-skel .sk-h{height:96px;border-radius:0}
 #liga-skel .sk-w{max-width:1100px;margin:0 auto;padding:18px 16px}
 #liga-skel .sk-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:22px}
@@ -1846,7 +1851,7 @@ html.modal-abierto .modal{overscroll-behavior:contain}
 @media (max-width:480px){.site-footer .footer-botones{flex-direction:column}}
 </style>
 </head>
-<body><div id="liga-skel" aria-hidden="true"><div class="sk sk-h"></div><div class="sk-w"><div class="sk-row"><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div></div></div>
+<body><div id="liga-skel" aria-hidden="true"><div class="ls-bola"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="22" fill="#fff" stroke="#0b2f5c" stroke-width="3"/><polygon points="24,14 33,21 30,32 18,32 15,21" fill="#0b2f5c"/><path d="M24 14V4M33 21l10-3M30 32l7 8M18 32l-7 8M15 21L5 18" stroke="#0b2f5c" stroke-width="2.5" fill="none"/></svg><span>Cargando la liga…</span></div><div class="sk sk-h"></div><div class="sk-w"><div class="sk-row"><div class="sk sk-card"></div><div class="sk sk-card"></div><div class="sk sk-card"></div></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div><div class="sk sk-line"></div></div></div>
 
     <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 
