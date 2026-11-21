@@ -3363,6 +3363,15 @@ html[data-theme="dark"] #caja-resumen-hoy{
 
         limpiarAvisosExpirados();
 
+        // Con el panel abierto por horas/días, los avisos vencidos se retiran solos cada minuto.
+        setInterval(function () {
+            const antes = (db.comunicados || []).length;
+            limpiarAvisosExpirados();
+            if ((db.comunicados || []).length !== antes) {
+                try { localStorage.setItem('liga_premier_db', JSON.stringify(db)); renderizarGestion(); } catch (e) { /* se reintenta en el siguiente ciclo */ }
+            }
+        }, 60000);
+
         // --- PIN de registro por equipo ---
         // Cada equipo tiene un PIN de 6 dígitos que su dueño debe escribir a mano en el
         // formulario público de "Solicitud de Registro de Jugador" (index.html) para
@@ -3579,6 +3588,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                 try {
                     db = JSON.parse(e.newValue);
                     normalizarDB(db);
+                    limpiarAvisosExpirados();
                     aplicarLogoSitio();
                     actualizarPreviewEscudoCredencial();
                     actualizarFormularios();
@@ -3886,6 +3896,7 @@ html[data-theme="dark"] #caja-resumen-hoy{
                 guardarBaseNube(datosNube);
                 db = datosNube;
                 normalizarDB(db);
+                limpiarAvisosExpirados();
                 localStorage.setItem('liga_premier_db', JSON.stringify(db));
                 cargarConfigFormulario();
                 aplicarLogoSitio();
@@ -7069,6 +7080,7 @@ ${cuerpo}`;
                     </div>`).join('') : '<p style="font-size:0.8rem; color:#888;">Sin canchas registradas.</p>';
             }
 
+            limpiarAvisosExpirados();
             const listaComunicados = document.getElementById('gestion-lista-comunicados');
             if (listaComunicados) {
                 const iconoTipo = { aviso: '📢', sancion: '⚠️', cronica: '📰', registro: '📋', traspaso: '🔄' };
